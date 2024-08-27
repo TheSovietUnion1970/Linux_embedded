@@ -335,6 +335,10 @@ void *server_func2_handle() {
                                 break;
                             }
                         }
+
+                        IP_fd__Client_Active_index--;
+                        IP_fd__Apps_index--;
+                        n_fds_from_client--;
                     }
                 }
 #endif
