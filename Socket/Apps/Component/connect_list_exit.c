@@ -15,7 +15,7 @@
 #define BUFF_SIZE 256
 
 #define SERVER_PORT 2000 /* >>>>>>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-const char IP_APP[16] = "192.168.1.5";
+const char IP_APP[16] = "192.168.0.75";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -314,6 +314,32 @@ void *server_func2_handle() {
                     if (bytes_read > 0) {
                         printf("(Server - fd[%d].fd = %d) ==> Msg[%d] = '%s'\n", i, fds_from_client[i].fd, msg_i_server, recvbuff);
                         msg_i_server++;
+
+                        /* Exit */
+                        if (strcmp(recvbuff, "exit") == 0){
+                            printf("Deleting IP (active client): %s\n", IP_fd__Client_Active[i].ip);
+                            close(fds_from_client[i].fd);
+
+                            // Remove the deleted IP and shift the remaining entries
+                            for (int j = i; j < n_fds_from_client - 1; j++) {
+                                fds_from_client[j] = fds_from_client[j + 1];
+                                IP_fd__Client_Active[j] = IP_fd__Client_Active[j + 1];
+                            }
+
+                            /* scan for common */
+                            for (int x = 0; x < IP_fd__Apps_index; x++) {
+                                if (strcmp(IP_fd__Client_Active[i].ip, IP_fd__Apps[x].ip) == 0){
+                                    for (int v = x; v < IP_fd__Apps_index - 1; v++){
+                                        IP_fd__Apps[v] = IP_fd__Apps[v+1];
+                                    }
+                                    break;
+                                }
+                            }
+
+                            IP_fd__Client_Active_index--;
+                            IP_fd__Apps_index--;
+                            n_fds_from_client--;   
+                        }
                     }
                     else if (bytes_read == 0) {
                         printf("Client disconnected, fd[%d].fd = %d\n", i, fds_from_client[i].fd);
@@ -345,6 +371,8 @@ void *server_func2_handle() {
                 fds_from_client[i].revents = 0;
             }
         }
+
+        PrintArr(IP_fd__Apps, IP_fd__Apps_index);
     }
 }
 
@@ -419,12 +447,12 @@ void *client_func2_handle() {
         int poll_count = poll(fds_from_server, n_fds_from_server, -1);
         memset(recvbuff, 0, sizeof(recvbuff));
         if (poll_count == -1) {
-            handle_error("poll()");
+            handle_error("poll1()");
         }
 
         for (int i = 0; i <= n_fds_from_server; i++) {
             if (fds_from_server[i].fd == -1) {
-                handle_error("poll()");
+                handle_error("poll2()");
             }
 
             if (fds_from_server[i].revents & POLLIN) {
@@ -457,7 +485,7 @@ void *client_func2_handle() {
 
                     if (strcmp(recvbuff, "exit") == 0) {
     #if (debug == 1)
-                        printf("Deleting IP: %s\n", IP_fd__Server_Passive[i].ip);
+                        printf("Deleting IP (passive server): %s\n", IP_fd__Server_Passive[i].ip);
     #endif
 
                         close(fds_from_server[i].fd);
@@ -528,6 +556,8 @@ void *client_func2_handle() {
                 fds_from_server[i].revents = 0;
             }
         }
+
+        PrintArr(IP_fd__Apps, IP_fd__Apps_index);
     }
 }
 
@@ -586,6 +616,8 @@ int main(){
                 handle_error("pthread_create()");
             }
 
+            PrintArr(IP_fd__Apps, IP_fd__Apps_index);
+
         }
         else if (strncmp(request, "list", sizeof("list")) == 0){
 #if (debug == 1)
@@ -611,20 +643,21 @@ int main(){
                     IP_fd__Apps[i].fd = -1;
                     memset(IP_fd__Apps[i].ip, 0, sizeof(IP_fd__Apps[i].ip));
 
-                    if (IP_fd__Apps[i].state_IP == FROM_PASSIVE_SERVER){
-                        n_fds_from_server--;
-                    }
-                    if (IP_fd__Apps[i].state_IP == FROM_ACTIVE_CLIENT){
-                        n_fds_from_client--;
-                    }
+                    // if (IP_fd__Apps[i].state_IP == FROM_PASSIVE_SERVER){
+                    //     n_fds_from_server--;
+                    // }
+                    // if (IP_fd__Apps[i].state_IP == FROM_ACTIVE_CLIENT){
+                    //     n_fds_from_client--;
+                    // }
                     // Mark the last entry as invalid after shifting
                     //fds_from_server[i].fd = -1;
+                    //IP_fd__Apps_index--;
                 }
             }
 
-            IP_fd__Apps_index = 1; // only contain of IP of this app
+            // IP_fd__Apps_index = 1; // only contain of IP of this app
 
-
+            PrintArr(IP_fd__Apps, IP_fd__Apps_index);
         }
     }
 }
