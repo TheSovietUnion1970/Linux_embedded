@@ -408,12 +408,12 @@ void *client_func_connect(void *arg){
     printf("ip = %s\n", ip);
 
     /* Scan to check whether IP is available */
-    // for (int i = 0; i < IP_fd__Apps_index; i++){
-    //     if (strcmp(ip, IP_fd__Apps[i].ip) == 0){
-    //         printf("IP avaiable already or IP of this app\n");
-    //         flag_check_IP = 1;
-    //     }
-    // }
+    for (int i = 0; i < IP_fd__Apps_index; i++){
+        if (strcmp(ip, IP_fd__Apps[i].ip) == 0){
+            printf("IP avaiable already or IP of this app\n");
+            flag_check_IP = 1;
+        }
+    }
 
     // if IP is not available
     if (flag_check_IP != 1){
@@ -458,7 +458,9 @@ void *client_func_connect(void *arg){
 }
 
 void *client_func2_handle() {
+    int tmp_fd = 0;
     while (1) {
+        printf("POLLING....\n");
         int poll_count = poll(fds_from_server, n_fds_from_server, -1);
         memset(recvbuff, 0, sizeof(recvbuff));
         if (poll_count == -1) {
@@ -466,16 +468,16 @@ void *client_func2_handle() {
         }
 
         for (int i = 0; i < n_fds_from_server; i++) {
-            if (fds_from_server[i].fd == -1) {
-                handle_error("poll2()");
-            }
+            // if (fds_from_server[i].fd == -1) {
+            //     handle_error("poll2()");
+            // }
             pthread_mutex_lock(&client_lock); // Acquire the lock before processing events
             if (fds_from_server[i].revents & POLLIN) {
                 //pthread_mutex_lock(&client_lock);
 #if (debug == 1)
                 printf("\nCLIENT handling, i = %d\n", i);
                 printf("IP_fd__Server_Passive[%d].fd = %d\n", i, IP_fd__Server_Passive[i].fd);
-#endif            
+#endif           
                 ssize_t bytes_read = -1;
                 if (IP_fd__Server_Passive[i].fd != 0){
                     bytes_read = read(IP_fd__Server_Passive[i].fd, recvbuff, BUFF_SIZE);
@@ -492,9 +494,11 @@ void *client_func2_handle() {
                 printf("Done to read\n");
 #endif
                 //pthread_mutex_lock(&client_lock);
-
+                printf("fds_from_server[%d].fd = %d\n", i, fds_from_server[i].fd);
+                tmp_fd = fds_from_server[i].fd;
                 if (bytes_read > 0){
                     recvbuff[bytes_read] = '\0'; // Null-terminate the received message
+                    printf("fds_from_server[%d].fd = %d\n", i, fds_from_server[i].fd);
     #if (debug == 1)
                     printf("(Client handle - fd[%d].fd = %d) ==> Msg[%d] = '%s'\n", i, IP_fd__Server_Passive[i].fd, msg_i_client, recvbuff);
                     msg_i_client++;
@@ -504,43 +508,7 @@ void *client_func2_handle() {
                     printf("* Messge     : '%s'\n", recvbuff);
                     printf("*******************************************\n");
     #endif
-
-                    if (strcmp(recvbuff, "exit") == 0) {
-    #if (debug == 1)
-                        printf("Deleting IP (passive server): %s\n", IP_fd__Server_Passive[i].ip);
-    #endif
-
-                        close(fds_from_server[i].fd);
-                        // Remove the deleted IP and shift the remaining entries
-                        for (int x = i; x < IP_fd__Server_Passive_index - 1; x++) {
-                            IP_fd__Server_Passive[x] = IP_fd__Server_Passive[x + 1];
-                            fds_from_server[x] = fds_from_server[x + 1];
-                        }
-
-                        /* scan for common */
-                        for (int x = 0; x < IP_fd__Apps_index; x++) {
-                            if (strcmp(IP_fd__Server_Passive[i].ip, IP_fd__Apps[x].ip) == 0){
-                                for (int v = x; v < IP_fd__Apps_index - 1; v++){
-                                    IP_fd__Apps[v] = IP_fd__Apps[v+1];
-                                }
-                                break;
-                            }
-                        }
-                        
-                        // Close the socket and mark it for removal
-                        IP_fd__Apps_index--;
-                        IP_fd__Server_Passive_index--;
-                        n_fds_from_server--;
-
-    // #if (debug == 1)
-    //                     if (nfds_r == -1){
-    //                         printf("nfds_r = -1 --> error\n");
-    //                     }
-    // #endif
-
-                        // Mark the last entry as invalid after shifting
-                        //fds_r[nfds_r].fd = -1;
-                    }
+                    fds_from_server[i].fd = tmp_fd;
                 }
 
                 else if (bytes_read == 0) {
@@ -576,6 +544,8 @@ void *client_func2_handle() {
                 //pthread_mutex_unlock(&client_lock);
                 // Clear the revents flag to avoid continuous detection
                 fds_from_server[i].revents = 0;
+                //fds_from_server[i].fd = 4;
+                printf("fds_from_server[%d].fd = %d\n", i, fds_from_server[i].fd);
             }
             pthread_mutex_unlock(&client_lock); // Acquire the lock before processing events
         }
@@ -752,20 +722,9 @@ int main(){
                 /* Scan IPs to delete */
                 for (int i = 1; i < IP_fd__Apps_index; i++){
                     if (strcmp(IP_fd__Apps[i].ip, IP_addr) == 0){
-                        /* Check if it's a server */
-                        if (IP_fd__Apps[i].state_IP == FROM_PASSIVE_SERVER){
-                            printf("*************************write to SEND (fd = %d) (n_fds_from_server = %d)\n", fds_from_server[0].fd, n_fds_from_server);
-                            if (write(fds_from_server[0].fd, port_str, sizeof(port_str)) == -1)
-                                handle_error("write()");
-                        }
-
-                        /* Check if it's a client */
-                        if (IP_fd__Apps[i].state_IP == FROM_ACTIVE_CLIENT){
-                            printf("*************************write to SEND (fd = %d) (n_fds_from_server = %d)\n", fds_from_client[1].fd, n_fds_from_client);
-                            if (write(fds_from_client[1].fd, port_str, sizeof(port_str)) == -1)
-                                handle_error("write()");
-                        }
-
+                        printf("*************************write to SEND (fd = %d) (IP_fd__Apps_index = %d)\n", IP_fd__Apps[i].fd, IP_fd__Apps_index);
+                        if (write(IP_fd__Apps[i].fd, port_str, sizeof(port_str)) == -1)
+                            handle_error("write()");
                         break;
                     }
 
