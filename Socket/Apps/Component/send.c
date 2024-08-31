@@ -711,8 +711,12 @@ int main(){
 #if (debug == 1)
                             printf("*************************write to terminate (fd = %d) (n_fds_from_server = %d)\n", fds_from_server[0].fd, n_fds_from_server);
 #endif
-                            if (write(fds_from_server[0].fd, "minus", sizeof("minus")) == -1)
-                                handle_error("write()");
+                            for (int v = 0; v < n_fds_from_server; v++){
+                                if (fds_from_server[v].fd == IP_fd__Apps[i].fd){
+                                    if (write(fds_from_server[v].fd, "minus", sizeof("minus")) == -1)
+                                        handle_error("write()");
+                                }
+                            }
                         }
 
                         /* Check if it's a client */
@@ -720,8 +724,12 @@ int main(){
 #if (debug == 1)
                             printf("*************************write to exit (fd = %d) (n_fds_from_server = %d)\n", fds_from_client[1].fd, n_fds_from_client);
 #endif
-                            if (write(fds_from_client[1].fd, "minus", sizeof("minus")) == -1)
-                                handle_error("write()");
+                            for (int v = 0; v < n_fds_from_client; v++){
+                                if (fds_from_client[v].fd == IP_fd__Apps[i].fd){
+                                    if (write(fds_from_client[v].fd, "minus", sizeof("minus")) == -1)
+                                        handle_error("write()");
+                                }
+                            }
                         }
 
                         break;
