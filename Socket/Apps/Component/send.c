@@ -100,6 +100,15 @@ void PrintArr(Info_App* Apps, int s) {
 #endif
 }
 
+void Printpollfd(struct pollfd* fds, int s) {
+    printf("---- List of fds --------\n");
+    for (int i = 0; i < s; i++) {
+        printf("(%d) ", fds[i].fd);
+        printf("\n");
+    }
+    printf("-------------------------\n");
+}
+
 int splitString(const char *input, char *str1, char *str2, char *str3) {
     // Temporary copy of the input string since strtok modifies the string
     char temp[256];
@@ -736,7 +745,7 @@ int main(){
             /* Check no available Ips */
             if (IP_fd__Apps_index == 1){
                 printf("\n*******************************************\n");
-                printf("App already exited\n");
+                printf("* No available IPs in the list\n");
                 printf("*******************************************\n");
             }
             else {
@@ -763,12 +772,40 @@ int main(){
                     /* If no IPs */
                     else {
                         printf("\n*******************************************\n");
-                        printf("No available IPs in the list\n");
+                        printf("* No available IPs in the list\n");
                         printf("*******************************************\n");
                     }
                 }
 
             }
         }
+        else if (strncmp(request, "help", sizeof("help")) == 0){
+            DisplayOption();
+        }
+        else if (strncmp(request, "myip", sizeof("myip")) == 0){
+            printf("\n*******************************************\n");
+            printf("* IP address: %s\n", IP_fd__Apps[0].ip);
+            printf("*******************************************\n");
+        }
+        else if (strncmp(request, "myport", sizeof("myport")) == 0){
+            printf("\n*******************************************\n");
+            printf("* Port: %d\n", SERVER_PORT);
+            printf("*******************************************\n");
+        }
+#if (debug == 1)
+        else if (strncmp(request, "fd", sizeof("fd")) == 0){
+            printf("\n**************** fds_from_server *******************\n");
+            Printpollfd(fds_from_server, n_fds_from_server);
+            printf("\n**************** fds_from_client *******************\n");
+            Printpollfd(fds_from_client, n_fds_from_client);
+        }
+#endif
+        else {
+            printf("Invalid input!\n");
+            DisplayOption();
+        }
+#if (debug == 1)
+        printf("Done command <<<<<<\n");
+#endif
     }
 }
