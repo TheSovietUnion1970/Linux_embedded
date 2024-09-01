@@ -21,7 +21,7 @@ const char IP_APP[16] = "192.168.1.9";
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 /* ============= Debug =============*/
-#define debug 0
+#define debug 1
 
 /*  ========================================= Structures ======================================================  */
 typedef enum{
@@ -269,6 +269,7 @@ void *server_func1_listen(void *arg){
 
 void *server_func2_handle() {
     int new_socket_fd_temp = 0;
+    char tmp_IP[256];
     while (1){
         int poll_count = poll(fds_from_client, n_fds_from_client, -1);
         memset(recvbuff, 0, sizeof(recvbuff));
@@ -368,6 +369,8 @@ void *server_func2_handle() {
 #endif
                         close(fds_from_client[i].fd);
 
+                        strcpy(tmp_IP, IP_fd__Client_Active[i].ip);
+
                         // Remove the deleted IP and shift the remaining entries
                         for (int j = i; j < n_fds_from_client - 1; j++) {
                             fds_from_client[j] = fds_from_client[j + 1];
@@ -376,7 +379,7 @@ void *server_func2_handle() {
 
                         /* scan for common */
                         for (int x = 0; x < IP_fd__Apps_index; x++) {
-                            if (strcmp(IP_fd__Client_Active[i].ip, IP_fd__Apps[x].ip) == 0){
+                            if (strcmp(tmp_IP, IP_fd__Apps[x].ip) == 0){
                                 for (int v = x; v < IP_fd__Apps_index - 1; v++){
                                     IP_fd__Apps[v] = IP_fd__Apps[v+1];
                                 }
@@ -472,6 +475,7 @@ void *client_func_connect(void *arg){
 
 void *client_func2_handle() {
     int tmp_fd = 0;
+    char tmp_IP[256];
     while (1) {
 #if (debug == 1)
         printf("POLLING....\n");
@@ -540,6 +544,8 @@ void *client_func2_handle() {
 #endif
                     close(fds_from_server[i].fd);
 
+                    strcpy(tmp_IP, IP_fd__Server_Passive[i].ip);
+
                     // Remove the deleted IP and shift the remaining entries
                     for (int x = i; x < IP_fd__Server_Passive_index; x++) {
                         IP_fd__Server_Passive[x] = IP_fd__Server_Passive[x + 1];
@@ -548,7 +554,9 @@ void *client_func2_handle() {
 
                     /* scan for common */
                     for (int x = 0; x < IP_fd__Apps_index; x++) {
-                        if (strcmp(IP_fd__Server_Passive[i].ip, IP_fd__Apps[x].ip) == 0){
+                        if (strcmp(tmp_IP, IP_fd__Apps[x].ip) == 0){
+                            printf("IP_fd__Server_Passive[%d].ip = %s\n", i, IP_fd__Server_Passive[i].ip);
+                            printf("x = %d\n", x);
                             for (int v = x; v < IP_fd__Apps_index; v++){
                                 IP_fd__Apps[v] = IP_fd__Apps[v+1];
                             }
@@ -572,7 +580,7 @@ void *client_func2_handle() {
             }
             pthread_mutex_unlock(&client_lock); // Acquire the lock before processing events
         }
-        //PrintArr(IP_fd__Apps, IP_fd__Apps_index);
+        PrintArr(IP_fd__Apps, IP_fd__Apps_index);
     }
 }
 
@@ -704,12 +712,13 @@ int main(){
             }
             else {
                 /* Scan IPs to delete */
-                for (int i = 1; i < IP_fd__Apps_index; i++){
+                printf("IP_fd__Apps_index = %d\n", IP_fd__Apps_index);
+                for (int i = 0; i < IP_fd__Apps_index; i++){
                     if (strcmp(IP_fd__Apps[i].ip, IP_addr) == 0){
                         /* Check if it's a server */
                         if (IP_fd__Apps[i].state_IP == FROM_PASSIVE_SERVER){
 #if (debug == 1)
-                            printf("*************************write to terminate (fd = %d) (n_fds_from_server = %d)\n", fds_from_server[0].fd, n_fds_from_server);
+                            printf("*************************write to terminate (fd = %d) (n_fds_from_server = %d)\n", fds_from_server[i].fd, n_fds_from_server);
 #endif
                             for (int v = 0; v < n_fds_from_server; v++){
                                 if (fds_from_server[v].fd == IP_fd__Apps[i].fd){
@@ -722,7 +731,7 @@ int main(){
                         /* Check if it's a client */
                         if (IP_fd__Apps[i].state_IP == FROM_ACTIVE_CLIENT){
 #if (debug == 1)
-                            printf("*************************write to exit (fd = %d) (n_fds_from_server = %d)\n", fds_from_client[1].fd, n_fds_from_client);
+                            printf("*************************write to terminate (fd = %d) (n_fds_from_client = %d)\n", fds_from_client[i].fd, n_fds_from_client);
 #endif
                             for (int v = 0; v < n_fds_from_client; v++){
                                 if (fds_from_client[v].fd == IP_fd__Apps[i].fd){
