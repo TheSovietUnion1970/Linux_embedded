@@ -14,14 +14,16 @@
 #define LISTEN_BACKLOG 50 // for server
 #define BUFF_SIZE 256
 
-#define SERVER_PORT 2000 /* >>>>>>>>>>>>>>>>>>>>>>>>>> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+#define SERVER_PORT 2000 
 const char IP_APP[16] = "192.168.1.9";
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>  ==============  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 /* ============= Debug =============*/
-#define debug 1
+#define debug 0
 
 /*  ========================================= Structures ======================================================  */
 typedef enum{
@@ -580,7 +582,9 @@ void *client_func2_handle() {
             }
             pthread_mutex_unlock(&client_lock); // Acquire the lock before processing events
         }
+#if (debug == 1)
         PrintArr(IP_fd__Apps, IP_fd__Apps_index);
+#endif
     }
 }
 
