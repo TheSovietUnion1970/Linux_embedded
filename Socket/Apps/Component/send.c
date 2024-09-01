@@ -557,8 +557,8 @@ void *client_func2_handle() {
                     /* scan for common */
                     for (int x = 0; x < IP_fd__Apps_index; x++) {
                         if (strcmp(tmp_IP, IP_fd__Apps[x].ip) == 0){
-                            printf("IP_fd__Server_Passive[%d].ip = %s\n", i, IP_fd__Server_Passive[i].ip);
-                            printf("x = %d\n", x);
+                            //printf("IP_fd__Server_Passive[%d].ip = %s\n", i, IP_fd__Server_Passive[i].ip);
+                            //printf("x = %d\n", x);
                             for (int v = x; v < IP_fd__Apps_index; v++){
                                 IP_fd__Apps[v] = IP_fd__Apps[v+1];
                             }
@@ -702,7 +702,7 @@ int main(){
 #if (debug == 1)
             printf(">>>>> Terminate command\n");
 #endif
-            int i_captured = 0;
+            int flag_check = 0;
 
             /* Scan to get IP */
             //sscanf(cmd, "%s %s",request, IP_addr);
@@ -716,7 +716,7 @@ int main(){
             }
             else {
                 /* Scan IPs to delete */
-                printf("IP_fd__Apps_index = %d\n", IP_fd__Apps_index);
+                //printf("IP_fd__Apps_index = %d\n", IP_fd__Apps_index);
                 for (int i = 0; i < IP_fd__Apps_index; i++){
                     if (strcmp(IP_fd__Apps[i].ip, IP_addr) == 0){
                         /* Check if it's a server */
@@ -745,18 +745,19 @@ int main(){
                             }
                         }
 
+                        flag_check = 1;
+
                         break;
                     }
-
-                    /* If no IPs */
-                    else {
-                        printf("\n*******************************************\n");
-                        printf("* No available IPs in the list\n");
-                        printf("*******************************************\n");
-                    }
                 }
-
+                /* If no IPs */
+                if (flag_check == 0) {
+                    printf("\n*******************************************\n");
+                    printf("* No available IPs in the list\n");
+                    printf("*******************************************\n");
+                }
             }
+            flag_check = 0;
         }
         else if (strncmp(request, "send", sizeof("send")) == 0){
 #if (debug == 1)
