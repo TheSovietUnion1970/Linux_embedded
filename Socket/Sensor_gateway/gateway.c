@@ -69,6 +69,8 @@ typedef struct temperature_info{
     int *logFifo_fd;
 }ti;
 
+int index_sensor_used;
+
 /* Database part */
 const char database_name[] = "GATEWAY_INFO" ;
 const char table_name[] = "Sensor_temperature"; 
@@ -138,6 +140,7 @@ void *ConnectionManager(void *arg){
     ti* internal_temp = (ti*)arg;
     while (1){
         int poll_count = poll(fds_from_sensors, n_fds_from_sensors, -1);
+        printf("CLIENT HANDLING...\n");
         memset(recvbuff, 0, sizeof(recvbuff));
         if (poll_count == -1) {
             handle_error("poll()");
@@ -166,6 +169,7 @@ void *ConnectionManager(void *arg){
                     for (int v = 0; v < ID_known_index; v++){
                         if (strcmp(IP_fd__Sensor[IP_fd__Sensor_index].ip, ID_known[v].ip) == 0){
                             printf("The sensor node already with ID = %d\n", ID_known[v].ID_known);
+                            IP_fd__Sensor[IP_fd__Sensor_index].ID = ID_known[v].ID_known;
                             flag_ID_known = 1;
                             break;
                         }
@@ -223,6 +227,9 @@ void *ConnectionManager(void *arg){
 
                         recvbuff_i++;
 
+                        /* Get sensor index */
+                        index_sensor_used = i;
+
                         /* WRITE */
                         //lseek(*(internal_temp->logFifo_fd), sizeof("Data: read temp"), SEEK_SET);  // Move to the end of the last read
                         // int write_bytes;
@@ -241,7 +248,7 @@ void *ConnectionManager(void *arg){
                     else if (bytes_read == 0) {
 
                         char buffer[256];
-                        sprintf(buffer, "A sensor node with ID %d has closed the connection\n", IP_fd__Sensor[IP_fd__Sensor_index].ID);
+                        sprintf(buffer, "A sensor node with ID %d has closed the connection\n", IP_fd__Sensor[i].ID);
                         /* WRITE */
                         int write_bytes;
                         //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
@@ -286,7 +293,7 @@ void *DataManager(void *arg) {
         int write_bytes;
 
         char buffer[256];
-        sprintf(buffer, "The sensor node with ID %d reports it’s too cold (running avg temperature = %.2f)\n", IP_fd__Sensor[IP_fd__Sensor_index].ID, internal_temp->avg_temperature);
+        sprintf(buffer, "The sensor node with ID %d reports it’s too cold (running avg temperature = %.2f)\n", IP_fd__Sensor[index_sensor_used].ID, internal_temp->avg_temperature);
         //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
         int buffer_len = strlen(buffer);
         write_bytes = write(*(internal_temp->logFifo_fd), buffer, buffer_len);
@@ -386,7 +393,7 @@ void *StorageManager(void *arg){
         /* **** ********** **** */
 
         /* WRITE */
-        sprintf(buffer_log, "The sensor node with ID %d into sql\n", IP_fd__Sensor[IP_fd__Sensor_index].ID);
+        sprintf(buffer_log, "The sensor node with ID %d into sql\n", IP_fd__Sensor[index_sensor_used].ID);
         //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
         int buffer_len = strlen(buffer_log);
         write_bytes = write(*(internal_temp->logFifo_fd), buffer_log, buffer_len);
@@ -420,18 +427,12 @@ int main(){
         }
     }
     int logFifo_fd = open("./logFifo", O_RDWR|O_CREAT);
-    //struct pollfd fds_from_log;
-    struct pollfd* fds_from_log = (struct pollfd*)mmap(NULL, sizeof(struct pollfd), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
-    /* Shared memory cpy value */
-    ti* info_temp = (ti*)mmap(NULL, sizeof(ti*)*256, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    ti info_temp;
 
     /* Set values */
-    info_temp->index = 0;
-    info_temp->logFifo_fd = &logFifo_fd;
-
-    fds_from_log->fd = logFifo_fd;
-    fds_from_log->events = POLLIN;
+    info_temp.index = 0;
+    info_temp.logFifo_fd = &logFifo_fd;
 
     /* The info of server of app1 */
     strncpy(IP_fd__Sensor[0].ip, IP_APP, sizeof(IP_APP));
@@ -441,26 +442,31 @@ int main(){
     server_func1_listen(IP_fd__Sensor);   
 
     /* ConnectionManager handling sensor connecting */
-    if (pthread_create(&ConnectionManager_id, NULL, &ConnectionManager, info_temp) != 0) {
+    if (pthread_create(&ConnectionManager_id, NULL, &ConnectionManager, &info_temp) != 0) {
         handle_error("pthread_create()");
     }
 
     /* DataManager handling after ConnectionManager */
-    if (pthread_create(&DataManager_id, NULL, &DataManager, info_temp) != 0) {
+    if (pthread_create(&DataManager_id, NULL, &DataManager, &info_temp) != 0) {
         handle_error("pthread_create()");
     }
 
     /* StorageManager handling after ConnectionManager */
-    if (pthread_create(&StorageManager_id, NULL, &StorageManager, info_temp) != 0) {
+    if (pthread_create(&StorageManager_id, NULL, &StorageManager, &info_temp) != 0) {
         handle_error("pthread_create()");
     }
 
-    usleep(500);
-    //pthread_cond_signal(&cond_ConnectionManager);
+    usleep(5000);
 
     /* Log process */
     if((Log_process = fork()) == 0){
         char logFifo_buffer[256];
+
+        int logFifo_fd = open("./logFifo", O_RDONLY);
+
+        struct pollfd fds_from_logFifo;
+        fds_from_logFifo.fd = logFifo_fd;
+        fds_from_logFifo.events = POLLIN;
 
         /* Write to gateway.log */
         int log_fd;
@@ -473,7 +479,7 @@ int main(){
         while(1){
             /* Polling */
             //printf(" >>> fds_from_log->fd = %d\n", fds_from_log->fd);
-            int poll_count = poll(fds_from_log, 1, -1);
+            int poll_count = poll(&fds_from_logFifo, 1, -1);
             //printf("Handling here ..... <<<\n");
 
             if (poll_count == -1) {
@@ -482,8 +488,8 @@ int main(){
             }
 
             pthread_mutex_lock(&log_lock);
-            if (fds_from_log->revents & POLLIN){
-                ssize_t bytes_read = read(fds_from_log->fd, logFifo_buffer, sizeof(logFifo_buffer));
+            if (fds_from_logFifo.revents & POLLIN){
+                ssize_t bytes_read = read(fds_from_logFifo.fd, logFifo_buffer, sizeof(logFifo_buffer));
                 if (bytes_read > 0) {
                     //lseek(fds_from_log->fd, bytes_read, SEEK_SET);  // Move to the end of the last read
                     logFifo_buffer[bytes_read] = '\0';  // Null-terminate the buffer
@@ -494,7 +500,7 @@ int main(){
                     //printf("==> Log_process ==> '%s'\n", logFifo_buffer);
 
                     printf("Log file descriptor closed\n");
-                    close(fds_from_log->fd);
+                    close(fds_from_logFifo.fd);
                     break;
                 }
                 else {
@@ -523,4 +529,5 @@ int main(){
     pthread_cond_destroy(&cond_ConnectionManager);
     pthread_cond_destroy(&cond_DataManager);
     close(logFifo_fd);
+    //munmap(info_temp, sizeof(ti*)*256);
 }
