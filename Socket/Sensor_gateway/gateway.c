@@ -13,6 +13,8 @@
 #include <string.h>
 #include <sys/mman.h> //mmap()
 #include <bits/mman-linux.h> //MAP_ANONYMOUS
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define LISTEN_BACKLOG 50 // for server
 #define BUFF_SIZE 256
@@ -32,9 +34,17 @@ typedef struct {
     int fd;
     char ip[INET_ADDRSTRLEN];
     int port;
+    int ID;
 } Info;
 Info IP_fd__Sensor[100];
 int IP_fd__Sensor_index = 1;
+
+typedef struct {
+    char ip[INET_ADDRSTRLEN];
+    int ID_known;;
+} ID_kn;
+ID_kn ID_known[100];
+int ID_known_index;
 
 struct sockaddr_in serv_addr, client_addr;
 pthread_t server_id1;
@@ -43,6 +53,7 @@ char sendbuff[BUFF_SIZE];
 char recvbuff[BUFF_SIZE];
 
 pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t log_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_ConnectionManager = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_DataManager = PTHREAD_COND_INITIALIZER;
 
@@ -52,6 +63,7 @@ typedef struct temperature_info{
     float avg_temperature;
     float pre_avg_temperature;
     int index;
+    int *logFifo_fd;
 }ti;
 
 /*  ========================================= Server part ======================================================  */
@@ -135,6 +147,39 @@ void *ConnectionManager(void *arg){
                     IP_fd__Sensor[IP_fd__Sensor_index].fd = new_socket_fd_temp;
                     inet_ntop(AF_INET, &client_addr.sin_addr, IP_fd__Sensor[IP_fd__Sensor_index].ip, INET_ADDRSTRLEN);
 
+                    /* Check ID */
+                    int flag_ID_known = 0;
+                    for (int v = 0; v < ID_known_index; v++){
+                        if (strcmp(IP_fd__Sensor[IP_fd__Sensor_index].ip, ID_known[v].ip) == 0){
+                            printf("The sensor node already with ID = %d\n", ID_known[v].ID_known);
+                            flag_ID_known = 1;
+                            break;
+                        }
+                    }
+                    if (0 == flag_ID_known){
+                        printf("The sensor node with new ID = %d\n", ID_known_index);
+                        /* Save new ID */
+                        strcpy(ID_known[ID_known_index].ip, IP_fd__Sensor[IP_fd__Sensor_index].ip);
+                        ID_known[ID_known_index].ID_known = ID_known_index;
+                        /* Save new ID into IP_fd__Sensor*/
+                        IP_fd__Sensor[IP_fd__Sensor_index].ID = ID_known_index;
+
+                        ID_known_index++; // update ID
+                    }
+
+                    char buffer[256];
+                    sprintf(buffer, "A sensor node with ID %d has opened a new connection\n", IP_fd__Sensor[IP_fd__Sensor_index].ID);
+                    int buffer_len = strlen(buffer);
+                    printf("buffer_len = %d\n", buffer_len);
+
+                    /* WRITE */
+                    int write_bytes;
+                    //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
+                    write_bytes = write(*(internal_temp->logFifo_fd), buffer, buffer_len);
+                    if (-1 == write_bytes){
+                        perror("error writing\n");
+                    }
+
                     n_fds_from_sensors++;
                     IP_fd__Sensor_index++;
 
@@ -163,9 +208,34 @@ void *ConnectionManager(void *arg){
                         internal_temp->index++;
 
                         recvbuff_i++;
+
+                        /* WRITE */
+                        //lseek(*(internal_temp->logFifo_fd), sizeof("Data: read temp"), SEEK_SET);  // Move to the end of the last read
+                        // int write_bytes;
+                        // //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
+                        // char buffer[256];
+                        // sprintf(buffer, "The sensor node with %d reports it’s too cold (running avg temperature = %.2f)\n", IP_fd__Sensor[IP_fd__Sensor_index].ID, internal_temp->avg_temperature);
+                        // write_bytes = write(*(internal_temp->logFifo_fd), buffer, sizeof(buffer));
+                        // if (-1 == write_bytes){
+                        //     perror("error writing\n");
+                        // }
+
+                        // usleep(500);
+
                         pthread_cond_signal(&cond_DataManager);  // Signal thread DataManager to run
                     }
                     else if (bytes_read == 0) {
+
+                        char buffer[256];
+                        sprintf(buffer, "A sensor node with ID %d has closed the connection\n", IP_fd__Sensor[IP_fd__Sensor_index].ID);
+                        /* WRITE */
+                        int write_bytes;
+                        //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
+                        write_bytes = write(*(internal_temp->logFifo_fd), buffer, sizeof(buffer));
+                        if (-1 == write_bytes){
+                            perror("error writing\n");
+                        }
+
                         printf("Sensor[%s] is disconnected\n", IP_fd__Sensor[i].ip);
                         close(fds_from_sensors[i].fd);
 
@@ -198,6 +268,19 @@ void *DataManager(void *arg) {
         // Process the data after being signaled
         printf("DataManager ==> Average temperature: %.2f\n", internal_temp->avg_temperature);
 
+        /* WRITE */
+        int write_bytes;
+
+        char buffer[256];
+        sprintf(buffer, "The sensor node with ID %d reports it’s too cold (running avg temperature = %.2f)\n", IP_fd__Sensor[IP_fd__Sensor_index].ID, internal_temp->avg_temperature);
+        //printf("*(internal_temp->logFifo_fd) = %d\n", *(internal_temp->logFifo_fd));
+        int buffer_len = strlen(buffer);
+        write_bytes = write(*(internal_temp->logFifo_fd), buffer, buffer_len);
+        //printf("write_bytes = %d\n", write_bytes);
+        if (-1 == write_bytes){
+            perror("error writing\n");
+        }
+
         pthread_mutex_unlock(&client_lock);  // Unlock mutex after processing
     }
 
@@ -207,19 +290,34 @@ void *DataManager(void *arg) {
 int main(){
     /* Forking */
     pid_t Log_process;
-    /* For process locking*/
-    sem_t *mutex = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    sem_t *IsGetting = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    sem_t *IsNothing = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    sem_init(mutex, 1, 1);
-    sem_init(IsNothing, 1, 1);
-    sem_init(IsGetting, 1, 0);
+    // /* For process locking*/
+    // sem_t *mutex = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    // sem_t *IsGetting = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    // sem_t *IsNothing = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    // sem_init(mutex, 1, 1);
+    // sem_init(IsNothing, 1, 1);
+    // sem_init(IsGetting, 1, 0);
+
+    // Create the FIFO (named pipe)
+    if (mkfifo("./logFifo", 0666) == -1) {
+        if (errno != EEXIST) {  // Ignore the error if the FIFO already exists
+            perror("mkfifo");
+            exit(EXIT_FAILURE);
+        }
+    }
+    int logFifo_fd = open("./logFifo", O_RDWR|O_CREAT);
+    //struct pollfd fds_from_log;
+    struct pollfd* fds_from_log = (struct pollfd*)mmap(NULL, sizeof(struct pollfd), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
     /* Shared memory cpy value */
     ti* info_temp = (ti*)mmap(NULL, sizeof(ti*)*256, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
-    /* Reset temp_index */
+    /* Set values */
     info_temp->index = 0;
+    info_temp->logFifo_fd = &logFifo_fd;
+
+    fds_from_log->fd = logFifo_fd;
+    fds_from_log->events = POLLIN;
 
     /* The info of server of app1 */
     strncpy(IP_fd__Sensor[0].ip, IP_APP, sizeof(IP_APP));
@@ -238,11 +336,63 @@ int main(){
         handle_error("pthread_create()");
     }
 
-    // if((Log_process = fork()) == 0){
-    //     while(1){
-    //         dddd
-    //     }
-    // }
+    /* Log process */
+    if((Log_process = fork()) == 0){
+        char logFifo_buffer[256];
+
+        /* Write to gateway.log */
+        int log_fd;
+        /* OPEN */
+        log_fd = open("./gateway.log", O_RDWR|O_CREAT|O_APPEND, 0644);
+        if (-1 == log_fd){
+            perror("error opening or creating\n");
+        }   
+
+        while(1){
+            /* Polling */
+            //printf(" >>> fds_from_log->fd = %d\n", fds_from_log->fd);
+            int poll_count = poll(fds_from_log, 1, -1);
+            //printf("Handling here ..... <<<\n");
+
+            if (poll_count == -1) {
+                perror("poll error");
+                exit(EXIT_FAILURE);
+            }
+
+            pthread_mutex_lock(&log_lock);
+            if (fds_from_log->revents & POLLIN){
+                ssize_t bytes_read = read(fds_from_log->fd, logFifo_buffer, sizeof(logFifo_buffer));
+                if (bytes_read > 0) {
+                    //lseek(fds_from_log->fd, bytes_read, SEEK_SET);  // Move to the end of the last read
+                    logFifo_buffer[bytes_read] = '\0';  // Null-terminate the buffer
+                    //printf("==> Log_process ==> '%s'\n", logFifo_buffer);
+                }
+                else if (bytes_read == 0) {
+                    logFifo_buffer[bytes_read] = '\0';  // Null-terminate the buffer
+                    //printf("==> Log_process ==> '%s'\n", logFifo_buffer);
+
+                    printf("Log file descriptor closed\n");
+                    close(fds_from_log->fd);
+                    break;
+                }
+                else {
+                    perror("read error");
+                }
+
+                /* WRITE */
+                int write_bytes;
+                int buffer_len = strlen(logFifo_buffer);
+                write_bytes = write(log_fd, logFifo_buffer, buffer_len);
+                if (-1 == write_bytes){
+                    perror("error writing\n");
+                }            
+
+
+            }
+            pthread_mutex_unlock(&log_lock);
+        }
+    }
+
 
     while(1);
 
@@ -250,4 +400,5 @@ int main(){
     pthread_mutex_destroy(&client_lock);
     pthread_cond_destroy(&cond_ConnectionManager);
     pthread_cond_destroy(&cond_DataManager);
+    close(logFifo_fd);
 }
