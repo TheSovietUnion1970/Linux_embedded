@@ -49,7 +49,7 @@ ID_kn ID_known[100];
 int ID_known_index;
 
 struct sockaddr_in serv_addr, client_addr;
-pthread_t server_id1;
+pthread_t ConnectionManager_id, DataManager_id, StorageManager_id;
 
 char sendbuff[BUFF_SIZE];
 char recvbuff[BUFF_SIZE];
@@ -441,17 +441,17 @@ int main(){
     server_func1_listen(IP_fd__Sensor);   
 
     /* ConnectionManager handling sensor connecting */
-    if (pthread_create(&server_id1, NULL, &ConnectionManager, info_temp) != 0) {
+    if (pthread_create(&ConnectionManager_id, NULL, &ConnectionManager, info_temp) != 0) {
         handle_error("pthread_create()");
     }
 
     /* DataManager handling after ConnectionManager */
-    if (pthread_create(&server_id1, NULL, &DataManager, info_temp) != 0) {
+    if (pthread_create(&DataManager_id, NULL, &DataManager, info_temp) != 0) {
         handle_error("pthread_create()");
     }
 
     /* StorageManager handling after ConnectionManager */
-    if (pthread_create(&server_id1, NULL, &StorageManager, info_temp) != 0) {
+    if (pthread_create(&StorageManager_id, NULL, &StorageManager, info_temp) != 0) {
         handle_error("pthread_create()");
     }
 
