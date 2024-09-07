@@ -341,7 +341,7 @@ void *StorageManager(void *arg){
         if (mysql_real_connect(con, "localhost", "vinh", "1234", NULL, 0, NULL, 0) == NULL) {
             finish_with_error(con);
         }
-        /* WRITE */
+        /* WRITE to Log */
         sprintf(buffer_log, "Connection to SQL server established\n");
         buffer_len = strlen(buffer_log);
         write_bytes = write(*(internal_temp->logFifo_fd), buffer_log, buffer_len);
