@@ -16,13 +16,14 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define SERVER_PORT 3000 
-const char IP_Target[16] = "192.168.30.61";
+const char IP_Target[16] = "192.168.1.4";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 /*  ========================================= Variables ======================================================  */
 pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_t sensor_id1;
 char sendbuff[BUFF_SIZE];
 char recvbuff[BUFF_SIZE];
 
@@ -35,13 +36,16 @@ typedef struct gateway_info{
 } gi;
 gi gateway;
 
+struct pollfd fds_from_gateway; // for server handling events (connecting + reading)
+int n_fds_from_gateway = 1;
+
 int flag_connected = 0;
 int server_fd_temp_for_client;
 void *client_func_connect(){
     int portno;
     char ip[16];
 
-    memset(&client_addr, '0',sizeof(client_addr));
+    memset(&serv_addr, '0',sizeof(serv_addr));
     portno = 2000;
     strncpy(ip, IP_Target, sizeof(IP_Target));
 
@@ -65,8 +69,48 @@ void *client_func_connect(){
         /* Kết nối tới server*/
         if (connect(server_fd_temp_for_client, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
             handle_error("connect()");
+
+        fds_from_gateway.fd = server_fd_temp_for_client;
+        fds_from_gateway.events = POLLIN;
     }
 }
+
+void *client_func2_handle() {
+    int tmp_fd = 0;
+    int msg_i_gateway = 0;
+    while (1) {
+        //printf("POLLING here...\n");
+        int poll_count = poll(&fds_from_gateway, 1, -1);
+        printf("DONE POLLING ...\n");
+        memset(recvbuff, 0, sizeof(recvbuff));
+        if (poll_count == -1) {
+            handle_error("poll1()");
+        }
+
+        /* 1 - only gateway connection */
+        for (int i = 0; i < 1; i++) {
+            pthread_mutex_lock(&client_lock); // Acquire the lock before processing events
+            if (fds_from_gateway.revents & POLLIN) {
+                ssize_t bytes_read = -1;
+                bytes_read = read(fds_from_gateway.fd, recvbuff, BUFF_SIZE);
+                if (bytes_read == -1) {
+                    handle_error("read(client)");
+                }
+
+                if (bytes_read == 0) {
+                    // Server has closed the connection
+                    printf("Gateway has shut down\n");
+                    close(fds_from_gateway.fd);
+                    fds_from_gateway.fd = -1;  // Mark the socket as closed
+                    break;  // Exit the loop since the server is disconnected
+                }
+            }
+            pthread_mutex_unlock(&client_lock);
+        }
+    }
+}
+
+
 
 int splitString(const char *input, char *str1, char *str2, char *str3) {
     // Temporary copy of the input string since strtok modifies the string
@@ -153,8 +197,21 @@ int splitString(const char *input, char *str1, char *str2, char *str3) {
     }
 }
 
+void Printpollfd(struct pollfd* fds, int s) {
+    printf("---- List of fds --------\n");
+    for (int i = 0; i < s; i++) {
+        printf("(%d) ", fds[i].fd);
+        printf("\n");
+    }
+    printf("-------------------------\n");
+}
 
 int main(){
+
+    if (pthread_create(&sensor_id1, NULL, &client_func2_handle, NULL) != 0) {
+        handle_error("pthread_create()");
+    }
+
     while(1){
         char cmd[200];
         printf("Enter the command: ");
@@ -175,6 +232,15 @@ int main(){
 
         if (strncmp(request, "connect", sizeof("connect")) == 0){
             client_func_connect();
+
+            pthread_detach(sensor_id1);
+
+            if (pthread_create(&sensor_id1, NULL, &client_func2_handle, NULL) != 0) {
+                handle_error("pthread_create()");
+            }
+        }
+        else if (strncmp(request, "fd", sizeof("fd")) == 0){
+            Printpollfd(&fds_from_gateway, 1);
         }
         else if (strncmp(request, "exit", sizeof("exit")) == 0){
             close(server_fd_temp_for_client);
