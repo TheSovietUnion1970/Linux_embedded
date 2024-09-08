@@ -17,13 +17,15 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <mysql/mysql.h>
+#include <stdbool.h>
+#include <signal.h>
 
 #define LISTEN_BACKLOG 50 // for server
 #define BUFF_SIZE 256
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define SERVER_PORT 2000 
-const char IP_APP[16] = "192.168.30.61";
+const char IP_APP[16] = "192.168.100.77";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -43,10 +45,12 @@ int IP_fd__Sensor_index = 1;
 
 typedef struct {
     char ip[INET_ADDRSTRLEN];
-    int ID_known;;
+    int ID_known;
+    float pre_avg_temperature;
+    bool intoSQL;
 } ID_kn;
 ID_kn ID_known[100];
-int ID_known_index;
+int ID_known_index = 1;
 
 struct sockaddr_in serv_addr, client_addr;
 pthread_t ConnectionManager_id, DataManager_id, StorageManager_id;
@@ -70,10 +74,12 @@ typedef struct temperature_info{
 }ti;
 
 int index_sensor_used;
+int ID_known_index_captured;
 
 /* Database part */
 const char database_name[] = "GATEWAY_INFO" ;
 const char table_name[] = "Sensor_temperature"; 
+#define FIFO_PATH "./logFifo"
 
 /*  ========================================= Sub functions ======================================================  */
 void finish_with_error(MYSQL *con) {
@@ -82,6 +88,98 @@ void finish_with_error(MYSQL *con) {
     exit(1);
 }
 
+int splitString(const char *input, char *str1, char *str2, char *str3) {
+    // Temporary copy of the input string since strtok modifies the string
+    char temp[256];
+    strncpy(temp, input, sizeof(temp));
+    temp[sizeof(temp) - 1] = '\0';  // Ensure null termination
+
+    // Tokenize the string
+    char *token = strtok(temp, " ");
+
+    // Initialize output strings to empty
+    str1[0] = str2[0] = str3[0] = '\0';
+
+    // First token (command)
+    if (token != NULL) {
+        strncpy(str1, token, 255);
+        str1[255] = '\0';  // Ensure null termination
+        token = strtok(NULL, " ");
+    }
+    /* Scan to remove '\n' */
+    int k = 0;
+    while(1){
+        /* Remove newline */
+        if (str1[k] == '\n'){
+            str1[k] = '\0';
+            return 1;
+        }
+
+        else if (str1[k] == '\0'){
+            break;
+        }
+        k++;
+    }
+
+    // Second token (IP address)
+    if (token != NULL) {
+        strncpy(str2, token, 255);
+        str2[255] = '\0';  // Ensure null termination
+        token = strtok(NULL, " ");
+    }
+    /* Scan to remove '\n' */
+    int j = 0;
+    while(1){
+        /* Remove newline */
+        if (str2[j] == '\n'){
+            str2[j] = '\0';
+            return 2;
+        }
+
+        else if (str2[j] == '\0'){
+            break;
+        }
+        j++;
+    }
+    
+
+    // The rest of the string (message)
+    if (token != NULL) {
+        // Copy the rest of the string as the third part
+        strncpy(str3, token, 255);
+        str3[255] = '\0';  // Ensure null termination
+        token = strtok(NULL, "");
+
+        if (token != NULL) {
+            // Append the rest of the string to str3 if there are more tokens
+            strncat(str3, " ", 255 - strlen(str3));
+            strncat(str3, token, 255 - strlen(str3));
+        }
+
+        /* Scan to remove '\n' */
+        int i = 0;
+        while(1){
+            /* Remove newline */
+            if (str3[i] == '\n'){
+                str3[i] = '\0';
+                return 3;
+            }
+
+            else if (str3[i] == '\0'){
+                break;
+            }
+            i++;
+        }
+    }
+}
+
+void cleanup(int signum) {
+    // Unlink (remove) the FIFO
+    unlink(FIFO_PATH);
+
+    printf("FIFO unlinked and program terminated\n");
+    exit(EXIT_SUCCESS);
+}
 /*  ========================================= Server part ======================================================  */
 int len;
 int server_fd_temp;
@@ -179,6 +277,7 @@ void *ConnectionManager(void *arg){
                         /* Save new ID */
                         strcpy(ID_known[ID_known_index].ip, IP_fd__Sensor[IP_fd__Sensor_index].ip);
                         ID_known[ID_known_index].ID_known = ID_known_index;
+                        ID_known[ID_known_index].intoSQL = false;
                         /* Save new ID into IP_fd__Sensor*/
                         IP_fd__Sensor[IP_fd__Sensor_index].ID = ID_known_index;
 
@@ -205,8 +304,9 @@ void *ConnectionManager(void *arg){
                 }
 
                 else {
+                    // printf("Wait to read...\n");
                     ssize_t bytes_read = read(fds_from_sensors[i].fd, recvbuff, sizeof(recvbuff));
-                    if (fds_from_sensors[i].fd == -1) {
+                    if (bytes_read == -1) {
                         handle_error("read (server)");
                     }
 
@@ -215,12 +315,29 @@ void *ConnectionManager(void *arg){
                         sscanf(recvbuff, "Avergae temperature: %f oC", &temperature);
                         //printf(" ==> temperature: %.2f\n", temperature);
                         
-                        if (0 == internal_temp->index){
+                        for (int v = 1; v < ID_known_index; v++){
+                            if (strcmp(ID_known[v].ip, IP_fd__Sensor[i].ip) == 0){
+                                ID_known_index_captured = v;
+                            }
+                        }
+
+                        printf("ID_known_index_captured = %d\n", ID_known_index_captured);
+
+                        if (false == ID_known[ID_known_index_captured].intoSQL){
                             internal_temp->avg_temperature = temperature;
                         }
                         else {
-                            internal_temp->avg_temperature = (temperature + internal_temp->pre_avg_temperature)/2;
+                            internal_temp->avg_temperature = (temperature + ID_known[ID_known_index_captured].pre_avg_temperature)/2;
                         }
+
+                        ID_known[ID_known_index_captured].pre_avg_temperature = temperature;
+
+                        // if (0 == internal_temp->index){
+                        //     internal_temp->avg_temperature = temperature;
+                        // }
+                        // else {
+                        //     internal_temp->avg_temperature = (temperature + internal_temp->pre_avg_temperature)/2;
+                        // }
                         printf("\nConnectionManager ==> Average temperature: %.2f\n", internal_temp->avg_temperature);
                         internal_temp->pre_avg_temperature = temperature;
                         internal_temp->index++;
@@ -270,7 +387,7 @@ void *ConnectionManager(void *arg){
                         IP_fd__Sensor_index--;
                     }
                 }
-            fds_from_sensors[i].revents = 0;
+                //fds_from_sensors[i].revents = 0;
             }
             pthread_mutex_unlock(&client_lock);
         }
@@ -312,83 +429,116 @@ void *DataManager(void *arg) {
 }
 
 void *StorageManager(void *arg){
+
+    pthread_mutex_lock(&client_lock);  // Lock mutex before waiting
+
+    pthread_cond_wait(&cond_StorageManager, &client_lock);
+
     ti* internal_temp = (ti*)arg;
+
+    MYSQL *con = mysql_init(NULL);
+    char temp_buffer[256];
 
     char buffer_log[256];
     int write_bytes;
     int buffer_len;
 
+    int check = 0;
+
+    if (con == NULL) {
+        fprintf(stderr, "mysql_init() failed\n");
+        exit(1);
+    }
+
+    // Connect to the MySQL server (without specifying a database)
+    if (mysql_real_connect(con, "localhost", "vinh", "1234", NULL, 0, NULL, 0) == NULL) {
+        finish_with_error(con);
+    }
+    /* WRITE to Log */
+    sprintf(buffer_log, "Connection to SQL server established\n");
+    buffer_len = strlen(buffer_log);
+    write_bytes = write(*(internal_temp->logFifo_fd), buffer_log, buffer_len);
+    if (-1 == write_bytes){
+        perror("error writing\n");
+    }
+
+    // Create the database
+    memset(temp_buffer, 0, sizeof(temp_buffer));
+    sprintf(temp_buffer, "CREATE DATABASE IF NOT EXISTS %s", database_name);
+    if (mysql_query(con, temp_buffer)) {
+        finish_with_error(con);
+    }
+
+    // Select the database
+    memset(temp_buffer, 0, sizeof(temp_buffer));
+    sprintf(temp_buffer, "USE %s", database_name);
+    if (mysql_query(con, temp_buffer)) {
+        finish_with_error(con);
+    }
+
+    // Drop the table if it exists
+    memset(temp_buffer, 0, sizeof(temp_buffer));
+    sprintf(temp_buffer, "DROP TABLE IF EXISTS %s", table_name);
+    if (mysql_query(con, temp_buffer)) {
+        finish_with_error(con);
+    }
+
+    // Create a new table
+    memset(temp_buffer, 0, sizeof(temp_buffer));
+    sprintf(temp_buffer, "CREATE TABLE %s(Id INT PRIMARY KEY AUTO_INCREMENT, Temperature INT)", table_name);
+    if (mysql_query(con, temp_buffer)) {
+        finish_with_error(con);
+    }
+    /* WRITE */
+    sprintf(buffer_log, "New table %s created\n", table_name);
+    buffer_len = strlen(buffer_log);
+    write_bytes = write(*(internal_temp->logFifo_fd), buffer_log, buffer_len);
+    if (-1 == write_bytes){
+        perror("error writing\n");
+    }
+
+    pthread_mutex_unlock(&client_lock);  
+
     while (1) {
         pthread_mutex_lock(&client_lock);  // Lock mutex before waiting
 
         // Keep waiting until signaled, and use a loop to recheck the condition
-        pthread_cond_wait(&cond_StorageManager, &client_lock);  // Wait for the signal from DataManager
+        if (check != 0) pthread_cond_wait(&cond_StorageManager, &client_lock);  // Wait for the signal from DataManager
+        check = 1;
         
         // Process the data after being signaled
         printf("StorageManager ==> Store temperature: %.2f\n", internal_temp->avg_temperature);
 
 
         /* **** MYSQL Part **** */
-        MYSQL *con = mysql_init(NULL);
-        char temp_buffer[256];
 
-        if (con == NULL) {
-            fprintf(stderr, "mysql_init() failed\n");
-            exit(1);
-        }
 
-        // Connect to the MySQL server (without specifying a database)
-        if (mysql_real_connect(con, "localhost", "vinh", "1234", NULL, 0, NULL, 0) == NULL) {
-            finish_with_error(con);
-        }
-        /* WRITE to Log */
-        sprintf(buffer_log, "Connection to SQL server established\n");
-        buffer_len = strlen(buffer_log);
-        write_bytes = write(*(internal_temp->logFifo_fd), buffer_log, buffer_len);
-        if (-1 == write_bytes){
-            perror("error writing\n");
-        }
+        // // Insert data into the table
+        // memset(temp_buffer, 0, sizeof(temp_buffer));
+        // sprintf(temp_buffer, "INSERT INTO %s(Temperature) VALUES(%.2f)", table_name, internal_temp->avg_temperature);
+        // if (mysql_query(con, temp_buffer)) {
+        //     finish_with_error(con);
+        // }
+        
 
-        // Create the database
-        memset(temp_buffer, 0, sizeof(temp_buffer));
-        sprintf(temp_buffer, "CREATE DATABASE IF NOT EXISTS %s", database_name);
-        if (mysql_query(con, temp_buffer)) {
-            finish_with_error(con);
+        if (ID_known[ID_known_index_captured].intoSQL == false){
+            // Insert data into the table
+            memset(temp_buffer, 0, sizeof(temp_buffer));
+            sprintf(temp_buffer, "INSERT INTO %s(Temperature) VALUES(%.2f)", table_name, internal_temp->avg_temperature);
+            if (mysql_query(con, temp_buffer)) {
+                finish_with_error(con);
+            }
+            ID_known[ID_known_index_captured].intoSQL = true;
+            printf("INSERT...\n");
         }
-
-        // Select the database
-        memset(temp_buffer, 0, sizeof(temp_buffer));
-        sprintf(temp_buffer, "USE %s", database_name);
-        if (mysql_query(con, temp_buffer)) {
-            finish_with_error(con);
-        }
-
-        // Drop the table if it exists
-        memset(temp_buffer, 0, sizeof(temp_buffer));
-        sprintf(temp_buffer, "DROP TABLE IF EXISTS %s", table_name);
-        if (mysql_query(con, temp_buffer)) {
-            finish_with_error(con);
-        }
-
-        // Create a new table
-        memset(temp_buffer, 0, sizeof(temp_buffer));
-        sprintf(temp_buffer, "CREATE TABLE %s(Number INT PRIMARY KEY AUTO_INCREMENT, Temperature INT)", table_name);
-        if (mysql_query(con, temp_buffer)) {
-            finish_with_error(con);
-        }
-        /* WRITE */
-        sprintf(buffer_log, "New table %s created\n", table_name);
-        buffer_len = strlen(buffer_log);
-        write_bytes = write(*(internal_temp->logFifo_fd), buffer_log, buffer_len);
-        if (-1 == write_bytes){
-            perror("error writing\n");
-        }
-
-        // Insert data into the table
-        memset(temp_buffer, 0, sizeof(temp_buffer));
-        sprintf(temp_buffer, "INSERT INTO %s(Temperature) VALUES(%.2f)", table_name, internal_temp->avg_temperature);
-        if (mysql_query(con, temp_buffer)) {
-            finish_with_error(con);
+        else {
+            // Insert data into the table
+            memset(temp_buffer, 0, sizeof(temp_buffer));
+            sprintf(temp_buffer, "UPDATE %s SET Temperature = %.2f WHERE Id = %d", table_name, internal_temp->avg_temperature, ID_known_index_captured);
+            if (mysql_query(con, temp_buffer)) {
+                finish_with_error(con);
+            }
+            printf("UPDATE...\n");
         }
         /* **** ********** **** */
 
@@ -409,24 +559,21 @@ void *StorageManager(void *arg){
 }
 
 int main(){
+    // Set up the signal handler to catch SIGINT (Ctrl+C)
+    signal(SIGINT, cleanup);
+    signal(SIGTERM, cleanup);
+
     /* Forking */
     pid_t Log_process;
-    // /* For process locking*/
-    // sem_t *mutex = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    // sem_t *IsGetting = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    // sem_t *IsNothing = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    // sem_init(mutex, 1, 1);
-    // sem_init(IsNothing, 1, 1);
-    // sem_init(IsGetting, 1, 0);
 
     // Create the FIFO (named pipe)
-    if (mkfifo("./logFifo", 0666) == -1) {
+    if (mkfifo(FIFO_PATH, 0666) == -1) {
         if (errno != EEXIST) {  // Ignore the error if the FIFO already exists
             perror("mkfifo");
             exit(EXIT_FAILURE);
         }
     }
-    int logFifo_fd = open("./logFifo", O_RDWR|O_CREAT);
+    int logFifo_fd = open(FIFO_PATH, O_RDWR|O_CREAT);
 
     ti info_temp;
 
@@ -462,7 +609,7 @@ int main(){
     if((Log_process = fork()) == 0){
         char logFifo_buffer[256];
 
-        int logFifo_fd = open("./logFifo", O_RDONLY);
+        int logFifo_fd = open(FIFO_PATH, O_RDONLY);
 
         struct pollfd fds_from_logFifo;
         fds_from_logFifo.fd = logFifo_fd;
@@ -519,15 +666,36 @@ int main(){
             }
             pthread_mutex_unlock(&log_lock);
         }
+
+        close(logFifo_fd);
     }
 
 
-    while(1);
+    while(1){
+        char cmd[200];
+        fgets(cmd, sizeof(cmd), stdin); // Reads the entire line, including spaces
+        char request[BUFF_SIZE];
+        char temp1[BUFF_SIZE], temp2[BUFF_SIZE];
+
+        (void)splitString(cmd, request, temp1, temp2);
+
+        if (strncmp(request, "exit", sizeof("exit")) == 0){
+
+            for (int i = 1; i < n_fds_from_sensors; i++) {
+                if (write(fds_from_sensors[i].fd, "minus", sizeof("minus")) == -1)
+                    handle_error("write()");
+                usleep(50000);
+            }
+            exit(0); // end the gateway process
+        }
+    }
 
     /* clean up */
     pthread_mutex_destroy(&client_lock);
     pthread_cond_destroy(&cond_ConnectionManager);
     pthread_cond_destroy(&cond_DataManager);
+    pthread_cond_destroy(&cond_StorageManager);
+
     close(logFifo_fd);
-    //munmap(info_temp, sizeof(ti*)*256);
+    unlink(FIFO_PATH);
 }
