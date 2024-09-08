@@ -16,7 +16,7 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define SERVER_PORT 3000 
-const char IP_Target[16] = "192.168.1.4";
+const char IP_Target[16] = "192.168.100.77";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -95,6 +95,12 @@ void *client_func2_handle() {
                 bytes_read = read(fds_from_gateway.fd, recvbuff, BUFF_SIZE);
                 if (bytes_read == -1) {
                     handle_error("read(client)");
+                }
+
+                if (bytes_read > 0){
+                    if (strncmp(recvbuff, "minus", sizeof("minus")) == 0){
+                        bytes_read = 0;
+                    }
                 }
 
                 if (bytes_read == 0) {
@@ -225,25 +231,21 @@ int main(){
         char port_str[256];
         int s_rev;
         float temperature;
+        char *endptr; // Pointer to character where conversion stops
 
         s_rev = splitString(cmd, request, IP_addr, port_str);
         port = atoi(port_str);
-        temperature = atoi(IP_addr);
+
+        temperature = strtof(IP_addr, &endptr);
 
         if (strncmp(request, "connect", sizeof("connect")) == 0){
             client_func_connect();
-
-            // pthread_detach(sensor_id1);
-
-            // if (pthread_create(&sensor_id1, NULL, &client_func2_handle, NULL) != 0) {
-            //     handle_error("pthread_create()");
-            // }
         }
         else if (strncmp(request, "fd", sizeof("fd")) == 0){
             Printpollfd(&fds_from_gateway, 1);
         }
         else if (strncmp(request, "exit", sizeof("exit")) == 0){
-            close(server_fd_temp_for_client);
+            close(3);
             server_fd_temp_for_client = -1;
         }
         else if (strncmp(request, "send", sizeof("send")) == 0){
@@ -253,6 +255,7 @@ int main(){
             else {
                 char temp_buffer[256];
                 sprintf(temp_buffer, "Avergae temperature: %.2f oC", temperature);
+                printf("temp_buffer = %s\n", temp_buffer);
                 if (write(server_fd_temp_for_client, temp_buffer, sizeof(temp_buffer)) == -1)
                     handle_error("write()");
             }
