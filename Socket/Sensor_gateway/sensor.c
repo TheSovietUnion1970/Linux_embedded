@@ -16,7 +16,7 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define SERVER_PORT 3000 
-const char IP_Target[16] = "192.168.30.60";
+const char IP_Target[16] = "192.168.100.77";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -81,7 +81,7 @@ void *client_func2_handle() {
     while (1) {
         //printf("POLLING here...\n");
         int poll_count = poll(&fds_from_gateway, 1, -1);
-        printf("DONE POLLING ...\n");
+        //printf("DONE POLLING ...\n");
         memset(recvbuff, 0, sizeof(recvbuff));
         if (poll_count == -1) {
             handle_error("poll1()");
@@ -105,10 +105,10 @@ void *client_func2_handle() {
 
                 if (bytes_read == 0) {
                     // Server has closed the connection
-                    printf("Gateway has shut down\n");
+                    printf("* Gateway has shut down\n");
                     close(fds_from_gateway.fd);
                     fds_from_gateway.fd = -1;  // Mark the socket as closed
-                    break;  // Exit the loop since the server is disconnected
+                    //break;  // Exit the loop since the server is disconnected
                 }
             }
             pthread_mutex_unlock(&client_lock);

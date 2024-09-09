@@ -25,7 +25,7 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define SERVER_PORT 2000 
-const char IP_APP[16] = "192.168.30.60";
+const char IP_APP[16] = "192.168.100.77";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -34,7 +34,7 @@ const char IP_APP[16] = "192.168.30.60";
 #define test_SQL_bug1 0
 
 /*  ========================================= Bug SQL fail 3 times ======================================================  */
-#define test_SQL_bug2 0
+#define test_SQL_bug2 1
 
 /*  ========================================= Debug ======================================================  */
 #define debug 0
@@ -605,13 +605,27 @@ void *StorageManager(void *arg){
         if (-1 == write_bytes){
             perror("error writing\n");
         }
-
+#if (debug == 1)
+        printf("n_fds_from_sensors = %d\n", n_fds_from_sensors);
+#endif
         for (int i = 1; i < n_fds_from_sensors; i++) {
+#if (debug == 1)
+            printf("exit -> %d\n",fds_from_sensors[i].fd );
+#endif
             if (write(fds_from_sensors[i].fd, "minus", sizeof("minus")) == -1)
                 handle_error("write()");
             usleep(50000);
         }
-        unlink(FIFO_PATH);
+
+        write_bytes = write(*(internal_temp->logFifo_fd), "Kill", 5);
+        //printf("write_bytes = %d\n", write_bytes);
+        if (-1 == write_bytes){
+            perror("error writing\n");
+        }
+
+        /* Wait the log process (last process) delete and unlink FIFO */
+        sleep(2);
+        exit(0);
     }
     return NULL;   
 }
@@ -683,7 +697,7 @@ int main(){
 
         while(1){
             /* Polling */
-            //printf(" >>> fds_from_log->fd = %d\n", fds_from_log->fd);
+            //printf(" >>> fds_from_logFifo.fd = %d\n", fds_from_logFifo.fd);
             int poll_count = poll(&fds_from_logFifo, 1, -1);
             //printf("Handling here ..... <<<\n");
 
@@ -699,17 +713,19 @@ int main(){
                     //lseek(fds_from_log->fd, bytes_read, SEEK_SET);  // Move to the end of the last read
                     logFifo_buffer[bytes_read] = '\0';  // Null-terminate the buffer
                     //printf("==> Log_process ==> '%s'\n", logFifo_buffer);
+
+                    if (strcmp(logFifo_buffer, "Kill") == 0){
+                        bytes_read = 0;
+                    }
                 }
-                else if (bytes_read == 0) {
+                if (bytes_read == 0) {
                     logFifo_buffer[bytes_read] = '\0';  // Null-terminate the buffer
                     //printf("==> Log_process ==> '%s'\n", logFifo_buffer);
-
                     printf("Log file descriptor closed\n");
                     close(fds_from_logFifo.fd);
+                    unlink(FIFO_PATH);
+                    exit(0);
                     break;
-                }
-                else {
-                    perror("read error");
                 }
 
                 /* WRITE */
@@ -724,8 +740,7 @@ int main(){
             }
             pthread_mutex_unlock(&log_lock);
         }
-
-        close(logFifo_fd);
+        exit(0);
     }
 
     /* For exit manually */
@@ -738,13 +753,12 @@ int main(){
         (void)splitString(cmd, request, temp1, temp2);
 
         if (strncmp(request, "exit", sizeof("exit")) == 0){
-
             for (int i = 1; i < n_fds_from_sensors; i++) {
                 if (write(fds_from_sensors[i].fd, "minus", sizeof("minus")) == -1)
                     handle_error("write()");
                 usleep(50000);
             }
-            exit(0); // end the gateway process
+
         }
     }
 
