@@ -16,7 +16,7 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define SERVER_PORT 3000 
-const char IP_Target[16] = "192.168.100.77";
+const char IP_Target[16] = "192.168.30.60";
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -240,6 +240,12 @@ int main(){
 
         if (strncmp(request, "connect", sizeof("connect")) == 0){
             client_func_connect();
+
+            pthread_detach(sensor_id1);
+
+            if (pthread_create(&sensor_id1, NULL, &client_func2_handle, NULL) != 0) {
+                handle_error("pthread_create()");
+            }
         }
         else if (strncmp(request, "fd", sizeof("fd")) == 0){
             Printpollfd(&fds_from_gateway, 1);
