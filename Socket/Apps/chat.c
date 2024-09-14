@@ -10,13 +10,14 @@
 #include <poll.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <netdb.h> // getnameinfo()
+#include <ifaddrs.h> // getifaddrs(), freeifaddrs(), struct ifaddrs
 
 #define LISTEN_BACKLOG 50 // for server
-#define BUFF_SIZE 256
+#define BUFF_SIZE 256 // size of data
+#define APPS_MAX_NUM 10 // max num of apps
+#define IP_SIZE 16 // size of IP address
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-#define SERVER_PORT 2000 
-const char IP_APP[16] = "192.168.1.9";
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>  ==============  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
 #define handle_error(msg) \
@@ -26,14 +27,16 @@ const char IP_APP[16] = "192.168.1.9";
 #define debug 0
 
 /*  ========================================= Structures ======================================================  */
+/* State of an app */
 typedef enum{
     NONE,
-    FROM_ACTIVE_CLIENT,
-    FROM_PASSIVE_SERVER
+    FROM_ACTIVE_CLIENT, /* when this app (client) connecting to another app (server)*/
+    FROM_PASSIVE_SERVER /* when this app (server) is connected to another app (client)*/
 } IP_STATE;
 
+/* Used for adding new IP, port of another app when connecting */
 typedef struct ip_port{
-    char ip[16];
+    char ip[IP_SIZE];
     unsigned int port;
 }ip;
 ip IP_port__App[10]; // 10 apps maximum
@@ -42,10 +45,10 @@ struct sockaddr_in serv_addr, client_addr;
 struct sockaddr_in serv_addr_for_client;
 
 /*  ========================================= Variables ======================================================  */
-struct pollfd fds_from_client[100]; // for server handling events (connecting + reading)
+struct pollfd fds_from_client[APPS_MAX_NUM]; // for client handling events (connecting + reading)
 int n_fds_from_client = 1;
 
-struct pollfd fds_from_server[100]; // for server handling events (connecting + reading)
+struct pollfd fds_from_server[APPS_MAX_NUM]; // for server handling events (connected + reading)
 int n_fds_from_server = 0;
 
 pthread_mutex_t client_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -62,17 +65,19 @@ int msg_i_client, msg_i_server;
 typedef struct {
     int fd;
     char ip[INET_ADDRSTRLEN];
+    int port;
 } Info;
 
-Info IP_fd__Client_Active[100];
+Info IP_fd__Client_Active[APPS_MAX_NUM];
 int IP_fd__Client_Active_index = 1;
 
-Info IP_fd__Server_Passive[100];
+Info IP_fd__Server_Passive[APPS_MAX_NUM];
 int IP_fd__Server_Passive_index = 0;
 
 typedef struct {
     int fd;
     char ip[INET_ADDRSTRLEN];
+    int port;
     IP_STATE state_IP;
 } Info_App;
 Info_App IP_fd__Apps[100];
@@ -94,9 +99,9 @@ void PrintArr(Info_App* Apps, int s) {
     printf("-------------------------\n");
 #else
     printf("\n*******************************************\n");
-    printf("ID |    IP Address      \n");
-    for (int i = 0; i < s; i++) {
-        printf("%d  |    %s\n", i, Apps[i].ip);
+    printf("ID |    IP Address    | Port No.  \n");
+    for (int i = 1; i < s; i++) {
+        printf("%d  |    %s    | %d\n", i, Apps[i].ip, Apps[i].port);
     }
     printf("*******************************************\n");
 #endif
@@ -113,7 +118,7 @@ void Printpollfd(struct pollfd* fds, int s) {
 
 int splitString(const char *input, char *str1, char *str2, char *str3) {
     // Temporary copy of the input string since strtok modifies the string
-    char temp[256];
+    char temp[BUFF_SIZE];
     strncpy(temp, input, sizeof(temp));
     temp[sizeof(temp) - 1] = '\0';  // Ensure null termination
 
@@ -194,6 +199,36 @@ int splitString(const char *input, char *str1, char *str2, char *str3) {
             i++;
         }
     }
+
+    return -1; // return error
+}
+
+/* Function to get the server's IP address */
+void get_server_ip(char* ip_buffer, size_t buffer_size) {
+    struct ifaddrs *ifaddr, *ifa;
+    int family;
+    
+    if (getifaddrs(&ifaddr) == -1) {
+        handle_error("getifaddrs");
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL)
+            continue;
+
+        family = ifa->ifa_addr->sa_family;
+
+        // Check for IPv4 address
+        if (family == AF_INET) {
+            // Skip loopback interface (127.0.0.1)
+            if (strcmp(ifa->ifa_name, "lo") != 0) {
+                getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), ip_buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+                break;
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
 }
 
 /*  ========================================= Display ======================================================  */
@@ -214,15 +249,12 @@ void DisplayOption(){
 /* ========================================= Server part ====================================================== */
 int len;
 int server_fd_temp;
-void *server_func1_listen(void *arg){
-    ip *IP_used = (ip*)arg;
-
+void server_func1_listen(void *arg){
     int portno;
-    char ip[16];
     int opt = 1;
-    
+    char IP_APP[IP_SIZE];
 
-    portno = IP_used->port;
+    portno = *((int*)arg);
 
     memset(&serv_addr, 0, sizeof(struct sockaddr_in));
     memset(&client_addr, 0, sizeof(struct sockaddr_in));
@@ -258,6 +290,9 @@ void *server_func1_listen(void *arg){
     fds_from_client[0].fd = server_fd_temp;
     fds_from_client[0].events = POLLIN;
 
+    /* Get the server's IP address */
+    get_server_ip(IP_APP, INET_ADDRSTRLEN);
+
     /* Save this server into  IP_fd__Server_Passive */
     IP_fd__Server_Passive[0].fd = server_fd_temp;
     strcpy(IP_fd__Server_Passive[0].ip, IP_APP);
@@ -266,12 +301,14 @@ void *server_func1_listen(void *arg){
     strcpy(IP_fd__Apps[0].ip, IP_APP);
     IP_fd__Apps[0].state_IP = FROM_ACTIVE_CLIENT;
 
-    printf("Server is listening at port: %d\n....\n", SERVER_PORT);
+    printf("Server is listening at port: %d\n....\n", portno);
+
+    return;
 }
 
 void *server_func2_handle() {
     int new_socket_fd_temp = 0;
-    char tmp_IP[256];
+    char tmp_IP[IP_SIZE];
     while (1){
         int poll_count = poll(fds_from_client, n_fds_from_client, -1);
         memset(recvbuff, 0, sizeof(recvbuff));
@@ -284,7 +321,7 @@ void *server_func2_handle() {
             if (fds_from_client[i].revents & POLLIN){
 
                 if (fds_from_client[i].fd == IP_fd__Apps[0].fd){
-                    new_socket_fd_temp = accept(IP_fd__Apps[0].fd, (struct sockaddr*)&client_addr, &len);
+                    new_socket_fd_temp = accept(IP_fd__Apps[0].fd, (struct sockaddr*)&client_addr, (socklen_t *)&len);
                     if (new_socket_fd_temp == -1) {
                         handle_error("accept()");
                     }
@@ -296,10 +333,12 @@ void *server_func2_handle() {
                     /* client new */
                     inet_ntop(AF_INET, &client_addr.sin_addr, IP_fd__Client_Active[IP_fd__Client_Active_index].ip, INET_ADDRSTRLEN);
                     IP_fd__Client_Active[IP_fd__Client_Active_index].fd = new_socket_fd_temp;
+                    IP_fd__Client_Active[IP_fd__Client_Active_index].port = client_addr.sin_port;
 
                     /* common new */
                     inet_ntop(AF_INET, &client_addr.sin_addr, IP_fd__Apps[IP_fd__Apps_index].ip, INET_ADDRSTRLEN);
                     IP_fd__Apps[IP_fd__Apps_index].fd = new_socket_fd_temp;
+                    IP_fd__Apps[IP_fd__Apps_index].port = client_addr.sin_port;
                     IP_fd__Apps[IP_fd__Apps_index].state_IP = FROM_ACTIVE_CLIENT;
 
                     n_fds_from_client++;
@@ -311,7 +350,8 @@ void *server_func2_handle() {
 
 #else
                     printf("\n*******************************************\n");
-                    printf("Accepted a new connection from IP = %s\n", IP_fd__Client_Active[IP_fd__Client_Active_index - 1].ip);
+                    printf("Accepted a new connection from IP: %s\n", IP_fd__Client_Active[IP_fd__Client_Active_index - 1].ip);
+                    printf("Set up at port: %d\n", IP_fd__Client_Active[IP_fd__Client_Active_index - 1].port);
                     printf("*******************************************\n\n");
 #endif
                 }
@@ -353,6 +393,7 @@ void *server_func2_handle() {
                         if (IP_fd__Apps[v].fd == fds_from_client[i].fd){
                             printf("\n*******************************************\n");
                             printf("* Messge from: %s\n", IP_fd__Apps[v].ip);
+                            printf("* Sender's port: %d\n", IP_fd__Apps[v].port);
                             printf("* Messge     : '%s'\n", recvbuff);
                             printf("*******************************************\n");
 
@@ -366,7 +407,8 @@ void *server_func2_handle() {
                         printf("Client disconnected, fd[%d].fd = %d\n", i, fds_from_client[i].fd);
 #else
                         printf("\n*******************************************\n");
-                        printf("Deleted a connection from fd = %s\n", IP_fd__Client_Active[i].ip);
+                        printf("* Deleted a connection from IP: %s\n", IP_fd__Client_Active[i].ip);
+                        printf("* Sender's port: %d\n", IP_fd__Client_Active[i].port);
                         printf("*******************************************\n\n");
 #endif
                         close(fds_from_client[i].fd);
@@ -410,7 +452,7 @@ void *client_func_connect(void *arg){
     ip *IP_used = (ip*)arg;
 /* ------------------------- Client part ------------------------- */
     int portno;
-    char ip[16];
+    char ip[IP_SIZE];
     
 	memset(&serv_addr_for_client, '0',sizeof(serv_addr_for_client));
 
@@ -447,6 +489,7 @@ void *client_func_connect(void *arg){
         /* SAVE Passive server into arrays */
         IP_fd__Server_Passive[IP_fd__Server_Passive_index].fd = server_fd_temp_for_client;
         strcpy(IP_fd__Server_Passive[IP_fd__Server_Passive_index].ip, ip);
+        IP_fd__Server_Passive[IP_fd__Server_Passive_index].port = serv_addr_for_client.sin_port;
 #if (debug == 1)
         printf("IP_fd__Server_Passive_index = %d\n", IP_fd__Server_Passive_index);
 #endif
@@ -454,6 +497,7 @@ void *client_func_connect(void *arg){
         IP_fd__Apps[IP_fd__Apps_index].fd = server_fd_temp_for_client;
         IP_fd__Apps[IP_fd__Apps_index].state_IP = FROM_PASSIVE_SERVER;
         strcpy(IP_fd__Apps[IP_fd__Apps_index].ip, ip);
+        IP_fd__Apps[IP_fd__Apps_index].port = serv_addr_for_client.sin_port;
         
         /* Kết nối tới server*/
         if (connect(server_fd_temp_for_client, (struct sockaddr *)&serv_addr_for_client, sizeof(serv_addr_for_client)) == -1)
@@ -473,11 +517,13 @@ void *client_func_connect(void *arg){
 
     // reset flag
     flag_check_IP = 0;
+
+    return NULL;
 }
 
 void *client_func2_handle() {
     int tmp_fd = 0;
-    char tmp_IP[256];
+    char tmp_IP[IP_SIZE];
     while (1) {
 #if (debug == 1)
         printf("POLLING....\n");
@@ -530,6 +576,7 @@ void *client_func2_handle() {
                         if (IP_fd__Apps[v].fd == fds_from_server[i].fd){
                             printf("\n*******************************************\n");
                             printf("* Messge from: %s\n", IP_fd__Apps[v].ip);
+                            printf("* Sender's port: %d\n", IP_fd__Apps[v].port);
                             printf("* Messge     : '%s'\n", recvbuff);
                             printf("*******************************************\n");
 
@@ -543,6 +590,11 @@ void *client_func2_handle() {
 #if (debug == 1)
                     // Connection closed by client
                     printf("Server disconnected, fd = %d ****************\n", fds_from_server[i].fd);
+#else
+                    printf("\n*******************************************\n");
+                    printf("* Deleted a connection from IP: %s\n", IP_fd__Server_Passive[i].ip);
+                    printf("* Sender's port: %d\n", IP_fd__Server_Passive[i].port);
+                    printf("*******************************************\n\n");
 #endif
                     close(fds_from_server[i].fd);
 
@@ -589,15 +641,12 @@ void *client_func2_handle() {
 }
 
 
-int main(){
-    char cmd[200];
-
-    /* The info of server of app1 */
-    strncpy(IP_port__App[0].ip, IP_APP, sizeof(IP_APP));
-    IP_port__App[0].port = SERVER_PORT;
+int main(int argc, char *argv[]){
+    char cmd[BUFF_SIZE];
+    int port_used = atoi(argv[1]);
 
     /* Set up server part (not accepting)*/
-    server_func1_listen(IP_port__App);   
+    server_func1_listen(&port_used);   
 
     /* parralel server handling client connecting */
     if (pthread_create(&server_id1, NULL, &server_func2_handle, NULL) != 0) {
@@ -617,14 +666,14 @@ int main(){
         fgets(cmd, sizeof(cmd), stdin); // Reads the entire line, including spaces
 
         char IP_addr[BUFF_SIZE];
-        int port, fd_temp = -1;
+        int port;
         char request[BUFF_SIZE];
-        int check = 0;
-        char msg[256];
-        char port_str[256];
-        int s_rev;
+        char port_str[BUFF_SIZE];
 
-        s_rev = splitString(cmd, request, IP_addr, port_str);
+        int s_rev = splitString(cmd, request, IP_addr, port_str);
+        if (s_rev == -1){
+            handle_error("splitString");
+        }
         port = atoi(port_str);
 
         if (strncmp(request, "connect", sizeof("connect")) == 0){
@@ -632,7 +681,7 @@ int main(){
             printf(">>>>> Connect command\n");
 #endif
             /* SAVE this active client (on this app) into IP_port__App */
-            strncpy(IP_port__App[IP_port__App_index].ip, IP_addr, 16); 
+            strncpy(IP_port__App[IP_port__App_index].ip, IP_addr, IP_SIZE); 
             IP_port__App[IP_port__App_index].port = port;
 
             client_func_connect(IP_port__App + IP_port__App_index);
@@ -763,8 +812,6 @@ int main(){
 #if (debug == 1)
             printf(">>>>> Send command\n");
 #endif
-            int i_captured = 0;
-
             /* Scan to get IP */
             //sscanf(cmd, "%s %s",request, IP_addr);
             s_rev = splitString(cmd, request, IP_addr, port_str); // port_str = NULL
@@ -807,7 +854,7 @@ int main(){
         }
         else if (strncmp(request, "myport", sizeof("myport")) == 0){
             printf("\n*******************************************\n");
-            printf("* Port: %d\n", SERVER_PORT);
+            printf("* Port: %d\n", port_used);
             printf("*******************************************\n");
         }
 #if (debug == 1)
