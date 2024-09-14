@@ -13,10 +13,7 @@
 
 #define LISTEN_BACKLOG 50 // for server
 #define BUFF_SIZE 256
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-#define SERVER_PORT 3000 
-const char IP_Target[16] = "192.168.100.77";
+#define IP_SIZE 16
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -31,7 +28,7 @@ struct sockaddr_in serv_addr, client_addr;
 
 typedef struct gateway_info{
     int fd;
-    char ip[16];
+    char ip[IP_SIZE];
     int Isconnected;
 } gi;
 gi gateway;
@@ -41,13 +38,11 @@ int n_fds_from_gateway = 1;
 
 int flag_connected = 0;
 int server_fd_temp_for_client;
-void *client_func_connect(){
-    int portno;
-    char ip[16];
+void client_func_connect(char* IP_Target, int portno){
+    char ip[IP_SIZE];
 
     memset(&serv_addr, '0',sizeof(serv_addr));
-    portno = 2000;
-    strncpy(ip, IP_Target, sizeof(IP_Target));
+    strncpy(ip, IP_Target, IP_SIZE);
 
     /* Scan to check whether IP is available */
     if (gateway.Isconnected == 1){
@@ -76,8 +71,6 @@ void *client_func_connect(){
 }
 
 void *client_func2_handle() {
-    int tmp_fd = 0;
-    int msg_i_gateway = 0;
     while (1) {
         //printf("POLLING here...\n");
         int poll_count = poll(&fds_from_gateway, 1, -1);
@@ -120,7 +113,7 @@ void *client_func2_handle() {
 
 int splitString(const char *input, char *str1, char *str2, char *str3) {
     // Temporary copy of the input string since strtok modifies the string
-    char temp[256];
+    char temp[BUFF_SIZE];
     strncpy(temp, input, sizeof(temp));
     temp[sizeof(temp) - 1] = '\0';  // Ensure null termination
 
@@ -201,6 +194,8 @@ int splitString(const char *input, char *str1, char *str2, char *str3) {
             i++;
         }
     }
+
+    return -1; // return error
 }
 
 void Printpollfd(struct pollfd* fds, int s) {
@@ -212,7 +207,17 @@ void Printpollfd(struct pollfd* fds, int s) {
     printf("-------------------------\n");
 }
 
-int main(){
+int main(int argc, char *argv[]){
+
+    /* Check argv */
+    if (NULL == argv[1]){
+        printf("Missing the first argument\n");
+        exit(0);
+    }
+    if (NULL == argv[2]){
+        printf("Missing the second argument\n");
+        exit(0);
+    }
 
     if (pthread_create(&sensor_id1, NULL, &client_func2_handle, NULL) != 0) {
         handle_error("pthread_create()");
@@ -224,22 +229,21 @@ int main(){
         fgets(cmd, sizeof(cmd), stdin); // Reads the entire line, including spaces
 
         char IP_addr[BUFF_SIZE];
-        int port, fd_temp = -1;
         char request[BUFF_SIZE];
-        int check = 0;
-        char msg[256];
-        char port_str[256];
+        char port_str[BUFF_SIZE];
         int s_rev;
         float temperature;
         char *endptr; // Pointer to character where conversion stops
 
         s_rev = splitString(cmd, request, IP_addr, port_str);
-        port = atoi(port_str);
+        if (s_rev == -1){
+            handle_error("splitString");
+        }
 
         temperature = strtof(IP_addr, &endptr);
 
         if (strncmp(request, "connect", sizeof("connect")) == 0){
-            client_func_connect();
+            client_func_connect(argv[1], atoi(argv[2]));
 
             pthread_detach(sensor_id1);
 
@@ -259,7 +263,7 @@ int main(){
                 printf("Sensor is already disconnected\n");
             }
             else {
-                char temp_buffer[256];
+                char temp_buffer[BUFF_SIZE];
                 sprintf(temp_buffer, "Avergae temperature: %.2f oC", temperature);
                 printf("temp_buffer = %s\n", temp_buffer);
                 if (write(server_fd_temp_for_client, temp_buffer, sizeof(temp_buffer)) == -1)

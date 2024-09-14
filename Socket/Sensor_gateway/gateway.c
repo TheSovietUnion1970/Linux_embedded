@@ -19,13 +19,29 @@
 #include <mysql/mysql.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <netdb.h> // getnameinfo()
+#include <ifaddrs.h> // getifaddrs(), freeifaddrs(), struct ifaddrs
 
 #define LISTEN_BACKLOG 50 // for server
 #define BUFF_SIZE 256
+#define IP_SIZE 16
+#define SENSORS_MAX_NUM 10 // max num of apps
+#define TEMPERATURE_AVG 25 // above 25 -> too hot, below 25 -> too cold
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>> MODIFY PORT + IP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-#define SERVER_PORT 2000 
-const char IP_APP[16] = "192.168.100.77";
+/* Database part */
+const char database_name[] = "GATEWAY_INFO" ;
+const char table_name[] = "Sensor_temperature"; 
+#define FIFO_PATH "./logFifo"
+
+/* Global MYSQL */
+MYSQL *con;
+const char user[] = "vinh";
+const char hostname[] = "localhost";
+char password[] = "1234";
+
+/* SQL handling error */
+#define MAX_TRY 3
+int count_try;
 
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -34,13 +50,13 @@ const char IP_APP[16] = "192.168.100.77";
 #define test_SQL_bug1 0
 
 /*  ========================================= Bug SQL fail 3 times ======================================================  */
-#define test_SQL_bug2 1
+#define test_SQL_bug2 0
 
 /*  ========================================= Debug ======================================================  */
 #define debug 0
 
 /*  ========================================= Variables ======================================================  */
-struct pollfd fds_from_sensors[100];
+struct pollfd fds_from_sensors[SENSORS_MAX_NUM];
 int n_fds_from_sensors = 1;
 
 typedef struct {
@@ -49,7 +65,7 @@ typedef struct {
     int port;
     int ID;
 } Info;
-Info IP_fd__Sensor[100];
+Info IP_fd__Sensor[SENSORS_MAX_NUM];
 int IP_fd__Sensor_index = 1;
 
 typedef struct {
@@ -58,7 +74,7 @@ typedef struct {
     float pre_avg_temperature;
     bool intoSQL;
 } ID_kn;
-ID_kn ID_known[100];
+ID_kn ID_known[SENSORS_MAX_NUM];
 int ID_known_index = 1;
 
 struct sockaddr_in serv_addr, client_addr;
@@ -85,21 +101,6 @@ typedef struct temperature_info{
 int index_sensor_used;
 int ID_known_index_captured;
 
-/* Database part */
-const char database_name[] = "GATEWAY_INFO" ;
-const char table_name[] = "Sensor_temperature"; 
-#define FIFO_PATH "./logFifo"
-
-/* Global MYSQL */
-MYSQL *con;
-const char user[] = "vinh";
-const char hostname[] = "localhost";
-char password[] = "1234";
-
-/* SQL handling error */
-#define MAX_TRY 3
-int count_try;
-
 /*  ========================================= Sub functions ======================================================  */
 void finish_with_error(MYSQL *con) {
     fprintf(stderr, "%s\n", mysql_error(con));
@@ -109,7 +110,7 @@ void finish_with_error(MYSQL *con) {
 
 int splitString(const char *input, char *str1, char *str2, char *str3) {
     // Temporary copy of the input string since strtok modifies the string
-    char temp[256];
+    char temp[BUFF_SIZE];
     strncpy(temp, input, sizeof(temp));
     temp[sizeof(temp) - 1] = '\0';  // Ensure null termination
 
@@ -190,6 +191,8 @@ int splitString(const char *input, char *str1, char *str2, char *str3) {
             i++;
         }
     }
+
+    return -1; // error
 }
 
 void cleanup(int signum) {
@@ -201,11 +204,41 @@ void cleanup(int signum) {
 #endif
     exit(EXIT_SUCCESS);
 }
+
+/* Function to get the server's IP address */
+void get_server_ip(char* ip_buffer, size_t buffer_size) {
+    struct ifaddrs *ifaddr, *ifa;
+    int family;
+    
+    if (getifaddrs(&ifaddr) == -1) {
+        handle_error("getifaddrs");
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL)
+            continue;
+
+        family = ifa->ifa_addr->sa_family;
+
+        // Check for IPv4 address
+        if (family == AF_INET) {
+            // Skip loopback interface (127.0.0.1)
+            if (strcmp(ifa->ifa_name, "lo") != 0) {
+                getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), ip_buffer, buffer_size, NULL, 0, NI_NUMERICHOST);
+                break;
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+}
+
 /*  ========================================= Server part ======================================================  */
 int len;
 int server_fd_temp;
 void server_func1_listen(void *arg){
     Info* info_sensor = (Info*)arg;
+    char IP_SERVER[IP_SIZE];
 
     int portno;
     int opt = 1;
@@ -250,9 +283,9 @@ void server_func1_listen(void *arg){
 
     /* Save this server into  IP_fd__Sensor */
     IP_fd__Sensor[0].fd = server_fd_temp;
-    strcpy(IP_fd__Sensor[0].ip, IP_APP);
+    strcpy(IP_fd__Sensor[0].ip, IP_SERVER);
 
-    printf("Gateway is listening at port: %d\n....\n", SERVER_PORT);
+    printf("Gateway is listening at port: %d\n....\n", portno);
 }
 
 void *ConnectionManager(void *arg){
@@ -274,7 +307,7 @@ void *ConnectionManager(void *arg){
             if (fds_from_sensors[i].revents & POLLIN){
                 //printf("i = %d\n", i);
                 if (fds_from_sensors[i].fd == IP_fd__Sensor[0].fd){
-                    new_socket_fd_temp = accept(IP_fd__Sensor[0].fd, (struct sockaddr*)&client_addr, &len);
+                    new_socket_fd_temp = accept(IP_fd__Sensor[0].fd, (struct sockaddr*)&client_addr, (socklen_t *)&len);
                     if (new_socket_fd_temp == -1) {
                         handle_error("accept()");
                     }
@@ -309,7 +342,7 @@ void *ConnectionManager(void *arg){
                         ID_known_index++; // update ID
                     }
 
-                    char buffer[256];
+                    char buffer[BUFF_SIZE];
                     sprintf(buffer, "ConnectionManager ==> A sensor node with ID %d has opened a new connection\n", IP_fd__Sensor[IP_fd__Sensor_index].ID);
                     int buffer_len = strlen(buffer);
 #if (debug == 1)
@@ -378,7 +411,7 @@ void *ConnectionManager(void *arg){
                     }
                     else if (bytes_read == 0) {
 
-                        char buffer[256];
+                        char buffer[BUFF_SIZE];
                         sprintf(buffer, "A sensor node with ID %d has closed the connection\n", IP_fd__Sensor[i].ID);
                         /* WRITE */
                         int write_bytes;
@@ -418,7 +451,7 @@ void *DataManager(void *arg) {
         pthread_cond_wait(&cond_DataManager, &client_lock);  // Wait for the signal from ConnectionManager
         
 
-        char buffer[256];
+        char buffer[BUFF_SIZE];
         int write_bytes;
 
         if (temperature <= 0){
@@ -432,7 +465,12 @@ void *DataManager(void *arg) {
             }
         }
         else {
-            sprintf(buffer, "DataManager ==> The sensor node with ID %d reports it’s too cold (running avg temperature = %.2f)\n", IP_fd__Sensor[index_sensor_used].ID, internal_temp->avg_temperature);
+            if (internal_temp->avg_temperature >= TEMPERATURE_AVG){
+                sprintf(buffer, "DataManager ==> The sensor node with ID %d reports it’s too hot (running avg temperature = %.2f)\n", IP_fd__Sensor[index_sensor_used].ID, internal_temp->avg_temperature);
+            }
+            else {
+                sprintf(buffer, "DataManager ==> The sensor node with ID %d reports it’s too cold (running avg temperature = %.2f)\n", IP_fd__Sensor[index_sensor_used].ID, internal_temp->avg_temperature);
+            }
             // Process the data after being signaled
             printf("DataManager ==> Average temperature: %.2f\n", internal_temp->avg_temperature);
 
@@ -462,9 +500,9 @@ void *StorageManager(void *arg){
     ti* internal_temp = (ti*)arg;
 
     con = mysql_init(NULL);
-    char temp_buffer[256];
+    char temp_buffer[BUFF_SIZE];
 
-    char buffer_log[256];
+    char buffer_log[BUFF_SIZE];
     int write_bytes;
     int buffer_len;
 
@@ -630,10 +668,12 @@ void *StorageManager(void *arg){
     return NULL;   
 }
 
-int main(){
+int main(int argc, char *argv[]){
     // Set up the signal handler to catch SIGINT (Ctrl+C)
     signal(SIGINT, cleanup);
     signal(SIGTERM, cleanup);
+
+    char IP_SENSOR[IP_SIZE];
 
     /* Forking */
     pid_t Log_process;
@@ -653,9 +693,12 @@ int main(){
     info_temp.index = 0;
     info_temp.logFifo_fd = &logFifo_fd;
 
-    /* The info of server of app1 */
-    strncpy(IP_fd__Sensor[0].ip, IP_APP, sizeof(IP_APP));
-    IP_fd__Sensor[0].port = SERVER_PORT;
+    /* Get the server's IP address */
+    get_server_ip(IP_SENSOR, INET_ADDRSTRLEN);
+
+    /* The info of server of server */
+    strncpy(IP_fd__Sensor[0].ip, IP_SENSOR, IP_SIZE);
+    IP_fd__Sensor[0].port = atoi(argv[1]);
 
     /* Set up server part (not accepting)*/
     server_func1_listen(IP_fd__Sensor);   
@@ -679,7 +722,7 @@ int main(){
 
     /* Log process */
     if((Log_process = fork()) == 0){
-        char logFifo_buffer[256];
+        char logFifo_buffer[BUFF_SIZE];
 
         int logFifo_fd = open(FIFO_PATH, O_RDONLY);
 
