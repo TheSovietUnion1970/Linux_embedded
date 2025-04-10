@@ -1,0 +1,3 @@
+- Core vs CPU
+- multiple cores on SoC and Micros
+- what about HSM core on Soc and Micros
