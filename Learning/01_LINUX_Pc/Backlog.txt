@@ -1,0 +1,2 @@
+Update Firmware, how?
+CPU can access ROM and Flash
