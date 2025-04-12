@@ -1,2 +1,1 @@
-Update Firmware, how?
-CPU can access ROM and Flash
+Meg queue -> when not unlink -> why got the message too long
