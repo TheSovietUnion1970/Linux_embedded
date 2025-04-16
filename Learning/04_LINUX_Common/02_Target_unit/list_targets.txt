@@ -1,0 +1,77 @@
+basic.target
+● ├─-.mount
+● ├─tmp.mount
+● ├─paths.target
+● │ ├─acpid.path
+● │ └─apport-autoreport.path
+● ├─slices.target
+● │ ├─-.slice
+● │ └─system.slice
+● ├─sockets.target
+● │ ├─acpid.socket
+● │ ├─apport-forward.socket
+● │ ├─avahi-daemon.socket
+● │ ├─cups.socket
+● │ ├─dbus.socket
+● │ ├─snapd.socket
+● │ ├─systemd-initctl.socket
+● │ ├─systemd-journald-audit.socket
+● │ ├─systemd-journald-dev-log.socket
+● │ ├─systemd-journald.socket
+● │ ├─systemd-udevd-control.socket
+● │ ├─systemd-udevd-kernel.socket
+● │ └─uuidd.socket
+● ├─sysinit.target
+● │ ├─apparmor.service
+● │ ├─dev-hugepages.mount
+● │ ├─dev-mqueue.mount
+● │ ├─keyboard-setup.service
+● │ ├─kmod-static-nodes.service
+● │ ├─plymouth-read-write.service
+● │ ├─plymouth-start.service
+● │ ├─proc-sys-fs-binfmt_misc.automount
+● │ ├─setvtrgb.service
+● │ ├─sys-fs-fuse-connections.mount
+● │ ├─sys-kernel-config.mount
+● │ ├─sys-kernel-debug.mount
+● │ ├─sys-kernel-tracing.mount
+● │ ├─systemd-ask-password-console.path
+● │ ├─systemd-binfmt.service
+● │ ├─systemd-boot-system-token.service
+● │ ├─systemd-hwdb-update.service
+● │ ├─systemd-journal-flush.service
+● │ ├─systemd-journald.service
+● │ ├─systemd-machine-id-commit.service
+● │ ├─systemd-modules-load.service
+● │ ├─systemd-pstore.service
+● │ ├─systemd-random-seed.service
+● │ ├─systemd-sysctl.service
+● │ ├─systemd-sysusers.service
+● │ ├─systemd-timesyncd.service
+● │ ├─systemd-tmpfiles-setup-dev.service
+● │ ├─systemd-tmpfiles-setup.service
+● │ ├─systemd-udev-trigger.service
+● │ ├─systemd-udevd.service
+● │ ├─systemd-update-utmp.service
+● │ ├─cryptsetup.target
+● │ ├─local-fs.target
+● │ │ ├─-.mount
+● │ │ ├─boot-efi.mount
+● │ │ ├─systemd-fsck-root.service
+● │ │ └─systemd-remount-fs.service
+● │ └─swap.target
+● │   └─swapfile.swap
+● └─timers.target
+●   ├─anacron.timer
+●   ├─apt-daily-upgrade.timer
+●   ├─apt-daily.timer
+●   ├─e2scrub_all.timer
+●   ├─fstrim.timer
+●   ├─fwupd-refresh.timer
+●   ├─logrotate.timer
+●   ├─man-db.timer
+●   ├─motd-news.timer
+●   ├─phpsessionclean.timer
+●   ├─snapd.snap-repair.timer
+●   ├─systemd-tmpfiles-clean.timer
+●   └─ua-timer.timer

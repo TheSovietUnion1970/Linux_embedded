@@ -1,7 +1,9 @@
 - systemd-udev.service			 -> hardware init + device node
 - systemd-sysctl.service		 -> configure kernel parameters during boot time
-- systemd-remount-fs.service		 -> remount root filestytem in read-write mode
 - systemd-modules-load.service		 -> load kernel modules
+
+- local-fs.target
+- swap.target
 
 
 =====
