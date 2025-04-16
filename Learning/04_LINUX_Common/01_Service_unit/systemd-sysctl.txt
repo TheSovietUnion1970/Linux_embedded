@@ -1,6 +1,6 @@
 - Used by: sysinit.target
 ====
-- Load kernel parameters at boot time.
+- Configure kernel parameters at boot time.
 - It reads:
 	+ /etc/sysctl.cfg
 	+ /etc/sysctl.d/*.cfg
