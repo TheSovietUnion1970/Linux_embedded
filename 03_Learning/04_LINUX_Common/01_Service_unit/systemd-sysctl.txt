@@ -1,0 +1,11 @@
+- Used by: sysinit.target
+====
+- Configure kernel parameters at boot time.
+- It reads:
+	+ /etc/sysctl.cfg
+	+ /etc/sysctl.d/*.cfg
+	+ /usr/lib/sysctl.d/*.cfg
+
+
+=====
+Ex: when I want to configure PC as a gateway -> uncomment the line 'net.ipv4.ip_forward=1' in /etc/sysctl.cfg

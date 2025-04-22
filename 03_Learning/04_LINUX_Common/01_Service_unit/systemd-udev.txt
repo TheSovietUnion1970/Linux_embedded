@@ -1,0 +1,7 @@
+- Used by: sysinit.target
+====
+- Hardware initialization
+- Create device node (in /dev) based on udev rules (/etc or /lib - /udev/rules.d)
+
+
+=====

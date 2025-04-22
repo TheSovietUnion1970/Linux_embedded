@@ -1,0 +1,6 @@
+- Used by: local-fs.target -> sysinit.target
+====
+- Remount root filesystems in read-write mode
+
+
+=====

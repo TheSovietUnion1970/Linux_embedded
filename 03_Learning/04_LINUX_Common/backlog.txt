@@ -1,0 +1,3 @@
+bridging with a Wi-Fi interface (wlp1s0) likely failed due to 4-address mode (WDS) limitations, further breaking connectivity.
+
+layers in network

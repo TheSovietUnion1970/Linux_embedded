@@ -1,0 +1,5 @@
+the purpose of make U-boot and ./buildkernel
+
+
+===*
+5.4.288-bone69
