@@ -1,4 +1,0 @@
-1. If PC host both has bridge and NAT configuration -> BBB with USB-ethernet interface on PC will conflict
-	+ PC side: the bridge -> connect -> BBB = 192.168.1.0/24 subnet (the bridge (br0) was enslaving enx1ef18e357ad8)
-	+ BBB side: BBB -> connect -> the PC = enx1ef18e357ad8 (ip = 192.168.137.1)
-	+ => Remove br0 to make clean

@@ -1,3 +1,0 @@
-- fork()
-- wait(), waitpid()
-- orphan, zombie process

@@ -1,6 +1,0 @@
-- Used by: local-fs.target -> sysinit.target
-====
-- Check root filesystems integrity, no corruption
-
-
-=====
