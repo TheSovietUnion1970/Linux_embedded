@@ -1,0 +1,2 @@
+- Test the GPIO1_19 (GPIO 51)
+- The LED will blink every 1 second
