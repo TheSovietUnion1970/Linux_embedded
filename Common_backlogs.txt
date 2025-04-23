@@ -1,0 +1,2 @@
+- Rebuild gpiolib on host PC -> add it to BBB
+- Check /arch/arm/boot/dts/am335x-boneblack.dts
