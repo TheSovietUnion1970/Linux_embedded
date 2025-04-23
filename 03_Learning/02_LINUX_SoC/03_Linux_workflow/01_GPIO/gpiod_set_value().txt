@@ -1,0 +1,15 @@
+./gpiolib.c
+gpiod_set_value_nocheck(desc, value); -> check flag
+
+gpiod_set_raw_value_commit(desc, value);
+
+gpiochip_set(guard.gc, gpio_chip_hwgpio(desc), value);
+
+gc->set(gc, offset, value); -> omap_gpio_set
+
+./gpio-omap.c
+bank->set_dataout(bank, offset, value);
+
+omap_set_gpio_dataout_reg
+
+writel_relaxed(l, reg);

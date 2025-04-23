@@ -1,0 +1,26 @@
+gpiod_get
+
+gpiod_get_index
+
+gpiod_find_and_request(NULL, fwnode, con_id, index, flags, label, false);
+
+ret = gpiod_configure_flags(desc, con_id, lookupflags, flags); -> will base on enum gpiod_flags to identify gpiod_direction_output_nonotify or gpiod_direction_input_nonotify
+
+ret = gpiod_direction_output_nonotify(desc, !!(dflags & GPIOD_FLAGS_BIT_DIR_VAL));
+
+bank->chip.direction_input = omap_gpio_input; (ret = gc->direction_input(gc, offset);)
+
+omap_set_gpio_direction(bank, offset, 1);
+
+bank->context.oe = omap_gpio_rmw(bank->base + bank->regs->direction, BIT(gpio), is_input);
+
+writel_relaxed(val, reg);
+
+#define writel_relaxed(v,c)	__raw_writel((__force u32) cpu_to_le32(v),c)
+
+(arch/arm/include/asm)
+static inline void __raw_writel(u32 val, volatile void __iomem *addr)
+{
+	asm volatile("str %1, %0"
+		     : : "Qo" (*(volatile u32 __force *)addr), "r" (val));
+}
