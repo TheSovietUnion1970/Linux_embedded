@@ -1,0 +1,34 @@
+- sudo nano /usr/local/bin/hello-userspace.sh -> create a sh file
+
+	#!/bin/bash
+	echo "Hello from userspace before login"
+
+- sudo chmod +x /usr/local/bin/hello-userspace.sh -> Make it executable
+
+- sudo nano /etc/systemd/system/hello-userspace.service -> create a service file (symbol link)
+
+	[Unit]
+	Description=Hello Userspace Before Login
+	After=network.target
+
+	[Service]
+	Type=oneshot
+	ExecStart=/usr/local/bin/hello-userspace.sh
+	RemainAfterExit=true
+
+	[Install]
+	WantedBy=multi-user.target
+ 
+- sudo systemctl daemon-reload
+- sudo systemctl enable hello-userspace.service
+				-> make it run automatically at every boot.
+	=======                      		=========
+- sudo systemctl start hello-userspace.service -> test manually to start
+- journalctl -u hello-userspace.service -> check the ouput
+
+=====================================================================
+
+.bashrc -> after login
+systemd unit -> before login and after kernel job (hardware, mount rootfilesystems in ro mode, load kernel modules)
+
+

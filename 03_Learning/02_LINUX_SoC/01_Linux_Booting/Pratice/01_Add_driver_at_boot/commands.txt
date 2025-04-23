@@ -1,0 +1,4 @@
+- sudo mkdir -p /lib/modules/$(uname -r)/extra/ -> create dir extra
+- sudo cp welcome.ko /lib/modules/$(uname -r)/extra/ -> copy file.ko into extra
+- sudo vi /etc/modules-load.d/load_automatically.conf -> create load_automatically.conf and add 'the name of file.ko (if gpio.ko -> gpio here)'
+- sudo depmod -> update module Update module dependencies:
