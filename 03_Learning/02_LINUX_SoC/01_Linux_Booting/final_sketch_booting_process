@@ -1,0 +1,18 @@
+....
+=== After kenerl loaded ===
+Kernel:
+	+ Hardware initialization
+	+ mount rootfilesystems in ro mode
+=== PDI1 ===
++ /etc/systemd:
+	+ /etc/module-loads.d (load modules at boot)
+	
+    + /etc/system.d -> targets (local-fs.target - remounting rootfilesystems in rw mode)
+    
+    	+ /etc/fstab -> t tells the system what partitions, devices, or remote filesystems to automatically mount, where, and how.
+    	
+	+ /etc/sysctl.d (IP forwarding)
+	+ /etc/udev/rules.d 
+	+ /etc/network/interfaces.d (create network interface)
+	
+    + /etc/system.d -> userlogin
