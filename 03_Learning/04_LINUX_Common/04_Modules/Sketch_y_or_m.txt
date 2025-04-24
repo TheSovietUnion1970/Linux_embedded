@@ -1,0 +1,34 @@
+./drivers/spi/Kconfig
+config SPI_OMAP24XX -> A355x - part of OMAP2PLUS family
+	tristate "McSPI driver for OMAP"
+	depends on ARCH_OMAP2PLUS || ARCH_K3 || COMPILE_TEST
+	select SG_SPLIT
+	help
+	  SPI master controller for OMAP24XX and later Multichannel SPI
+	  (McSPI) modules.
+
+config SPI_MASTER
+#	bool "SPI Master Support"
+	bool
+	default SPI
+	help
+	  If your system has an master-capable SPI controller (which
+	  provides the clock and chipselect), you can enable that
+	  controller and the protocol drivers for the SPI slave chips
+	  that are connected.
+
+config SPI_SPIDEV
+	tristate "User mode SPI device driver support"
+	help
+	  This supports user mode SPI protocol drivers.
+
+
+=============================
+./drivers/spi/Makefile
+obj-$(CONFIG_SPI_MASTER)		+= spi.o
+=============================
+./arch/arm/configs/omap2plus_defconfig
+CONFIG_SPI_OMAP24XX=y
+
+=============================
+./arch/arm/configs/omap2plus_defconfig -> specify whether a module is a separate or built in module
