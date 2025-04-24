@@ -1,3 +1,4 @@
 - Rebuild gpiolib on host PC -> add it to BBB
 - Check /arch/arm/boot/dts/am335x-boneblack.dts
 - Check the mechanism of config.gz and see Linux_embedded\03_Learning\04_LINUX_Common\04_Modules
+- proxy
