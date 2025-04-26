@@ -1,0 +1,12 @@
+In ~/Documents/BBB1/kernelbuildscripts/deploy:
+	+ 5.15.177-bone43-dtbs.tar.gz (device tree)
+	
+In ~/Documents/BBB1/linux-stable-rcn-ee/arch/arm/boot/
+	+ zImage (custom kernel image, not including gpio_omap.ko)
+	
+# copy kernel modules
+sudo cp -a /tmp/modules/lib/modules/5.15.177+/* /media/rootfs/lib/modules/5.15.177+/
+	
+Now I have kernel image (zImage), device tree (5.15.177-bone43-dtbs.tar.gz) and kernel modules (5.15.177+-modules.tar.gz). Device tree I use the default (5.15.177-bone43-dtbs.tar.gz) so please kepp it the same
+
+The component I miss is initramfs, right as initramfs provides some basic drivers (omap_gpio.ko) to mount the root filesystem directory (/dev/mmblk0p1), right?
