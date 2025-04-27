@@ -1,0 +1,46 @@
+# Load g_ether at boot time
+cat /etc/modules
+echo "g_ether" | sudo tee -a /etc/modules
+
+lsmod | grep g_ether
+sudo modprobe g_ether
+sudo ip addr add 192.168.137.2/24 dev usb0
+sudo ip link set usb0 up
+
+===
+
+cat /etc/resolv.conf
+# Should show:
+# nameserver 8.8.8.8
+# nameserver 8.8.4.4
+
++ If not:
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+
+===
+
+
+debian@arm:~$ ip route
+default via 192.168.137.1 dev usb0 onlink
+192.168.137.0/24 dev usb0 proto kernel scope link src 192.168.137.2
+
++ If not -> sudo ip route add default via 192.168.137.1 dev usb0
+
+===
+
+auto usb0
+iface usb0 inet static
+    address 192.168.137.2
+    netmask 255.255.255.0
+    gateway 192.168.137.1
+    dns-nameservers 8.8.8.8 8.8.4.4
+
+sudo service networking restart
+
+systemctl status networking -> check the status
+
+=== On PC host ====
+Window -> try to uncheck and check 'allow user ....'
+
+
