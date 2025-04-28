@@ -1,0 +1,21 @@
+export DISK=/dev/sda
+sudo umount /media/vinh/rootfs
+sudo umount {DISK}
+sudo dd if=/dev/zero of={DISK} bs=1M count=10
+
+sudo umount -l /media/vinh/rootfs
+sudo systemctl stop udisks2
+udisksctl unmount -b /dev/sda1
+
+
+
+sudo tee /media/rootfs/etc/network/interfaces > /dev/null <<EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+EOF
+
+
+./bbb_make_m2.sh
