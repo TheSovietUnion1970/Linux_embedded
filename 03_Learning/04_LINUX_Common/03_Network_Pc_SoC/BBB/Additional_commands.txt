@@ -41,6 +41,10 @@ sudo service networking restart
 systemctl status networking -> check the status
 
 === On PC host ====
+Modify -> IFACE_PC="enx6ab0a067d1de"   # PC USB/Ethernet interface
+./setup_network.sh
+
+
 Window -> try to uncheck and check 'allow user ....'
 
 
