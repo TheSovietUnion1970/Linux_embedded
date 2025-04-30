@@ -1,0 +1,12 @@
+apt install <package> -> install a package (*.deb) + its dependencies => ready to use
+apt download <package> -> install a package (*.deb) => add manually to filesystem
+
+dpkg - Debian package manager
+dpkg -i <file>.deb -> install a .deb package
+dpkg -l -> list
+dpkg -s <pkg> -> show status
+dpkg -x <file>.deb <dir> -> extract content
+
+wget - command to download files from web
+wget https://example.com/file.zip
+wget -O newname.zip https://example.com/file.zip

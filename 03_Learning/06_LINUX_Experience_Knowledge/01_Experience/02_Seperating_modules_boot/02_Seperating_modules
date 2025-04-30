@@ -1,0 +1,8 @@
+Treat /home/<user>/BBB_rootfs as root
+	+ Install 'apt' and 'dpkg' libraries (*.so) for install new packages
+	+ Install basic Debian packages for ARM by adding ../etc/apt/source.list
+	+ Use installed initramfs-tools to build initramfs.img for custom BBB
+	+ Include some basic seperate drivers (gpio-omap.ko) into initramfs.img to mount /dev/mmcblk0p1 to read and mount rootfilesystem
+	
+==============
+If not including gpio-omap.ko => the boot process stucks at 'waiting for mounting root /dev/mmcblk0p1'

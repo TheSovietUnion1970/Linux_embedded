@@ -1,0 +1,5 @@
+sudo chroot <directory> /bin/bash -c "<command line>"
+	=> make <directoty> as root
+Ex: + sudo chroot /media/rootfs/ /bin/bash -c "depmod ${KERNEL_VERSION}"
+    + In order to use 'apt' or 'dpkg' in /media/rootfs as root, we need shared libraries 	(*.so) in /media/rootfs/lib/<kernel version>/
+    + The purpose is to build initramfs in ARM arch

@@ -1,0 +1,34 @@
+In ../lib/modules/5.15.177:
+	+ modules.alias
+	+ modules.dep: modules dependencies
+	+ modules.order
+Ex: alias pci:v00008086d000010D3sv*sd*bc*sc*i* e1000e (in modules.alias)
+	-> This line tells the kernel: if PCI device 8086:10D3 is detected, load the 		e1000e driver.
+	
+	
+In ../lib/modules/5.15.177:
+	+ build (symbolic link) -> where kernel is compiled
+	+ source (symbolic link) -> kernel source
+	+ kernel (directory) -> compiled kernel drivers
+	
+	
+=============================================================================
+vinh@vinh-Inspiron-15-3520:~/media_home/rootfs/lib/modules/5.15.177$ ls -l
+total 2900
+lrwxrwxrwx  1 vinh vinh     47 Thg 4  30 08:06 build -> /home/vinh/build_BBB_custom/linux-stable-rcn-ee
+drwxrwxr-x 12 vinh vinh   4096 Thg 4  30 08:07 kernel
+-rw-r--r--  1 vinh vinh 722930 Thg 4  30 08:07 modules.alias
+-rw-r--r--  1 vinh vinh 762516 Thg 4  30 08:07 modules.alias.bin
+-rw-rw-r--  1 vinh vinh  16023 Thg 4  30 08:06 modules.builtin
+-rw-r--r--  1 vinh vinh  37260 Thg 4  30 08:07 modules.builtin.alias.bin
+-rw-r--r--  1 vinh vinh  18901 Thg 4  30 08:07 modules.builtin.bin
+-rw-rw-r--  1 vinh vinh 101243 Thg 4  30 08:06 modules.builtin.modinfo
+-rw-r--r--  1 vinh vinh 245063 Thg 4  30 08:07 modules.dep
+-rw-r--r--  1 vinh vinh 358779 Thg 4  30 08:07 modules.dep.bin
+-rw-r--r--  1 vinh vinh    260 Thg 4  30 08:07 modules.devname
+-rw-rw-r--  1 vinh vinh 102459 Thg 4  30 08:06 modules.order
+-rw-r--r--  1 vinh vinh    764 Thg 4  30 08:07 modules.softdep
+-rw-r--r--  1 vinh vinh 250210 Thg 4  30 08:07 modules.symbols
+-rw-r--r--  1 vinh vinh 305098 Thg 4  30 08:07 modules.symbols.bin
+lrwxrwxrwx  1 vinh vinh     47 Thg 4  30 08:06 source -> /home/vinh/build_BBB_custom/linux-stable-rcn-ee
+

@@ -1,0 +1,13 @@
+In order to get packages for ARM on PC host:
+	+ ls /etc/apt/source.list: 
+	+ update web pages for ARM packages
+# For armhf packages
+deb [arch=armhf] http://ports.Ubuntu.com/ubuntu-ports focal main restricted universe multiverse
+deb [arch=armhf] http://ports.Ubuntu.com/ubuntu-ports focal-updates main restricted universe multiverse
+deb [arch=armhf] http://ports.Ubuntu.com/ubuntu-ports focal-backports main restricted universe multiverse
+deb [arch=armhf] http://ports.Ubuntu.com/ubuntu-ports focal-security main restricted universe multiverse
+
+deb [arch=armhf] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
+deb [arch=armhf] http://archive.Ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb [arch=armhf] http://archive.Ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+

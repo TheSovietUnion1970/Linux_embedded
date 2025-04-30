@@ -1,0 +1,8 @@
+For building initramfs.img:
+	+ coreutils (cap, cp, ...)
+	+ kernel modules (ext4.ko, usb-storage.ko, gpio-omap.ko, ...)
+	+ kmod (modprobe, insmod, ....)
+	
+	OR
+	
+	+ BusyBox -used by- initramfs-generating tools like mkinitramfs

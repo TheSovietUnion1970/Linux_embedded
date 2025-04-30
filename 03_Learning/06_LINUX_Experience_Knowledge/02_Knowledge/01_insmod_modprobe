@@ -1,0 +1,9 @@
+sudo insmod *.ko -> add a .ko to kernel
+sudo modprobe -> add a .ko and dependencies
+-> Check lib/modules/$(uname -r)/modules.dep
+
+There are serveral seperate modules which are not needed to be embedded into initramfs.img:
+	Ex: gpio-omap.ko -> initramfs.img (needed to mount rootfilesystem)
+	    spi-gpio.ko X-> initramfs.img (not needed to mount rootfilesystem)
+But if -> initramfs manually: add the name of .ko to ../etc/initramfs-tools/modules
+
