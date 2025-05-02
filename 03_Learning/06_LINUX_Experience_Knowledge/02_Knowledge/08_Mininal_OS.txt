@@ -1,0 +1,34 @@
+/bin/bash
+	+ ldd /bin/bash -> check shared libraries
+	+ /lib/x86_64-linux-gnu/libtinfo.so.6 -> /media/rootfs/lib/x86_64-linux-gnu/libtinfo.so.6
+	+ /lib64/ld-linux-x86-64.so.2 -> /media/rootfs/lib64/
+	
+apt
+	+ /usr/bin/apt -> /media/rootfs/usr/bin/
+	+ -> can check ldd /usr/bin/apt
+	+ /lib/x86_64-linux-gnu/ and /lib64/ld-linux-x86-64.so.2 and /lib/libgcc_s.so.1
+	  /etc/apt/
+	+ -> apt is installed
+	
+==> Overallt -> need to install minimal debian (minimal OS)
+
+=============================== Minimal Debian ====================
+Having:
+	+ Package manager: apt, dpkg (/usr/bin)
+	+ Shell: (/bin/bash or bin/sh)
+	+ Core utils: mv, cp, grep (/bin)
+	+ Filesystem: mount, lsblk (/bin)
+	+ Init system: systemd (/bin)
+	+ Networking: ifup (/bin)
+	
+Not having:
+	+ No GUI
+	+ Kernel image + U-boot + firmware
+	+ No compiler toolchains (gcc, make)
+	+ No python
+
+=============================== PC (x86) -> Arm ===========
+sudo apt install qemu-user-static
+sudo cp /usr/bin/qemu-arm-static /media/rootfs/usr/bin/
+sudo chroot /media/rootfs /usr/bin/qemu-arm-static /bin/bash
+	

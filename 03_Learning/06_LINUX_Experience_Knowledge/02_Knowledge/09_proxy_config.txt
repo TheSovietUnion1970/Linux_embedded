@@ -1,0 +1,27 @@
+Proxy configuration
+
+	+ nano /etc/apt/resolv.conf:
+		nameserver 10.255.255.254
+		search de.bosch.com HC.APAC.BOSCH.COM APAC.BOSCH.COM BOSCH.COM
+		
+		OR
+		
+		
+	+ nano ~/.bashrc
+		export HTTP_PROXY="http://192.168.127.254:3128"
+		export HTTPS_PROXY="http://192.168.127.254:3128"
+		export NO_PROXY="localhost,127.0.0.0/8,::1,bosch.com,.bosch.com"
+		export http_proxy=$HTTP_PROXY
+		export https_proxy=$HTTPS_PROXY
+		export no_proxy=$NO_PROXY
+		
+	+ nano or create /etc/apt/apt.conf.d/99-proxy.conf
+		Acquire::http::Proxy "http://192.168.127.254:3128";
+		Acquire::https::Proxy "http://192.168.127.254:3128";
+		
+	-> restart
+	
+	
+Check Proxy configuration:
+	+ curl -I http://deb.debian.org --proxy http://192.168.127.254:3128
+	  curl -I http://security.debian.org --proxy http://192.168.127.254:3128
