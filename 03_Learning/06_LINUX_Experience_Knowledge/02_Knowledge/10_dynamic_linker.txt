@@ -1,0 +1,23 @@
+static vs dynamic:
++ Size -> static takes more space
++ Execution time -> dynamic runs longer
+
+Binary type is ELF (Executable and Linkable Format)
+
+======================== Ex ===================
+/bin/ls:
+
+root@HC-C-0080G:/# ldd /bin/ls
+        libselinux.so.1 => /lib/arm-linux-gnueabihf/libselinux.so.1 (0xfe767000)
+        libc.so.6 => /lib/arm-linux-gnueabihf/libc.so.6 (0xfe668000)
+        /lib/ld-linux-armhf.so.3 (0xfefc5000)
+        libpcre2-8.so.0 => /usr/lib/arm-linux-gnueabihf/libpcre2-8.so.0 (0xfe5f2000)
+        libdl.so.2 => /lib/arm-linux-gnueabihf/libdl.so.2 (0xfe5df000)
+        libpthread.so.0 => /lib/arm-linux-gnueabihf/libpthread.so.0 (0xfe5b9000)
+
+root@HC-C-0080G:/# readelf -l /bin/ls | grep interpreter
+      [Requesting program interpreter: /lib/ld-linux-armhf.so.3]
+
+ => /lib/ld-linux-armhf.so.3 is a dynamic linker -> links:
+	+ all shared libraries: libpthread.so.0, libdl.so.2, ...
+	+ symbol references (printf() in libc.so.6)
