@@ -1,4 +1,5 @@
 #!/bin/bash
+export DIR=/home/vinh
 
 set -e
 
@@ -61,17 +62,23 @@ sudo cp -v ./linux-stable-rcn-ee/arch/arm/boot/zImage /media/rootfs/boot/vmlinuz
 # === INSTALL DTBs ===
 echo "Installing DTBs..."
 sudo mkdir -p /media/rootfs/boot/dtbs/${KERNEL_VERSION}/
-sudo tar xfv /home/vinh/build_BBB_custom/5.15.177-bone43-dtbs.tar.gz -C /media/rootfs/boot/dtbs/${KERNEL_VERSION}/
+sudo tar xfv ${DIR}/build_BBB_custom/5.15.177-bone43-dtbs.tar.gz -C /media/rootfs/boot/dtbs/${KERNEL_VERSION}/
 
 # === INSTALL MODULES ===
 echo "Copying kernel modules..."
 sudo mkdir -p /media/rootfs/lib/modules/${KERNEL_VERSION}
 # (CHECK - output from bbb_build_m)
-sudo cp -a /home/vinh/media_home/rootfs/lib/modules/${KERNEL_VERSION}/* /media/rootfs/lib/modules/${KERNEL_VERSION}/
+sudo cp -a ${DIR}/media_home/rootfs/lib/modules/${KERNEL_VERSION}/* /media/rootfs/lib/modules/${KERNEL_VERSION}/
 
 # === INSTALL INITRAMFS ===
 echo "Copying initramfs..."
-sudo cp -a /home/vinh/media_home/rootfs/boot/initrd.img-${KERNEL_VERSION} /media/rootfs/boot/initrd.img-${KERNEL_VERSION}
+sudo cp -a ${DIR}/media_home/rootfs/boot/initrd.img-${KERNEL_VERSION} /media/rootfs/boot/initrd.img-${KERNEL_VERSION}
+
+# === COPY /usr/src ===
+echo "Copying /usr/src..."
+sudo cp -a ${DIR}/media_home/rootfs/usr/src/linux-headers-${KERNEL_VERSION} /media/rootfs/usr/src/linux-headers-${KERNEL_VERSION}
+sudo cp -a ${DIR}/media_home/rootfs/usr/src/ethernet_init.sh /media/rootfs/usr/src/ethernet_init.sh
+sudo chmod +x /media/rootfs/usr/src/ethernet_init.sh
 
 # echo "Running depmod..."
 # sudo chroot /media/rootfs/ /bin/bash -c "depmod 5.15.177+"
@@ -92,6 +99,13 @@ iface lo inet loopback
 
 auto eth0
 iface eth0 inet dhcp
+
+auto usb0
+iface usb0 inet static
+    address 192.168.137.2
+    netmask 255.255.255.0
+    gateway 192.168.137.1
+    dns-nameservers 8.8.8.8 8.8.4.4
 EOF
 
 sync
