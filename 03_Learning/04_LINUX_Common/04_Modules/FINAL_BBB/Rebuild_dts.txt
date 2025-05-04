@@ -1,0 +1,12 @@
+=== Rebuild device tree ===
+
+make ARCH=arm CROSS_COMPILE=${CC_x86_for_arm} am335x-boneblack.dtb
+scp ~/build_BBB_custom/linux-stable-rcn-ee/arch/arm/boot/dts/am335x-boneblack.dtb debian@192.168.137.2:/boot/dtbs/5.15.177/
+
+=== Update U-boot to load new dtb ===
+(Press SPACE to abort the default u-boot) -> '=>'
+
+setenv fdtfile am335x-boneblack.dtb
+saveenv
+boot
+
