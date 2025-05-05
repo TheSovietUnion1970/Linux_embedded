@@ -1,0 +1,18 @@
+export KERNEL_VERSION=5.15.177+
+export DIR=~/media_home_gdb/rootfs
+
+echo "-> check config"
+grep -i kgdb ${DIR}/usr/src/linux-headers-${KERNEL_VERSION}/include/config/auto.conf
+echo "====================" 
+
+echo "-> check.c .h"
+find ${DIR}/usr/src/linux-headers-${KERNEL_VERSION}/arch/arm/ -name "*kgdb*" -type f 
+echo "====================" 
+
+echo "-> must have kgdb_compiled_brk_fn, kgdb_brk_fn"
+find ${DIR}/usr/src/linux-headers-${KERNEL_VERSION}/ -name "System.map" -exec grep -i kgdb {} \; 
+echo "====================" 
+
+echo "-> Check built-in modules (not all of them)"
+grep kgdb ${DIR}/lib/modules/${KERNEL_VERSION}/modules.builtin 
+echo "====================" 
