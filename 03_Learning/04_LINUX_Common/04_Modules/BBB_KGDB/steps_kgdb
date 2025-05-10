@@ -1,18 +1,28 @@
-================================ [PC] kdmx =============================
+================================ [PC] - compile modules =============================
+sudo scp ./gpio.ko debian@192.168.137.2:/home/debian
+
+================================ [PC] - kdmx - terminal =============================
 ~/Downloads/agent-proxy/kdmx/kdmx -p /dev/ttyUSB0 -b 115200 -s /tmp/kdmx_status
 minicom -o -w -p /dev/pts/X
 
-sudo scp ./gpio.ko debian@192.168.137.2:/home/debian
+================================ [BBB] - install modules =============================
+sudo insmod gpio.ko
 
 ================================ [BBB] - check =============================
-sudo insmod gpio.ko
 sudo cat /sys/module/gpio/sections/.text
-add-symbol-file /media/vinh/rootfs/build_BBB_custom/linux-stable-rcn-ee/test/gpio.ko 0xbf806000
-info functions gpio_init
 
 ================================ [BBB] - enable debug =============================
 echo "ttyS0" | sudo tee /sys/module/kgdboc/parameters/kgdboc
 echo "g" | sudo tee /proc/sysrq-trigger
+
+================================ [PC] -Enter debug =============================
+/usr/bin/gdb-multiarch ~/build_BBB_custom/linux-stable-rcn-ee/vmlinux -tui
+set serial baud 115200
+target remote /dev/pts/X
+
+================================ [BBB] - add modular symbol =============================
+add-symbol-file /media/vinh/rootfs/build_BBB_custom/linux-stable-rcn-ee/test/gpio.ko 0xbf806000
+info functions gpio_init
 
 ================================ [PC] -Enter debug =============================
 /usr/bin/gdb-multiarch ~/build_BBB_custom/linux-stable-rcn-ee/vmlinux -tui
