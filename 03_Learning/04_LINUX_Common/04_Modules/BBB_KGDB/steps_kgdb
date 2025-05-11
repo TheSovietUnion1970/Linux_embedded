@@ -6,10 +6,10 @@ sudo scp ./gpio.ko debian@192.168.137.2:/home/debian
 minicom -o -w -p /dev/pts/X
 
 ================================ [BBB] - install modules =============================
-sudo insmod gpio.ko
+sudo insmod gpio_t.ko
 
 ================================ [BBB] - check =============================
-sudo cat /sys/module/gpio/sections/.text
+sudo cat /sys/module/gpio_t/sections/.text
 
 ================================ [BBB] - enable debug =============================
 echo "ttyS0" | sudo tee /sys/module/kgdboc/parameters/kgdboc
@@ -17,21 +17,29 @@ echo "g" | sudo tee /proc/sysrq-trigger
 
 ================================ [PC] -Enter debug =============================
 /usr/bin/gdb-multiarch ~/build_BBB_custom/linux-stable-rcn-ee/vmlinux -tui
+./gdb/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gdb ~/build_BBB_custom/linux-stable-rcn-ee/vmlinux -x debug_bbb.gdb
+
+================================ [gdb] - add modular symbol =============================
 set serial baud 115200
 target remote /dev/pts/X
 
-================================ [BBB] - add modular symbol =============================
-add-symbol-file /media/vinh/rootfs/build_BBB_custom/linux-stable-rcn-ee/test/gpio.ko 0xbf806000
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.ko 0xbf02a000
 info functions gpio_init
 
-================================ [PC] -Enter debug =============================
-/usr/bin/gdb-multiarch ~/build_BBB_custom/linux-stable-rcn-ee/vmlinux -tui
-set serial baud 115200
-target remote /dev/ttyUSB0
 
-break gpio.c:22
+break gpio_t.c:24
+break gpio_t.c:27
+break gpio_t.c:35
+break gpio_t.c:38
+
 break gpio-omap.c:924
+break gpio-omap.c:927
 info break
+
+set scheduler-locking on
+
+set debug infrun 1
+set debug remote 1
 
 c
 n
