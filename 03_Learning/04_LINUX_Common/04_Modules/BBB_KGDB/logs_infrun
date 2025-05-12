@@ -1,0 +1,342 @@
+# # (c->n)
+n
+[infrun] clear_proceed_status_thread: 42000.392.0
+[infrun] set_step_info: symtab = /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.c, line = 38, step_frame_id = {stack=0xc692ff80,code=0x00000000bf01a0e0,!special}, step_stack_frame_id = {stack=0xc692ff80,code=0x00000000bf01a0e0,!special}
+[infrun] proceed: enter
+  [infrun] follow_fork: enter
+  [infrun] follow_fork: exit
+  [infrun] proceed: cur_thr = 42000.392.0
+  [infrun] proceed: addr=0xffffffff, signal=GDB_SIGNAL_DEFAULT, resume_ptid=42000.392.0
+  [infrun] global_thread_step_over_chain_enqueue: enqueueing thread 42000.392.0 in global step over chain
+  [infrun] scoped_disable_commit_resumed: reason=proceeding
+  [infrun] start_step_over: enter
+    [infrun] start_step_over: stealing global queue of threads to step, length = 1
+    [infrun] start_step_over: resuming [42000.392.0] for step-over
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xbf01a214
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xbf01a214
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xbf01a214
+    [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=1, current thread [42000.392.0] at 0xbf01a214
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xbf01a214
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xbf01a214
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xbf01a214
+    [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+    [infrun] infrun_async: enable=1
+    [infrun] prepare_to_wait: prepare_to_wait
+    [infrun] start_step_over: [42000.392.0] was resumed.
+    [infrun] operator(): step-over queue now empty
+  [infrun] start_step_over: exit
+  [infrun] reset: reason=proceeding
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] proceed: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] clear_step_over_info: clearing step over info
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a218
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a218
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a21c
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a21c
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a220
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a220
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: enabling commit-resumed for target remote
+  [infrun] maybe_call_commit_resumed_all_targets: calling commit_resumed for target remote
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a224
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a224
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a228
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a228
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a22c
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a22c
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a230
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a214-0xbf01a234]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a230
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: enabling commit-resumed for target remote
+  [infrun] maybe_call_commit_resumed_all_targets: calling commit_resumed for target remote
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a234
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: updated step range, start = 0xbf01a234, end = 0xbf01a240, may_range_step = 1
+  [infrun] set_step_info: symtab = /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.c, line = 38, step_frame_id = {stack=0xc692ff80,code=0x00000000bf01a0e0,!special}, step_stack_frame_id = {stack=0xc692ff80,code=0x00000000bf01a0e0,!special}
+  [infrun] process_event_stop_test: keep going
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a234
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a238
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a234-0xbf01a240]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a238
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: enabling commit-resumed for target remote
+  [infrun] maybe_call_commit_resumed_all_targets: calling commit_resumed for target remote
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a23c
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepping inside range [0xbf01a234-0xbf01a240]
+  [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a23c
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.392.0 [Thread 392],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.392.0
+  [infrun] handle_signal_stop: stop_pc=0xbf01a240
+  [infrun] handle_signal_stop: [42000.392.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: stepped to a different line
+  [infrun] stop_waiting: stop_waiting
+42	        msleep(BLINK_INTERVAL_MS); // Sleep for specified interval
+  [infrun] infrun_async: enable=0
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, no resumed threads
+(gdb) [infrun] fetch_inferior_event: exit
+
+# # (n->c)
+(gdb) c
+Continuing.
+[infrun] clear_proceed_status_thread: 42000.392.0
+[infrun] proceed: enter
+  [infrun] follow_fork: enter
+  [infrun] follow_fork: exit
+  [infrun] proceed: cur_thr = 42000.392.0
+  [infrun] proceed: addr=0xffffffff, signal=GDB_SIGNAL_DEFAULT, resume_ptid=42000.392.0
+  [infrun] scoped_disable_commit_resumed: reason=proceeding
+  [infrun] start_step_over: enter
+    [infrun] start_step_over: stealing global queue of threads to step, length = 0
+    [infrun] operator(): step-over queue now empty
+  [infrun] start_step_over: exit
+  [infrun] proceed_resume_thread_checked: resuming 42000.392.0
+  [infrun] resume_1: step=0, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.392.0] at 0xbf01a240
+  [infrun] do_target_resume: resume_ptid=42000.392.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] infrun_async: enable=1
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=proceeding
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] proceed: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.76.0 [Thread 76],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.76.0
+  [infrun] handle_signal_stop: stop_pc=0xc09b9a84
+  [infrun] bpstat_check_breakpoint_conditions: enter
+    [infrun] bpstat_check_breakpoint_conditions: thread = 42000.76.0, breakpoint 5.1
+    [infrun] bpstat_check_breakpoint_conditions: stopping at this breakpoint
+  [infrun] bpstat_check_breakpoint_conditions: exit
+  [infrun] process_event_stop_test: BPSTAT_WHAT_STOP_NOISY
+  [infrun] stop_waiting: stop_waiting
+[Switching to Thread 76]
+
+Thread 36 hit Breakpoint 5, omap_gpio_set (chip=0xc5d2489c, offset=22, value=1) at drivers/gpio/gpio-omap.c:924
+924		bank = gpiochip_get_data(chip);
+  [infrun] infrun_async: enable=0
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, no resumed threads
+(gdb) [infrun] fetch_inferior_event: exit
+
+# # (c->c)
+c
+Continuing.
+[infrun] clear_proceed_status_thread: 42000.76.0
+[infrun] proceed: enter
+  [infrun] follow_fork: enter
+  [infrun] follow_fork: exit
+  [infrun] proceed: cur_thr = 42000.76.0
+  [infrun] proceed: addr=0xffffffff, signal=GDB_SIGNAL_DEFAULT, resume_ptid=42000.76.0
+  [infrun] global_thread_step_over_chain_enqueue: enqueueing thread 42000.76.0 in global step over chain
+  [infrun] scoped_disable_commit_resumed: reason=proceeding
+  [infrun] start_step_over: enter
+    [infrun] start_step_over: stealing global queue of threads to step, length = 1
+    [infrun] start_step_over: resuming [42000.76.0] for step-over
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xc09b9a84
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xc09b9a84
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xc09b9a84
+    [infrun] resume_1: step=1, signal=GDB_SIGNAL_0, trap_expected=1, current thread [42000.76.0] at 0xc09b9a84
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xc09b9a84
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xc09b9a84
+    [infrun] should_be_inserted: skipping breakpoint: stepping past insn at: 0xc09b9a84
+    [infrun] do_target_resume: resume_ptid=42000.76.0, step=0, sig=GDB_SIGNAL_0
+    [infrun] infrun_async: enable=1
+    [infrun] prepare_to_wait: prepare_to_wait
+    [infrun] start_step_over: [42000.76.0] was resumed.
+    [infrun] operator(): step-over queue now empty
+  [infrun] start_step_over: exit
+  [infrun] reset: reason=proceeding
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] proceed: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.76.0 [Thread 76],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] clear_step_over_info: clearing step over info
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.76.0
+  [infrun] handle_signal_stop: stop_pc=0xc09b9a88
+  [infrun] handle_signal_stop: [42000.76.0] hit its single-step breakpoint
+  [infrun] process_event_stop_test: no stepping, continue
+  [infrun] resume_1: step=0, signal=GDB_SIGNAL_0, trap_expected=0, current thread [42000.76.0] at 0xc09b9a88
+  [infrun] do_target_resume: resume_ptid=42000.76.0, step=0, sig=GDB_SIGNAL_0
+  [infrun] prepare_to_wait: prepare_to_wait
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, target has pending events
+[infrun] fetch_inferior_event: exit
+[infrun] fetch_inferior_event: enter
+  [infrun] scoped_disable_commit_resumed: reason=handling event
+  [infrun] random_pending_event_thread: None found.
+  [infrun] print_target_wait_results: target_wait (-1.0.0 [Thread 0], status) =
+  [infrun] print_target_wait_results:   42000.13.0 [Thread 13],
+  [infrun] print_target_wait_results:   status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] handle_inferior_event: status->kind = STOPPED, sig = GDB_SIGNAL_TRAP
+  [infrun] context_switch: Switching context from 0.0.0 to 42000.13.0
+  [infrun] handle_signal_stop: stop_pc=0xc09b9a84
+  [infrun] bpstat_check_breakpoint_conditions: enter
+    [infrun] bpstat_check_breakpoint_conditions: thread = 42000.13.0, breakpoint 5.1
+    [infrun] bpstat_check_breakpoint_conditions: stopping at this breakpoint
+  [infrun] bpstat_check_breakpoint_conditions: exit
+  [infrun] process_event_stop_test: BPSTAT_WHAT_STOP_NOISY
+  [infrun] stop_waiting: stop_waiting
+[Switching to Thread 13]
+
+Thread 14 hit Breakpoint 5, omap_gpio_set (chip=0xc5d2489c, offset=21, value=1) at drivers/gpio/gpio-omap.c:924
+924		bank = gpiochip_get_data(chip);
+  [infrun] infrun_async: enable=0
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, no resumed threads
+(gdb) [infrun] fetch_inferior_event: exit
+
