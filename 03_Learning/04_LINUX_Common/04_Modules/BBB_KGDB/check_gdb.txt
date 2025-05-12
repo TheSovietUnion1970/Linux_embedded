@@ -16,3 +16,12 @@ echo "===================="
 echo "-> Check built-in modules (not all of them)"
 grep kgdb ${DIR}/lib/modules/${KERNEL_VERSION}/modules.builtin 
 echo "====================" 
+
+readelf --debug-dump=info ./media_home1/rootfs/boot/vmlinux | grep DW_AT_comp_dir 
+-> check directory source
+readelf --debug-dump=info ./media_home1/rootfs/boot/vmlinux | grep -E 'DW_AT_comp_dir|DW_AT_name'
+-> check directory source | file
+
+objdump --section-headers ./media_home1/rootfs/boot/vmlinux | grep debug_info
+objdump --section-headers ./media_home1/rootfs/boot/vmlinux | grep debug_line
+-> check sections like .debug_info and .debug_line are present.
