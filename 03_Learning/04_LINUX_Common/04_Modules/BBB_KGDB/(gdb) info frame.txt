@@ -1,0 +1,36 @@
+(gdb) info frame
+Stack level 0, frame at 0xc9ffbf80:
+ pc = 0xbf01a250 in thread_fn
+    (/home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.c:42); 
+    saved pc = 0xc016771c
+ called by frame at 0xc9ffbfb0
+ source language c.
+ Arglist at 0xc9ffbf7c, args: data=0x0
+ Locals at 0xc9ffbf7c, Previous frame's sp at 0xc9ffbf74
+ Saved registers:
+  r11 at 0xc9ffbf70, lr at 0xc9ffbf78
+(gdb) print $sp
+$5 = (void *) 0xc9ffbf60
+(gdb) info address c
+Symbol "c" is a complex DWARF expression:
+     0: DW_OP_fbreg -21
+
+==>:
+
+.. stack ..
+0xc9ffbfb0: Caller’s frame (higher address, as the stack grows downward) (previous frame)
+
+0xc9ffbf80: Current frame base (top of thread_fn’s frame).
+0xc9ffbf7c: Arguments (data) and start of locals (c, d).
+0xc9ffbf78: Saved link register (lr = 0xc016771c).
+
+0xc9ffbf74: Previous frame’s sp (previous frame) -> 0xc9ffbf84
+
+0xc9ffbf70: Saved frame pointer (r11) -> 0xc9ffbf80
+0xc9ffbf60: Current sp (bottom of the frame after allocating space).
+
+.. text ..
+
+0xc016771c: instructions in .text
+
+==>: To get the address of ocal variable address c: 0xc9ffbf80 - 0x15 = C9FF BF6B
