@@ -1,0 +1,9 @@
+gpiod_set_raw_value(struct gpio_desc * desc, int value) (/home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/gpio/gpiolib.c:3026)
+gpio_init() (/home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.c:73)
+thread_fn(void * data) (/home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.c:39)
+kthread(void * _create) (/home/vinh/build_BBB_custom/linux-stable-rcn-ee/kernel/kthread.c:334)
+ret_from_fork() (/home/vinh/build_BBB_custom/linux-stable-rcn-ee/arch/arm/kernel/entry-common.S:147)
+
+><
+
+thread_fn -> gpio_set_value -> gpiod_set_raw_value >< thread_fn -> gpio_init -> gpiod_set_raw_value

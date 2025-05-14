@@ -1,0 +1,11 @@
+((struct gpio_chip *)0xc5da089c)->request 		0xc09b9d08 <omap_gpio_request>
+((struct gpio_chip *)0xc5da089c)->free		0xc09baba0 <omap_gpio_free>
+((struct gpio_chip *)0xc5da089c)->get_direction	0xc09b9c70 <omap_gpio_get_direction>
+((struct gpio_chip *)0xc5da089c)->direction_input	0xc09b9c10 <omap_gpio_input>
+((struct gpio_chip *)0xc5da089c)->direction_output	0xc09b9ac8 <omap_gpio_output>
+((struct gpio_chip *)0xc5da089c)->get			0xc09b9bbc <omap_gpio_get>
+((struct gpio_chip *)0xc5da089c)->get_multiple	0xc09b9b44 <omap_gpio_get_multiple>
+((struct gpio_chip *)0xc5da089c)->set			0xc09b9a70 <omap_gpio_set>
+((struct gpio_chip *)0xc5da089c)->set_multiple	0xc09b9a00 <omap_gpio_set_multiple>
+((struct gpio_chip *)0xc5da089c)->set_config		0xc09ba99c <omap_gpio_set_config>
+((struct gpio_chip *)0xc5da089c)->to_irq		0xc09a99cc <gpiochip_to_irq>

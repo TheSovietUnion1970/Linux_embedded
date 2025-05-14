@@ -1,0 +1,16 @@
+gpiod_set_raw_value(desc, 1) -> gpiod_set_raw_value_commit(desc, 1); -> trace_gpio_value(desc_to_gpio(desc), 0, value);
+									-> gc->set(gc, gpio_chip_hwgpio(desc), value);
+									
+									
+=====================
+int desc_to_gpio(const struct gpio_desc *desc)
+{
+	return desc->gdev->base + (desc - &desc->gdev->descs[0]);
+}
+struct gpio_desc *gpio_to_desc(unsigned gpio)
+{
+	struct gpio_device *gdev;
+	list_for_each_entry(gdev, &gpio_devices, list){
+		return &gdev->descs[gpio - gdev->base];
+	}
+}
