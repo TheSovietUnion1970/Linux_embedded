@@ -25,3 +25,9 @@ readelf --debug-dump=info ./media_home1/rootfs/boot/vmlinux | grep -E 'DW_AT_com
 objdump --section-headers ./media_home1/rootfs/boot/vmlinux | grep debug_info
 objdump --section-headers ./media_home1/rootfs/boot/vmlinux | grep debug_line
 -> check sections like .debug_info and .debug_line are present.
+
+
+==============================
+
+nm -n *.ko
+	-> list index of variables, functions, ....
