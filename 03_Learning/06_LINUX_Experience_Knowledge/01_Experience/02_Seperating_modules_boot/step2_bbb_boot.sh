@@ -7,6 +7,8 @@ set -e
 export DISK=/dev/sda
 export ROOTFS_TAR=$(ls debian-*-*-armhf-*/armhf-rootfs-*.tar)
 export DEPLOY_DIR=./kernelbuildscripts/deploy
+export CC_x86_for_arm=/home/vinh/build_BBB_custom/gcc-11.3.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
+
 
 cd ./linux-stable-rcn-ee/
 KERNEL_VERSION=$(make kernelrelease)
@@ -71,8 +73,8 @@ sudo mkdir -p /media/rootfs/lib/modules/${KERNEL_VERSION}
 sudo cp -a ${DIR}/media_home/rootfs/lib/modules/${KERNEL_VERSION}/* /media/rootfs/lib/modules/${KERNEL_VERSION}/
 
 # === INSTALL INITRAMFS ===
-echo "Copying initramfs..."
-sudo cp -a ${DIR}/media_home/rootfs/boot/initrd.img-${KERNEL_VERSION} /media/rootfs/boot/initrd.img-${KERNEL_VERSION}
+# echo "Copying initramfs..."
+# sudo cp -a ${DIR}/media_home/rootfs/boot/initrd.img-${KERNEL_VERSION} /media/rootfs/boot/initrd.img-${KERNEL_VERSION}
 
 # === COPY /usr/src ===
 echo "Copying /usr/src..."
@@ -83,9 +85,10 @@ sudo chmod +x /media/rootfs/usr/src/ethernet_init.sh
 # echo "Running depmod..."
 # sudo chroot /media/rootfs/ /bin/bash -c "depmod 5.15.177+"
 
-# echo "Generating initramfs..."
-# sudo chroot /media/rootfs/ /bin/bash -c "apt update && apt install -y initramfs-tools"
-# sudo chroot /media/rootfs/ /bin/bash -c "mkinitramfs -o /boot/initrd.img-${KERNEL_VERSION} 5.15.177+"
+echo "Generating initramfs..."
+sudo chroot /media/rootfs/ /bin/bash -c "apt update && apt install -y initramfs-tools"
+sudo chroot /media/rootfs/ /bin/bash -c "depmod ${KERNEL_VERSION}"
+sudo chroot /media/rootfs/ /bin/bash -c "mkinitramfs -o /boot/initrd.img-${KERNEL_VERSION} ${KERNEL_VERSION}"
 
 # === CREATE FSTAB ===
 echo "Writing /etc/fstab..."
@@ -109,6 +112,9 @@ iface usb0 inet static
 EOF
 
 sync
+
+echo "Writing /etc/modules-load.d/g_ether.conf..."
+echo 'g_ether host_addr=192.168.137.1 dev_addr=192.168.137.2' | sudo tee -a /etc/modules-load.d/g_ether.conf
 
 # === UNMOUNT ===
 echo "Unmounting..."
