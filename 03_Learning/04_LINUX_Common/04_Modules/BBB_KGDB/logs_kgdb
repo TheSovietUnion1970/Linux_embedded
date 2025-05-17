@@ -277,4 +277,67 @@ n
   [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, no resumed threads
 (gdb) [infrun] fetch_inferior_event: exit
 
+==============
+
+gdb) info address a
+Symbol "a" is static storage at address 0x0.
+(gdb) info address c
+Symbol "c" is a complex DWARF expression:
+     0: DW_OP_fbreg -21
+.
+(gdb) info address d
+Symbol "d" is a complex DWARF expression:
+     0: DW_OP_fbreg -20
+.
+(gdb) info address b
+Symbol "b" is static storage at address 0x4.
+
+
+vinh@vinh-Inspiron-15-3520:~$ nm /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.ko | grep -E " a$| b$| led_on$"
+00000000 D a
+00000004 D b
+00000004 b led_on
+
+
+====
+
+debian@arm:~$ sudo cat /sys/module/gpio_t/sections/.text
+0xbf024000
+debian@arm:~$ sudo cat /sys/module/gpio_t/sections/.data
+0xbf026000
+
+
+a = 1
+b = 2
+
+and I access the address to get the value:
+(gdb) x/b 0xbf026000
+0xbf026000:	1
+(gdb) x/b 0xbf026001
+0xbf026001:	0
+(gdb) x/b 0xbf026002
+0xbf026002:	0
+(gdb) x/b 0xbf026003
+0xbf026003:	0
+(gdb) x/b 0xbf026004
+0xbf026004:	2
+
+add symbol table from file "/home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.ko" at
+	.text_addr = 0xbf024000
+	.bss_addr = 0xbf026280
+(y or n) y
+Reading symbols from /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.ko...
+(gdb) x/b 0xbf026284
+0xbf026284 <led_on>:	1
+(gdb) print led_on
+Cannot access memory at address 0x4
+
+vinh@vinh-Inspiron-15-3520:~$ nm /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/gpio_t.ko | grep led_on
+00000004 b led_on
+
+
+From the output above:
+led_on is at the offset 0x4 at .bss -> 0xbf026284 <led_on>:	1
+eventhough I loaded .bss but print led_on -> Cannot access memory at address 0x4
+
 
