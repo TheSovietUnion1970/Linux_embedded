@@ -1,0 +1,32 @@
+config-pin -q P9.14
+config-pin -q P9.16
+
+===
+
+ls /sys/class/pwm -> pwmchip0 
+cat /sys/class/pwm/pwmchip*/export 2>/dev/null
+
+echo "0" | sudo tee /sys/class/pwm/pwmchip0/export -> /sys/class/pwm/pwmchip0/pwm0/
+
+echo "1000000" | sudo tee /sys/class/pwm/pwmchip0/pwm0/period
+echo "500000" | sudo tee /sys/class/pwm/pwmchip0/pwm0/duty_cycle
+echo "1" | sudo tee /sys/class/pwm/pwmchip0/pwm0/enable
+
+===
+
+static int fade_in_led(struct pwm_device *pwm)
+{
+    int duty, ret;
+
+    pr_info("PWM state before enable: enabled=%d, period=%u, duty=%u\n",
+            pwm->state.enabled, pwm->state.period, pwm->state.duty_cycle);
+
+    ret = pwm_enable(pwm);
+    if (ret) {
+        pr_err("Failed to enable PWM: %d\n", ret);
+        return ret;
+    }
+
+    // ... rest of the function ...
+}
+
