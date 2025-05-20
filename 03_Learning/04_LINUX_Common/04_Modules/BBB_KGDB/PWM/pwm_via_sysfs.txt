@@ -1,0 +1,10 @@
+# create /sys/class/pwm/pwmchip0/pwm0/ (pwm channel 0)
+echo "0" | sudo tee /sys/class/pwm/pwmchip0/export
+
+echo "1000000" | sudo tee /sys/class/pwm/pwmchip0/pwm0/period
+echo "500000" | sudo tee /sys/class/pwm/pwmchip0/pwm0/duty_cycle
+echo "1" | sudo tee /sys/class/pwm/pwmchip0/pwm0/enable
+
+# not control anymore
+echo "0" | sudo tee /sys/class/pwm/pwmchip0/pwm0/enable
+echo "0" | sudo tee /sys/class/pwm/pwmchip0/unexport
