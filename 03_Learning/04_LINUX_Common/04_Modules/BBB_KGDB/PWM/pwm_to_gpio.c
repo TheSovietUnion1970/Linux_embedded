@@ -9,16 +9,19 @@
 #define PWM_PERIOD_NS 1000000 // 1ms = 1kHz
 #define FADE_STEPS    100
 #define STEP_DELAY_MS 20
+struct gpio_desc *gpio50;
 
 struct led_pwm_data {
     struct pwm_device *pwm;
     struct gpio_desc *gpio_led;
+    struct pinctrl *pinctrl;
+    struct pinctrl_state *default_state;
+    struct pinctrl_state *sleep_state;
 };
 
 static int fade_in_led(struct pwm_device *pwm)
 {
     int duty, ret;
-    // Configure PWM before enabling
     ret = pwm_config(pwm, 0, PWM_PERIOD_NS); // Start with 0 duty cycle
     if (ret) {
         pr_err("Failed to config PWM: %d\n", ret);
@@ -47,10 +50,50 @@ static int fade_in_led(struct pwm_device *pwm)
             pwm_disable(pwm);
             return ret;
         }
-        printk("PWM -> %d\n", duty_ns);
         msleep(STEP_DELAY_MS);
     }
 
+    return 0;
+}
+
+static int blink(void){
+    int i = 0;
+    for (i = 0; i < 5; i++){
+        gpiod_set_value(gpio50, 1);
+        msleep(1000); // Sleep for specified interval
+        gpiod_set_value(gpio50, 0);
+        msleep(1000); // Sleep for specified interval
+    }
+    return 0;
+};
+
+static int switch_to_sleep_state(struct device *dev, struct led_pwm_data *data)
+{
+    int ret;
+
+    if (!data->pinctrl) {
+        data->pinctrl = devm_pinctrl_get(dev);
+        if (IS_ERR(data->pinctrl)) {
+            dev_err(dev, "Failed to get pinctrl: %ld\n", PTR_ERR(data->pinctrl));
+            return PTR_ERR(data->pinctrl);
+        }
+    }
+
+    if (!data->sleep_state) {
+        data->sleep_state = pinctrl_lookup_state(data->pinctrl, "sleep");
+        if (IS_ERR(data->sleep_state)) {
+            dev_err(dev, "Failed to lookup sleep state: %ld\n", PTR_ERR(data->sleep_state));
+            return PTR_ERR(data->sleep_state);
+        }
+    }
+
+    ret = pinctrl_select_state(data->pinctrl, data->sleep_state);
+    if (ret) {
+        dev_err(dev, "Failed to select sleep state: %d\n", ret);
+        return ret;
+    }
+
+    dev_info(dev, "Switched to sleep state (GPIO mode)\n");
     return 0;
 }
 
@@ -76,15 +119,36 @@ static int led_pwm_probe(struct platform_device *pdev)
     // Request PWM
     data->pwm = devm_pwm_get(dev, "led50");
     if (IS_ERR(data->pwm)) {
-        dev_err(dev, "Failed to get PWM: %ld\n", PTR_ERR(data->pwm));
+        dev_err(dev, "Failed to get PWM 'led50': %ld\n", PTR_ERR(data->pwm));
         return PTR_ERR(data->pwm);
     }
 
-    dev_info(dev, "Starting LED fade-in\n");
+    // Perform fade-in (PWM mode)
+    dev_info(dev, "Starting LED fade-in (PWM mode)\n");
     ret = fade_in_led(data->pwm);
     if (ret) {
         dev_err(dev, "Failed to fade in LED: %d\n", ret);
         return ret;
+    }
+
+    // Disable PWM after fade-in
+    pwm_disable(data->pwm);
+
+    // Switch to sleep state (GPIO mode)
+    ret = switch_to_sleep_state(dev, data);
+    if (ret) {
+        dev_err(dev, "Failed to switch to sleep state: %d\n", ret);
+        return ret;
+    }
+
+    // Optionally control P9_14 as GPIO after switching
+    gpio50 = devm_gpiod_get(dev, "led50", GPIOD_OUT_HIGH);
+    if (IS_ERR(gpio50)) {
+        dev_warn(dev, "Failed to get GPIO for P9_14: %ld\n", PTR_ERR(gpio50));
+    } else {
+        // gpiod_set_value(gpio50, 1); // Turn on LED on P9_14 as GPIO
+        dev_info(dev, "Set P9_14 (gpio50) to high\n");
+        blink();
     }
 
     return 0;
@@ -92,16 +156,8 @@ static int led_pwm_probe(struct platform_device *pdev)
 
 static int led_pwm_remove(struct platform_device *pdev)
 {
-    struct led_pwm_data *data = dev_get_drvdata(&pdev->dev);
-
-    if (data->pwm) {
-        pwm_disable(data->pwm); // Disable PWM before removal
-        pwm_put(data->pwm);     // Release the PWM device
-    }
-
-    if (data->gpio_led)
-        gpiod_put(data->gpio_led);
-
+    struct led_pwm_data *data = platform_get_drvdata(pdev);
+    pwm_disable(data->pwm);
     return 0;
 }
 
