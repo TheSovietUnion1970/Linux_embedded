@@ -1,0 +1,221 @@
+debian@arm:~$ sudo rmmod pwm.ko
+[ 2095.614557] 8<--- cut here ---
+[ 2095.617667] Unhandled fault: external abort on non-linefetch (0x1028) at 0xfa30221a
+[ 2095.625363] pgd = fdfc4f1d
+[ 2095.628087] [fa30221a] *pgd=48211452(bad)
+[ 2095.632136] Internal error: : 1028 [#1] SMP ARM
+[ 2095.636692] Modules linked in: pwm(O-) g_ether evdev uio_pdrv_genirq uio ip_tables x_tables
+ [last unloaded: pwm]
+[ 2095.646959] CPU: 0 PID: 2381 Comm: rmmod Tainted: G           O      5.15.177 #2
+[ 2095.654393] Hardware name: Generic AM33XX (Flattened Device Tree)
+[ 2095.660513] PC is at ehrpwm_pwm_disable+0x3c/0xf0
+[ 2095.665258] LR is at pwm_apply_state+0x280/0x2b0
+[ 2095.669910] pc : [<c09c2d6c>]    lr : [<c09bf430>]    psr: 60070013
+[ 2095.676205] sp : c236fde8  ip : c236fe10  fp : c236fe0c
+[ 2095.681451] r10: 00000000  r9 : 00000000  r8 : fa30221a
+[ 2095.686697] r7 : 0000fffc  r6 : 00000001  r5 : 00000000  r4 : c5d3b1c0
+[ 2095.693254] r3 : fa302200  r2 : 0000fffc  r1 : 00000000  r0 : c5d3b1c0
+[ 2095.699811] Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment none
+[ 2095.706980] Control: 10c5387d  Table: 864a8019  DAC: 00000051
+[ 2095.712748] Register r0 information: slab kmalloc-192 start c5d3b180 pointer offset 64 size
+ 192
+[ 2095.721516] Register r1 information: NULL pointer
+[ 2095.726247] Register r2 information: non-paged memory
+[ 2095.731322] Register r3 information: 0-page vmalloc region starting at 0xfa000000 allocated
+ at iotable_init+0x0/0xfc
+[ 2095.741914] Register r4 information: slab kmalloc-192 start c5d3b180 pointer offset 64 size
+ 192
+[ 2095.750671] Register r5 information: NULL pointer
+[ 2095.755398] Register r6 information: non-paged memory
+[ 2095.760475] Register r7 information: non-paged memory
+[ 2095.765550] Register r8 information: 0-page vmalloc region starting at 0xfa000000 allocated
+ at iotable_init+0x0/0xfc
+[ 2095.776129] Register r9 information: NULL pointer
+[ 2095.780855] Register r10 information: NULL pointer
+[ 2095.785670] Register r11 information: non-slab/vmalloc memory
+[ 2095.791444] Register r12 information: non-slab/vmalloc memory
+[ 2095.797218] Process rmmod (pid: 2381, stack limit = 0xcae975c1)
+[ 2095.803167] Stack: (0xc236fde8 to 0xc2370000)
+[ 2095.807547] fde0:                   c5d3bc00 00000000 c236fe48 c5d3b1c0 000f4240 00000000
+[ 2095.815764] fe00: c236fe3c c236fe10 c09bf430 c09c2d3c c236fe48 c22f0810 bf021018 c193e5d8
+[ 2095.823981] fe20: bf021018 c193e61c c236e000 00000081 c236fe74 c236fe40 bf01f3b0 c09bf1bc
+[ 2095.832198] fe40: c15eb788 c5d3bc00 000f4240 00000000 000f4240 00000000 00000000 00000000
+[ 2095.840415] fe60: c0439d4c 78d2aa89 c236fe94 c236fe78 bf01f708 bf01f350 bf021018 c22f0800
+[ 2095.848632] fe80: c236fe9c ca5adb40 c236feac c236fe98 c0b0de78 bf01f6dc c22f0810 bf021018
+[ 2095.856849] fea0: c236fed4 c236feb0 c0b0aa10 c0b0de34 c22f0810 bf021018 c193e5d8 c22f0854
+[ 2095.865065] fec0: c01002a4 c236e000 c236fef4 c236fed8 c0b0bf30 c0b0a8b8 bf021018 bf021080
+[ 2095.873282] fee0: 00000800 00000081 c236ff0c c236fef8 c0b0a024 c0b0be58 bf021018 bf021080
+[ 2095.881499] ff00: c236ff24 c236ff10 c0b0c848 c0b09fd0 00000000 bf021080 c236ff34 c236ff28
+[ 2095.889715] ff20: c0b0dba4 c0b0c81c c236ff44 c236ff38 bf01f730 c0b0db94 c236ffa4 c236ff48
+[ 2095.897932] ff40: c01fc7d0 bf01f724 006d7770 c038ec48 c236ff7c c236ff60 c0387318 c038ed20
+[ 2095.906149] ff60: c55c4600 b6f374d0 00000003 00000006 c236ff94 c236ff80 c03b31cc 78d2aa89
+[ 2095.914366] ff80: 00ea7138 78d2aa89 b6f374d0 bef0adec 00ea7138 bef0abdc 00000000 c236ffa8
+[ 2095.922584] ffa0: c0100060 c01fc648 bef0adec 00ea7138 00ea7174 00000800 00000000 00000002
+[ 2095.930800] ffc0: bef0adec 00ea7138 bef0abdc 00000081 bef0aef1 00ea7138 00ea6190 00000001
+[ 2095.939017] ffe0: 00499f60 bef0ab84 0047ea5f b6cd07e8 00070030 00ea7174 00000000 00000000
+[ 2095.947229] Backtrace: 
+[ 2095.949689] [<c09c2d30>] (ehrpwm_pwm_disable) from [<c09bf430>] (pwm_apply_state+0x280/0x2b
+0)
+[ 2095.958272]  r9:00000000 r8:000f4240 r7:c5d3b1c0 r6:c236fe48 r5:00000000 r4:c5d3bc00
+[ 2095.966047] [<c09bf1b0>] (pwm_apply_state) from [<bf01f3b0>] (pwm_disable+0x6c/0xa4 [pwm])
+[ 2095.974379]  r10:00000081 r9:c236e000 r8:c193e61c r7:bf021018 r6:c193e5d8 r5:bf021018
+[ 2095.982245]  r4:c22f0810 r3:c236fe48
+[ 2095.985833] [<bf01f344>] (pwm_disable [pwm]) from [<bf01f708>] (led_pwm_remove+0x38/0x48 [p
+wm])
+[ 2095.994587] [<bf01f6d0>] (led_pwm_remove [pwm]) from [<c0b0de78>] (platform_remove+0x50/0x6
+c)
+[ 2096.003165] [<c0b0de28>] (platform_remove) from [<c0b0aa10>] (__device_release_driver+0x164
+/0x238)
+[ 2096.012185]  r5:bf021018 r4:c22f0810
+[ 2096.015772] [<c0b0a8ac>] (__device_release_driver) from [<c0b0bf30>] (driver_detach+0xe4/0x
+124)
+[ 2096.024526]  r9:c236e000 r8:c01002a4 r7:c22f0854 r6:c193e5d8 r5:bf021018 r4:c22f0810
+[ 2096.032302] [<c0b0be4c>] (driver_detach) from [<c0b0a024>] (bus_remove_driver+0x60/0xdc)
+[ 2096.040443]  r7:00000081 r6:00000800 r5:bf021080 r4:bf021018
+[ 2096.046125] [<c0b09fc4>] (bus_remove_driver) from [<c0b0c848>] (driver_unregister+0x38/0x5c
+)
+[ 2096.054614]  r5:bf021080 r4:bf021018
+[ 2096.058203] [<c0b0c810>] (driver_unregister) from [<c0b0dba4>] (platform_driver_unregister+
+0x1c/0x20)
+[ 2096.067475]  r5:bf021080 r4:00000000
+[ 2096.071062] [<c0b0db88>] (platform_driver_unregister) from [<bf01f730>] (led_pwm_driver_exi
+t+0x18/0x8e8 [pwm])
+[ 2096.081121] [<bf01f718>] (led_pwm_driver_exit [pwm]) from [<c01fc7d0>] (sys_delete_module+0
+x194/0x2a0)
+[ 2096.090489] [<c01fc63c>] (sys_delete_module) from [<c0100060>] (ret_fast_syscall+0x0/0x48)
+[ 2096.098801] Exception stack(0xc236ffa8 to 0xc236fff0)
+[ 2096.103879] ffa0:                   bef0adec 00ea7138 00ea7174 00000800 00000000 00000002
+[ 2096.112097] ffc0: bef0adec 00ea7138 bef0abdc 00000081 bef0aef1 00ea7138 00ea6190 00000001
+[ 2096.120312] ffe0: 00499f60 bef0ab84 0047ea5f b6cd07e8
+[ 2096.125387]  r6:bef0abdc r5:00ea7138 r4:bef0adec
+[ 2096.130028] Code: 01a07002 e283801a 13a06004 03a06001 (e1d830b0) 
+[ 2096.136154] ---[ end trace 4fa7522b81a12a67 ]---
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.632136] Internal error: : 1028 [#1] SMP ARM
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.797218] Process rmmod (pid: 2381, stack limit = 0xcae975c1)
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.803167] Stack: (0xc236fde8 to 0xc2370000)
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.807547] fde0:                   c5d3bc00 00000000 c236fe48 c5d3b1c0 000f4240 00
+000000
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.815764] fe00: c236fe3c c236fe10 c09bf430 c09c2d3c c236fe48 c22f0810 bf021018 c1
+93e5d8
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.823981] fe20: bf021018 c193e61c c236e000 00000081 c236fe74 c236fe40 bf01f3b0 c0
+9bf1bc
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.832198] fe40: c15eb788 c5d3bc00 000f4240 00000000 000f4240 00000000 00000000 00
+000000
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.840415] fe60: c0439d4c 78d2aa89 c236fe94 c236fe78 bf01f708 bf01f350 bf021018 c2
+2f0800
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.848632] fe80: c236fe9c ca5adb40 c236feac c236fe98 c0b0de78 bf01f6dc c22f0810 bf
+021018
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.856849] fea0: c236fed4 c236feb0 c0b0aa10 c0b0de34 c22f0810 bf021018 c193e5d8 c2
+2f0854
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.865065] fec0: c01002a4 c236e000 c236fef4 c236fed8 c0b0bf30 c0b0a8b8 bf021018 bf
+021080
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.873282] fee0: 00000800 00000081 c236ff0c c236fef8 c0b0a024 c0b0be58 bf021018 bf
+021080
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.881499] ff00: c236ff24 c236ff10 c0b0c848 c0b09fd0 00000000 bf021080 c236ff34 c2
+36ff28
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.889715] ff20: c0b0dba4 c0b0c81c c236ff44 c236ff38 bf01f730 c0b0db94 c236ffa4 c2
+36ff48
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.897932] ff40: c01fc7d0 bf01f724 006d7770 c038ec48 c236ff7c c236ff60 c0387318 c0
+38ed20
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.906149] ff60: c55c4600 b6f374d0 00000003 00000006 c236ff94 c236ff80 c03b31cc 78
+d2aa89
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.914366] ff80: 00ea7138 78d2aa89 b6f374d0 bef0adec 00ea7138 bef0abdc 00000000 c2
+36ffa8
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.922584] ffa0: c0100060 c01fc648 bef0adec 00ea7138 00ea7174 00000800 00000000 00
+000002
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.930800] ffc0: bef0adec 00ea7138 bef0abdc 00000081 bef0aef1 00ea7138 00ea6190 00
+000001
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.939017] ffe0: 00499f60 bef0ab84 0047ea5f b6cd07e8 00070030 00ea7174 00000000 00
+000000
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.947229] Backtrace: 
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.949689] [<c09c2d30>] (ehrpwm_pwm_disable) from [<c09bf430>] (pwm_apply_state+0x
+280/0x2b0)
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.958272]  r9:00000000 r8:000f4240 r7:c5d3b1c0 r6:c236fe48 r5:00000000 r4:c5d3bc0
+0
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.966047] [<c09bf1b0>] (pwm_apply_state) from [<bf01f3b0>] (pwm_disable+0x6c/0xa4
+ [pwm])
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.974379]  r10:00000081 r9:c236e000 r8:c193e61c r7:bf021018 r6:c193e5d8 r5:bf0210
+18
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.982245]  r4:c22f0810 r3:c236fe48
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.985833] [<bf01f344>] (pwm_disable [pwm]) from [<bf01f708>] (led_pwm_remove+0x38
+/0x48 [pwm])
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2095.994587] [<bf01f6d0>] (led_pwm_remove [pwm]) from [<c0b0de78>] (platform_remove+
+0x50/0x6c)
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2096.003165] [<c0b0de28>] (platform_remove) from [<c0b0aa10>] (__device_release_driv
+er+0x164/0x238)
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2096.012185]  r5:bf021018 r4:c22f0810
+
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 2096.015772] [<c0b0a8ac>] (__device_rel
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ 
+Message from syslogd@arm at May 19 13:11:47 ...
+ kernel:[ Segmentation fault
+
+
+
+After that, I got error
