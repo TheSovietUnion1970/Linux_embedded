@@ -1,0 +1,56 @@
+&am33xx_pinmux {
+	ehrpwm1_pins: ehrpwm1_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x848, PIN_OUTPUT | MUX_MODE6) /* P9.14, EHRPWM1A */
+			AM33XX_IOPAD(0x84c, PIN_OUTPUT | MUX_MODE6) /* P9.16, EHRPWM1B */
+		>;
+	};
+
+	gpio_pins: gpio_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x848, PIN_OUTPUT | MUX_MODE7) /* P9.14, gpio50 */
+			AM33XX_IOPAD(0x84c, PIN_OUTPUT | MUX_MODE7) /* P9.16, gpio51 */
+			AM33XX_IOPAD(0x870, PIN_OUTPUT | MUX_MODE7) /* P9.11, gpio0_30 */
+		>;
+	};
+
+
+	irq_pin_pins: irq_pin_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x840, PIN_INPUT_PULLUP | MUX_MODE7) /* P9.15, gpio1_16 as IRQ */
+		>;
+	};
+};
+
+&gpio1 {
+    status = "okay";
+};
+
+&epwmss1 {
+    status = "okay";
+
+    ehrpwm1: pwm@200 {
+		#pwm-cells = <2>;
+        status = "okay";
+    };
+};
+
+/ {
+    foo_device {
+        compatible = "gpio-descriptor-based";
+        pinctrl-names = "default", "sleep", "irq";
+        pinctrl-0 = <&ehrpwm1_pins>;
+        pinctrl-1 = <&gpio_pins>;
+		pinctrl-2 = <&irq_pin_pins>;
+
+        led30-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>; /* gpio0_30 */
+        led50-gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>; /* gpio1_18 */
+
+        pwms = <&ehrpwm1 0 1000000>;
+        pwm-names = "led50";
+
+		interrupts-extended = <&gpio1 16 IRQ_TYPE_EDGE_RISING>;
+
+        status = "okay";
+    };
+};
