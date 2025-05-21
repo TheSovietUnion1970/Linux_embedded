@@ -1,3 +1,9 @@
-bridging with a Wi-Fi interface (wlp1s0) likely failed due to 4-address mode (WDS) limitations, further breaking connectivity.
+registers in PWM, IRQ
+PWM:
+	TBCL[CTRMODE]@0 -> Up or down mode
+	CMPA[CMPA]@12 -> compare to TBCNT
+	AQCTLA[]@16 -> action required
 
-layers in network
+IRQ:
+	root of handlers
+	check the interrupt vector table has user handler 
