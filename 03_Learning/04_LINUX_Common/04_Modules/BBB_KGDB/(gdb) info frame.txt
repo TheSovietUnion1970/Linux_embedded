@@ -16,8 +16,8 @@ Symbol "c" is a complex DWARF expression:
      0: DW_OP_fbreg -21
 
 ==>:
-
-.. stack ..
+========================================= Start of Frame =========================================
+== stack (down) ==============
 0xc9ffbfb0: Caller’s frame (higher address, as the stack grows downward) (previous frame)
 
 0xc9ffbf80: Current frame base (top of thread_fn’s frame).
@@ -28,9 +28,16 @@ Symbol "c" is a complex DWARF expression:
 
 0xc9ffbf70: Saved frame pointer (r11) -> 0xc9ffbf80
 0xc9ffbf60: Current sp (bottom of the frame after allocating space).
-
-.. text ..
+== heap (up) ==============
+...
+== bss (up) ===============
+...
+== data (up) ==============
+...
+== text (up) ==============
 
 0xc016771c: instructions in .text
 
+0xbf01a250 <- pc
+========================================= End of Frame =========================================
 ==>: To get the address of ocal variable address c: 0xc9ffbf80 - 0x15 = C9FF BF6B
