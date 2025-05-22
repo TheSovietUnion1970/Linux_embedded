@@ -1,0 +1,20 @@
+                AREA vectors, CODE, READONLY
+                ENTRY
+Vector_Table
+                LDR pc, Reset_Addr
+                LDR pc, Undefined_Addr
+                LDR pc, SVC_Addr
+                LDR pc, Prefetch_Addr
+                LDR pc, Abort_Addr
+                NOP                    ;Reserved vector
+                LDR pc, IRQ_Addr
+FIQ_Handler
+                ; FIQ handler code - max 4kB in size
+Reset_Addr      DCD Reset_Handler
+Undefined_Addr  DCD Undefined_Handler
+SVC_Addr        DCD SVC_Handler
+Prefetch_Addr   DCD Prefetch_Handler
+Abort_Addr      DCD Abort_Handler
+IRQ_Addr        DCD IRQ_Handler
+                ...
+                END
