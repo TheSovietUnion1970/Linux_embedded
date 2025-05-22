@@ -7,7 +7,7 @@ Vector_Table
                 LDR pc, Prefetch_Addr
                 LDR pc, Abort_Addr
                 NOP                    ;Reserved vector
-                LDR pc, IRQ_Addr
+                LDR pc, IRQ_Addr                                  -> 0x00000018
 FIQ_Handler
                 ; FIQ handler code - max 4kB in size
 Reset_Addr      DCD Reset_Handler
@@ -15,6 +15,6 @@ Undefined_Addr  DCD Undefined_Handler
 SVC_Addr        DCD SVC_Handler
 Prefetch_Addr   DCD Prefetch_Handler
 Abort_Addr      DCD Abort_Handler
-IRQ_Addr        DCD IRQ_Handler
+IRQ_Addr        DCD IRQ_Handler = __irq_svc
                 ...
                 END
