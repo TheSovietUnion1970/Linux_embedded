@@ -1,0 +1,8 @@
+/ {
+    dma_transfer_device {
+        compatible = "memcpy-dma-transfer";
+        dmas = <&edma 20 0>;
+        dma-names = "memcpy";
+        status = "okay";
+    };
+};

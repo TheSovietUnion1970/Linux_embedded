@@ -1,0 +1,3 @@
+echo 1 | sudo tee /sys/kernel/debug/dma_driver/trigger_transfer
+sudo xxd /sys/kernel/debug/dma_driver/dst_buffer
+sudo xxd /sys/kernel/debug/dma_driver/src_buffer
