@@ -1,0 +1,102 @@
+edma_completion_handler (echan=0xc5d49800) at drivers/dma/ti/edma.c:1515:
+struct edma_chan {
+	struct virt_dma_chan		vchan;
+	struct list_head		node;
+	struct edma_desc		*edesc;
+	struct edma_cc			*ecc;
+	struct edma_tc			*tc;
+	int				ch_num;
+	bool				alloced;
+	bool				hw_triggered;
+	int				slot[EDMA_MAX_SLOTS];
+	int				missed;
+	struct dma_slave_config		cfg;
+};
+
+============================================================
+
+(gdb) print *echan->ecc
+$16 = {dev = 0xc642d810, info = 0xc68dd840, base = 0xe0220000, id = 0, legacy_mode = false, 
+  num_channels = 64, num_qchannels = 8, num_region = 4, num_slots = 256, num_tc = 3, 
+  chmap_exist = true, default_queue = EVENTQ_2, ccint = 44, ccerrint = 46, slot_inuse = 0xc68ddec0, 
+  channels_mask = 0xc68dd5c0, dma_slave = {ref = {refcount = {refs = {counter = 8}}}, chancnt = 62, 
+    privatecnt = 7, channels = {next = 0xc5d48060, prev = 0xc5d4cb30}, global_node = {
+      next = 0xc68d7e54, prev = 0xc1934fec <dma_device_list>}, filter = {
+      fn = 0xc09f91fc <edma_filter_fn>, mapcnt = 0, map = 0x0}, cap_mask = {bits = {3328}}, 
+    desc_metadata_modes = DESC_METADATA_NONE, max_xor = 0, max_pq = 0, 
+    copy_align = DMAENGINE_ALIGN_1_BYTE, xor_align = DMAENGINE_ALIGN_1_BYTE, 
+    pq_align = DMAENGINE_ALIGN_1_BYTE, fill_align = DMAENGINE_ALIGN_1_BYTE, dev_id = 0, 
+    dev = 0xc642d810, owner = 0x0, chan_ida = {xa = {xa_lock = {{rlock = {raw_lock = {{
+                  slock = 4063294, tickets = {owner = 62, next = 62}}}}}}, xa_flags = 33554437, 
+        xa_head = 0xc6992780}}, chan_mutex = {owner = {counter = 0}, wait_lock = {raw_lock = {{
+            slock = 0, tickets = {owner = 0, next = 0}}}}, osq = {tail = {counter = 0}}, 
+      wait_list = {next = 0xc68d7ce8, prev = 0xc68d7ce8}}, src_addr_widths = 30, 
+    dst_addr_widths = 30, directions = 6, min_burst = 0, max_burst = 32767, max_sg_burst = 0, 
+    descriptor_reuse = false, residue_granularity = DMA_RESIDUE_GRANULARITY_BURST, 
+    device_alloc_chan_resources = 0xc09fc6c8 <edma_alloc_chan_resources>, 
+    device_router_config = 0x0, device_free_chan_resources = 0xc09fc3c8 <edma_free_chan_resources>, 
+    device_prep_dma_memcpy = 0x0, device_prep_dma_xor = 0x0, device_prep_dma_xor_val = 0x0, 
+    device_prep_dma_pq = 0x0, device_prep_dma_pq_val = 0x0, device_prep_dma_memset = 0x0, 
+    device_prep_dma_memset_sg = 0x0, device_prep_dma_interrupt = 0x0, 
+    device_prep_slave_sg = 0xc09fc06c <edma_prep_slave_sg>, 
+    device_prep_dma_cyclic = 0xc09fb890 <edma_prep_dma_cyclic>, device_prep_interleaved_dma = 0x0, 
+    device_prep_dma_imm_data = 0x0, device_caps = 0x0, 
+    device_config = 0xc09f9160 <edma_slave_config>, device_pause = 0xc09f9578 <edma_dma_pause>, 
+    device_resume = 0xc09f952c <edma_dma_resume>, 
+    device_terminate_all = 0xc09fa390 <edma_terminate_all>, 
+    device_synchronize = 0xc09f90a0 <edma_synchronize>, 
+    device_tx_status = 0xc09f9fc8 <edma_tx_status>, 
+    device_issue_pending = 0xc09f9c68 <edma_issue_pending>, device_release = 0x0, 
+    dbg_summary_show = 0x0, dbg_dev_root = 0xc3288000}, dma_memcpy = 0xc68d7e40, 
+  slave_chans = 0xc5d48040, tc_list = 0xc697e640, dummy_slot = 0}
+
+(gdb) print *echan->tc
+$15 = {node = 0xdf958438, id = 0}
+
+(gdb) print echan->missed
+$17 = 0
+
+(gdb) print echan->missed
+$17 = 0
+(gdb) print echan->ch_num
+$18 = 20
+(gdb) print echan->alloced 
+$19 = true
+(gdb) print echan->hw_triggered 
+$20 = false
+(gdb) print echan->slot
+$21 = {65, -1 <repeats 19 times>}
+
+(gdb) print echan->vchan
+$22 = {chan = {device = 0xc68d7e40, slave = 0x0, cookie = 11, completed_cookie = 10, chan_id = 0, 
+    dev = 0xc69a4200, name = 0x0, dbg_client_name = 0x0, device_node = {next = 0xc5d49950, 
+      prev = 0xc68d7e4c}, local = 0xc17e4590, client_count = 1, table_count = 0, router = 0x0, 
+    route_data = 0x0, private = 0x0}, task = {next = 0x0, state = 0, count = {counter = 0}, 
+    use_callback = true, {func = 0xc09f67e0 <vchan_complete>, 
+      callback = 0xc09f67e0 <vchan_complete>}, data = 0}, desc_free = 0xc09f8eb8 <edma_desc_free>, 
+  lock = {{rlock = {raw_lock = {{slock = 3145776, tickets = {owner = 48, next = 48}}}}}}, 
+  desc_allocated = {next = 0xc5d49860, prev = 0xc5d49860}, desc_submitted = {next = 0xc5d49868, 
+    prev = 0xc5d49868}, desc_issued = {next = 0xc5d49870, prev = 0xc5d49870}, desc_completed = {
+    next = 0xc5d49878, prev = 0xc5d49878}, desc_terminated = {next = 0xc5d49880, 
+    prev = 0xc5d49880}, cyclic = 0x0}
+
+(gdb) print echan->node
+$23 = {next = 0xc5d4988c, prev = 0xc5d4988c}
+
+(gdb) print *echan->edesc
+$25 = {vdesc = {tx = {cookie = 11, flags = (DMA_PREP_INTERRUPT | DMA_CTRL_ACK), phys = 0, 
+      chan = 0xc5d49800, tx_submit = 0xc09f66f8 <vchan_tx_submit>, 
+      desc_free = 0xc09f6b18 <vchan_tx_desc_free>, callback = 0xc019730c <complete>, 
+      callback_result = 0x0, callback_param = 0xcf81d588, unmap = 0x0, 
+      desc_metadata_mode = DESC_METADATA_NONE, metadata_ops = 0x0}, tx_result = {
+      result = DMA_TRANS_NOERROR, residue = 0}, node = {next = 0x100, prev = 0x122}}, node = {
+    next = 0x0, prev = 0x0}, direction = DMA_MEM_TO_MEM, cyclic = 0, polled = false, absync = 0, 
+  pset_nr = 1, echan = 0xc5d49800, processed = 1, processed_stat = 0, sg_len = 32, residue = 32, 
+  residue_stat = 32, pset = 0xcf81dbb4}
+
+(gdb) print echan->cfg
+$26 = {direction = DMA_MEM_TO_MEM, src_addr = 0, dst_addr = 0, 
+  src_addr_width = DMA_SLAVE_BUSWIDTH_UNDEFINED, dst_addr_width = DMA_SLAVE_BUSWIDTH_UNDEFINED, 
+  src_maxburst = 0, dst_maxburst = 0, src_port_window_size = 0, dst_port_window_size = 0, 
+  device_fc = false, slave_id = 0, peripheral_config = 0x0, peripheral_size = 0}
+

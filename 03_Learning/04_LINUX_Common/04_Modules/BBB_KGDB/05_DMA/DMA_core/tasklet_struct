@@ -1,0 +1,23 @@
+chan_complete (t=0xc5d49840) at drivers/dma/virt-dma.c:103
+
+break print *t
+$40 = {next = 0x0, state = 2, count = {counter = 0}, use_callback = true, {
+    func = 0xc09f67e0 <vchan_complete>, callback = 0xc09f67e0 <vchan_complete>}, data = 0}
+
+(gdb) print *vc
+$41 = {chan = {device = 0xc68d7e40, slave = 0x0, cookie = 11, completed_cookie = 11, chan_id = 0, 
+    dev = 0xc69a4200, name = 0x0, dbg_client_name = 0x0, device_node = {next = 0xc5d49950, 
+      prev = 0xc68d7e4c}, local = 0xc17e4590, client_count = 1, table_count = 0, router = 0x0, 
+    route_data = 0x0, private = 0x0}, task = {next = 0x0, state = 2, count = {counter = 0}, 
+    use_callback = true, {func = 0xc09f67e0 <vchan_complete>, 
+      callback = 0xc09f67e0 <vchan_complete>}, data = 0}, desc_free = 0xc09f8eb8 <edma_desc_free>, 
+  lock = {{rlock = {raw_lock = {{slock = 3276850, tickets = {owner = 50, next = 50}}}}}}, 
+  desc_allocated = {next = 0xc5d49860, prev = 0xc5d49860}, desc_submitted = {next = 0xc5d49868, 
+    prev = 0xc5d49868}, desc_issued = {next = 0xc5d49870, prev = 0xc5d49870}, desc_completed = {
+    next = 0xc5d49878, prev = 0xc5d49878}, desc_terminated = {next = 0xc5d49880, 
+    prev = 0xc5d49880}, cyclic = 0x0}
+
+(gdb) print cb
+$42 = {callback = 0x0, callback_result = 0x0, callback_param = 0x0}
+
+

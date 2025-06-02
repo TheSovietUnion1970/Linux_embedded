@@ -1,0 +1,55 @@
+vchan_cookie_complete (vd=0xcf81db40) at drivers/dma/ti/../virt-dma.h:105
+
+
+struct virt_dma_desc {
+	struct dma_async_tx_descriptor tx;
+	struct dmaengine_result tx_result;
+	/* protected by vc.lock */
+	struct list_head node;
+};
+
+struct virt_dma_chan {
+	struct dma_chan	chan;
+	struct tasklet_struct task;
+	void (*desc_free)(struct virt_dma_desc *);
+
+	spinlock_t lock;
+
+	/* protected by vc.lock */
+	struct list_head desc_allocated;
+	struct list_head desc_submitted;
+	struct list_head desc_issued;
+	struct list_head desc_completed;
+	struct list_head desc_terminated;
+
+	struct virt_dma_desc *cyclic;
+};
+
+========================
+
+(gdb) print *vc
+$31 = {chan = {device = 0xc68d7e40, slave = 0x0, cookie = 11, completed_cookie = 11, chan_id = 0, 
+    dev = 0xc69a4200, name = 0x0, dbg_client_name = 0x0, device_node = {next = 0xc5d49950, 
+      prev = 0xc68d7e4c}, local = 0xc17e4590, client_count = 1, table_count = 0, router = 0x0, 
+    route_data = 0x0, private = 0x0}, task = {next = 0x0, state = 0, count = {counter = 0}, 
+    use_callback = true, {func = 0xc09f67e0 <vchan_complete>, 
+      callback = 0xc09f67e0 <vchan_complete>}, data = 0}, desc_free = 0xc09f8eb8 <edma_desc_free>, 
+  lock = {{rlock = {raw_lock = {{slock = 3211312, tickets = {owner = 48, next = 49}}}}}}, 
+  desc_allocated = {next = 0xc5d49860, prev = 0xc5d49860}, desc_submitted = {next = 0xc5d49868, 
+    prev = 0xc5d49868}, desc_issued = {next = 0xc5d49870, prev = 0xc5d49870}, desc_completed = {
+    next = 0xcf81db78, prev = 0xcf81db78}, desc_terminated = {next = 0xc5d49880, 
+    prev = 0xc5d49880}, cyclic = 0x0}
+(gdb) print *vd
+$32 = {tx = {cookie = 0, flags = (DMA_PREP_INTERRUPT | DMA_CTRL_ACK), phys = 0, chan = 0xc5d49800, 
+    tx_submit = 0xc09f66f8 <vchan_tx_submit>, desc_free = 0xc09f6b18 <vchan_tx_desc_free>, 
+    callback = 0xc019730c <complete>, callback_result = 0x0, callback_param = 0xcf81d588, 
+    unmap = 0x0, desc_metadata_mode = DESC_METADATA_NONE, metadata_ops = 0x0}, tx_result = {
+    result = DMA_TRANS_NOERROR, residue = 0}, node = {next = 0xc5d49878, prev = 0xc5d49878}}
+    
+    (gdb) print *vd->tx.chan
+$34 = {device = 0xc68d7e40, slave = 0x0, cookie = 11, completed_cookie = 11, chan_id = 0, 
+  dev = 0xc69a4200, name = 0x0, dbg_client_name = 0x0, device_node = {next = 0xc5d49950, 
+    prev = 0xc68d7e4c}, local = 0xc17e4590, client_count = 1, table_count = 0, router = 0x0, 
+  route_data = 0x0, private = 0x0}
+
+

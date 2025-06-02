@@ -1,0 +1,20 @@
+0xc09f69e0 in dmaengine_desc_callback_invoke (result=0xcf81db70, cb=0xca675d28)
+    at drivers/dma/dmaengine.h:145
+    
+struct dmaengine_desc_callback {
+	dma_async_tx_callback callback;
+	dma_async_tx_callback_result callback_result;
+	void *callback_param;
+};
+
+struct dmaengine_result {
+	enum dmaengine_tx_result result;
+	u32 residue;
+};
+
+=======================================
+
+(gdb) print *cb
+$46 = {callback = 0xc019730c <complete>, callback_result = 0x0, callback_param = 0xcf81d588}
+(gdb) print *result
+$47 = {result = DMA_TRANS_NOERROR, residue = 0}

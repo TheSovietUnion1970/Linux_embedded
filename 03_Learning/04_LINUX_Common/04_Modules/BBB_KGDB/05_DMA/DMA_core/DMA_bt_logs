@@ -1,0 +1,44 @@
+#0  dma_cookie_complete (tx=<optimized out>) at drivers/dma/ti/../virt-dma.h:96
+#1  vchan_cookie_complete (vd=0xcf81d180) at drivers/dma/ti/../virt-dma.h:100
+#2  edma_completion_handler (echan=0xc5d49800) at drivers/dma/ti/edma.c:1525
+#3  dma_irq_handler (irq=<optimized out>, data=0xc68d7c40) at drivers/dma/ti/edma.c:1585
+#4  0xc01b8590 in __handle_irq_event_percpu (desc=desc@entry=0xc697df00, 
+    flags=flags@entry=0xc69f1de0) at kernel/irq/handle.c:156
+#5  0xc01b87f0 in handle_irq_event_percpu (desc=0xc697df00) at kernel/irq/handle.c:196
+#6  handle_irq_event (desc=desc@entry=0xc697df00) at kernel/irq/handle.c:213
+#7  0xc01bd784 in handle_level_irq (desc=0xc697df00) at kernel/irq/chip.c:650
+#8  0xc01b7e10 in generic_handle_irq_desc (desc=<optimized out>) at ./include/linux/irqdesc.h:158
+#9  handle_irq_desc (desc=<optimized out>) at kernel/irq/irqdesc.c:652
+#10 handle_domain_irq (domain=<optimized out>, hwirq=12, regs=<optimized out>)
+    at kernel/irq/irqdesc.c:707
+#11 0xc0101318 in omap_intc_handle_irq (regs=<optimized out>) at drivers/irqchip/irq-omap-intc.c:360
+#12 0xc0100b7c in __irq_svc () at arch/arm/kernel/entry-armv.S:205
+
+
+Thread 48 hit Breakpoint 8, complete (x=0xcf81d588) at kernel/sched/completion.c:29
+29	{
+  [infrun] infrun_async: enable=0
+  [infrun] reset: reason=handling event
+  [infrun] maybe_set_commit_resumed_all_targets: not requesting commit-resumed for target remote, no resumed threads
+(gdb) [infrun] fetch_inferior_event: exit
+bt
+#0  complete (x=0xcf81d588) at kernel/sched/completion.c:29
+#1  0xc09f69e0 in dmaengine_desc_callback_invoke (result=0xcf81d1b0, cb=0xc69f1d28)
+    at drivers/dma/dmaengine.h:145
+#2  dmaengine_desc_callback_invoke (result=0xcf81d1b0, cb=0xc69f1d28) at drivers/dma/dmaengine.h:132
+#3  vchan_complete (t=<optimized out>) at drivers/dma/virt-dma.c:107
+#4  0xc0145e88 in tasklet_action_common (tl_head=0xdf918324, softirq_nr=softirq_nr@entry=6, 
+    a=<optimized out>) at kernel/softirq.c:790
+#5  0xc0145ed8 in tasklet_action (a=<optimized out>) at kernel/softirq.c:809
+#6  0xc014564c in handle_softirqs (ksirqd=ksirqd@entry=false) at kernel/softirq.c:558
+#7  0xc0145c78 in __do_softirq () at kernel/softirq.c:592
+#8  do_softirq_own_stack () at ./include/asm-generic/softirq_stack.h:10
+#9  invoke_softirq () at kernel/softirq.c:439
+#10 __irq_exit_rcu () at kernel/softirq.c:641
+#11 irq_exit () at kernel/softirq.c:665
+#12 0xc01b7e14 in handle_domain_irq (domain=<optimized out>, hwirq=12, regs=<optimized out>)
+    at kernel/irq/irqdesc.c:711
+#13 0xc0101318 in omap_intc_handle_irq (regs=<optimized out>) at drivers/irqchip/irq-omap-intc.c:360
+#14 0xc0100b7c in __irq_svc () at arch/arm/kernel/entry-armv.S:205
+
+
