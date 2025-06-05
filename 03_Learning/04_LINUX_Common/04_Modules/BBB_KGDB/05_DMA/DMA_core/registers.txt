@@ -1,0 +1,49 @@
+ecc-> base = 49000000
+
+===== PaRAM Set (p.1583):
+EDMA Base Address + 4820h -> EDMA Base Address + 483Fh = PaRAM Set 65
+(size = 32 bytes)
+	=> 49004820 (4900000 + n(hex)*20)
+
+===== EDMACC:
+SH_ESR = 0x10
+ESR (Event Set Register): EDMA_SHADOW0 + offset + (i << 2) = 0x2010
+	=> SH_ESR -> 49002010
+	   ESR -> 49001010
+
+DCHMAP_N: DCHMAP_0 to DCHMAP_63 Register - n
+	=> 49000000 + (n*4)(hex)
+
+IPR: Read IPR register 1h = Interrupt transfer completion code is detected
+	=> 49001068
+
+EER (Event Enable Register): 1h = Event is enabled. An external event latched in the event register (ER) is evaluated by the EDMA3CC
+	=> 49001020
+
+ER (Event Register): 1h = Event is enabled. An external event latched in the event register (ER) is evaluated by the EDMA3CC
+	=> 49001000
+
+EMR (Event Missed Register): 1h = Missed event occurred
+	=> 49001300
+
+IER (Interrupt Enable Register): 1h = Interrupt is enabled
+	=> 49001050
+
+ICR (Interrupt Clear Register): 1h = Corresponding bit in the interrupt pending register (IPR) is cleared (In = 0)
+	=> 49001070
+
+
+DRAE (DMA Region Access Enable): 
+DRAE0: 1h = Accesses via region 0 address space to bit 31 to 0 in any DMA channel register are allowed
+	=> 49000340
+
+
+
+
+
+
+
+
+
+
+

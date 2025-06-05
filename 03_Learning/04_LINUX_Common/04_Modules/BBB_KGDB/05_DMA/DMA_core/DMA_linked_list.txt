@@ -1,0 +1,29 @@
++ list_move_tail(&vd->node, &vc->desc_submitted) => cut the link with current head list + join tail of the new head list (desc_submitted)
+
++ list_splice_tail_init(&vc->desc_submitted, &vc->desc_issued) => mv all nodes in desc_submitted to desc_issued + reinitialize the empty desc_submitted
+
++ list_empty(&vc->desc_issued) => TRUE - desc_issued is empty, FALSE - desc_issued is non-empty
+
+======== DMA functions handles desc:
+
+vchan_tx_prep -> list_add_tail(&vd->node, &vc->desc_allocated);
+vchan_tx_submit -> list_move_tail(&vd->node, &vc->desc_submitted);
+vchan_issue_pending -> list_splice_tail_init(&vc->desc_submitted, &vc->desc_issued);
+vchan_cookie_complete -> list_add_tail(&vd->node, &vc->desc_completed);
+vchan_terminate_vdesc -> list_add_tail(&vd->node, &vc->desc_terminated);
+vchan_tx_desc_free -> list_del(&vd->node);
+
+======== DMA - virt_dma_desc:
++ node
++ result
++ tx -> cookie
+	tx_submit(tx) pointer
+	desc_free(tx) pointer
+
+	callback <complete>
+
+======== DMA - virt_dma_chan:
++ tasklet_struct -> (callback <vchan_complete> = calling <complete> + free desc(*) )
++ desc_free(virt_dma_desc) pointer(*)
++ desc: ...
+
