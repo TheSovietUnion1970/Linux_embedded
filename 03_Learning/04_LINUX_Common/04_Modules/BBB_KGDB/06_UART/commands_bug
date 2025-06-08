@@ -1,0 +1,25 @@
+ls -lh /boot/dtbs/5.15.177/ | grep boneblack.dtb
+
+setenv fdtfile am335x-boneblack.dtb
+
+ls -lh ~/build_BBB_custom/linux-stable-rcn-ee/arch/arm/boot/dts/am335x-boneblack.dtb debian@192.168.137.2:/boot/dtbs/5.15.177/ | grep boneblack.dtb
+
+====
+ls /sys/bus/platform/devices/481a8000.serial/driver
+echo 481a8000.serial | sudo tee /sys/bus/platform/devices/481a8000.serial/driver/unbind
+sudo insmod uart4_t.ko
+
+
+--=========
+sudo mknod /dev/bbb_uart4 c 240 0
+ls -l /dev/bbb_uart4
+
+echo "Hello UART4" | sudo tee /dev/bbb_uart4
+cat /dev/bbb_uart4
+
+=============
+
+sudo dtc -I fs -O dts /sys/firmware/devicetree/base > runtime.dts
+grep -A 20 "target-module@a8000" runtime.dts
+grep -A 10 "serial@0" runtime.dts
+grep -A 40 "uart4-based" runtime.dts
