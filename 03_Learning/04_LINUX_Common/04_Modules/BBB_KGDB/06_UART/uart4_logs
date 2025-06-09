@@ -1,0 +1,113 @@
+debian@arm:~$ echo "Hello UART4, everone" | sudo tee /dev/bbb_uart4             
+Hello UART4, everone[ 3319.089572] TX - count = 21
+
+[ 3319.094120] bbb-uart4 481a8000.uart4_device: Write: LSR=0x60
+[ 3319.100012] bbb-uart4 481a8000.uart4_device: Write: LSR=0x0
+[ 3319.105641] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.111352] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.116987] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.122710] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.128336] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.134046] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.139668] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.145378] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.151013] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.156724] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.162347] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.168056] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.173676] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.179386] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.185008] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.190716] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.196338] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.202047] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.207669] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.213379] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.219003] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.224712] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.230338] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.236050] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.241672] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.247382] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.253004] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.258714] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.264335] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.270045] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.275667] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.281375] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.286996] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.292705] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.298327] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.304036] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.309666] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+[ 3319.315376] bbb-uart4 481a8000.uart4_device: Write: LSR=0x1
+[ 3319.321005] bbb-uart4 481a8000.uart4_device: Write: LSR=0x61
+debian@arm:~$ cat /dev/bbb_uart4
+[ 3329.463226] bbb-uart4 481a8000.uart4_device: RX - count = 131072
+[ 3329.469489] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=H
+[ 3329.475881] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=e
+[ 3329.482213] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=l
+[ 3329.488537] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=l
+[ 3329.494868] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=o
+[ 3329.501192] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte= 
+[ 3329.507515] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=U
+[ 3329.513837] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=A
+[ 3329.520159] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=R
+[ 3329.526480] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=T
+[ 3329.532800] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=4
+[ 3329.539121] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=,
+[ 3329.545442] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte= 
+[ 3329.551765] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=e
+[ 3329.558086] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=v
+[ 3329.564408] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=e
+[ 3329.570731] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=r
+[ 3329.577058] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=o
+[ 3329.583392] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=n
+[ 3329.589716] bbb-uart4 481a8000.uart4_device: Read: LSR=0x61, byte=e
+[ 3329.596039] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60, byte=.
+[ 3329.602364] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.607987] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.613620] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.619242] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.624864] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.630486] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.636107] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.641729] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.647351] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.652974] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.658596] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.664218] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.669840] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.675462] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.681083] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.686705] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.692328] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.697950] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.703573] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.709197] bbb-uart4 481a8000.uart4_device: RX timeout, LSR=0x60, read 21 by
+tes
+Hello UART4, everone[ 3329.798357] bbb-uart4 481a8000.uart4_device: RX - count =
+ 131072
+
+[ 3329.806240] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.811997] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.817631] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.823256] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.828880] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.834503] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.840125] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.845748] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.851370] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.856992] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.862613] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.868235] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.873857] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.879480] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.885102] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.890724] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.896345] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.901966] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.907588] bbb-uart4 481a8000.uart4_device: Read: LSR=0x60
+[ 3329.913209] bbb-uart4 481a8000.uart4_device: RX timeout, LSR=0x60, read 0 byt
+es
+
