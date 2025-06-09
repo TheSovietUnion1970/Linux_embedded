@@ -1,0 +1,14 @@
+debian@arm:~$ echo "Soviet Union." | sudo tee /dev/bbb_uart4
+UART_THR/RHR (0x00) = 0x53
+
+debian@arm:~$ cat /dev/bbb_uart4
+UART_THR/RHR (0x00) = 0xD8
+
+UART_DLL (0x0C) = 0x3 (Divisor Latch Low - -> 115200 baud)
+UART_DLH (0x04) = 0 (Divisor Latch Low - -> 115200 baud)
+
+UART_MCR (0x10) = 0x0 (Modem Control Register - local loopback mode - disbaled)
+
+UART_FCR (0x08) = 0xC1 (FIFO control register - enable FIFO, clear TX, RX)
+
+UART_MDR1 (0x20) = 0x0 (Mode definition register - UART 16x mode)
