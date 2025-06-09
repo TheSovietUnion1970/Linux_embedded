@@ -1,0 +1,65 @@
+=== SET_UP ===
+uart0 - base: 0x44e09000
+uart1 - base: 0x48022000
+
+iowrite32(0x2, uart->sysc) => Set this bit to 1 to trigger a module reset
+ioread32(uart->syss) = 1 -> reset completed
+
+UART_MDR1 (0x10) = 0x7 (Modem Control Register -  [1] = IrDA/CIR sleep mode enabled, MODESELECT[0] = disabled)
+
+UART_LCR (0x0C) = 0xBF (Line Control Register - ....)
+
+UART_DLL (0x0C) = 26 (Divisor Latch Low - -> 115200 baud)
+UART_DLH (0x04) = 0 (Divisor Latch Low - -> 115200 baud)
+	(Divisor = 48,000,000 / (16 * 115200) ≈ 26)
+
+UART_LCR (0x0C) = 0x3 (Line Control Register - handle 8-bit data)
+
+UART_FCR (0x08) = 0x7 (FIFO control register - enable FIFO, clear TX, RX)
+
+UART_MDR1 (0x20) = 0x0 (Mode definition register - UART 16x mode)
+
+UART_MCR (0x10) = 0x10 (Modem Control Register - local loopback mode)
+
+=== CHECK ===
+UART_LCR (0x0C) = 0x3 (Line Control Register - handle 8-bit data)
+UART_FCR (0x08) = 0x1 (FIFO control register - enable FIFO)
+UART_MDR1 (0x20) = 0x0 (Mode definition register - UART 16x mode)
+UART_MCR (0x10) = 0x10 (Modem Control Register - local loopback mode)
+
+=== PIN ===
+    uart4_pins: pinmux_uart4_pins {
+        pinctrl-single,pins = <
+            AM33XX_PADCONF(AM335X_PIN_GPMC_WAIT0, PIN_INPUT_PULLUP, MUX_MODE6) /* P9_11: uart4_rxd */
+            AM33XX_PADCONF(AM335X_PIN_GPMC_WPN, PIN_OUTPUT_PULLDOWN, MUX_MODE6) /* P9_13: uart4_txd */
+        >;
+    };
+
+    uart4_pins: pinmux_uart4_pins {
+        pinctrl-single,pins = <
+            AM33XX_PADCONF(0x870, PIN_INPUT_PULLUP, MUX_MODE6) /* P9_11: uart4_rxd */
+            AM33XX_PADCONF(0x874, PIN_OUTPUT_PULLDOWN, MUX_MODE6) /* P9_13: uart4_txd */
+        >;
+    };
+
+-> 0x44e07870, 0x44e07874
+
+=== TRANSFER ===
+UART_LSR (0x14):
+ + bit 5 (TXFIFOE) = 1 (holding reg is empty = data is gone to TSR / FIFO)
+ + bit 0 (RXFIFOE) = 1 (at least 1 data in FIFO)
+
+=== CHECK FLK ===
+clk_get_rate(uart->clk)
+
+sudo mount -t debugfs none /sys/kernel/debug
+cat /sys/kernel/debug/clk/clk_summary | grep uart
+cat /sys/kernel/debug/clk/uart4_fck/clk_enable_count
+
+CM_PER_UART4_CLKCTRL Register (offset = 78h) [reset = 30000h]
+CM_PER_UART5_CLKCTRL Register (offset = 38h) [reset = 30000h]
+
+AM3_L4LS_UART5_CLKCTRL - 0x481a8000 (uart 4 uses)
+AM3_L4LS_UART4_CLKCTRL - 0x481a6000
+
+
