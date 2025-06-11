@@ -10,6 +10,8 @@
 #include <linux/pm_runtime.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
+#include <linux/ctype.h> /* Add this for isprint */
+#include <linux/interrupt.h>
 
 /* AM335x UART register offsets */
 #define UART_THR 0x00 /* Transmit Holding Register */
@@ -24,10 +26,24 @@
 #define UART_SYSC 0x54 /* System Configuration Register */
 #define UART_SYSS 0x58 /* System Status Register */
 #define UART_MDR1 0x20 /* Mode Definition Register 1 */
+#define UART_IIR 0x08 /* Interrupt Identification Register */
 
 /* Line Status Register bits */
 #define UART_LSR_TXFIFOE (1 << 5) /* Transmit FIFO empty */
 #define UART_LSR_DR      (1 << 0) /* Data Ready (Receive FIFO has data) */
+
+/* Interrupt Enable Register bits */
+#define UART_IER_RHR_IT  (1 << 0) /* Received Data Available */
+
+/* Interrupt Enable Register bits */
+#define UART_IIR_IT_PENDING (1 << 0) /* Interrupt pending (0 = pending) */
+#define UART_IIR_CTO_IT  (0x6 << 1) /* Character Timeout (priority 2) */
+#define UART_IIR_RLS_IT  (0x3 << 1) /* Receiver Line Status (priority 1) */
+#define UART_IIR_RHR_IT  (0x2 << 1) /* Received Data Available (priority 2) */
+#define UART_IIR_THR_IT  (0x1 << 1) /* Transmitter Holding Register Empty (priority 3) */
+#define UART_IIR_MSI     (0x0 << 1) /* Modem Status (priority 4) */
+
+#define MAX_NUM_INTERUPTS 50
 
 /* Device structure */
 struct bbb_uart {
@@ -38,7 +54,34 @@ struct bbb_uart {
     struct cdev cdev;
     struct device *dev;
     struct clk *clk;
+
+    int irq;
+    unsigned int count;
+    unsigned long irqFlags;
+
+    unsigned int Tx_Rx_count;
+    char RX_buffer[256];
 };
+
+static irqreturn_t irqHandler(int irq, void *d)
+{
+    struct bbb_uart *dev = d;
+    dev->count++;
+
+    // Read val in UART_RHR to clear IIR from 0xcc to 0xc1
+    printk("%x\n", ioread32(dev->base + UART_IIR));
+    dev->RX_buffer[dev->Tx_Rx_count++] = ioread32(dev->base + UART_RHR);
+
+
+    if (dev->count > MAX_NUM_INTERUPTS){
+        printk("Too many interrupts - IIR=0x%x, LSR=0x%x\n", ioread32(dev->base + UART_IIR), ioread32(dev->base + UART_LSR));
+        iowrite32(0x0, dev->base + UART_IER);
+        dev->count = 0;
+    }
+
+    return IRQ_HANDLED;
+}
+
 
 /* Device tree match table */
 static const struct of_device_id bbb_uart_of_match[] = {
@@ -67,6 +110,12 @@ static ssize_t bbb_uart_write(struct file *filp, const char __user *buf,
     char *kbuf;
     int i;
 
+    /* Re-enable RHR IT */
+    iowrite32(UART_IER_RHR_IT, uart->base + UART_IER);
+
+    uart->count = 0;
+    uart->Tx_Rx_count = 0;
+
     kbuf = kmalloc(count, GFP_KERNEL);
     if (!kbuf)
         return -ENOMEM;
@@ -75,13 +124,14 @@ static ssize_t bbb_uart_write(struct file *filp, const char __user *buf,
         kfree(kbuf);
         return -EFAULT;
     }
+    printk("TX - count = %d\n", count);
 
     for (i = 0; i < count; i++) {
         unsigned long timeout = jiffies + msecs_to_jiffies(1000);
         u32 lsr;
         while (1) {
             lsr = ioread32(uart->base + UART_LSR);
-            dev_info(uart->dev, "Write: LSR=0x%x\n", lsr);  // Log LSR value
+            //dev_info(uart->dev, "Write: LSR=0x%x\n", lsr);  // Log LSR value
             if (lsr & UART_LSR_TXFIFOE)
                 break;
             if (time_after(jiffies, timeout)) {
@@ -91,49 +141,37 @@ static ssize_t bbb_uart_write(struct file *filp, const char __user *buf,
             }
             cpu_relax();
         }
+        // dev_info(uart->dev, "Before writting, UART_THR = '%c'\n", ioread32(uart->base + UART_THR));  
         iowrite32(kbuf[i], uart->base + UART_THR);
+        dev_info(uart->dev, "After writting, UART_THR = '%c'\n", ioread32(uart->base + UART_THR));  
     }
 
     kfree(kbuf);
     return count;
 }
+
 static ssize_t bbb_uart_read(struct file *filp, char __user *buf,
                              size_t count, loff_t *ppos)
 {
     struct bbb_uart *uart = filp->private_data;
-    char *kbuf;
-    int i;
 
-    kbuf = kmalloc(count, GFP_KERNEL);
-    if (!kbuf)
-        return -ENOMEM;
-
-    for (i = 0; i < count; i++) {
-        unsigned long timeout = jiffies + msecs_to_jiffies(1000);
-        u32 lsr;
-        while (1) {
-            lsr = ioread32(uart->base + UART_LSR);
-            dev_info(uart->dev, "Read: LSR=0x%x\n", lsr);  // Log LSR value
-            if (lsr & UART_LSR_DR)
-                break;
-            if (time_after(jiffies, timeout)) {
-                dev_err(uart->dev, "RX timeout, LSR=0x%x\n", lsr);
-                kfree(kbuf);
-                return i ? i : -ETIMEDOUT;
-            }
-            cpu_relax();
-        }
-        kbuf[i] = ioread32(uart->base + UART_RHR) & 0xFF;
-    }
-
-    if (copy_to_user(buf, kbuf, count)) {
-        kfree(kbuf);
+    // copy_to_user will print the buf in the terminal
+    if (copy_to_user(buf, uart->RX_buffer, uart->Tx_Rx_count)) {
         return -EFAULT;
     }
 
-    kfree(kbuf);
-    return count;
+    /* Save how many bytes we are returning */
+    ssize_t bytes_read = uart->Tx_Rx_count;
+
+    /* Reset buffer and counters */
+    memset(uart->RX_buffer, 0, sizeof(uart->RX_buffer));
+    uart->Tx_Rx_count = 0;
+
+    // return correct bytes_read to avoid the next automatic read operation
+    return bytes_read;
 }
+
+
 static const struct file_operations bbb_uart_fops = {
     .owner = THIS_MODULE,
     .open = bbb_uart_open,
@@ -173,7 +211,10 @@ static void bbb_uart_init_hw(struct bbb_uart *uart)
     usleep_range(1000, 2000);  /* 1ms */
 
     /* 6. Enable loopback */
-    iowrite32(0x10, uart->base + UART_MCR);  /* Set loopback */
+    iowrite32(0x00, uart->base + UART_MCR);  /* Not Set loopback */
+
+    /* Enable RHR interrupts */
+    iowrite32(UART_IER_RHR_IT, uart->base + UART_IER);
 }
 
 static int bbb_uart_probe(struct platform_device *pdev)
@@ -188,6 +229,8 @@ static int bbb_uart_probe(struct platform_device *pdev)
     uart = devm_kzalloc(&pdev->dev, sizeof(*uart), GFP_KERNEL);
     if (!uart)
         return -ENOMEM;
+
+    uart->count = 0;
 
     /* Get the single memory resource */
     res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -205,6 +248,22 @@ static int bbb_uart_probe(struct platform_device *pdev)
                 PTR_ERR(uart->base));
         return PTR_ERR(uart->base);
     }
+
+
+    uart->irq = platform_get_irq(pdev, 0);
+	if (uart->irq < 0) {
+		dev_err(&pdev->dev, "%s: unable to get IRQ\n", __func__);
+		return uart->irq;
+	}
+
+    ret = devm_request_irq(&pdev->dev, uart->irq, irqHandler, 0, "bbb-uart4", uart);
+    if (ret < 0) 
+    {
+        dev_err(&pdev->dev, "%s: unable to request IRQ %d (%d)\n", __func__, uart->irq, ret);
+        return ret;
+    }
+
+
 
     /* Set offsets for control registers */
     uart->sysc = uart->base + 0x54;  // SYSC register at offset 0x54
