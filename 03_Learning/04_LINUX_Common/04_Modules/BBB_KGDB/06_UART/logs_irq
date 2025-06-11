@@ -1,0 +1,769 @@
+debian@arm:~$ sudo insmod u4_i.ko 
+[  970.811845] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.817846] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.823795] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.829742] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.835688] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.841634] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.847580] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.853526] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.859472] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.865417] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.871362] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.877308] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.883254] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.889199] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.895145] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.901090] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.907035] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.912981] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.918926] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.924871] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.930817] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.936763] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.942709] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.948655] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.954601] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.960546] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.966492] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.972437] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.978383] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.984329] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.990275] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  970.996221] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.002167] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.008113] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.014059] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.020004] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.025950] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.031895] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.037841] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.043787] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.049733] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.055678] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.061624] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.067570] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.073515] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.079461] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.085406] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.091352] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.097298] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.103243] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.109189] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.115136] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.121081] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.127026] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.132972] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.138918] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.144863] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.150808] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.156754] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.162700] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.168646] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.174592] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.180537] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.186483] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.192428] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.198374] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.204320] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.210266] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.216212] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.222158] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.228103] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.234049] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.239995] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.245940] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.251886] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.257833] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.263779] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.269725] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.275670] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.281615] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.287562] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.293508] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.299453] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.305399] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.311344] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.317289] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.323235] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.329180] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.335126] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.341071] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.347017] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.352963] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.358908] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.364854] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.370800] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.376746] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.382691] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.388638] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.394584] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.400528] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.406474] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.412420] (NULL device *): Too many interrupts: IIR=0xc2, LSR=0x60
+[  971.427746] (NULL device *): FCR retry: wrote 0x47, read 0xc1
+[  971.440907] (NULL device *): FCR retry: wrote 0x47, read 0xc1
+[  971.456582] (NULL device *): FCR retry: wrote 0x47, read 0xc1
+[  971.465012] (NULL device *): FCR configuration failed: 0xc1
+[  971.476605] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.482590] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.488538] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.494485] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.500431] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.506377] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.512322] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.518268] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.524215] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.530160] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.536106] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.542051] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.547997] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.553943] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.559888] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.565833] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.571779] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.577724] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.583670] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.589616] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.595563] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.601508] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.607454] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.613400] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.619345] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.625291] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.631237] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.637183] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.643129] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.649075] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.655021] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.660965] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.666911] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.672857] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.678802] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.684748] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.690693] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.696639] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.702584] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.708530] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.714476] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.720422] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.726368] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.732313] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.738258] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.744204] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.750150] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.756095] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.762041] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.767986] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.773931] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.779877] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.785823] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.791768] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.797714] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.803659] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.809605] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.815550] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.821495] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.827441] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.833387] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.839332] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.845278] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.851222] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.857168] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.863113] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.869058] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.875004] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.880949] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.886895] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.892840] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.898786] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.904731] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.910676] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.916621] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.922568] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.928513] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.934458] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.940404] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.946349] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.952294] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.958240] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.964186] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.970132] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.976078] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.982023] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.987968] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.993914] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  971.999860] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.005806] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.011752] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.017698] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.023644] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.029589] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.035535] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.041480] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.047426] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.053371] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.059317] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.065263] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.071208] (NULL device *): Unexpected IRQ: IIR=0xc2, LSR=0x60
+[  972.077153] (NULL device *): Too many interrupts: IIR=0xc2, LSR=0x60
+[  972.083750] bbb-uart4 481a8000.uart4_device: UART4 initialized: IRQ=17,
+ Major=240, FCR=0xc1, IER=0x0
+ 
+ 
+ ===========
+ 
+ 
+ debian@arm:~$ sudo insmod u4_i.ko                                         
+[ 1928.607955] bbb-uart4 481a8000.uart4_device: FCR retry: wrote 0x47, rea
+d 0xc1
+[ 1928.616307] bbb-uart4 481a8000.uart4_device: FCR retry: wrote 0x47, rea
+d 0xc1
+[ 1928.624638] bbb-uart4 481a8000.uart4_device: FCR retry: wrote 0x47, rea
+d 0xc1
+[ 1928.632932] bbb-uart4 481a8000.uart4_device: FCR retry: wrote 0x47, rea
+d 0xc1
+[ 1928.641221] bbb-uart4 481a8000.uart4_device: FCR retry: wrote 0x47, rea
+d 0xc1
+[ 1928.649409] bbb-uart4 481a8000.uart4_device: FCR configuration failed: 
+0xc1
+[ 1928.656703] bbb-uart4 481a8000.uart4_device: TX error: LSR=0x3
+[ 1928.662614] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0x6, L
+SR=0x60
+[ 1928.669875] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.677219] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.684562] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.691905] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.699247] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.706589] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.713933] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.721276] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.728618] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.735961] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.743304] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.750647] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.757990] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.765333] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.772676] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.780019] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.787362] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.794705] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.802047] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.809389] bbb-uart4 481a8000.uart4_device: Unexpected IRQ: IIR=0xc2, 
+LSR=0x60
+[ 1928.816731] bbb-uart4 481a8000.uart4_device: Too many interrupts: IIR=0
+xc2, LSR=0x60
+[ 1928.824583] bbb-uart4 481a8000.uart4_device: UART4 initialized: IRQ=17,
+ Major=240, FCR=0xc1, IER=0x0, Interrupts=disabled
+
+
+============ Driver interrupt uart:
+
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/io.h>
+#include <linux/cdev.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/clk.h>
+#include <linux/pm_runtime.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
+#include <linux/interrupt.h>
+
+/* AM335x UART register offsets */
+#define UART_THR 0x00 /* Transmit Holding Register */
+#define UART_RHR 0x00 /* Receive Holding Register */
+#define UART_LSR 0x14 /* Line Status Register */
+#define UART_IER 0x04 /* Interrupt Enable Register */
+#define UART_FCR 0x08 /* FIFO Control Register */
+#define UART_LCR 0x0C /* Line Control Register */
+#define UART_MCR 0x10 /* Modem Control Register */
+#define UART_DLL 0x00 /* Divisor Latch Low */
+#define UART_DLH 0x04 /* Divisor Latch High */
+#define UART_SYSC 0x54 /* System Configuration Register */
+#define UART_SYSS 0x58 /* System Status Register */
+#define UART_MDR1 0x20 /* Mode Definition Register 1 */
+#define UART_IIR 0x08 /* Interrupt Identification Register */
+#define UART_MSR 0x18 /* Modem Status Register */
+
+/* Line Status Register bits */
+#define UART_LSR_TXFIFOE (1 << 5) /* Transmit FIFO empty */
+#define UART_LSR_DR      (1 << 0) /* Data Ready */
+#define UART_LSR_OE      (1 << 1) /* Overrun Error */
+#define UART_LSR_PE      (1 << 2) /* Parity Error */
+#define UART_LSR_FE      (1 << 3) /* Framing Error */
+#define UART_LSR_BI      (1 << 4) /* Break Interrupt */
+
+/* Interrupt Enable Register bits */
+#define UART_IER_RHR_IT  (1 << 0) /* Received Data Available */
+#define UART_IER_THR_IT  (1 << 1) /* Transmitter Holding Register Empty */
+#define UART_IER_LS_IT   (1 << 2) /* Receiver Line Status Interrupt */
+#define UART_IER_MSI     (1 << 3) /* Modem Status Interrupt */
+
+/* Interrupt Identification Register bits */
+#define UART_IIR_IT_PENDING (1 << 0) /* Interrupt pending (0 = pending) */
+#define UART_IIR_RLS_IT  (0x6 << 1) /* Receiver Line Status (priority 1) */
+#define UART_IIR_RHR_IT  (0x4 << 1) /* Received Data Available (priority 2) */
+#define UART_IIR_THR_IT  (0x2 << 1) /* Transmitter Holding Register Empty (priority 3) */
+#define UART_IIR_MSI     (0x0 << 1) /* Modem Status (priority 4) */
+#define UART_IIR_CTO_IT  (0xC << 1) /* Character Timeout (priority 2) */
+
+/* Device structure */
+struct bbb_uart {
+    void __iomem *base;
+    void __iomem *sysc;
+    void __iomem *syss;
+    dev_t devno;
+    struct cdev cdev;
+    struct device *dev;
+    struct clk *clk;
+    int irq;
+    bool interrupts_enabled;
+};
+
+/* Send message in polling mode */
+static void bbb_uart_send_message(struct bbb_uart *uart, const char *msg)
+{
+    const char *p = msg;
+    while (*p) {
+        unsigned long timeout = jiffies + msecs_to_jiffies(50);
+        u32 lsr;
+        while (1) {
+            lsr = ioread32(uart->base + UART_LSR);
+            if (lsr & (UART_LSR_OE | UART_LSR_PE | UART_LSR_FE | UART_LSR_BI)) {
+                dev_err(uart->dev, "TX error: LSR=0x%x\n", lsr);
+                return;
+            }
+            if (lsr & UART_LSR_TXFIFOE)
+                break;
+            if (time_after(jiffies, timeout)) {
+                dev_err(uart->dev, "TX timeout: LSR=0x%x\n", lsr);
+                return;
+            }
+            cpu_relax();
+        }
+        iowrite32(*p++, uart->base + UART_THR);
+    }
+}
+
+/* Interrupt handler */
+static irqreturn_t bbb_uart_irq_handler(int irq, void *dev_id)
+{
+    struct bbb_uart *uart = dev_id;
+    u32 iir, lsr, count = 0;
+
+    do {
+        iir = ioread32(uart->base + UART_IIR);
+        if (iir & UART_IIR_IT_PENDING)
+            break;
+
+        lsr = ioread32(uart->base + UART_LSR);
+
+        /* Clear RX FIFO */
+        while (lsr & UART_LSR_DR) {
+            ioread32(uart->base + UART_RHR);
+            lsr = ioread32(uart->base + UART_LSR);
+        }
+
+        /* Handle RLS interrupt */
+        if ((iir & 0xE) == UART_IIR_RLS_IT) {
+            if (lsr & (UART_LSR_OE | UART_LSR_PE | UART_LSR_FE | UART_LSR_BI)) {
+                dev_err(uart->dev, "RLS Error: IIR=0x%x, LSR=0x%x\n", iir, lsr);
+            }
+            iowrite32(0x07, uart->base + UART_FCR); /* Reset FIFOs */
+            iowrite32(0x47, uart->base + UART_FCR);
+        }
+        /* Handle RHR or CTO */
+        else if ((iir & 0xE) == UART_IIR_RHR_IT || (iir & 0xE) == UART_IIR_CTO_IT) {
+            /* RX FIFO already cleared */
+        }
+        /* Handle THR */
+        else if ((iir & 0xE) == UART_IIR_THR_IT) {
+            /* No action needed for TX */
+        }
+        /* Handle MSI */
+        else if ((iir & 0xE) == UART_IIR_MSI) {
+            u32 msr = ioread32(uart->base + UART_MSR);
+            dev_err(uart->dev, "MSI: IIR=0x%x, MSR=0x%x\n", iir, msr);
+        }
+        /* Unexpected interrupt */
+        else {
+            dev_err(uart->dev, "Unexpected IRQ: IIR=0x%x, LSR=0x%x\n", iir, lsr);
+            iowrite32(0x07, uart->base + UART_FCR); /* Reset FIFOs */
+            iowrite32(0x47, uart->base + UART_FCR);
+        }
+
+        if (++count > 20) {
+            dev_err(uart->dev, "Too many interrupts: IIR=0x%x, LSR=0x%x\n", iir, lsr);
+            iowrite32(0x0, uart->base + UART_IER);
+            uart->interrupts_enabled = false;
+            break;
+        }
+    } while (1);
+
+    return IRQ_HANDLED;
+}
+
+/* Device tree match table */
+static const struct of_device_id bbb_uart_of_match[] = {
+    { .compatible = "uart4-based" },
+    { }
+};
+MODULE_DEVICE_TABLE(of, bbb_uart_of_match);
+
+/* File operations */
+static int bbb_uart_open(struct inode *inode, struct file *filp)
+{
+    struct bbb_uart *uart = container_of(inode->i_cdev, struct bbb_uart, cdev);
+    filp->private_data = uart;
+    return 0;
+}
+
+static int bbb_uart_release(struct inode *inode, struct file *filp)
+{
+    return 0;
+}
+
+static ssize_t bbb_uart_write(struct file *filp, const char __user *buf,
+                              size_t count, loff_t *ppos)
+{
+    struct bbb_uart *uart = filp->private_data;
+    char *kbuf;
+    int i;
+
+    kbuf = kmalloc(count, GFP_KERNEL);
+    if (!kbuf)
+        return -ENOMEM;
+
+    if (copy_from_user(kbuf, buf, count)) {
+        kfree(kbuf);
+        return -EFAULT;
+    }
+
+    for (i = 0; i < count; i++) {
+        unsigned long timeout = jiffies + msecs_to_jiffies(50);
+        u32 lsr;
+        while (1) {
+            lsr = ioread32(uart->base + UART_LSR);
+            if (lsr & (UART_LSR_OE | UART_LSR_PE | UART_LSR_FE | UART_LSR_BI)) {
+                dev_err(uart->dev, "Write error: LSR=0x%x\n", lsr);
+                kfree(kbuf);
+                return -EIO;
+            }
+            if (lsr & UART_LSR_TXFIFOE)
+                break;
+            if (time_after(jiffies, timeout)) {
+                dev_err(uart->dev, "TX timeout: LSR=0x%x\n", lsr);
+                kfree(kbuf);
+                return -ETIMEDOUT;
+            }
+            cpu_relax();
+        }
+        iowrite32(kbuf[i], uart->base + UART_THR);
+    }
+
+    kfree(kbuf);
+    return count;
+}
+
+static ssize_t bbb_uart_read(struct file *filp, char __user *buf,
+                             size_t count, loff_t *ppos)
+{
+    struct bbb_uart *uart = filp->private_data;
+    char *kbuf;
+    int i;
+    unsigned long timeout;
+
+    kbuf = kmalloc(count, GFP_KERNEL);
+    if (!kbuf)
+        return -ENOMEM;
+
+    for (i = 0; i < count; i++) {
+        timeout = jiffies + msecs_to_jiffies(50);
+        while (!(ioread32(uart->base + UART_LSR) & UART_LSR_DR)) {
+            u32 lsr = ioread32(uart->base + UART_LSR);
+            if (lsr & (UART_LSR_OE | UART_LSR_PE | UART_LSR_FE | UART_LSR_BI)) {
+                dev_err(uart->dev, "Read error: LSR=0x%x\n", lsr);
+                kfree(kbuf);
+                return -EIO;
+            }
+            if (lsr & UART_LSR_DR)
+                break;
+            if (time_after(jiffies, timeout)) {
+                if (i > 0) {
+                    if (copy_to_user(buf, kbuf, i)) {
+                        kfree(kbuf);
+                        return -EFAULT;
+                    }
+                    kfree(kbuf);
+                    return i;
+                }
+                kfree(kbuf);
+                return 0;
+            }
+            cpu_relax();
+        }
+        kbuf[i] = ioread32(uart->base + UART_RHR) & 0xFF;
+    }
+
+    if (copy_to_user(buf, kbuf, count)) {
+        kfree(kbuf);
+        return -EFAULT;
+    }
+
+    kfree(kbuf);
+    return count;
+}
+
+static const struct file_operations bbb_uart_fops = {
+    .owner = THIS_MODULE,
+    .open = bbb_uart_open,
+    .release = bbb_uart_release,
+    .write = bbb_uart_write,
+    .read = bbb_uart_read,
+};
+
+static void bbb_uart_init_hw(struct bbb_uart *uart)
+{
+    u32 val;
+    int retries;
+
+    /* Disable interrupts and UART */
+    iowrite32(0x0, uart->base + UART_IER);
+    iowrite32(0x7, uart->base + UART_MDR1);
+    udelay(100);
+
+    /* Disable RX */
+    iowrite32(0x0, uart->base + UART_MCR);
+
+    /* Perform triple reset */
+    int i = 0;
+    for (i = 0; i < 3; i++) {
+        iowrite32(0x2, uart->sysc);
+        udelay(1000);
+        do {
+            val = ioread32(uart->syss);
+        } while (!(val & 0x1));
+        udelay(1000);
+    }
+
+    /* Disable UART again */
+    iowrite32(0x7, uart->base + UART_MDR1);
+
+    /* Clear pending interrupts and FIFO */
+    ioread32(uart->base + UART_IIR);
+    ioread32(uart->base + UART_LSR);
+    ioread32(uart->base + UART_MSR);
+    while (ioread32(uart->base + UART_LSR) & UART_LSR_DR) {
+        ioread32(uart->base + UART_RHR);
+    }
+
+    /* Configure baud rate (115200) */
+    iowrite32(0xBF, uart->base + UART_LCR);
+    iowrite32(26 & 0xFF, uart->base + UART_DLL);
+    iowrite32(0, uart->base + UART_DLH);
+    iowrite32(0x03, uart->base + UART_LCR); /* 8N1 */
+    udelay(100);
+
+    /* Configure FIFOs in non-FIFO mode first */
+    iowrite32(0x00, uart->base + UART_FCR); /* Disable FIFOs */
+    udelay(100);
+    iowrite32(0x06, uart->base + UART_FCR); /* Clear TX/RX FIFOs */
+    udelay(100);
+
+    /* Enable FIFOs with retries */
+    retries = 5;
+    do {
+        iowrite32(0x47, uart->base + UART_FCR); /* FIFO en, TX trig=8, RX trig=16 */
+        udelay(100);
+        val = ioread32(uart->base + UART_FCR);
+        if ((val & 0xF7) == 0x47) {
+            break;
+        }
+        dev_err(uart->dev, "FCR retry: wrote 0x47, read 0x%x\n", val);
+        iowrite32(0x00, uart->base + UART_FCR);
+        iowrite32(0x06, uart->base + UART_FCR);
+        udelay(1000);
+    } while (--retries);
+    if (retries == 0) {
+        dev_err(uart->dev, "FCR configuration failed: 0x%x\n", val);
+    }
+
+    /* Enable UART */
+    iowrite32(0x0, uart->base + UART_MDR1);
+    udelay(100);
+
+    /* Send test message */
+    bbb_uart_send_message(uart, "Hello UART4\n");
+
+    /* Enable RX */
+    iowrite32(0x0, uart->base + UART_MCR);
+
+    /* Enable interrupts */
+    iowrite32(UART_IER_RHR_IT | UART_IER_THR_IT | UART_IER_LS_IT | UART_IER_MSI,
+              uart->base + UART_IER);
+    uart->interrupts_enabled = true;
+}
+
+static int bbb_uart_probe(struct platform_device *pdev)
+{
+    struct bbb_uart *uart;
+    struct resource *res;
+    int ret;
+
+    uart = devm_kzalloc(&pdev->dev, sizeof(*uart), GFP_KERNEL);
+    if (!uart)
+        return -ENOMEM;
+
+    /* Get memory resource */
+    res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+    if (!res) {
+        dev_err(&pdev->dev, "No memory resource\n");
+        return -ENODEV;
+    }
+
+    /* Map memory region */
+    uart->base = devm_ioremap_resource(&pdev->dev, res);
+    if (IS_ERR(uart->base)) {
+        dev_err(&pdev->dev, "Failed to map memory: %ld\n", PTR_ERR(uart->base));
+        return PTR_ERR(uart->base);
+    }
+
+    /* Set control register offsets */
+    uart->sysc = uart->base + UART_SYSC;
+    uart->syss = uart->base + UART_SYSS;
+
+    /* Clock setup */
+    uart->clk = devm_clk_get(&pdev->dev, "fck");
+    if (IS_ERR(uart->clk)) {
+        dev_err(&pdev->dev, "Failed to get clock: %ld\n", PTR_ERR(uart->clk));
+        return PTR_ERR(uart->clk);
+    }
+    ret = clk_prepare_enable(uart->clk);
+    if (ret) {
+        dev_err(&pdev->dev, "Failed to enable clock: %d\n", ret);
+        return ret;
+    }
+
+    /* Get IRQ */
+    uart->irq = platform_get_irq(pdev, 0);
+    if (uart->irq < 0) {
+        dev_err(&pdev->dev, "Failed to get IRQ: %d\n", uart->irq);
+        clk_disable_unprepare(uart->clk);
+        return uart->irq;
+    }
+
+    /* Register interrupt handler */
+    ret = devm_request_irq(&pdev->dev, uart->irq, bbb_uart_irq_handler,
+                           IRQF_NO_THREAD, "bbb-uart4", uart);
+    if (ret) {
+        dev_err(&pdev->dev, "Failed to request IRQ %d: %d\n", uart->irq, ret);
+        clk_disable_unprepare(uart->clk);
+        return ret;
+    }
+
+    /* Power management */
+    pm_runtime_enable(&pdev->dev);
+    ret = pm_runtime_get_sync(&pdev->dev);
+    if (ret < 0) {
+        dev_err(&pdev->dev, "Failed to enable PM: %d\n", ret);
+        clk_disable_unprepare(uart->clk);
+        return ret;
+    }
+
+    /* Allocate chrdev */
+    ret = alloc_chrdev_region(&uart->devno, 0, 1, "bbb_uart4");
+    if (ret) {
+        dev_err(&pdev->dev, "Failed to allocate chrdev: %d\n", ret);
+        pm_runtime_put_sync(&pdev->dev);
+        clk_disable_unprepare(uart->clk);
+        return ret;
+    }
+
+    /* Initialize and add cdev */
+    cdev_init(&uart->cdev, &bbb_uart_fops);
+    uart->cdev.owner = THIS_MODULE;
+    ret = cdev_add(&uart->cdev, uart->devno, 1);
+    if (ret) {
+        dev_err(&pdev->dev, "Failed to add cdev: %d\n", ret);
+        unregister_chrdev_region(uart->devno, 1);
+        pm_runtime_put_sync(&pdev->dev);
+        clk_disable_unprepare(uart->clk);
+        return ret;
+    }
+
+    uart->dev = &pdev->dev;
+    platform_set_drvdata(pdev, uart);
+
+    /* Initialize hardware */
+    bbb_uart_init_hw(uart);
+
+    dev_info(&pdev->dev, "UART4 initialized: IRQ=%d, Major=%d, FCR=0x%x, IER=0x%x, Interrupts=%s\n",
+             uart->irq, MAJOR(uart->devno),
+             ioread32(uart->base + UART_FCR),
+             ioread32(uart->base + UART_IER),
+             uart->interrupts_enabled ? "enabled" : "disabled");
+
+    return 0;
+}
+
+static int bbb_uart_remove(struct platform_device *pdev)
+{
+    struct bbb_uart *uart = platform_get_drvdata(pdev);
+
+    cdev_del(&uart->cdev);
+    unregister_chrdev_region(uart->devno, 1);
+    pm_runtime_put_sync(&pdev->dev);
+    pm_runtime_disable(&pdev->dev);
+    clk_disable_unprepare(uart->clk);
+    return 0;
+}
+
+static struct platform_driver bbb_uart_driver = {
+    .probe = bbb_uart_probe,
+    .remove = bbb_uart_remove,
+    .driver = {
+        .name = "bbb-uart4",
+        .of_match_table = bbb_uart_of_match,
+    },
+};
+
+static int __init bbb_uart_init(void)
+{
+    return platform_driver_register(&bbb_uart_driver);
+}
+
+static void __exit bbb_uart_exit(void)
+{
+    platform_driver_unregister(&bbb_uart_driver);
+}
+
+module_init(bbb_uart_init);
+module_exit(bbb_uart_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Grok");
+MODULE_DESCRIPTION("BeagleBone Black UART4 Driver");
+
