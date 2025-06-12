@@ -1,0 +1,13 @@
+SCR[7] - enable/disable RX-FIFO granularity of 1
+FCR[7:6] - 8/16/56/60 characters
+TLR[7:4] - Receive FIFO trigger level.
+
++ SCR[7] = 0, TLR[7:4] = 0 -> value triggered = FCR[7:6]
++ SCR[7] = 0, TLR[7:4] = values -> value triggered = {4, ..., 60}, granularity = 4
++ SCR[7] = 1, TLR[7:4] = values_4_MSB, FCR[7:6] = values_2_LSB -> values triggered =  values_4_MSB <<2 | values_2_LSB, granularity = 1
+	Ex: 9 characters with TLR[7:4]=0010, FCR[7:6]=01 → 001001
+
+
+Conditions to trigger RHR interrupt:
+	+ Above
+	+ FCR[2:0] = 0xFF (FIFO enabled)
