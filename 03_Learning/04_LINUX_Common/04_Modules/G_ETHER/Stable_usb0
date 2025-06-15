@@ -1,0 +1,8 @@
+== Need to make sure NetwotkManager doesn't interfere usb0 (~45s timeout)
+
+sudo nano /etc/udev/rules.d/99-networkmanager-unmanaged-usb0.rules
+
+ACTION=="add", SUBSYSTEM=="net", NAME=="usb0", ENV{NM_UNMANAGED}="1"
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger

@@ -14,3 +14,6 @@ sudo depmod -a
 sudo nano /etc/udev/rules.d/70-persistent-net.rules
 SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="02:bb:bb:00:00:02", NAME="usb0"
 (If enx02bbbb000002 is matched -> assign usb0)
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
