@@ -1,0 +1,8 @@
+https://github.com/settings/tokens
+
+	-> Copy token
+
+git config credential.helper store
+
+git push (Username: ...1970, Password: copied token)
+
