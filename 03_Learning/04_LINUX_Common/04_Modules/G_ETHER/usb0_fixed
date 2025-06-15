@@ -1,0 +1,16 @@
+=== On BBB:
+sudo nano /etc/modprobe.d/g_ether.conf
+options g_ether dev_addr=02:bb:bb:00:00:01 host_addr=02:bb:bb:00:00:02
+(02:bb:bb:00:00:01 is MAC of BBB, 02:bb:bb:00:00:02 is MAC on PC -> enx02bbbb000002)
+	+ cat /sys/module/g_ether/parameters/dev_addr -> 02:bb:bb:00:00:01
+	+ cat /sys/module/g_ether/parameters/host_addr -> 02:bb:bb:00:00:02
+
+// Ensure the kernel recognizes the new options
+sudo depmod -a
+
+// reboot
+
+=== On PC:
+sudo nano /etc/udev/rules.d/70-persistent-net.rules
+SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="02:bb:bb:00:00:02", NAME="usb0"
+(If enx02bbbb000002 is matched -> assign usb0)

@@ -1,0 +1,33 @@
+=== On BBB:
+
+sudo nano /etc/systemd/network/usb0.network
+
+	[Match]
+	Name=usb0
+
+	[Network]
+	Address=192.168.137.2/24
+	Gateway=192.168.137.1
+
+
+sudo systemctl enable systemd-networkd
+sudo systemctl restart systemd-networkd
+
+// check
+ip addr show usb0
+
+=== On PC:
+sudo nano /etc/systemd/network/usb0.network
+                           
+	[Match]
+	Name=usb0
+
+	[Network]
+	Address=192.168.137.1/24
+
+
+sudo systemctl enable systemd-networkd
+sudo systemctl restart systemd-networkd
+
+// check
+ip addr
