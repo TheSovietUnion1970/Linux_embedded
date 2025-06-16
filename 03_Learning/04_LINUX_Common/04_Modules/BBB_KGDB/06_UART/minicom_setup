@@ -1,0 +1,11 @@
+sudo minicom -s
+
+Screen and keyboard
+
+Q - Local echo             : Yes => read what you type
+R - Line Wrap              : Yes => show what you type
+
+===
+
+sudo minicom -D /dev/ttyUSB0 -b 115200
+
