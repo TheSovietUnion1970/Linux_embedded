@@ -1,0 +1,51 @@
+&am33xx_pinmux {
+    uart4_pins: pinmux_uart4_pins {
+        pinctrl-single,pins = <
+            AM33XX_PADCONF(AM335X_PIN_GPMC_WAIT0, PIN_INPUT_PULLUP, MUX_MODE6) /* P9_11: uart4_rxd */
+            AM33XX_PADCONF(AM335X_PIN_GPMC_WPN, PIN_OUTPUT_PULLDOWN, MUX_MODE6) /* P9_13: uart4_txd */
+        >;
+    };
+
+	irq_pin_pins: irq_pin_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x840, PIN_INPUT_PULLUP | MUX_MODE7) /* P9.15, gpio1_16 as IRQ */
+		>;
+	};
+};
+
+/* Disable UART4 (serial@0) to avoid ti,sysc conflict */
+&ocp {
+    interconnect@48000000 {
+        segment@100000 {
+            target-module@a8000 {
+                status = "disabled"; /* Disable entire module */
+                serial@0 {
+                    status = "disabled";
+                };
+            };
+        };
+    };
+};
+
+/
+{
+	foo_device {
+		compatible = "uart4-based";
+		
+		reg = <0x481a8000 0x1000>;  // Single region for the entire UART4 peripheral
+		
+		clocks = <&l4ls_clkctrl AM3_L4LS_UART5_CLKCTRL 0>;
+		clock-names = "fck";
+
+		clock-frequency = <48000000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&uart4_pins>, <&irq_pin_pins>;
+
+		/* Combine GPIO1 and UART4 interrupts */
+		interrupts-extended = <&intc 45>,      /* UART4 interrupt, main intc */
+							  <&gpio1 16 GPIO_ACTIVE_HIGH>; /* gpio1_16, GPIO_ACTIVE_HIGH */
+
+		status = "okay";
+	};
+};
