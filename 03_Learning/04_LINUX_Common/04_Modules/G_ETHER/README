@@ -1,4 +1,4 @@
 usb0_fixed => (set and align enx... as usb0) -> 
 assign_ip => (assign IP... into interface on BBB and PC) -> 
 Stable_usb0 => (Network manager ignores usb0) ->
-udev_at_boot_time => (rules ignoreing usb0 is loaded at boot time)
+udev_at_boot_time => (commands to reload /udev/rules.d is loaded at boot time)
