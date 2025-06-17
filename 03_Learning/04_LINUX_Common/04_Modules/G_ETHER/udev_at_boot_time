@@ -1,0 +1,19 @@
+sudo nano /etc/systemd/system/udev-reload.service
+
+[Unit]
+Description=Reload udev rules at boot
+Before=NetworkManager.service
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/udevadm control --reload-rules
+ExecStart=/usr/sbin/udevadm trigger
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl enable udev-reload.service
+	// crerate a symbolink:
+	Created symlink /etc/systemd/system/multi-user.target.wants/udev-reload.service → /etc/systemd/system/udev-reload.service.	
