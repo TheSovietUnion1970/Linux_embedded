@@ -76,6 +76,25 @@ struct irq_data_t {
 static irqreturn_t gpio_handler(int irq, void *dev_id);
 
 // ===================================== uart4 functions =====================
+static irqreturn_t uart4_handler(int irq, void *dev_id)
+{
+    struct irq_data_t *dev = dev_id;
+    dev->count++;
+
+    // Read val in UART_RHR to clear IIR from 0xcc to 0xc1
+    printk("%x\n", ioread32(dev->base + UART_IIR));
+    dev->RX_buffer[dev->Tx_Rx_count++] = ioread32(dev->base + UART_RHR);
+    printk("Character: '%c'\n", dev->RX_buffer[dev->Tx_Rx_count-1]);
+
+    if (dev->count > MAX_NUM_INTERUPTS){
+        printk("Too many interrupts - IIR=0x%x, LSR=0x%x\n", ioread32(dev->base + UART_IIR), ioread32(dev->base + UART_LSR));
+        iowrite32(0x0, dev->base + UART_IER);
+        dev->count = 0;
+    }
+
+    return IRQ_HANDLED;
+}
+
 /* File operations */
 static int bbb_uart_open(struct inode *inode, struct file *filp)
 {
@@ -210,18 +229,13 @@ static void bbb_uart_init_hw(struct irq_data_t *uart)
     iowrite32(UART_IER_RHR_IT, uart->base + UART_IER);
 }
 
-static int bbb_uart_probe(struct platform_device *pdev)
+static int bbb_uart_probe(struct platform_device *pdev, struct irq_data_t *data)
 {
-    struct irq_data_t *data;
     struct resource *res;
     int ret;
 
     dev_info(&pdev->dev, "Probing device: %s, Node: %s\n", 
              pdev->name, pdev->dev.of_node->full_name);
-
-    data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
-    if (!data)
-        return -ENOMEM;
 
     data->count = 0;
 
@@ -365,6 +379,7 @@ static int bbb_uart_remove(struct platform_device *pdev)
     return 0;
 }
 
+// ===================================== irq functions =====================
 static void re_request_irq_work(struct work_struct *work)
 {
     struct irq_data_t *data = container_of(work, struct irq_data_t, re_request_work);
@@ -385,25 +400,6 @@ static irqreturn_t gpio_handler(int irq, void *dev_id)
     printk("reource[0]->flags = %lu\n", pdev->resource[0].flags);
     // Schedule work to re-request IRQ
     schedule_work(&data->re_request_work);
-
-    return IRQ_HANDLED;
-}
-
-static irqreturn_t uart4_handler(int irq, void *dev_id)
-{
-    struct irq_data_t *dev = dev_id;
-    dev->count++;
-
-    // Read val in UART_RHR to clear IIR from 0xcc to 0xc1
-    printk("%x\n", ioread32(dev->base + UART_IIR));
-    dev->RX_buffer[dev->Tx_Rx_count++] = ioread32(dev->base + UART_RHR);
-    printk("Character: '%c'\n", dev->RX_buffer[dev->Tx_Rx_count-1]);
-
-    if (dev->count > MAX_NUM_INTERUPTS){
-        printk("Too many interrupts - IIR=0x%x, LSR=0x%x\n", ioread32(dev->base + UART_IIR), ioread32(dev->base + UART_LSR));
-        iowrite32(0x0, dev->base + UART_IER);
-        dev->count = 0;
-    }
 
     return IRQ_HANDLED;
 }
@@ -463,7 +459,7 @@ static int irq_probe(struct platform_device *pdev)
     dev_info(dev, "IRQ driver initialized for P9_15 (gpio1_16)\n");
     printk("=================\n");
 
-    bbb_uart_probe(pdev);
+    bbb_uart_probe(pdev, data);
     dev_info(dev, "UART4 IRQ driver initialized f\n");
     printk("=================\n");
 
