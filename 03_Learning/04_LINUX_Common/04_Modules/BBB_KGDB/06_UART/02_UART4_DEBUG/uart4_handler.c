@@ -380,6 +380,33 @@ static int bbb_uart_remove(struct platform_device *pdev)
 }
 
 // ===================================== irq functions =====================
+/* Helper function to write "Hi\n" to UART4 */
+static void bbb_uart_write_hi(struct irq_data_t *data)
+{
+    const char *msg = "Hi\n";
+    size_t count;
+    unsigned long timeout;
+    u32 lsr;
+    int i;
+
+    count = strlen(msg);
+    for (i = 0; i < count; i++) {
+        timeout = jiffies + msecs_to_jiffies(1000);
+        while (1) {
+            lsr = ioread32(data->base + UART_LSR);
+            if (lsr & UART_LSR_TXFIFOE)
+                break;
+            if (time_after(jiffies, timeout)) {
+                dev_err(data->dev, "TX timeout, LSR=0x%x\n", lsr);
+                return;
+            }
+            cpu_relax();
+        }
+        iowrite32(msg[i], data->base + UART_THR);
+    }
+    dev_info(data->dev, "Wrote 'Hi\\n' to UART4\n");
+}
+
 static void re_request_irq_work(struct work_struct *work)
 {
     struct irq_data_t *data = container_of(work, struct irq_data_t, re_request_work);
@@ -387,6 +414,7 @@ static void re_request_irq_work(struct work_struct *work)
     int ret;
 
     dev_info(dev, "Workqueue: Attempting to re-request UART4 IRQ %d\n", data->uart4_irq);
+    bbb_uart_write_hi(data);
 }
 
 static irqreturn_t gpio_handler(int irq, void *dev_id)

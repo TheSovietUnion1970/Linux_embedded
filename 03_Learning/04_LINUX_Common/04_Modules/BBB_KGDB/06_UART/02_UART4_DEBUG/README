@@ -1,1 +1,2 @@
-uart4_irq.c is used to debug handler and init functions
+uart4_handler.c is used to debug handler function
+uart4_setup.c is used to debug init functions
