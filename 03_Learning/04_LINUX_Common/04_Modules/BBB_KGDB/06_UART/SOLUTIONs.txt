@@ -1,0 +1,33 @@
+(2) === DMA
+
+Base edma: 4900000 
++ physical - 1000 -> 1094
++ shadow - 2000 -> 2094
+
+EMR(300 - R) - Missed event occurred
+	[when the submission is failed]
+IER(1050 - R) - Read interrupt enabled
+IESR(1060) - Corresponding bit in the interrupt enable register (IER) is set
+IPR(1068 - R) - Interrupt transfer completion code is detected
+
+ER(1000 - R) - EDMA3CC event is asserted. Corresponding DMA event is prioritized versus other pending DMA/QDMA events for submission to the EDMA3TC ( = 1 when EER = 0)
+	[automatically cleard once the transfer is submitted]
+ESR(1010) - Corresponding DMA event is prioritized versus other pending DMA/QDMA events for submission to the EDMA3TC
+	[manually set events to initiate DMA transfer requests]
+EER(1020 - R) - Event is enabled. An external event latched in the event register (ER) is evaluated by the EDMA3CC
+EESR(1030) - Event is enabled. Corresponding bit in the event enable register (EER) is set (En = 1)
+
+
+=== printk
+in init/main.c -> #define DEBUG	1	/* Enable initcall_debug */
+
+	} else if (edesc->processed <= MAX_NR_SG) {
+		dev_dbg(dev, "first transfer starting on channel %d\n",
+			echan->ch_num);
+		edma_start(echan);
+
+(1) === Use edma_error_handler (drivers/dma/ti/edma.c)
+
+(1) === Inspect dma_addr, &dma_addr, kbuf, &kbuf
+Clear TX FIFO to let it empty to see the trigger of DMA
+
