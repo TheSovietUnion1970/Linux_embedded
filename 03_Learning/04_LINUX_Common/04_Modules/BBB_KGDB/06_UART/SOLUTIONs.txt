@@ -18,7 +18,7 @@ EER(1020 - R) - Event is enabled. An external event latched in the event registe
 EESR(1030) - Event is enabled. Corresponding bit in the event enable register (EER) is set (En = 1)
 
 === Disable FIFO EN to let DMA transfer at a time 1 byte
-=== Set src addr = NULL or dst addr to see ...
+=== Set src addr = NULL or dst addr to see .. // set the mem addr
 === Set DMA mode 1 (as mode 0 and 1 are supported on this device)
 === Handle TX FIFO empty interrupt
 === Check register of DMA above
@@ -48,3 +48,73 @@ or
 (1c)TLR[3:0], TLR[7:4]
 -> TX, RX trigger
 
+======== XXX =========== XXX =========
+void write_dma(struct bbb_uart *uart, const char *data, size_t count, int DMA_used)
+{
+
+	/*
+	(gdb) print edesc->pset[0]
+	$7 = {len = 6, addr = 2625908736, param = {opt = 1163264, 
+		src = 2625908736, a_b_cnt = 393217, dst = 4194443264, 
+		src_dst_bidx = 1, link_bcntrld = 4294967295, src_dst_cidx = 1, 
+		ccnt = 1}}
+	*/
+
+    void *kbuf;
+    dma_addr_t dma_addr;
+    void __iomem *edma_base;
+
+    kbuf = dma_alloc_coherent(uart->dev, count, &dma_addr, GFP_KERNEL | GFP_DMA);
+    if (!kbuf) {
+        dev_err(uart->dev, "Failed to allocate DMA-coherent buffer\n");
+        return;
+    }
+    dev_info(uart->dev, "Write: Preparing %zu bytes\n", count);
+    memcpy(kbuf, data, count);  // Copies "0123456789abc"
+
+    if (DMA_used && uart->use_dma) {
+        edma_base = ioremap(0x49000000, 0x10000);
+        if (!edma_base) {
+            dev_err(uart->dev, "Failed to map EDMA3CC\n");
+            goto free_buf;
+        }
+
+        /* Configure PaRAM Set for channel 28 */
+        u32 param_addr = EDMA_PARAM_OFFSET(28);
+        iowrite32(0x11C002, edma_base + param_addr + 0x0);  /* OPT */
+        iowrite32(dma_addr, edma_base + param_addr + 0x4);  /* SRC */
+        iowrite32(0x60001 | count, edma_base + param_addr + 0x8);  /* ACNT=6, BCNT=1 */
+        iowrite32(uart->base + UART_THR_OFFSET, edma_base + param_addr + 0xC);  /* DST */
+        iowrite32(0x1 | 1, edma_base + param_addr + 0x10);  /* DSTBIDX=0, SRCBIDX=1 */
+        iowrite32(0xFFFF, edma_base + param_addr + 0x14);  /* LINK=0xFFFF */
+        iowrite32(1, edma_base + param_addr + 0x18);  /* CIDX=1 */
+        iowrite32(1, edma_base + param_addr + 0x1C);  /* CCNT=1 */
+
+        /* Enable channel 28 */
+        iowrite32(1 << 28, edma_base + 0x1030);  /* EESR */
+
+        /* Trigger transfer if needed */
+        // iowrite32(1 << 28, edma_base + 0x1010);  /* ESR */
+
+        /* Wait for completion */
+        reinit_completion(&uart->tx_completion);
+		dev_info(uart->dev, "DMA transfer wait...\n");
+        while (!(ioread32(edma_base + 0x1068) & (1 << 28))) {
+            cpu_relax();
+        }
+        iowrite32(1 << 28, edma_base + 0x1070);  /* Clear IPR[28] */
+        dev_info(uart->dev, "DMA transfer complete\n");
+
+        iounmap(edma_base);
+    } else {
+        /* Non-DMA mode */
+        for (size_t i = 0; i < count; i++) {
+            while (!(ioread32(uart->base + UART_LSR) & UART_LSR_THRE)) {
+                cpu_relax();
+            }
+            iowrite32(kbuf[i], uart->base + UART_THR);
+        }
+    }
+free_buf:
+    dma_free_coherent(uart->dev, count, kbuf, dma_addr);
+}
