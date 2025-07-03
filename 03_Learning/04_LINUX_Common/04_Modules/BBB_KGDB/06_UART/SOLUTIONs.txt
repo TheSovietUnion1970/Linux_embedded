@@ -31,3 +31,15 @@ in init/main.c -> #define DEBUG	1	/* Enable initcall_debug */
 (1) === Inspect dma_addr, &dma_addr, kbuf, &kbuf
 Clear TX FIFO to let it empty to see the trigger of DMA
 
+DMA mode
+(8)FCR[3] = DMA_MODE -> (UART_NDMA_REQ[0] in TX, UART_NDMA_REQ[1] in RX)
+(40)SCR[2:1] = DMAMODE2 -> The DMAMODE 
+
+(40)SCR[0] = DMA_MODE_CTL -> The DMAMODE is set with SCR[2:1]
+
+DMA trigger
+(8)FCR[5:4], FCR[7:6]
+or
+(1c)TLR[3:0], TLR[7:4]
+-> TX, RX trigger
+
