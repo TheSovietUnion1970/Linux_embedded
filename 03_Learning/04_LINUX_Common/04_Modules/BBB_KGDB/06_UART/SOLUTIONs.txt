@@ -17,6 +17,11 @@ ESR(1010) - Corresponding DMA event is prioritized versus other pending DMA/QDMA
 EER(1020 - R) - Event is enabled. An external event latched in the event register (ER) is evaluated by the EDMA3CC
 EESR(1030) - Event is enabled. Corresponding bit in the event enable register (EER) is set (En = 1)
 
+=== Disable FIFO EN to let DMA transfer at a time 1 byte
+=== Set src addr = NULL or dst addr to see ...
+=== Set DMA mode 1 (as mode 0 and 1 are supported on this device)
+=== Handle TX FIFO empty interrupt
+=== Check register of DMA above
 
 === printk
 in init/main.c -> #define DEBUG	1	/* Enable initcall_debug */
