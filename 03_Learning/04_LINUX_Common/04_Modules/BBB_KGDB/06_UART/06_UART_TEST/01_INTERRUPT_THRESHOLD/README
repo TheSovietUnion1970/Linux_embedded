@@ -1,0 +1,3 @@
+echo "" | sudo tee /dev/uart1 -> enable uart (FIFO will let data going out)
+sudo cat /dev/uart1 -> disable uart + enable IER (data is in/out for FIFO)
+	-> show how many bytes data is going out of RX FIFO and the remaining number of data in RX FIFO

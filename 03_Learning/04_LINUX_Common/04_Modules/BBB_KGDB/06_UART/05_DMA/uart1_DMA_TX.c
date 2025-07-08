@@ -234,6 +234,8 @@ static void write_dma(struct bbb_uart *uart, const char *data, size_t count)
     printk("TX FIFO lv = %d\n", ioread32(uart->base + UART_TXFIFO_LVL));/////////
     iowrite32(0x0, uart->base + UART_IER); // disable TX RX interrupt /////////
 
+
+    /* ======================================== APIs ============================================ */
     init_completion(&uart->tx_completion);
     tx_desc = dmaengine_prep_slave_single(uart->tx_chan, (dma_addr_t)dma_addr, count,
                                         DMA_MEM_TO_DEV, DMA_CTRL_ACK | DMA_PREP_INTERRUPT);
@@ -254,52 +256,8 @@ static void write_dma(struct bbb_uart *uart, const char *data, size_t count)
     dev_info(uart->dev, "Issuing TX DMA pending, cookie = %d\n", cookie);
     dma_async_issue_pending(uart->tx_chan);
 
-
-
-
-
-    uart->edma_base = ioremap(0x49000000, 0x10000);
-    u32 param_addr = 0, AB_Cnt;
-    param_addr = 0x4820; /* ch 28 -> paramset 65 */
-
-    AB_Cnt = count<<16 | 1;
-    //AB_Cnt = 1<<16 | count;
-
-    int xxx = 0;;
-
-    iowrite32(0x91C000, uart->edma_base + param_addr + 0x0);  /* OPT */
-    /* Configure PaRAM Set for channel 28 */
-    iowrite32(dma_addr, uart->edma_base + param_addr + 0x4);  /* SRC */
-    iowrite32(AB_Cnt, uart->edma_base + param_addr + 0x8);  /* ACNT=6, BCNT=1 */
-    
-    iowrite32(uart->uart_phy_base, uart->edma_base + param_addr + 0xC);  /* DST */
-    //iowrite32(test_addr, uart->edma_base + param_addr + 0xC);  /* DST */
-
-    //iowrite32(0x000001, uart->edma_base + param_addr + 0x10);  /* DSTBIDX=0, SRCBIDX=1 */
-    iowrite32(0<<16 | 1, uart->edma_base + param_addr + 0x10);  /* DSTBIDX=0, SRCBIDX=1 */
-    
-    iowrite32(0xFFFF, uart->edma_base + param_addr + 0x14);  /* LINK=0xFFFF */
-    iowrite32(1, uart->edma_base + param_addr + 0x18);  /* CIDX=1 */
-    iowrite32(1, uart->edma_base + param_addr + 0x1C);  /* CCNT=1 */
-
-
-    /* Clear any flags */
-    iowrite32(1 << 28, uart->edma_base + DMA_ECR);  
-    iowrite32(1 << 28, uart->edma_base + DMA_EMCR);  
-    iowrite32(1 << 28, uart->edma_base + DMA_SECR);  
-
-    //iowrite32(0x40, uart->base + 0x0); 
-
-    /* Enable channel 28 */
-    //iowrite32(1 << 28, uart->edma_base + DMA_EESR);  /* EESR */
-    //iowrite32(0x05, uart->base + UART_FCR);  /* Enable FIFO, clear TX/RX */
-    iowrite32(1 << 28, uart->edma_base + DMA_EESR);  /* EESR *
-    //iowrite32(1 << 28, uart->edma_base + DMA_ESR);  /* ESR */
-
     iowrite32(0x05, uart->base + UART_FCR);  /* Clear TX FIFO */
     iowrite32(0x40, uart->base + 0x0); 
-
-
 
 
     ret = wait_for_completion_timeout(&uart->tx_completion, msecs_to_jiffies(1000));
@@ -310,10 +268,10 @@ static void write_dma(struct bbb_uart *uart, const char *data, size_t count)
         dev_info(uart->dev, "DMA TX completed\n");
     }
 
-    //printk("TX FIFO lv = %d\n", ioread32(uart->base + UART_TXFIFO_LVL));
+    printk("After DMA completion, TX FIFO lv = %d\n", ioread32(uart->base + UART_TXFIFO_LVL));/////////
     
 
-
+    /* ======================================== Regs ============================================ */
     // uart->edma_base = ioremap(0x49000000, 0x10000);
     // u32 param_addr = 0, AB_Cnt;
     // param_addr = 0x4820; /* ch 28 -> paramset 65 */
@@ -344,22 +302,14 @@ static void write_dma(struct bbb_uart *uart, const char *data, size_t count)
     // iowrite32(1 << 28, uart->edma_base + DMA_EMCR);  
     // iowrite32(1 << 28, uart->edma_base + DMA_SECR);  
 
-    // //iowrite32(0x40, uart->base + 0x0); 
 
     // /* Enable channel 28 */
-    // //iowrite32(1 << 28, uart->edma_base + DMA_EESR);  /* EESR */
-    // //iowrite32(0x05, uart->base + UART_FCR);  /* Enable FIFO, clear TX/RX */
-    // iowrite32(1 << 28, uart->edma_base + DMA_EESR);  /* EESR *
-    // //iowrite32(1 << 28, uart->edma_base + DMA_ESR);  /* ESR */
+    // iowrite32(1 << 28, uart->edma_base + DMA_EESR);  /* EESR , HW-TRIGGER*/
 
     // iowrite32(0x05, uart->base + UART_FCR);  /* Clear TX FIFO */
     // iowrite32(0x40, uart->base + 0x0); 
-
-    //printk("\n");
     
-
     // while (!(ioread32(uart->edma_base + DMA_IPR) & (1 << 28))){
-    // //dev_info(uart->dev,"AB_Cnt = 0x%x, OPT = %x\n", AB_Cnt, ioread32(uart->edma_base + param_addr + 0x0));
     //     xxx++;
     //     if (xxx >= 500000){
     //         dev_info(uart->dev, "***Timeout***");
@@ -367,10 +317,11 @@ static void write_dma(struct bbb_uart *uart, const char *data, size_t count)
     //     }
     // }
 
-    // printk("TX FIFO lv = %d\n", ioread32(uart->base + UART_TXFIFO_LVL));/////////
+    // printk("After DMA completion, TX FIFO lv = %d\n", ioread32(uart->base + UART_TXFIFO_LVL));/////////
 
-    iowrite32(0x0, uart->base + UART_MDR1); // disable uart
-    iowrite32(0x1, uart->base + UART_IER); // disable TX RX interrupt /////////
+    // iowrite32(0x0, uart->base + UART_MDR1); // enable uart
+    // iowrite32(0x1, uart->base + UART_IER); // disable TX RX interrupt /////////
+
 
 free_buf:
     dma_free_coherent(uart->dev, count, kbuf, dma_addr);
@@ -429,6 +380,13 @@ static const struct file_operations bbb_uart_fops = {
 
 static void bbb_uart_init_hw(struct bbb_uart *uart)
 {
+/*
+LCR(0xBF) -> DLL/DLH and EFR
+EFR(1<<4) -> LCR(0x03 = normal operation) -> FCR[5:4] TX
+EFR(0<<4) -> LCR(0x03 = normal operation) -> FCR[7:6] RX
+
+EFR(1<<4) -> MCR[6] -> TCR/TLR
+*/
     u32 val;
 
     /* 1. Soft reset UART */
@@ -450,12 +408,14 @@ static void bbb_uart_init_hw(struct bbb_uart *uart)
     /* 4. Set MCR[6] = 1 (TCR/TLR enable) — after EFR[4] = 1 */
     iowrite32(1 << 6, uart->base + UART_MCR);
 
-    /* 5. Enable 1-byte granularity (SCR[6] = 1) and set TX trigger = 1 byte */
+    /* 5. Enable 1-byte granularity (SCR[6] = 1) and set TX trigger */
     iowrite32(1 << 6, uart->base + UART_SCR);  // SCR[6] = 1 => granularity = 1
-    iowrite32(0x00, uart->base + UART_TLR);    // TLR[3:0] = 0 => TX trigger = 1 byte
+    iowrite32(0x00, uart->base + UART_TLR);    // TLR[3:0] = 0 => TX trigger = 000xx
 
     /* 6. Enable FIFO + TX trigger via TLR (FCR[4] = 1), clear FIFOs */
-    iowrite32(0x17, uart->base + UART_FCR);  // FCR[4] = 1 => TX trigger via TLR
+    iowrite32(0x17, uart->base + UART_FCR);  // FCR[5:4] = 1 => TX trigger = xxx01
+
+    /* TLR[3:0] + FCR[5:4] = 000 01 = 1 byte */
 
     /* 7. Set baud rate (115200) — assuming 48MHz clock: divisor = 26 */
     iowrite32(26, uart->base + UART_DLL);
@@ -464,7 +424,8 @@ static void bbb_uart_init_hw(struct bbb_uart *uart)
     /* 8. Set 8N1 format (LCR = 0x03) */
     iowrite32(0x03, uart->base + UART_LCR);
 
-    /* 9. Enable DMA mode 1 (SCR[1:0] = 0b11) — for HW-triggered DMA */
+    /* 9. [0] = 1 -> DMAMODECT=SCR[2:1], [2:1] = 01 -> DMA mode 1 (UARTnDMAREQ[0] in TX, UARTnDMAREQ[1] in RX) */
+    /* [6] = 1 -> granularity of 1 for TX */
     iowrite32((1 << 6) | 0x03, uart->base + UART_SCR);  // Preserve SCR[6] too
 
     /* 10. Set MDR1 = 0x00 => 16x UART mode (enable UART) */
