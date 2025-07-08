@@ -1,0 +1,5 @@
+LCR(0xBF) -> DLL/DLH and EFR
+EFR(1<<4) -> LCR(0x03 = normal operation) -> FCR[5:4] TX
+EFR(0<<4) -> LCR(0x03 = normal operation) -> FCR[7:6] RX
+
+EFR(1<<4) -> MCR[6] -> TCR/TLR
