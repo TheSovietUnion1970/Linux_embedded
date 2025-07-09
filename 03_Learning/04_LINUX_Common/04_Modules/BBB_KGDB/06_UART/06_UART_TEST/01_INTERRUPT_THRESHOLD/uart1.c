@@ -59,7 +59,7 @@
 #define MAX_NUM_INTERRUPTS 1000
 #define UART_BUFFER_SIZE 256
 
-#define TX_THRESHOLD_VAL 16 /*******************************************/
+#define TX_THRESHOLD_VAL 35 /*******************************************/
 
 /* Device structure */
 struct bbb_uart {
@@ -160,7 +160,7 @@ static ssize_t bbb_uart_write(struct file *filp, const char __user *buf,
     struct bbb_uart *uart = filp->private_data;
     uart->tlv = ioread32(uart->base + UART_TXFIFO_LVL);
 
-    printk("tlv = %d\n", uart->tlv);
+    printk("tlv = %d, rlv = %d\n", uart->tlv, ioread32(uart->base + UART_RXFIFO_LVL));
 
     if (uart->tlv == 0) {
         uart->Cnt = 0;
@@ -210,49 +210,59 @@ LCR(0xBF) -> DLL/DLH and EFR
 EFR(1<<4) -> LCR(0x03 = normal operation) -> FCR[5:4] TX
 EFR(0<<4) -> LCR(0x03 = normal operation) -> FCR[7:6] RX
 
-EFR(1<<4) -> MCR[6] -> TCR/TLR -> CANNOT use in interrupt
-*/
+EFR(1<<4) -> MCR[6] -> TCR/TLR
 
+
+
+LCR != 0xBF and LCR[7] = 1 => Config mode A
+LCR = 0xBF and LCR[7] = 1 => Config mode B
+LCR[7] = 0 => operational mode 
+*/
     u32 val;
 
-    /* Reset the UART via SYSC register */
-    iowrite32(0x2, uart->sysc);  // Example: soft reset
-    printk("Before while, val = %du\n", ioread32(uart->syss));
+    /* 1. Soft reset UART */
+    iowrite32(0x2, uart->sysc);  // SYSC soft reset
     do {
         val = ioread32(uart->syss);
-    } while (!(val & 0x1));  // Wait for reset completion
-    printk("After while\n");
+    } while (!(val & 0x1));  // SYSS reset done
     dev_info(uart->dev, "Soft reset completed\n");
 
-    /* 2. Disable UART */
-    iowrite32(0x7, uart->base + UART_MDR1);  /* Disable UART */
+    /* 2. Disable UART before config (set MDR1 = 0x7) */
+    iowrite32(0x7, uart->base + UART_MDR1);
 
-
-    /* 3. Access EFR via LCR = 0xBF  => enable LCR(0xBF) -> EFR(0x10) -> FCR[5:4] accessable*/
+    /* 3. LCR = 0xBF  and LCR[7] = 1 => Config mode B ========================*/
     iowrite32(0xBF, uart->base + UART_LCR);
-    iowrite32(0x10, uart->base + UART_EFR);  // EFR[4] = 1 => Enhanced features (to access FCR[5:4]TX)
-
-    /* 3. Configure baud rate (e.g., 115200 with 48MHz clock) */
-    iowrite32(26 & 0xFF, uart->base + UART_DLL);  /* 115200 baud */
+	
+    iowrite32(0x10, uart->base + UART_EFR);  // EFR[4] = 1 => Enhanced features (access MCR[6])
+	
+    iowrite32(26, uart->base + UART_DLL); // Set baud rate (115200) — assuming 48MHz clock: divisor = 26
     iowrite32(0, uart->base + UART_DLH);
-    iowrite32(0x03, uart->base + UART_LCR);  /* 8N1 */
+	
+    /* 4. Set 8N1 format (LCR = 0x03) => Operational mode ========================*/
+    iowrite32(0x03, uart->base + UART_LCR);
+	
+	iowrite32(1 << 6, uart->base + UART_MCR); // Set MCR[6] = 1 (TCR/TLR enable)
+	
+	// always accessable
+	iowrite32((1 << 6) | 0x03 | (1 << 7), uart->base + UART_SCR);   // SCR[6] = 1 => granularity of TX = 1, SCR[2:1] = 1 -> DMA mode 1 (UARTnDMAREQ[0] in TX, UARTnDMAREQ[1] in RX)
+														 // SCR[0] = 1 -> The DMAMODE is set with SCR[2:1]
+                                                         // SCR[7] = 1 => granularity of RX = 1
+	
+	iowrite32(0x88, uart->base + UART_TLR);  // TLR[3:0] = 0 => TX trigger = 1000xx
+                                             // TLR[7:4] = 0 => RX trigger = 1000xx
+	iowrite32(0x37, uart->base + UART_FCR);  // FCR[5:4] = 3 => TX trigger = xxxx11, 
+                                             // FCR[7:6] = 1 => RX trigger = xxxx00, 
+                                             // FCR[2:0] = 7 -> enable FIFO, clear FIFOs
+	
+	/* TLR[3:0] + FCR[5:4] = 1000 11 -> TX threshold trigger is 35 bytes (<=29) */
+    /* TLR[7:4] + FCR[7:6] = 1000 00 -> RX threshold trigger is 32 bytes */
 
-    /* 4. Enable and configure FIFOs ************************* Set according to TX_THRESHOLD_VAL*/
-    iowrite32(0x13, uart->base + UART_FCR);  /* Enable FIFO, clear TX/RX, TX threashold is 16 bytes, RX threshold is 8 bytes */
-    /* If TX threashold is 16 bytes -> less or equal to 64 - 18 bytes, TX triggers */
-    /* If RX threashold is 8 bytes -> more or equal to 8 bytes, RX triggers */
-    /* For interrupt only, can not use TLR register to set the threshold value */
-
-    /* 5. Enable UART */
-    iowrite32(0x7, uart->base + UART_MDR1);  /* UART 16x mode */
-
-    usleep_range(1000, 2000);  /* 1ms */
-
-    /* 6. Enable loopback */
-    iowrite32(0x00, uart->base + UART_MCR);  /* Not Set loopback */
-
-    /* Enable RHR interrupts */
-    iowrite32(1<<0 | 1<<1, uart->base + UART_IER);
+    /* 5. Set MDR1 = 0x00 => 16x UART mode (enable UART) */
+    iowrite32(0x07, uart->base + UART_MDR1);
+	
+    /* 6. Enable RHR interrupt (optional if you're using RX IRQs) */
+    iowrite32(UART_IER_RHR_IT | 1 << 1, uart->base + UART_IER);	
+	
 }
 
 static int bbb_uart_probe(struct platform_device *pdev)
