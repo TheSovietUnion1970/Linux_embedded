@@ -1,0 +1,103 @@
+	iowrite32(0x01, uart->base + UART_TLR);    
+	iowrite32(0x07, uart->base + UART_FCR); 
+
+debian@arm:~$ echo "a" | sudo tee /dev/uart1
+a
+[ 5417.349673] TX - count = 2
+[ 5417.352618] BEFORE DMA , TX FIFO lv = 0
+[ 5417.359228] bbb_uart1 48022000.uart1_device: Write: Preparing 2 bytes
+[ 5417.365876] bbb_uart1 48022000.uart1_device: WRITE-DMA - HW_TRIGGER
+[ 5417.372242] TX FIFO lv = 0
+[ 5417.375005] bbb_uart1 48022000.uart1_device: Submitting TX DMA descriptor
+[ 5417.381859] bbb_uart1 48022000.uart1_device: Issuing TX DMA pending, cookie = 52
+[ 5417.389339] DMA callback => TX FIFO lv = 10
+[ 5417.393568] bbb_uart1 48022000.uart1_device: TX DMA callback called
+[ 5417.399894] bbb_uart1 48022000.uart1_device: DMA TX completed
+[ 5417.405690] After DMA completion, TX FIFO lv = 10
+[ 5417.410464] bbb_uart1 48022000.uart1_device: Wrote 2 bytes, last char = '
+[ 5417.410464] '
+debian@arm:~$ sudo cat /dev/uart1 
+[ 5422.079793] iir2 -> '@'
+[ 5422.082425] iir1 -> '@'
+[ 5422.084892] iir1 -> '@'
+[ 5422.087375] iir1 -> '@'
+[ 5422.089854] iir1 -> '@'
+[ 5422.092315] iir1 -> '@'
+[ 5422.094792] iir1 -> 'a'
+[ 5422.097253] iir1 -> '@'
+[ 5422.099729] iir1 -> '@'
+[ 5422.102207] iir1 -> '
+[ 5422.102207] '
+
+===========================================================
+
+	iowrite32(0x01, uart->base + UART_TLR);    // TLR[3:0] = 1111 => TX trigger = 0000xx
+	iowrite32(0x17, uart->base + UART_FCR);  // FCR[5:4] = 00 => TX trigger = xxxx01, FCR[2:0] = 7 -> enable FIFO, clear FIFOs
+
+debian@arm:~$ echo "a" | sudo tee /dev/uart1
+a
+[ 6153.534614] TX - count = 2
+[ 6153.537558] BEFORE DMA , TX FIFO lv = 0
+[ 6153.544269] bbb_uart1 48022000.uart1_device: Write: Preparing 2 bytes
+[ 6153.550924] bbb_uart1 48022000.uart1_device: WRITE-DMA - HW_TRIGGER
+[ 6153.557286] TX FIFO lv = 0
+[ 6153.560046] bbb_uart1 48022000.uart1_device: Submitting TX DMA descriptor
+[ 6153.566901] bbb_uart1 48022000.uart1_device: Issuing TX DMA pending, cookie = 59
+[ 6153.583897] w1 -> txlv = 6
+[ 6153.586842] DMA callback => TX FIFO lv = 9
+[ 6153.591039] bbb_uart1 48022000.uart1_device: TX DMA callback called
+[ 6153.601302] w2 -> txlv = 9
+[ 6153.604209] bbb_uart1 48022000.uart1_device: DMA TX completed
+[ 6153.610057] After DMA completion, TX FIFO lv = 9
+[ 6153.614788] bbb_uart1 48022000.uart1_device: Wrote 2 bytes, last char = '
+[ 6153.614788] '
+debian@arm:~$ sudo cat /dev/uart1 
+[ 6155.708055] iir2 -> '@'
+[ 6155.710693] iir1 -> '@'
+[ 6155.713163] iir1 -> '@'
+[ 6155.715667] iir1 -> '@'
+[ 6155.718130] iir1 -> '@'
+[ 6155.720613] iir1 -> 'a'
+[ 6155.723092] iir1 -> '@'
+[ 6155.725553] iir1 -> '@'
+[ 6155.728030] iir1 -> '
+[ 6155.728030] '
+
+debian@arm:~$ echo "a" | sudo tee /dev/uart1                                                                                                       
+a
+[ 6517.127822] TX - count = 2
+[ 6517.130900] BEFORE DMA , TX FIFO lv = 0
+[ 6517.137461] bbb_uart1 48022000.uart1_device: Write: Preparing 2 bytes
+[ 6517.144091] bbb_uart1 48022000.uart1_device: WRITE-DMA - HW_TRIGGER
+[ 6517.150455] TX FIFO lv = 0
+[ 6517.153216] bbb_uart1 48022000.uart1_device: Submitting TX DMA descriptor
+[ 6517.160072] bbb_uart1 48022000.uart1_device: Issuing TX DMA pending, cookie = 70
+[ 6517.176727] w1 -> txlv = 10
+[ 6517.179607] DMA callback => TX FIFO lv = 17
+[ 6517.183909] bbb_uart1 48022000.uart1_device: TX DMA callback called
+[ 6517.194155] w2 -> txlv = 17
+[ 6517.197170] bbb_uart1 48022000.uart1_device: DMA TX completed
+[ 6517.203016] After DMA completion, TX FIFO lv = 17
+[ 6517.207801] bbb_uart1 48022000.uart1_device: Wrote 2 bytes, last char = '
+[ 6517.207801] '
+debian@arm:~$ sudo cat /dev/uart1                                                                                          
+[ 6528.866980] iir2 -> '@'
+[ 6528.869609] iir1 -> '@'
+[ 6528.872079] iir1 -> '@'
+[ 6528.874560] iir1 -> '@'
+[ 6528.877038] iir1 -> '@'
+[ 6528.879499] iir1 -> '@'
+[ 6528.881975] iir1 -> '@'
+[ 6528.884435] iir1 -> '@'
+[ 6528.886911] iir1 -> '@'
+[ 6528.889389] iir1 -> 'a'
+[ 6528.891850] iir1 -> '@'
+[ 6528.894324] iir1 -> '@'
+[ 6528.896785] iir1 -> '@'
+[ 6528.899262] iir1 -> '@'
+[ 6528.901739] iir1 -> '@'
+[ 6528.904199] iir1 -> '@'
+[ 6528.906675] iir1 -> '
+[ 6528.906675] '
+
+
