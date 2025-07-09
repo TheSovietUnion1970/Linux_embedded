@@ -1,0 +1,34 @@
+#define API_USE 0
+#define REG_USE 1
+
+Can you API or register
+
+debian@arm:~$ echo "12345678" | sudo tee /dev/uart1                                                         
+12345678[11664.715160] TX - count = 9
+
+[11664.719350] bbb_uart1 48022000.uart1_device: Write: Preparing 9 bytes
+[11664.726014] bbb_uart1 48022000.uart1_device: WRITE-DMA - HW_TRIGGER
+[11664.732353] TX FIFO lv = 0
+[11664.845478] bbb_uart1 48022000.uart1_device: ***Timeout***
+[11664.851018] kbuf[0] = 0x31, test_buf[0] = 0x40
+[11664.855542] kbuf[1] = 0x32, test_buf[1] = 0x40
+[11664.860035] kbuf[2] = 0x33, test_buf[2] = 0x40
+[11664.864523] kbuf[3] = 0x34, test_buf[3] = 0x40
+[11664.869009] kbuf[4] = 0x35, test_buf[4] = 0x40
+[11664.873494] kbuf[5] = 0x36, test_buf[5] = 0x40
+[11664.877980] kbuf[6] = 0x37, test_buf[6] = 0x40
+[11664.882468] kbuf[7] = 0x38, test_buf[7] = 0x40
+[11664.886975] kbuf[8] = 0xa, test_buf[8] = 0x40
+[11664.891378] *****After DMA completion, TX FIFO lv = 9*****
+[11664.896933] bbb_uart1 48022000.uart1_device: Wrote 9 bytes, last char = '
+[11664.896933] '
+debian@arm:~$ sudo cat /dev/uart1
+[11666.982069] bbb_uart1 48022000.uart1_device: Read: Preparing 9 bytes
+[11666.988627] bbb_uart1 48022000.uart1_device: READ-DMA - HW_TRIGGER
+[11666.994913] Before DMA, RX FIFO lv = 9
+[11667.109202] bbb_uart1 48022000.uart1_device: ***Timeout***
+[11667.114737] After DMA completion, RX FIFO lv = 0
+[11667.119397] *****After DMA completion, RX FIFO lv = 0*****
+[11667.124928] *****dst = '12345678
+[11667.124928] '*****
+
