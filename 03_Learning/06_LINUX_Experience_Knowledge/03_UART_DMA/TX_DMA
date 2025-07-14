@@ -1,0 +1,27 @@
+static void write_dma(struct bbb_uart *uart, const char *data, size_t count)
+{
+...
+iowrite32(((char*)kbuf)[0], uart->base + 0x0); // write the first byte to trigger DMA TX
+...
+}
+
+Log:
+debian@armecho "Hello Soviet XXX" | sudo tee cat /dev/uart1                      
+Hello Soviet XXX[ 2046.346591] TX - count = 17
+
+[ 2046.351582] bbb_uart1 48022000.uart1_device: Write: Preparing 17 bytes
+[ 2046.358321] bbb_uart1 48022000.uart1_device: WRITE-DMA - HW_TRIGGER
+[ 2046.364661] TX FIFO lv = 0
+[ 2046.367417] bbb_uart1 48022000.uart1_device: Submitting TX DMA descriptor
+[ 2046.374265] bbb_uart1 48022000.uart1_device: Issuing TX DMA pending, cookie = 8
+[ 2046.381687] DMA callback => TX FIFO lv = 17
+[ 2046.385932] bbb_uart1 48022000.uart1_device: TX DMA callback called
+[ 2046.405492] bbb_uart1 48022000.uart1_device: DMA TX completed
+[ 2046.411458] After DMA completion, TX FIFO lv = 0
+[ 2046.416197] bbb_uart1 48022000.uart1_device: Wrote 17 bytes, last char = '
+[ 2046.416197] '
+==> 'TX DMA callback called'
+
+CASE:
+If not triggering manually the first byte, DMA TX will not be triggered,
+Else uart will re-evaluate the whole situation and trigger DMA request

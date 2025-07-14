@@ -1,0 +1,40 @@
+static void read_dma(struct bbb_uart *uart, size_t count)
+{
+...
+((char*)kbuf)[0] = ioread32(uart->base + 0x0); // read the first byte to trigger RX DMA
+...
+}
+
+Log:
+debian@armecho "Hello Soviet XXX" | sudo tee cat /dev/uart1                      
+Hello Soviet XXX[ 2046.346591] TX - count = 17
+
+[ 2046.351582] bbb_uart1 48022000.uart1_device: Write: Preparing 17 bytes
+[ 2046.358321] bbb_uart1 48022000.uart1_device: WRITE-DMA - HW_TRIGGER
+[ 2046.364661] TX FIFO lv = 0
+[ 2046.367417] bbb_uart1 48022000.uart1_device: Submitting TX DMA descriptor
+[ 2046.374265] bbb_uart1 48022000.uart1_device: Issuing TX DMA pending, cookie = 8
+[ 2046.381687] DMA callback => TX FIFO lv = 17
+[ 2046.385932] bbb_uart1 48022000.uart1_device: TX DMA callback called
+[ 2046.405492] bbb_uart1 48022000.uart1_device: DMA TX completed
+[ 2046.411458] After DMA completion, TX FIFO lv = 0
+[ 2046.416197] bbb_uart1 48022000.uart1_device: Wrote 17 bytes, last char = '
+[ 2046.416197] '
+debian@arm:~$ sudo cat /dev/uart1
+[ 2047.836287] bbb_uart1 48022000.uart1_device: Read: Preparing 17 bytes
+[ 2047.842951] bbb_uart1 48022000.uart1_device: READ-DMA - HW_TRIGGER
+[ 2047.849234] Before DMA, RX FIFO lv = 17
+[ 2047.853129] bbb_uart1 48022000.uart1_device: Submitting RX DMA descriptor
+[ 2047.859981] bbb_uart1 48022000.uart1_device: Issuing RX DMA pending, cookie = 8, u
+art->base = 0xa9b02b2c
+[ 2047.869574] bbb_uart1 48022000.uart1_device: RX DMA callback called
+[ 2047.888056] After DMA completion, RX FIFO lv = 0
+[ 2047.892885] bbb_uart1 48022000.uart1_device: DMA RX completed
+[ 2047.898726] *****After DMA completion, RX FIFO lv = 0*****
+[ 2047.904263] *****dst = 'Hello Soviet XXX
+[ 2047.904263] '*****
+==> 'RX DMA callback called'
+
+CASE:
+If not triggering manually the first byte, DMA TX will not be triggered,
+Else uart will re-evaluate the whole situation and trigger DMA request
