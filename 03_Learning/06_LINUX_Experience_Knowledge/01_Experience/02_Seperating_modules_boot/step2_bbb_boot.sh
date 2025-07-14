@@ -113,8 +113,27 @@ EOF
 
 sync
 
+echo "Handling g_ether.service..."
+# Create g_ether systemd service inside the SD card rootfs
+cat << 'EOF' > /media/rootfs/etc/systemd/system/g_ether.service
+[Unit]
+Description=Load g_ether USB Gadget
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/modprobe g_ether
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable the service using chroot
+sudo chroot /media/rootfs/ /bin/bash -c  "/bin/systemctl enable g_ether.service"
+
 echo "Writing /etc/modules-load.d/g_ether.conf..."
-echo 'g_ether host_addr=192.168.137.1 dev_addr=192.168.137.2' | sudo tee -a /etc/modules-load.d/g_ether.conf
+sudo chroot /media/rootfs/ /bin/bash -c  "echo 'g_ether host_addr=192.168.137.1 dev_addr=192.168.137.2' | sudo tee -a /etc/modules-load.d/g_ether.conf"
 
 # === UNMOUNT ===
 echo "Unmounting..."
