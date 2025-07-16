@@ -1,0 +1,13 @@
+MCSPI_MODULCTR (0x128):
+	[0] -> 1: Only one channel will be used in master mode
+MCSPI_CH0CON (0x12C):
+	[0], [1]
+	*[6] - SPI_EN
+	[11:7] -> 7 for 8 bits
+	[13:12] -> 2 for Transmit-only mode
+	[16] ->DPE0 (bit 16): Data pin 0 enable (0 for D1 as MOSI).
+	*[18] IS (bit 18): Input select (1 for D0 as MISO).
+	[20] - Manual SPIEN assertion
+MCSPI_CH0CTR (0x134)
+MCSPI_TX0 (0x138)
+MCSPI_CH0STAT (0x130)
