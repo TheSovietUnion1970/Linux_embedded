@@ -191,10 +191,9 @@ static int spi_device_probe(struct platform_device *pdev)
 
     // OMAP2_MCSPI_CHCONF_EPOL -> 0
 
+    chconf &= ~(1<<29); // Clock granularity of power of 2
     /* set clock divisor */
-    chconf |= OMAP2_MCSPI_CHCONF_CLKD_MASK; 
-
-    chconf |= 1<<29; // 1 clock cycle granularity
+    chconf |= 6 << 2; // Divide by 64 (2^6 = 64) -> clk =  48 000 000 / 64 = 750 000 Hz
 
     // chconf |= OMAP2_MCSPI_CHCONF_FORCE; // Manual CS control
 
