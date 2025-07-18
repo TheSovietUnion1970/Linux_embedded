@@ -1,0 +1,7 @@
+    // low CS
+    ch0cfg = ioread32(data->base + OMAP2_MCSPI_CHCONF0);
+    ch0cfg |= OMAP2_MCSPI_CHCONF_EPOL; 
+    iowrite32(ch0cfg, data->base + OMAP2_MCSPI_CHCONF0);
+
+
+chconf |= OMAP2_MCSPI_CHCONF_FORCE; // low EN - EPOL = 1, high EN - EPOL = 0
