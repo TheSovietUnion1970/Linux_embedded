@@ -1,0 +1,5 @@
+Data received: 12 bytes
+
+If set RX_TRIGGER to 0, at least 1 byte will trigger interrupt, data->jump_num = 12
+If set RX_TRIGGER to 1, at least 2 byte will trigger interrupt, data->jump_num = 6
+If set RX_TRIGGER to 2, at least 2 byte will trigger interrupt, data->jump_num = 4
