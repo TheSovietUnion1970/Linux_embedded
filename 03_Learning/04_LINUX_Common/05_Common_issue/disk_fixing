@@ -1,0 +1,11 @@
+check:
+mount | grep /media/vinh/DATA
+
+solution1: change to rw:
+sudo mount -o remount,rw /media/vinh/DATA
+
+solution1: ntfsfix:
+cd ~
+sudo umount /media/vinh/DATA
+sudo ntfsfix /dev/nvme0n1p4
+
