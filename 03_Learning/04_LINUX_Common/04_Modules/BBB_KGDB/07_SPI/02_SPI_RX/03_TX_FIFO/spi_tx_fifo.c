@@ -58,8 +58,9 @@
 #define MCSPI_CHSTAT_RX0_FULL BIT(2) // RX0 full interrupt (same as CHSTAT0 RXS)
 #define MCSPI_CHSTAT_TX0_EMPTY BIT(0)
 
-#define TX_TRIGGER 1
+#define TX_TRIGGER 2
 #define FIFO_USED 1
+#define LOOPs 10
 
 /* 
 NOTE:
@@ -156,7 +157,7 @@ static ssize_t spi_device_write(struct file *filp, const char __user *buf, size_
     timeout = jiffies + msecs_to_jiffies(3000);
 
     // Perform the transfer
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < LOOPs; i++) {
         // Wait for TX register to be empty
         while ((ioread32(data->base + MCSPI_CHSTAT0) & MCSPI_CHSTAT_TXS) != MCSPI_CHSTAT_TXS) {
             if (time_after(jiffies, timeout)) {
@@ -176,16 +177,20 @@ static ssize_t spi_device_write(struct file *filp, const char __user *buf, size_
 
         // Then, write the number of writes defined by MCSPI_XFERLEVEL[AEL] + 1
         for (j = 0; j < TX_TRIGGER + 1; j++){
+
             data->jump++;
+            if (data->jump == LOOPs) break;
+
             iowrite32(0x40, data->base + MCSPI_TX0);
+            msleep(1000);
         }
+        if (data->jump == LOOPs) data->wait_TX = 1;
         while(data->wait_TX != 1);
 
         udelay(100); // need a small break to after interrupt handler
 
         data->wait_TX = 0;
         i += TX_TRIGGER;
-
 
     }
 
