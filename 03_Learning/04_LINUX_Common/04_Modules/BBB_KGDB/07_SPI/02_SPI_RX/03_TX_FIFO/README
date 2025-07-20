@@ -1,0 +1,5 @@
+#define TX_TRIGGER 1
+#define FIFO_USED 1
+
++ If FIFO_USED is set to 0, no fifo used
++ If FIFO_USED is set to 1 and TX_TRIGGER is set a number, interrupt is raised whenever a number + 1 of writes are performed
