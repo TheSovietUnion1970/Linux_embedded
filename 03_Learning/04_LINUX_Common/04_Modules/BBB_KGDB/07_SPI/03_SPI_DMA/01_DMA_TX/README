@@ -1,0 +1,15 @@
+debian@arm:~$ sudo cat /dev/spi0
+[ 6193.403625] Jump IRQ = 0, jump w = 0
+[ 6193.407458] spi0_class spi0: TX DMA callback called
+
+	-> to check DMA callback
+	
+	===
+	
+#define TX_TRIGGER 0 // to write 1 byte manually to trigger DMA request
+#define FIFO_USED 1
+#define LOOPs 10
+
+#define DMA_USED 1
+
+u8 glob_TX[LOOPs] = {0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49};
