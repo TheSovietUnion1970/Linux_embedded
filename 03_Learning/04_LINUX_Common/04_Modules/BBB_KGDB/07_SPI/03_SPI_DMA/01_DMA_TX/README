@@ -13,3 +13,6 @@ debian@arm:~$ sudo cat /dev/spi0
 #define DMA_USED 1
 
 u8 glob_TX[LOOPs] = {0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49};
+
+	===
+TX_TRIGGER should be 0 in order to write 1 byte manually
