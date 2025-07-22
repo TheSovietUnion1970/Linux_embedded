@@ -1,0 +1,3 @@
+In this V1:
++ Every 2ms, msg is sent, so timeout DMA should be 2ms
++ Not use interrupt here as some first bytes are missed
