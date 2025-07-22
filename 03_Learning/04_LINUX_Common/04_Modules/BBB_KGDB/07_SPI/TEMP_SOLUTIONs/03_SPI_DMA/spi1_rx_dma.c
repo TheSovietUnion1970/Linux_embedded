@@ -168,6 +168,7 @@ static irqreturn_t irqHandler(int irq, void *d)
     u32 irqsts;
     u8 i;
     int x;
+    u32 ch0cfg;
 
     irqsts = ioread32(data->base + MCSPI_IRQSTATUS);
     //printk("irqsts = 0x%x, WCNT = %d\n", irqsts, ioread32(data->base + MCSPI_XFERLEVEL));
@@ -181,6 +182,10 @@ static irqreturn_t irqHandler(int irq, void *d)
 #if (DMA_USED)
         // disable all interrupt
         iowrite32(0, data->base + MCSPI_IRQENABLE);
+
+        ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
+        ch0cfg |= 1u << 15; // DMA request read;
+        iowrite32(ch0cfg, data->base + MCSPI_CHCONF0);
 
         schedule_work(&data->re_request_work);
 #endif
@@ -278,6 +283,7 @@ void spi_hw_init(struct spi_device_data *data){
     // Configure SPI controller (slave mode)
     iowrite32(MCSPI_MODULCTRL_MS, data->base + MCSPI_MODULCTRL);
 
+    chconf = ioread32(data->base + MCSPI_CHCONF0);
     // Configure CHCONF1 for SPI1 (CS1)
     chconf |= (8 - 1) << 7; // 8-bit word length
     chconf &= ~MCSPI_CHCONF_POL; // SPI Mode 0
