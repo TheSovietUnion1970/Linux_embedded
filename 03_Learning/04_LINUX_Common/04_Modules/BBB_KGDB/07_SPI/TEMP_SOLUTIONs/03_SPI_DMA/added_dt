@@ -23,3 +23,30 @@
 
 	};
 };
+
+
+/
+{
+	spi1_device {
+		compatible = "spi1-based";
+		
+		reg = <0x481a0000 0x400>;  // Single region for the entire SPI1 peripheral
+		
+		clocks = <&l4ls_clkctrl AM3_L4LS_SPI1_CLKCTRL 0>,
+				 <&l3_clkctrl AM3_L3_TPCC_CLKCTRL 0>;
+		clock-names = "fck-spi1", "fck-dma";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&spi1_pins>;
+
+		dmas = <&edma 43 0>;
+		dma-names = "rx111";
+
+		/* Combine GPIO1 and SPI0 interrupts */
+		interrupts-extended = <&intc 125>;
+							  <&intc 12>, <&intc 13>, <&intc 14>;
+							  
+		status = "okay";
+
+	};
+};
