@@ -99,6 +99,8 @@ struct spi_device_data {
     struct completion tx_completion;
     bool use_dma; /* Flag to indicate if DMA is used */
     bool DMA_IRQ;
+
+    u8* src1;
 };
 
 static irqreturn_t irqHandler(int irq, void *d)
@@ -149,6 +151,24 @@ void Non_dma_write(struct spi_device_data* data){
     int i, j;
     unsigned long timeout;
     u32 ch0cfg;
+
+
+
+    // low CS 
+    ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
+    ch0cfg |= MCSPI_CHCONF_FORCE; 
+    iowrite32(ch0cfg, data->base + MCSPI_CHCONF0);
+
+    iowrite32(LOOPs, data->base + MCSPI_TX0);
+    msleep(1000);
+
+    // high CS
+    ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
+    ch0cfg &=~ MCSPI_CHCONF_FORCE; 
+    iowrite32(ch0cfg, data->base + MCSPI_CHCONF0);
+
+    msleep(MS_DELAY); // delay 2s before sending read data
+
 
     iowrite32(MCSPI_CHSTAT_TX0_EMPTY, data->base + MCSPI_IRQENABLE);
 
@@ -209,14 +229,36 @@ void Dma_write(struct spi_device_data* data){
     int count = data->count;
     u32 ch0cfg;
 
-    dma_addr = dma_map_single(data->dev, data->tx_buf, count, DMA_FROM_DEVICE);
+    // data->src1 = devm_kmalloc(data->dev, 3, GFP_KERNEL | GFP_DMA);
+    // if (!data->src1) {
+    //     dev_err(data->dev, "Failed to allocate src buffer\n");
+    //     return;
+    // }
+
+    // dma_addr = dma_map_single(data->dev, data->src1, 3, DMA_TO_DEVICE);
+    // if (dma_mapping_error(data->dev, dma_addr)) {
+    //     dev_err(data->dev, "Failed to map source buffer for DMA\n");
+    //     //return -ENOMEM;
+    // }
+
+    /* Allocate DMA-coherent buffer */
+    data->src1 = dma_alloc_coherent(data->dev, count, &dma_addr, GFP_KERNEL | GFP_DMA);
+    if (!data->src1) {
+        dev_err(data->dev, "Failed to allocate DMA-coherent buffer\n");
+        return;
+    }
+
+    //memset(data->src1, 0x40, count);
+    memcpy(data->src1, data->tx_buf, count);
 
     // low CS 
     ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
     ch0cfg |= MCSPI_CHCONF_FORCE; 
     iowrite32(ch0cfg, data->base + MCSPI_CHCONF0);
 
+    udelay(2);
     iowrite32(count, data->base + MCSPI_TX0);
+    //udelay(50);
 
     // high CS
     ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
@@ -261,7 +303,8 @@ void Dma_write(struct spi_device_data* data){
         goto free_buf;
     }
 
-    udelay(50); // wait 50 us to let DMA transfer is done
+    udelay(500); // wait 50 us to let DMA transfer is done
+    //msleep(2000);
 
     // high CS
     ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
@@ -269,7 +312,7 @@ void Dma_write(struct spi_device_data* data){
     iowrite32(ch0cfg, data->base + MCSPI_CHCONF0);
 
 free_buf:
-    dma_unmap_single(data->dev, dma_addr, count, DMA_FROM_DEVICE);
+    dma_unmap_single(data->dev, dma_addr, count, DMA_TO_DEVICE);
 
     // high CS
     ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
@@ -305,7 +348,7 @@ static ssize_t spi_device_write(struct file *filp, const char __user *buf, size_
 
     
     // usleep_range(1000, 3000);
-    dev_info(data->dev, "Writing %zu bytes: %*ph\n", LOOPs, (int)LOOPs, glob_TX);
+    dev_info(data->dev, "Writing %zu bytes: %*ph\n", count, (int)count, data->tx_buf);
 
     return count;
 }
@@ -321,6 +364,7 @@ static ssize_t spi_device_read(struct file *filp, char __user *buf, size_t count
 
     data->jump_irq = 0;
     data->jump = 0;
+    data->DMA_IRQ = 0;
 
     return 0;
 }
@@ -478,6 +522,7 @@ static int spi_device_probe(struct platform_device *pdev)
         dev_info(&pdev->dev, "No TX DMA channel, falling back to non-DMA mode: %ld\n",
                  PTR_ERR(data->tx_chan));
         data->tx_chan = NULL;
+        return -1;
     }
 
     /* COnfig parameters for DMA */

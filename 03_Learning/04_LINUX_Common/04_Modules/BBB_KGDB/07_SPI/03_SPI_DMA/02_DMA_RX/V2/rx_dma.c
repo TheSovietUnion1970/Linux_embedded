@@ -78,9 +78,10 @@
 
 
 #define RX_TRIGGER 0
-#define DMA_SIZE 10
+#define MS_DELAY 3000 // increarw the time from 2000 to 3000 to make sure the completion of DMA received data
+
 #define DMA_USED 1
-#define MS_DELAY 2000
+
 
 struct spi_device_data {
     dev_t dev_num;
@@ -98,17 +99,19 @@ struct spi_device_data {
 
     u8 index;
     u8 jump_num;
+    u8 is_get_count;
 
     /* DMA-related fields */
     struct dma_chan *rx_chan;
     struct completion rx_completion;
     bool use_dma; /* Flag to indicate if DMA is used */
 
-    u8* rx_data;
     size_t count;
 
     struct work_struct re_request_work;
 };
+
+void spi_hw_init(struct spi_device_data *data);
 
 static void spi1_rx_dma_callback(void *data)
 {
@@ -123,6 +126,7 @@ void Dma_read(struct spi_device_data* data){
     struct dma_async_tx_descriptor *rx_desc;
     int ret;
     int i;
+    u32 ch0cfg;
 
     /* Allocate DMA-coherent buffer */
     kbuf = dma_alloc_coherent(data->dev, data->count, &dma_dst_addr, GFP_KERNEL | GFP_DMA);
@@ -130,10 +134,10 @@ void Dma_read(struct spi_device_data* data){
         dev_err(data->dev, "Failed to allocate DMA-coherent buffer\n");
         return;
     }
-    memset(kbuf, 0x40, DMA_SIZE); // @
+    memset(kbuf, 0x40, data->count); // @
 
     reinit_completion(&data->rx_completion);
-    rx_desc = dmaengine_prep_slave_single(data->rx_chan, dma_dst_addr, DMA_SIZE,
+    rx_desc = dmaengine_prep_slave_single(data->rx_chan, dma_dst_addr, data->count,
                                             DMA_DEV_TO_MEM, DMA_CTRL_ACK | DMA_PREP_INTERRUPT);
     if (!rx_desc) {
         dev_err(data->dev, "Failed to prepare RX DMA descriptor\n");
@@ -149,7 +153,7 @@ void Dma_read(struct spi_device_data* data){
     dev_info(data->dev, "Issuing RX DMA pending\n");
     dma_async_issue_pending(data->rx_chan);
 
-    ((char*)kbuf)[data->index++] = ioread32(data->base + MCSPI_RX0);
+    //((char*)kbuf)[data->index++] = ioread32(data->base + MCSPI_RX0);
 
     // due to every 2ms, msg is sent, so the timeout should be 2ms
     ret = wait_for_completion_timeout(&data->rx_completion, msecs_to_jiffies(MS_DELAY));
@@ -164,11 +168,17 @@ void Dma_read(struct spi_device_data* data){
 free_buf:
     dma_free_coherent(data->dev, data->count, kbuf, dma_dst_addr);
 
-    printk("Buffer received:\n");
-    for (i = 0; i < DMA_SIZE; i++){
+    printk("Buffer received (%d):\n", data->count);
+    for (i = 0; i < data->count; i++){
         printk("'%c' ", ((char*)kbuf)[i]);
     }
-    printk("\n");
+    printk("===== \n");
+
+    ch0cfg = ioread32(data->base + MCSPI_CHCONF0);
+    ch0cfg |= 0u << 15; // Disable DMA request read;
+    iowrite32(ch0cfg, data->base + MCSPI_CHCONF0);
+
+    spi_hw_init(data);
 
     iowrite32(MCSPI_CHSTAT_RX0_FULL, data->base + MCSPI_IRQENABLE); // enable IRQ for next time
 }
@@ -186,14 +196,28 @@ static irqreturn_t irqHandler(int irq, void *d)
     u32 ch0cfg;
 
     irqsts = ioread32(data->base + MCSPI_IRQSTATUS);
-    //printk("irqsts = 0x%x, WCNT = %d\n", irqsts, ioread32(data->base + MCSPI_XFERLEVEL));
+    //printk("XXX\n");
 
     if (irqsts & MCSPI_CHSTAT_RX0_FULL) {
 
 #if (!DMA_USED)
-        // Read data from RX1 (1 byte) manually as in DMA, RX_TRIGGER is set to 0
-        for (x = 0; x < RX_TRIGGER + 1; x++){
-            rx_data[data->index++] = ioread32(data->base + MCSPI_RX0);
+        int get_count;
+
+        if (data->is_get_count == 0){
+            get_count = ioread32(data->base + MCSPI_RX0);
+            data->is_get_count = 1;
+            printk("is get count = %d\n", get_count);
+        }
+
+        else {
+            data->rx_buffer[data->index++] = ioread32(data->base + MCSPI_RX0);
+
+            if (data->index == get_count){
+                data->count = data->index;
+                data->index = 0;
+                data->is_get_count = 0;
+                printk("Done received without DMA\n");
+            }
         }
 #else
         data->count = ioread32(data->base + MCSPI_RX0);
@@ -235,16 +259,26 @@ static int spi_device_open(struct inode *inode, struct file *file)
 static ssize_t spi_device_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
     struct spi_device_data *data = filp->private_data;
-    // size_t to_copy;
+    int i;
 
     // // Wait for data to be available
     // wait_event_interruptible(data->recv_wait, data->data_ready || kthread_should_stop());
 
     // // Copy received data to user space
     // to_copy = min(count, data->rx_count);
-    // if (copy_to_user(buf, data->rx_buffer, to_copy)) {
-    //     return -EFAULT;
-    // }
+    if (copy_to_user(buf, data->rx_buffer, 5)) {
+        return -EFAULT;
+    }
+
+    printk("index = %d\n", data->index);
+    for (i = 0; i < 5; i++){
+        printk("->'%c' ", data->rx_buffer[i]);
+    }
+
+    // back up
+    data->index = 0;
+    data->is_get_count = 0;
+
 
     // // Shift remaining data in buffer
     // if (to_copy < data->rx_count) {
@@ -257,7 +291,7 @@ static ssize_t spi_device_read(struct file *filp, char __user *buf, size_t count
 
     // return to_copy;
 
-    printk("channel status1 = 0x%x, RX1 = 0x%x, irqsts = 0x%x\n", ioread32(data->base + MCSPI_CHSTAT0), ioread32(data->base + MCSPI_RX0), ioread32(data->base + MCSPI_IRQSTATUS));
+    // printk("channel status1 = 0x%x, RX1 = 0x%x, irqsts = 0x%x\n", ioread32(data->base + MCSPI_CHSTAT0), ioread32(data->base + MCSPI_RX0), ioread32(data->base + MCSPI_IRQSTATUS));
     //printk("rx = '%s', i = %d\n", rx_data, data->index);
 
     return 0;
@@ -304,7 +338,7 @@ void spi_hw_init(struct spi_device_data *data){
     iowrite32(MCSPI_CHCTRL_EN, data->base + MCSPI_CHCTRL0);
 
     // Enable RX0_FULL interrupt
-    iowrite32(MCSPI_CHSTAT_RX0_FULL | MCSPI_CHSTAT_RX0_OVERFLOW | MCSPI_CHSTAT_EOWKE, data->base + MCSPI_IRQENABLE);
+    iowrite32(MCSPI_CHSTAT_RX0_FULL, data->base + MCSPI_IRQENABLE);
 
         // chconf = ioread32(data->base + MCSPI_CHCONF0);
         // chconf |= 1u << 15; // DMA request read;
@@ -350,6 +384,7 @@ static int spi_device_probe(struct platform_device *pdev)
 
     data->index = 0;
     data->jump_num = 0;
+    data->is_get_count = 0;
 
     // Map SPI controller registers
     data->base = ioremap(SPI1_BASE, 0x400);
@@ -492,6 +527,12 @@ static int spi_device_probe(struct platform_device *pdev)
 static int spi_device_remove(struct platform_device *pdev)
 {
     struct spi_device_data *data = platform_get_drvdata(pdev);
+
+    // Cancel any pending workqueue tasks
+    cancel_work_sync(&data->re_request_work);
+
+    // Disable interrupts
+    iowrite32(0, data->base + MCSPI_IRQENABLE);
 
     if (data->rx_chan)
         dma_release_channel(data->rx_chan);
