@@ -1,3 +1,4 @@
 Can use TX (non-dma or dma) with RX (non-dma or dma)
 * Note:
 + TX(non-dma) and RX(non-dma, not using FIFO_DRAINED)
++ TX(dma) and RX(non-dma, should use FIFO_DRAINED)
