@@ -47,7 +47,7 @@
 #define RX_TRIGGER 0
 
 #define DRIVER_NAME "i2c2_device_driver"
-#define DEVICE_NAME "i2c2"
+#define DEVICE_NAME "i2c-2"
 
 struct i2c_device_data {
     struct i2c_adapter *adap;
@@ -97,17 +97,30 @@ void i2c2_slave_init(struct i2c_device_data *data) {
     // enable_i2c2_clock(data);
     u32 i2c_con = 0;
 
+    i2c_con = ioread32(data->base + I2C_CON);
+    i2c_con |= (0u << 15); // [15] disable i2c module before reset
+    iowrite32(i2c_con, data->base + I2C_CON);
+
+    dev_info(data->dev, "Begin reset\n");
     iowrite32(0x2, data->base + I2C_SYSC); // Set soft reset
+
+    i2c_con = ioread32(data->base + I2C_CON);
+    i2c_con |= (1u << 15); // [15] enable i2c module before reset
+    iowrite32(i2c_con, data->base + I2C_CON);
+
+    dev_info(data->dev, "Wait to reset\n");
     while (!(ioread32(data->base + I2C_SYSS)&(1u)));  // Wait for reset complete
+
+    dev_info(data->dev, "Done reset\n");
     iowrite32(0x0, data->base + I2C_SYSC); // Clear reset - normal mode
 
-    i2c_con = ioread32(data->base + i2c_con);
+    i2c_con = ioread32(data->base + I2C_CON);
     i2c_con &= ~(1u << 15); // disable i2c module
     iowrite32(i2c_con, data->base + I2C_CON);
 
     iowrite32(SLAVE_ADDRESS, data->base + I2C_OA); // Set own address of slave
 
-    i2c_con = ioread32(data->base + i2c_con);
+    i2c_con = ioread32(data->base + I2C_CON);
     i2c_con |= (1u << 15)|(0u << 10)|(0u << 9); // [15] enable i2c module, [MST:10]: slave mode, [TRX:9]:  MST = 0, TRX = x, Operating Mode = Slave receiver
     iowrite32(i2c_con, data->base + I2C_CON);
 
@@ -128,10 +141,15 @@ static ssize_t i2c2_slave_read(struct file *filp, char __user *buf, size_t count
 
     dev_info(data->dev, "Reading %zu bytes: %*ph\n", data->count, (int)data->count, data->rx);
 
+    // if (data->count > 10){
+    //     return 
+    // }
+
     if (copy_to_user(buf, data->rx, count)) {
         return -EFAULT;
     }
 
+    count = data->count;
     data->count = 0;
     return count;
 }
@@ -150,6 +168,8 @@ static int i2c2_probe(struct platform_device *pdev)
     data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
     if (!data)
         return -ENOMEM;
+
+    platform_set_drvdata(pdev, data);
 
     data->base = ioremap(i2c2_BASE, 0x10000);
     data->dev = &pdev->dev;
@@ -209,7 +229,7 @@ static int i2c2_probe(struct platform_device *pdev)
         return PTR_ERR(data->class);
     }
 
-    data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, "i2c2");
+    data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, "i2c-2");
     if (IS_ERR(data->dev)) {
         dev_err(&pdev->dev, "Failed to create device: %ld\n", PTR_ERR(data->dev));
         class_destroy(data->class);
@@ -226,8 +246,14 @@ static int i2c2_probe(struct platform_device *pdev)
 
 static int i2c2_remove(struct platform_device *pdev)
 {
-    struct i2c_adapter *adap = platform_get_drvdata(pdev);
-    i2c_del_adapter(adap);
+    struct i2c_device_data *data = platform_get_drvdata(pdev);
+    
+    if (data->dev)
+        device_destroy(data->class, data->dev_num);
+    if (data->class)
+        class_destroy(data->class);
+    cdev_del(&data->cdev);
+
     return 0;
 }
 
