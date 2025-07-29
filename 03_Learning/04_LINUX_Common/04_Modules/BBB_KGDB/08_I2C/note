@@ -9,3 +9,19 @@ sudo m 0x44e10958 (i2c1_sda)
 
 sudo m 0x44e10954 (i2c2_scl)
 sudo m 0x44e10950 (i2c2_sda)
+
+=========
+
+
+/sys/class/spi_master/ -> inspect component has been present or not
+debian@arm:~$ ls -l /sys/class/spi_master/spi0/ -> show info
+cat /sys/class/spi_master/spi0/uevent -> show which driver is bound to the node
+
+cat /proc/interrupts | grep 65(<hw irq>)
+
+=== CM_PER_SPI0_CLKCTRL ===
+debian@arm:~$ sudo m  0x44E0004C w 0x2                                               
+/dev/mem opened.
+Memory mapped at address 0xb6fbc000.
+Value at address 0x44E0004C (0xb6fbc04c): 0x30000
+Written 0x2; readback 0x30002
