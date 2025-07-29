@@ -429,4 +429,26 @@
 	};
 };
 
+/
+{
+	i2c2_device {
+		compatible = "i2c2-based";
+		
+		reg = <0x4819c000 0x1000>;  // Single region for the entire I2C2 peripheral
+		
+		clocks = <&l4ls_clkctrl AM3_L4LS_I2C3_CLKCTRL 0>;
+		clock-names = "fck-i2c2";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c2_pins>;
+
+
+		/* Combine I2c2 interrupts */
+		interrupts-extended = <&intc 30>;
+							  
+		status = "okay";
+
+	};
+};
+
 

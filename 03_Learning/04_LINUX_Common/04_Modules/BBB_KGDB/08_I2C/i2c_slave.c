@@ -9,13 +9,13 @@
 #define SLAVE_ADDRESS 0x40
 
 // Register base addresses
-#define I2C1_BASE       0x4802A000
+#define i2c2_BASE       0x4819c000
 #define CM_PER_BASE     0x44E00000
 
 // CM_PER registers
-//#define CM_PER_I2C1_CLKCTRL    (*(volatile uint32_t *)(CM_PER_BASE + 0x48))
+//#define CM_PER_i2c2_CLKCTRL    (*(volatile uint32_t *)(CM_PER_BASE + 0x48))
 
-// I2C1 registers (offsets)
+// i2c2 registers (offsets)
 #define I2C_SYSC        0x10  // System configuration
 #define I2C_SYSS        0x90  // System status
 #define I2C_CON         0xA4  // Control
@@ -23,19 +23,31 @@
 #define I2C_SCLL        0xB4  // SCL low time
 #define I2C_SCLH        0xB8  // SCL high time
 #define I2C_SA          0xAC  // Slave address
+#define I2C_OA          0xA8  // Own address
 #define I2C_CNT         0x98  // Data count
 #define I2C_DATA        0x9C  // Data
 #define I2C_IRQENABLE_SET 0x2C  // Enable interrupts
+#define I2C_IRQENABLE_CLR 0x30  // Enable interrupts
 #define I2C_IRQSTATUS_RAW 0x24  // Interrupt raw status
 #define I2C_IRQSTATUS   0x28  // Interrupt status
+#define I2C_BUF         0x94  // Buffer
 
 #define I2C_IRQSTATUS_RAW_XRDY BIT(4)
 #define I2C_IRQSTATUS_RAW_BB BIT(12)
+#define I2C_IRQSTATUS_RAW_RRDY BIT(3)
 #define I2C_IRQSTATUS_RAW_ARDY BIT(2)
 #define I2C_IRQSTATUS_RAW_NACK BIT(1)
 
-#define DRIVER_NAME "i2c1_device_driver"
-#define DEVICE_NAME "i2c1"
+#define I2C_BUF_RXTRSH 8 // [13:8]
+#define I2C_BUF_RXFIFO_CLR BIT(14)
+
+#define XRDY_IE BIT(4)
+#define RRDY_IE BIT(3)
+
+#define RX_TRIGGER 0
+
+#define DRIVER_NAME "i2c2_device_driver"
+#define DEVICE_NAME "i2c2"
 
 struct i2c_device_data {
     struct i2c_adapter *adap;
@@ -45,23 +57,44 @@ struct i2c_device_data {
     struct class *class;
     struct device *dev;
 
-    void __iomem *base;  // Mapped base address of I2c1 registers
+    void __iomem *base;  // Mapped base address of i2c2 registers
     struct clk *clk;
 
     int irq;
+    int count;
+
+    u8 rx[256];
 };
 
-// // Enable module clock for I2C1
-// void enable_i2c1_clock(struct i2c_device_data *data) {
-//     CM_PER_I2C1_CLKCTRL = 0x2;  // Enable I2C1 clock
-//     while (!(CM_PER_I2C1_CLKCTRL & 0x2));  // Wait for enable
-// }
+static irqreturn_t irqHandler(int irq, void *d)
+{
+    struct i2c_device_data *data = d;
+    u32 irqsts;
+
+    irqsts = ioread32(data->base + I2C_IRQSTATUS);
+
+    if ((irqsts & RRDY_IE) == RRDY_IE) {
+
+        data->rx[data->count] = ioread32(data->base + I2C_DATA); // Read data
+        // Clear the XRDY interrupt
+        iowrite32(RRDY_IE, data->base + I2C_IRQSTATUS);
+    }
+
+    data->count++;
+    if (data->count > 100){
+        printk("Too many interrupts\n");
+        iowrite32(0, data->base + I2C_IRQENABLE_SET); 
+        data->count = 0;
+    }
+
+    return IRQ_HANDLED;
+}
 
 
 
-// Initialize I2C1 as master
-void i2c1_master_init(struct i2c_device_data *data) {
-    // enable_i2c1_clock(data);
+// Initialize i2c2 as slave
+void i2c2_slave_init(struct i2c_device_data *data) {
+    // enable_i2c2_clock(data);
     u32 i2c_con = 0;
 
     iowrite32(0x2, data->base + I2C_SYSC); // Set soft reset
@@ -72,97 +105,44 @@ void i2c1_master_init(struct i2c_device_data *data) {
     i2c_con &= ~(1u << 15); // disable i2c module
     iowrite32(i2c_con, data->base + I2C_CON);
 
-    iowrite32(5, data->base + I2C_PSC); // Prescaler: 24 MHz / (5+1) = 4 MHz
-
-    iowrite32(8, data->base + I2C_SCLL); // SCL low time
-    iowrite32(10, data->base + I2C_SCLH); // SCL high time
-    // Total period = (8 + 10) * (1/4 MHz) = 4.5 µs (~400 kHz)
+    iowrite32(SLAVE_ADDRESS, data->base + I2C_OA); // Set own address of slave
 
     i2c_con = ioread32(data->base + i2c_con);
-    i2c_con |= (1u << 15)|(1u << 10)|(1u << 9); // [15] enable i2c module, [MST:10]: master mode, [TRX:9]: MST = 1, TRX = 1, Operating Modes = Master transmitter
+    i2c_con |= (1u << 15)|(0u << 10)|(0u << 9); // [15] enable i2c module, [MST:10]: slave mode, [TRX:9]:  MST = 0, TRX = x, Operating Mode = Slave receiver
     iowrite32(i2c_con, data->base + I2C_CON);
 
-    //i2c1[I2C_IRQENABLE_SET / 4] = 0x64C;  // Enable XRDY, RRDY, BB interrupts
+    iowrite32((RX_TRIGGER << I2C_BUF_RXTRSH) | I2C_BUF_RXFIFO_CLR, data->base + I2C_BUF); // clear RX FIFO, RX threshold is 1 byte
+    iowrite32(RRDY_IE, data->base + I2C_IRQENABLE_SET); // Receive data ready interrupt enabled
 }
 
-static int i2c1_master_open(struct inode *inode, struct file *file)
+static int i2c2_slave_open(struct inode *inode, struct file *file)
 {
     struct i2c_device_data *data = container_of(inode->i_cdev, struct i2c_device_data, cdev);
     file->private_data = data;
     return 0;
 }
 
-// Write data to slave
-int i2c1_write(struct i2c_device_data *data, uint16_t slave_addr, uint8_t *tx, uint32_t len) {
-    uint32_t i;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
-
-    while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&I2C_IRQSTATUS_RAW_BB) == I2C_IRQSTATUS_RAW_BB);  // Wait for bus to be free
-
-    iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
-    iowrite32(len, data->base + I2C_CNT); // Number of bytes to write
-
-    i2c_con = ioread32(data->base + i2c_con);
-    i2c_con |= 0x1; // Start condition
-    iowrite32(i2c_con, data->base + I2C_CON);
-
-
-    for (i = 0; i < len; i++) {
-        while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_XRDY)) != I2C_IRQSTATUS_RAW_XRDY);  // Wait for XRDY (transmit data ready)
-        iowrite32(tx[i], data->base + I2C_DATA); // Write data
-
-        i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
-        i2c_sts_raw |= I2C_IRQSTATUS_RAW_XRDY; // Clear XRDY
-        iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-
-    }
-
-    while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_ARDY)) != I2C_IRQSTATUS_RAW_ARDY);  // Wait for ARDY (Access ready)
-
-    i2c_con = ioread32(data->base + i2c_con);
-    i2c_con |= 0x2; // Stop condition
-    iowrite32(i2c_con, data->base + I2C_CON);
-
-    i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
-    i2c_sts_raw |= I2C_IRQSTATUS_RAW_ARDY; // Clear ARDY
-    iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-
-    if ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_NACK)) == I2C_IRQSTATUS_RAW_NACK){
-        return -1;  // Error
-    }
-    return 0;  // Success
-}
-
-static ssize_t i2c1_master_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+static ssize_t i2c2_slave_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
     struct i2c_device_data *data = filp->private_data;
-    u8 *tx_buf;
 
-    // Allocate buffer for TX data
-    tx_buf = kmalloc(count, GFP_KERNEL);
-    if (!tx_buf)
-        return -ENOMEM;
+    dev_info(data->dev, "Reading %zu bytes: %*ph\n", data->count, (int)data->count, data->rx);
 
-    if (copy_from_user(tx_buf, buf, count)) {
-        kfree(tx_buf);
+    if (copy_to_user(buf, data->rx, count)) {
         return -EFAULT;
     }
 
-    dev_info(data->dev, "Writing %zu bytes: %*ph\n", count, (int)count, tx_buf);
-
-    i2c1_write(data, SLAVE_ADDRESS, tx_buf, count);
-
-    kfree(tx_buf);
+    data->count = 0;
     return count;
 }
 
 static const struct file_operations i2c_device_fops = {
     .owner = THIS_MODULE,
-    .open = i2c1_master_open,
-    .write = i2c1_master_write,
+    .open = i2c2_slave_open,
+    .read = i2c2_slave_read,
 };
 
-static int i2c1_probe(struct platform_device *pdev)
+static int i2c2_probe(struct platform_device *pdev)
 {
     struct i2c_device_data *data;
     int ret;
@@ -171,11 +151,11 @@ static int i2c1_probe(struct platform_device *pdev)
     if (!data)
         return -ENOMEM;
 
-    data->base = ioremap(I2C1_BASE, 0x10000);
+    data->base = ioremap(i2c2_BASE, 0x10000);
     data->dev = &pdev->dev;
 
     /* Clock setup (assuming this part is unchanged) */
-    data->clk = devm_clk_get(&pdev->dev, "fck-i2c1");
+    data->clk = devm_clk_get(&pdev->dev, "fck-i2c2");
     if (IS_ERR(data->clk)) {
         dev_err(&pdev->dev, "Failed to get clock: %ld\n", PTR_ERR(data->clk));
         return PTR_ERR(data->clk);
@@ -185,12 +165,25 @@ static int i2c1_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "Failed to enable clock: %d\n", ret);
         return ret;
     }
-    dev_info(&pdev->dev, "I2c1 clock rate: %lu Hz\n", clk_get_rate(data->clk));
+    dev_info(&pdev->dev, "i2c2 clock rate: %lu Hz\n", clk_get_rate(data->clk));
 
     // Initialize hardware
-    i2c1_master_init(data);
+    i2c2_slave_init(data);
 
-    // Create character device
+
+    // ========== Request IRQ (hwirq 30 maps to swirq x on AM33xx) ==========
+    data->irq = platform_get_irq(pdev, 0);
+    if (data->irq < 0) {
+        dev_err(&pdev->dev, "Failed Formatted: Unable to get IRQ: %d\n", data->irq);
+        return data->irq;
+    }
+    ret = devm_request_irq(&pdev->dev, data->irq, irqHandler, 0, "I2C2", data);
+    if (ret < 0) {
+        dev_err(&pdev->dev, "Unable to request IRQ %d: %d\n", data->irq, ret);
+        return ret;
+    }
+
+    // ============ Create character device
     ret = alloc_chrdev_region(&data->dev_num, 0, 1, DEVICE_NAME);
     if (ret < 0) {
         dev_err(&pdev->dev, "Failed to allocate chrdev region: %d\n", ret);
@@ -207,7 +200,7 @@ static int i2c1_probe(struct platform_device *pdev)
         return ret;
     }
 
-    data->class = class_create(THIS_MODULE, "i2c1_class");
+    data->class = class_create(THIS_MODULE, "i2c2_class");
     if (IS_ERR(data->class)) {
         dev_err(&pdev->dev, "Failed to create class: %ld\n", PTR_ERR(data->class));
         cdev_del(&data->cdev);
@@ -216,7 +209,7 @@ static int i2c1_probe(struct platform_device *pdev)
         return PTR_ERR(data->class);
     }
 
-    data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, "i2c1");
+    data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, "i2c2");
     if (IS_ERR(data->dev)) {
         dev_err(&pdev->dev, "Failed to create device: %ld\n", PTR_ERR(data->dev));
         class_destroy(data->class);
@@ -231,7 +224,7 @@ static int i2c1_probe(struct platform_device *pdev)
     return 0;
 }
 
-static int i2c1_remove(struct platform_device *pdev)
+static int i2c2_remove(struct platform_device *pdev)
 {
     struct i2c_adapter *adap = platform_get_drvdata(pdev);
     i2c_del_adapter(adap);
@@ -239,14 +232,14 @@ static int i2c1_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id i2c_device_of_match[] = {
-    { .compatible = "i2c1-based" },
+    { .compatible = "i2c2-based" },
     { /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, i2c_device_of_match);
 
 static struct platform_driver i2c_device_driver = {
-    .probe = i2c1_probe,
-    .remove = i2c1_remove,
+    .probe = i2c2_probe,
+    .remove = i2c2_remove,
     .driver = {
         .name = DRIVER_NAME,
         .of_match_table = i2c_device_of_match,
