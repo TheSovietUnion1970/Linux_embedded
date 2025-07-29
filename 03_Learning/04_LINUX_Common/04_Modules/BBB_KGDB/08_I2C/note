@@ -1,0 +1,11 @@
+echo "Hi" | sudo tee /dev/i2c1
+
+
+debian@arm:~$ sudo i2cdetect -y 2                                                                   
+Error: Could not get the adapter functionality matrix: Inappropriate ioctl for device
+
+sudo m 0x44e1095c (i2c1_scl)
+sudo m 0x44e10958 (i2c1_sda)
+
+sudo m 0x44e10954 (i2c2_scl)
+sudo m 0x44e10950 (i2c2_sda)
