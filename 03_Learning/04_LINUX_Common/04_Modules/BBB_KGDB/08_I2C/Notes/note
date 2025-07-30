@@ -25,3 +25,9 @@ debian@arm:~$ sudo m  0x44E0004C w 0x2
 Memory mapped at address 0xb6fbc000.
 Value at address 0x44E0004C (0xb6fbc04c): 0x30000
 Written 0x2; readback 0x30002
+
+=======================
+i2c0 - 0xb8 (CM_WKUP)
+i2c1 - 0x48 (CM_PER)
+i2c2 - 0x44 (CM_PER)
+

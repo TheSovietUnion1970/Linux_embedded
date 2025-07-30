@@ -1,0 +1,105 @@
+======================== am33xx-clocks.dtsi
+&prcm {
+	per_cm: per-cm@0 {
+		compatible = "ti,omap4-cm";
+		reg = <0x0 0x400>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0x0 0x400>;
+
+		l4ls_clkctrl: l4ls-clkctrl@38 {
+			compatible = "ti,clkctrl";
+			reg = <0x38 0x2c>, <0x6c 0x28>, <0xac 0xc>, <0xc0 0x1c>, <0xec 0xc>, <0x10c 0x8>, <0x130 0x4>;
+			#clock-cells = <2>;
+		};
+
+		l3s_clkctrl: l3s-clkctrl@1c {
+			compatible = "ti,clkctrl";
+			reg = <0x1c 0x4>, <0x30 0x8>, <0x68 0x4>, <0xf8 0x4>;
+			#clock-cells = <2>;
+		};
+
+		l3_clkctrl: l3-clkctrl@24 {
+			compatible = "ti,clkctrl";
+			reg = <0x24 0xc>, <0x94 0x10>, <0xbc 0x4>, <0xdc 0x8>, <0xfc 0x8>;
+			#clock-cells = <2>;
+		};
+
+		l4hs_clkctrl: l4hs-clkctrl@120 {
+			compatible = "ti,clkctrl";
+			reg = <0x120 0x4>;
+			#clock-cells = <2>;
+		};
+
+		pruss_ocp_clkctrl: pruss-ocp-clkctrl@e8 {
+			compatible = "ti,clkctrl";
+			reg = <0xe8 0x4>;
+			#clock-cells = <2>;
+		};
+
+		cpsw_125mhz_clkctrl: cpsw-125mhz-clkctrl@0 {
+			compatible = "ti,clkctrl";
+			reg = <0x0 0x18>;
+			#clock-cells = <2>;
+		};
+
+		lcdc_clkctrl: lcdc-clkctrl@18 {
+			compatible = "ti,clkctrl";
+			reg = <0x18 0x4>;
+			#clock-cells = <2>;
+		};
+
+		clk_24mhz_clkctrl: clk-24mhz-clkctrl@14c {
+			compatible = "ti,clkctrl";
+			reg = <0x14c 0x4>;
+			#clock-cells = <2>;
+		};
+	};
+
+======================== am33xx.dtsi
+&prcm {
+	prm_per: prm@c00 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0xc00 0x100>;
+		#reset-cells = <1>;
+		#power-domain-cells = <0>;
+	};
+
+	prm_wkup: prm@d00 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0xd00 0x100>;
+		#reset-cells = <1>;
+		#power-domain-cells = <0>;
+	};
+
+	prm_mpu: prm@e00 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0xe00 0x100>;
+		#power-domain-cells = <0>;
+	};
+
+	prm_device: prm@f00 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0xf00 0x100>;
+		#reset-cells = <1>;
+	};
+
+	prm_rtc: prm@1000 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0x1000 0x100>;
+		#power-domain-cells = <0>;
+	};
+
+	prm_gfx: prm@1100 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0x1100 0x100>;
+		#power-domain-cells = <0>;
+		#reset-cells = <1>;
+	};
+
+	prm_cefuse: prm@1200 {
+		compatible = "ti,am3-prm-inst", "ti,omap-prm-inst";
+		reg = <0x1200 0x100>;
+		#power-domain-cells = <0>;
+	};
+};
