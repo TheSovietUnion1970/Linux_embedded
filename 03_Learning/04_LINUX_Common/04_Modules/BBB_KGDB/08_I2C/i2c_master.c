@@ -5,6 +5,7 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
 
 #define SLAVE_ADDRESS 0x40
 
@@ -56,7 +57,44 @@ struct i2c_device_data {
 //     while (!(CM_PER_I2C1_CLKCTRL & 0x2));  // Wait for enable
 // }
 
+void init_clk(struct i2c_device_data *data, u32 fclk_rate, u32 speed)
+{
+    u32 scll = 0, sclh = 0, scl = 0;
+    u32 internal_speed = 0;
+    u8 psc = 0;
 
+    if (speed > 100000) // fast mode
+    {
+        internal_speed = 9600000;
+    }
+    else // standrd mode
+    {
+        internal_speed = 4000000;
+    }
+
+    /* Compute prescaler divisor */
+    psc = fclk_rate / internal_speed;
+    psc = psc - 1;
+    iowrite32(psc, data->base + I2C_PSC); // Prescaler: 48 MHz / (4+1) = 9.6 MHz
+
+    if (speed > 100000) // fast mode
+    {
+        scl = internal_speed / speed;
+        scll = scl - (scl / 3) - 7;
+        sclh = (scl / 3) - 5;
+        iowrite32(scll, data->base + I2C_SCLL); // SCL low time
+        iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
+    }
+    else // standard
+    {
+        scll = internal_speed / (speed * 2) - 7;
+        sclh = internal_speed / (speed * 2) - 5;
+        iowrite32(scll, data->base + I2C_SCLL); // SCL low time
+        iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
+    }
+
+    dev_info(data->dev, "pdc = %d, scll = %d. sclh = %d\n", psc, scll, sclh);
+}
 
 // Initialize I2C1 as master
 void i2c1_master_init(struct i2c_device_data *data) {
@@ -64,7 +102,7 @@ void i2c1_master_init(struct i2c_device_data *data) {
     u32 i2c_con = 0;
 
     i2c_con = ioread32(data->base + I2C_CON);
-    i2c_con |= (0u << 15); // [15] disable i2c module before reset
+    i2c_con &= ~(1u << 15); // [15] disable i2c module before reset
     iowrite32(i2c_con, data->base + I2C_CON);
 
     dev_info(data->dev, "Begin reset\n");
@@ -85,11 +123,7 @@ void i2c1_master_init(struct i2c_device_data *data) {
     i2c_con &= ~(1u << 15); // disable i2c module
     iowrite32(i2c_con, data->base + I2C_CON);
 
-    iowrite32(5, data->base + I2C_PSC); // Prescaler: 24 MHz / (5+1) = 4 MHz
-
-    iowrite32(8, data->base + I2C_SCLL); // SCL low time
-    iowrite32(10, data->base + I2C_SCLH); // SCL high time
-    // Total period = (8 + 10) * (1/4 MHz) = 4.5 µs (~400 kHz)
+    init_clk(data, 48000000, 100000);
 
     i2c_con = ioread32(data->base + I2C_CON);
     i2c_con |= (1u << 15)|(1u << 10)|(1u << 9); // [15] enable i2c module, [MST:10]: master mode, [TRX:9]: MST = 1, TRX = 1, Operating Modes = Master transmitter
@@ -116,15 +150,24 @@ int i2c1_write(struct i2c_device_data *data, uint16_t slave_addr, uint8_t *tx, u
     {
         if (time_after(jiffies, timeout)) {
             dev_err(data->dev, "Timeout BB, irqsts_raw = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
+
+            i2c_con = ioread32(data->base + I2C_CON);
+            i2c_con &=~ 0x1; 
+            i2c_con |= 0x2; // Stop condition
+            iowrite32(i2c_con, data->base + I2C_CON);
+
             return -ETIMEDOUT;
         }
         cpu_relax();
     }
 
     iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
-    iowrite32(len, data->base + I2C_CNT); // Number of bytes to write
+    iowrite32(0, data->base + I2C_CNT); // Number of bytes to write
 
+    printk("After 1s, willl begin\n");
+    msleep(1000);
     i2c_con = ioread32(data->base + I2C_CON);
+    i2c_con &=~ 0x2;
     i2c_con |= 0x1; // Start condition
     iowrite32(i2c_con, data->base + I2C_CON);
 
@@ -135,6 +178,12 @@ int i2c1_write(struct i2c_device_data *data, uint16_t slave_addr, uint8_t *tx, u
         {
             if (time_after(jiffies, timeout)) {
                 dev_err(data->dev, "Timeout XRDY, irqsts_raw = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
+
+                i2c_con = ioread32(data->base + I2C_CON);
+                i2c_con &=~ 0x1; 
+                i2c_con |= 0x2; // Stop condition
+                iowrite32(i2c_con, data->base + I2C_CON);
+
                 return -ETIMEDOUT;
             }
             cpu_relax();
@@ -152,6 +201,12 @@ int i2c1_write(struct i2c_device_data *data, uint16_t slave_addr, uint8_t *tx, u
     {
         if (time_after(jiffies, timeout)) {
             dev_err(data->dev, "Timeout ARDY, irqsts_raw = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
+
+            i2c_con = ioread32(data->base + I2C_CON);
+            i2c_con &=~ 0x1; 
+            i2c_con |= 0x2; // Stop condition
+            iowrite32(i2c_con, data->base + I2C_CON);
+
             return -ETIMEDOUT;
         }
         cpu_relax();
@@ -280,7 +335,7 @@ static int i2c1_remove(struct platform_device *pdev)
     if (data->class)
         class_destroy(data->class);
     cdev_del(&data->cdev);
-    
+
     return 0;
 }
 
