@@ -31,3 +31,15 @@ i2c0 - 0xb8 (CM_WKUP)
 i2c1 - 0x48 (CM_PER)
 i2c2 - 0x44 (CM_PER)
 
+========================
+    iowrite32(3, data->base + I2C_PSC); // Prescaler: 48 MHz / (3+1) = 12 MHz
+
+    iowrite32(8, data->base + I2C_SCLL); // SCL low time
+    iowrite32(10, data->base + I2C_SCLH); // SCL high time
+    // 0.00000125 = (tL + 7)*(1/12000000) -> tL = 8
+    // 0.00000125 = (tH + 5)*(1/12000000) -> tH = 10
+    // make sure tH + tL = 0.00000125*2 = 0.0000025s (f(CSL) = 400KHz)
+
+    // 0.00001 = (tL + 7)*(1/12000000) -> tL = 113
+    // 0.00001 = (tH + 5)*(1/12000000) -> tL = 115
+
