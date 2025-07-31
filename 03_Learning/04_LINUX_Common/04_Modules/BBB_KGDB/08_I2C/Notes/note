@@ -4,42 +4,22 @@ echo "Hi" | sudo tee /dev/i2c1
 debian@arm:~$ sudo i2cdetect -y 2                                                                   
 Error: Could not get the adapter functionality matrix: Inappropriate ioctl for device
 
+======= pin mux
 sudo m 0x44e1095c (i2c1_scl)
 sudo m 0x44e10958 (i2c1_sda)
 
 sudo m 0x44e10954 (i2c2_scl)
 sudo m 0x44e10950 (i2c2_sda)
 
-=========
+
+======= clock
+i2c0 - 0xb8 (CM_WKUP) - 0x44e004b8
+i2c1 - 0x48 (CM_PER) - 0x44e00048
+i2c2 - 0x44 (CM_PER) - 0x44e00044
+-> sudo m 0x44e004b8 w 0x2  => enable clock
 
 
-/sys/class/spi_master/ -> inspect component has been present or not
-debian@arm:~$ ls -l /sys/class/spi_master/spi0/ -> show info
-cat /sys/class/spi_master/spi0/uevent -> show which driver is bound to the node
-
-cat /proc/interrupts | grep 65(<hw irq>)
-
-=== CM_PER_SPI0_CLKCTRL ===
-debian@arm:~$ sudo m  0x44E0004C w 0x2                                               
-/dev/mem opened.
-Memory mapped at address 0xb6fbc000.
-Value at address 0x44E0004C (0xb6fbc04c): 0x30000
-Written 0x2; readback 0x30002
-
-=======================
-i2c0 - 0xb8 (CM_WKUP)
-i2c1 - 0x48 (CM_PER)
-i2c2 - 0x44 (CM_PER)
-
-========================
-    iowrite32(3, data->base + I2C_PSC); // Prescaler: 48 MHz / (3+1) = 12 MHz
-
-    iowrite32(8, data->base + I2C_SCLL); // SCL low time
-    iowrite32(10, data->base + I2C_SCLH); // SCL high time
-    // 0.00000125 = (tL + 7)*(1/12000000) -> tL = 8
-    // 0.00000125 = (tH + 5)*(1/12000000) -> tH = 10
-    // make sure tH + tL = 0.00000125*2 = 0.0000025s (f(CSL) = 400KHz)
-
-    // 0.00001/2 = 0.000005 = (tL + 7)*(1/12000000) -> tL = 53
-    // 0.00001/2 = 0.000005 = (tH + 5)*(1/12000000) -> tL = 55
-
+======= module I2c
+i2c0  - 0x44e0b000 70
+i2c1  - 0x4802a000 30
+i2c2  - 0x4819c000 71
