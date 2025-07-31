@@ -51,48 +51,60 @@ struct i2c_device_data {
     int irq;
 };
 
-// // Enable module clock for I2C1
-// void enable_i2c1_clock(struct i2c_device_data *data) {
-//     CM_PER_I2C1_CLKCTRL = 0x2;  // Enable I2C1 clock
-//     while (!(CM_PER_I2C1_CLKCTRL & 0x2));  // Wait for enable
+// void init_clk1(struct i2c_device_data *data, u32 fclk_rate, u32 speed)
+// {
+//     u32 scll = 0, sclh = 0, scl = 0;
+//     u32 internal_speed = 0;
+//     u8 psc = 0;
+
+//     if (speed > 100000) // fast mode
+//     {
+//         internal_speed = 9600000;
+//     }
+//     else // standrd mode
+//     {
+//         internal_speed = 4000000;
+//     }
+
+//     /* Compute prescaler divisor */
+//     psc = fclk_rate / internal_speed;
+//     psc = psc - 1;
+//     iowrite32(psc, data->base + I2C_PSC); // Prescaler: 48 MHz / (4+1) = 9.6 MHz
+
+//     if (speed > 100000) // fast mode
+//     {
+//         scl = internal_speed / speed;
+//         scll = scl - (scl / 3) - 7;
+//         sclh = (scl / 3) - 5;
+//         iowrite32(scll, data->base + I2C_SCLL); // SCL low time
+//         iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
+//     }
+//     else // standard
+//     {
+//         scll = internal_speed / (speed * 2) - 7;
+//         sclh = internal_speed / (speed * 2) - 5;
+//         iowrite32(scll, data->base + I2C_SCLL); // SCL low time
+//         iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
+//     }
+
+//     dev_info(data->dev, "pdc = %d, scll = %d. sclh = %d\n", psc, scll, sclh);
 // }
 
-void init_clk(struct i2c_device_data *data, u32 fclk_rate, u32 speed)
+void init_clk2(struct i2c_device_data *data, u32 fclk_rate, u32 internal_speed, u32 speed)
 {
-    u32 scll = 0, sclh = 0, scl = 0;
-    u32 internal_speed = 0;
+    u32 scll = 0, sclh = 0;
     u8 psc = 0;
-
-    if (speed > 100000) // fast mode
-    {
-        internal_speed = 9600000;
-    }
-    else // standrd mode
-    {
-        internal_speed = 4000000;
-    }
 
     /* Compute prescaler divisor */
     psc = fclk_rate / internal_speed;
     psc = psc - 1;
     iowrite32(psc, data->base + I2C_PSC); // Prescaler: 48 MHz / (4+1) = 9.6 MHz
 
-    if (speed > 100000) // fast mode
-    {
-        scl = internal_speed / speed;
-        scll = scl - (scl / 3) - 7;
-        sclh = (scl / 3) - 5;
-        iowrite32(scll, data->base + I2C_SCLL); // SCL low time
-        iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
-    }
-    else // standard
-    {
-        scll = internal_speed / (speed * 2) - 7;
-        sclh = internal_speed / (speed * 2) - 5;
-        iowrite32(scll, data->base + I2C_SCLL); // SCL low time
-        iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
-    }
-
+    scll = internal_speed / (speed*2) - 7;
+    sclh = internal_speed / (speed*2) - 5;
+    iowrite32(scll, data->base + I2C_SCLL); // SCL low time
+    iowrite32(sclh, data->base + I2C_SCLH); // SCL high time
+ 
     dev_info(data->dev, "pdc = %d, scll = %d. sclh = %d\n", psc, scll, sclh);
 }
 
@@ -123,7 +135,8 @@ void i2c1_master_init(struct i2c_device_data *data) {
     i2c_con &= ~(1u << 15); // disable i2c module
     iowrite32(i2c_con, data->base + I2C_CON);
 
-    init_clk(data, 48000000, 100000);
+    // init_clk1(data, 48000000, 100000);
+    init_clk2(data, 48000000, 12000000, 400000);
 
     i2c_con = ioread32(data->base + I2C_CON);
     i2c_con |= (1u << 15)|(1u << 10)|(1u << 9); // [15] enable i2c module, [MST:10]: master mode, [TRX:9]: MST = 1, TRX = 1, Operating Modes = Master transmitter
