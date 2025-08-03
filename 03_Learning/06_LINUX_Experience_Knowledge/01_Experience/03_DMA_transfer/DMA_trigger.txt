@@ -1,0 +1,53 @@
+Some protocol using DMA need to manually trigger DMA (uart, i2c)
+I. If threshold for TX is the number of free bytes, it's recommened to set the value is set to 0 as whenever one byte is sent/received to/from 	FIFO, DMA is activated immediately. Hence, data is transfered completely
+
+II. Ex:
+    #define TX_TRIGGER 0 
+    // ================================= DMA WRITE ===============================
+    /* Allocate DMA-coherent buffer */
+    kbuf = dma_alloc_coherent(data->dev, len, &dma_src_addr, GFP_KERNEL | GFP_DMA);
+    if (!kbuf) {
+        dev_err(data->dev, "Failed to allocate DMA-coherent buffer\n");
+        return;
+    }
+    
+    memcpy(kbuf, tx, len);
+
+    reinit_completion(&data->tx_completion);
+    tx_desc = dmaengine_prep_slave_single(data->tx_chan, dma_src_addr + 1, len - 1,
+                                            DMA_MEM_TO_DEV, DMA_CTRL_ACK | DMA_PREP_INTERRUPT);
+    if (!tx_desc) {
+        dev_err(data->dev, "Failed to prepare TX DMA descriptor\n");
+        goto free_buf;
+    }
+
+    tx_desc->callback = i2c1_tx_dma_callback;
+    tx_desc->callback_param = data;
+
+    dev_info(data->dev, "Submitting TX DMA descriptor\n");
+    dmaengine_submit(tx_desc);
+
+    dev_info(data->dev, "Issuing TX DMA pending\n");
+    dma_async_issue_pending(data->tx_chan);
+
+    iowrite32(kbuf[0], data->base + I2C_DATA); // send the first byte manually to activate DMA
+
+    ret = wait_for_completion_timeout(&data->tx_completion, msecs_to_jiffies(MS_DELAY));
+    if (ret == 0) {
+        dev_err(data->dev, "DMA TX timeout\n");
+        printk("cnt left = %d\n", ioread32(data->base + I2C_CNT));
+        dmaengine_terminate_sync(data->tx_chan);
+        goto free_buf;
+    }
+    
+    	==> dma_src_addr + 1, len - 1 and iowrite32(kbuf[0], data->base + I2C_DATA);.
+    	==> These actions should be taken in some cases
+    	
+III. Some module can define threshold as avaiable bytes or free bytes. If free bytes are taken, manual actions above needs to be considered
+
+IV. For uart, when FIFO is written, this data will be transmitted serially immediately if uart is enabled, so to let the FIFO contains the 	specified numbers of avaiable bytes, uart should be disabled first
+    Then, uart is enabled again, DMA or interrupt is raised then.
+    
+V. For i2c, pins should be input pullup to act like open drain pin if no pull-up resistors are used.
+   Open-drain pin: can actively drive low but can release to let high floating signal => this feature can let master/slave can send or read 	message
+   ACK is bit 0
