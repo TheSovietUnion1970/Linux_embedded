@@ -47,7 +47,9 @@ III. Some module can define threshold as avaiable bytes or free bytes. If free b
 
 IV. For uart, when FIFO is written, this data will be transmitted serially immediately if uart is enabled, so to let the FIFO contains the 	specified numbers of avaiable bytes, uart should be disabled first
     Then, uart is enabled again, DMA or interrupt is raised then.
+    uart also save RAM by somes registers at the same address can only be used in different modes
     
 V. For i2c, pins should be input pullup to act like open drain pin if no pull-up resistors are used.
    Open-drain pin: can actively drive low but can release to let high floating signal => this feature can let master/slave can send or read 	message
    ACK is bit 0
+   I2C also introduces draining feature to make sure the remmaining bytes are sent if the number of bytes doesn't meet threshold value 
