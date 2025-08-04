@@ -411,6 +411,76 @@ int i2c1_write(struct i2c_device_data *data, u8 slave_addr, u16 *tx, u32 len) {
     return 0;  // Success
 }
 
+// Write data (internal register) to slave
+int i2c1_writell(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 *tx, size_t len){
+    u32 i;
+    int ret;
+
+    // ===================== Master sends START. ===========================
+    i2c_reinit_master_transmit(data);
+
+    ret = i2c_wait_BB(data);
+    if (ret < 0) {
+        return ret;
+    }
+
+    iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
+    iowrite32(1, data->base + I2C_CNT); // Number of bytes to write (here 1 byte for register address )
+
+    // ===================== MMaster sends [slave address + write bit]. ===========================
+    // Start I2C
+    i2c_start(data);
+
+    // wait ACK from slave
+    ret = i2c_wait_ACK(data);
+    if (ret < 0){
+        return ret;
+    }
+
+    // ===================== MMaster sends internal register address. ===========================
+    if (register_addr){
+        ret = i2c_wait_XRDY(data);
+        if (ret < 0){
+            return ret;
+        }
+
+        iowrite32(register_addr, data->base + I2C_DATA); // Write data
+
+        // wait ACK from slave
+        ret = i2c_wait_ACK(data);
+        if (ret < 0){
+            return ret;
+        }
+    }
+
+    // ===================== Master sends data. ===========================    
+    for (i = 0; i < len; i++){
+        ret = i2c_wait_XRDY(data);
+        if (ret < 0){
+            return ret;
+        }
+
+        iowrite32(tx[i], data->base + I2C_DATA); // Write data
+
+        // wait ACK from slave
+        ret = i2c_wait_ACK(data);
+        if (ret < 0){
+            return ret;
+        }
+    }
+
+    ret = i2c_wait_ARDY(data);
+    if (ret < 0){
+        return ret;
+    }
+
+    // Stop i2c
+    i2c_stop(data);
+
+    return 0;
+}
+
+
 // Read data from slave
 int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 *rx, size_t len){
     uint32_t i;
