@@ -1,0 +1,45 @@
+debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
+Hi[ 2496.916821] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+
+[ 2496.922211] i2c1_class i2c1: irqsts = 0x0
+[ 2496.926805] i2c1_class i2c1: Passed + ACK. sts = 0x101c
+[ 2496.932088] rx_buf: 0x30, 0x10, 0x10
+debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
+Hi[ 2598.867158] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+
+[ 2598.872570] i2c1_class i2c1: irqsts = 0x11c
+[ 2598.876976] i2c1_class i2c1: Passed + ACK. sts = 0x119c
+[ 2598.882257] rx_buf: 0x25, 0x10, 0x10
+debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
+Hi[ 2655.052820] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+
+[ 2655.058227] i2c1_class i2c1: irqsts = 0x119c
+[ 2658.066073] i2c1_class i2c1: Timeout BB, irqsts_raw = 0x119c
+[ 2658.071789] i2c1_class i2c1: Status error
+[ 2658.075841] rx_buf: 0x10, 0x10, 0x10
+
+
+If use reset:
+
+debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
+Hi[ 2760.943099] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+
+[ 2760.948486] i2c1_class i2c1: pdc = 3, scll = 53. sclh = 55
+[ 2760.954196] i2c1_class i2c1: irqsts = 0x0
+[ 2760.958643] i2c1_class i2c1: Passed + ACK. sts = 0x101c
+[ 2760.963917] rx_buf: 0x54, 0x10, 0x10
+debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
+Hi
+[ 2763.061938] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+[ 2763.067254] i2c1_class i2c1: pdc = 3, scll = 53. sclh = 55
+[ 2763.072841] i2c1_class i2c1: irqsts = 0x0
+[ 2763.077286] i2c1_class i2c1: Passed + ACK. sts = 0x101c
+[ 2763.082563] rx_buf: 0x56, 0x10, 0x10
+debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
+Hi[ 2763.870136] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+
+[ 2763.875519] i2c1_class i2c1: pdc = 3, scll = 53. sclh = 55
+[ 2763.881219] i2c1_class i2c1: irqsts = 0x0
+[ 2763.885681] i2c1_class i2c1: Passed + ACK. sts = 0x101c
+[ 2763.890956] rx_buf: 0x57, 0x10, 0x10
+
