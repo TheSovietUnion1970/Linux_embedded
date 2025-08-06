@@ -1,45 +1,100 @@
 debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
-Hi[ 2496.916821] i2c1_class i2c1: Writing 3 bytes: 64 64 64
-
-[ 2496.922211] i2c1_class i2c1: irqsts = 0x0
-[ 2496.926805] i2c1_class i2c1: Passed + ACK. sts = 0x101c
-[ 2496.932088] rx_buf: 0x30, 0x10, 0x10
-debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
-Hi[ 2598.867158] i2c1_class i2c1: Writing 3 bytes: 64 64 64
-
-[ 2598.872570] i2c1_class i2c1: irqsts = 0x11c
-[ 2598.876976] i2c1_class i2c1: Passed + ACK. sts = 0x119c
-[ 2598.882257] rx_buf: 0x25, 0x10, 0x10
-debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
-Hi[ 2655.052820] i2c1_class i2c1: Writing 3 bytes: 64 64 64
-
-[ 2655.058227] i2c1_class i2c1: irqsts = 0x119c
-[ 2658.066073] i2c1_class i2c1: Timeout BB, irqsts_raw = 0x119c
-[ 2658.071789] i2c1_class i2c1: Status error
-[ 2658.075841] rx_buf: 0x10, 0x10, 0x10
-
-
-If use reset:
-
-debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
-Hi[ 2760.943099] i2c1_class i2c1: Writing 3 bytes: 64 64 64
-
-[ 2760.948486] i2c1_class i2c1: pdc = 3, scll = 53. sclh = 55
-[ 2760.954196] i2c1_class i2c1: irqsts = 0x0
-[ 2760.958643] i2c1_class i2c1: Passed + ACK. sts = 0x101c
-[ 2760.963917] rx_buf: 0x54, 0x10, 0x10
-debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
 Hi
-[ 2763.061938] i2c1_class i2c1: Writing 3 bytes: 64 64 64
-[ 2763.067254] i2c1_class i2c1: pdc = 3, scll = 53. sclh = 55
-[ 2763.072841] i2c1_class i2c1: irqsts = 0x0
-[ 2763.077286] i2c1_class i2c1: Passed + ACK. sts = 0x101c
-[ 2763.082563] rx_buf: 0x56, 0x10, 0x10
-debian@arm:~$ echo "Hi" | sudo tee /dev/i2c1
-Hi[ 2763.870136] i2c1_class i2c1: Writing 3 bytes: 64 64 64
+[   82.604695] i2c1_class i2c1: Passed + ACK
+[   82.608853] i2c1_class i2c1: Passed + ACK
+[   82.612958] i2c1_class i2c1: Passed + ACK
+[   82.617413] 8<--- cut here ---
+[   82.620482] Unable to handle kernel NULL pointer dereference at virtual address 00000000
+[   82.628610] pgd = daa14d36
+[   82.631334] [00000000] *pgd=00000000
+[   82.634941] Internal error: Oops: 805 [#1] SMP ARM
+[   82.639758] Modules linked in: ds(O) g_ether evdev uio_pdrv_genirq uio ip_tables x_tables
+[   82.648015] CPU: 0 PID: 112 Comm: kworker/0:14 Tainted: G           O      5.15.177+ #5
+[   82.656059] Hardware name: Generic AM33XX (Flattened Device Tree)
+[   82.662180] Workqueue: events re_request_irq_work [ds]
+[   82.667371] PC is at irqHandler+0x74/0x15c [ds]
+[   82.671931] LR is at ioread32+0x1c/0x3c [ds]
+[   82.676227] pc : [<bf01f44c>]    lr : [<bf01f254>]    psr: 200e0193
+[   82.682521] sp : c65ebd80  ip : c65ebd60  fp : c65ebd9c
+[   82.687768] r10: c1806094  r9 : c65ea000  r8 : c65ebde0
+[   82.693013] r7 : 00000011  r6 : 00000000  r5 : 00000000  r4 : c55e38c0
+[   82.699569] r3 : 00000000  r2 : 00000001  r1 : c5e63a00  r0 : 00000001
+[   82.706125] Flags: nzCv  IRQs off  FIQs on  Mode SVC_32  ISA ARM  Segment none
+[   82.713382] Control: 10c5387d  Table: 83c30019  DAC: 00000051
+[   82.719152] Register r0 information: non-paged memory
+[   82.724232] Register r1 information: slab kmalloc-192 start c5e639c0 pointer offset 64 size 192
+[   82.732998] Register r2 information: non-paged memory
+[   82.738074] Register r3 information: NULL pointer
+[   82.742800] Register r4 information: slab kmalloc-64 start c55e38c0 pointer offset 0 size 64
+[   82.751298] Register r5 information: NULL pointer
+[   82.756024] Register r6 information: NULL pointer
+[   82.760750] Register r7 information: non-paged memory
+[   82.765825] Register r8 information: non-slab/vmalloc memory
+[   82.771512] Register r9 information: non-slab/vmalloc memory
+[   82.777198] Register r10 information: non-slab/vmalloc memory
+[   82.782973] Register r11 information: non-slab/vmalloc memory
+[   82.788745] Register r12 information: non-slab/vmalloc memory
+[   82.794518] Process kworker/0:14 (pid: 112, stack limit = 0xa3194a9a)
+[   82.800990] Stack: (0xc65ebd80 to 0xc65ec000)
+[   82.805372] bd80: c5e63a00 00000011 c5e63a00 00001008 c65ebddc c65ebda0 c01b8590 bf01f3e4
+[   82.813589] bda0: c15794cc 000000f0 c198ba75 c21df100 bf022340 c21df100 00000000 c21df16c
+[   82.821806] bdc0: 00000047 00000000 c65ea000 df923605 c65ebe04 c65ebde0 c01b87f0 c01b8534
+[   82.830023] bde0: 00000000 cdfd22d1 c65ebe04 c21df100 00000000 00000000 c65ebe1c c65ebe08
+[   82.838239] be00: c01bd784 c01b8788 c17db0bc 00000000 c65ebe3c c65ebe20 c01b7e10 c01bd6cc
+[   82.846456] be20: c1a1882c 600e0013 ffffffff c65ebe8c c65ebe54 c65ebe40 c0101318 c01b7db0
+[   82.854674] be40: bf020740 600e0013 c65ebecc c65ebe58 c0100b7c c01012e4 00000000 00000000
+[   82.862891] be60: 00000000 c5e63a00 c5e63a6c c653ff80 df920280 df923600 00000000 00000000
+[   82.871107] be80: df923605 c65ebecc c65ebe58 c65ebea8 bf01f254 bf020740 600e0013 ffffffff
+[   82.879323] bea0: 00000051 bf020184 c65ebea0 c65ebef1 68000000 c5e63a00 c65ebed0 00000000
+[   82.887539] bec0: c65ebf04 c65ebed0 bf02095c bf0205b0 00000001 c109ad8c c1899d44 c5e63a6c
+[   82.895757] bee0: 0302016c c5e63a6c c5e63a00 00000000 0000006c cdfd22d1 c65ebf44 c65ebf08
+[   82.903974] bf00: c015eacc bf0207a4 c2358000 c65ea000 c65ebf2c c65ebf20 c0160b8c c653ff80
+[   82.912190] bf20: df920280 c653ff98 df920298 c1804d00 00000008 df920280 c65ebf7c c65ebf48
+[   82.920407] bf40: c015ee64 c015e8f8 c65ebf6c c65ea000 c65ebf7c c653ef80 c653e900 c015edfc
+[   82.928624] bf60: c653ff80 c65ea000 c641be8c c653e920 c65ebfac c65ebf80 c016771c c015ee08
+[   82.936841] bf80: 00000001 c653ef80 c01675cc 00000000 00000000 00000000 00000000 00000000
+[   82.945058] bfa0: 00000000 c65ebfb0 c0100134 c01675d8 00000000 00000000 00000000 00000000
+[   82.953274] bfc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[   82.961491] bfe0: 00000000 00000000 00000000 00000000 00000013 00000000 00000000 00000000
+[   82.969702] Backtrace: 
+[   82.972162] [<bf01f3d8>] (irqHandler [ds]) from [<c01b8590>] (__handle_irq_event_percpu+0x68/0x1c4
+)
+[   82.981279] [<c01b8528>] (__handle_irq_event_percpu) from [<c01b87f0>] (handle_irq_event+0x74/0xe0
+)
+[   82.990380]  r10:df923605 r9:c65ea000 r8:00000000 r7:00000047 r6:c21df16c r5:00000000
+[   82.998243]  r4:c21df100
+[   83.000783] [<c01b877c>] (handle_irq_event) from [<c01bd784>] (handle_level_irq+0xc4/0x1bc)
+[   83.009189]  r6:00000000 r5:00000000 r4:c21df100
+[   83.013824] [<c01bd6c0>] (handle_level_irq) from [<c01b7e10>] (handle_domain_irq+0x6c/0x88)
+[   83.022223]  r5:00000000 r4:c17db0bc
+[   83.025812] [<c01b7da4>] (handle_domain_irq) from [<c0101318>] (omap_intc_handle_irq+0x40/0x9c)
+[   83.034564]  r7:c65ebe8c r6:ffffffff r5:600e0013 r4:c1a1882c
+[   83.040246] [<c01012d8>] (omap_intc_handle_irq) from [<c0100b7c>] (__irq_svc+0x5c/0x78)
+[   83.048293] Exception stack(0xc65ebe58 to 0xc65ebea0)
+[   83.053368] be40:                                                       00000000 00000000
+[   83.061584] be60: 00000000 c5e63a00 c5e63a6c c653ff80 df920280 df923600 00000000 00000000
+[   83.069801] be80: df923605 c65ebecc c65ebe58 c65ebea8 bf01f254 bf020740 600e0013 ffffffff
+[   83.078015]  r5:600e0013 r4:bf020740
+[   83.081602] [<bf0205a4>] (i2c1_read [ds]) from [<bf02095c>] (re_request_irq_work+0x1c4/0x2e8 [ds])
+[   83.090623] [<bf020798>] (re_request_irq_work [ds]) from [<c015eacc>] (process_one_work+0x1e0/0x51
+0)
+[   83.099815] [<c015e8ec>] (process_one_work) from [<c015ee64>] (worker_thread+0x68/0x57c)
+[   83.107955]  r10:df920280 r9:00000008 r8:c1804d00 r7:df920298 r6:c653ff98 r5:df920280
+[   83.115819]  r4:c653ff80
+[   83.118360] [<c015edfc>] (worker_thread) from [<c016771c>] (kthread+0x150/0x170)
+[   83.125802]  r10:c653e920 r9:c641be8c r8:c65ea000 r7:c653ff80 r6:c015edfc r5:c653e900
+[   83.133665]  r4:c653ef80
+[   83.136207] [<c01675cc>] (kthread) from [<c0100134>] (ret_from_fork+0x14/0x20)
+[   83.143467] Exception stack(0xc65ebfb0 to 0xc65ebff8)
+[   83.148543] bfa0:                                     00000000 00000000 00000000 00000000
+[   83.156759] bfc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[   83.164975] bfe0: 00000000 00000000 00000000 00000000 00000013 00000000
+[   83.171622]  r10:00000000 r9:00000000 r8:00000000 r7:00000000 r6:00000000 r5:c01675cc
+[   83.179486]  r4:c653ef80 r3:00000001
+[   83.183079] Code: e1a02000 e51b3014 e5933064 e6ef2072 (e5c32000) 
+[   83.189206] ---[ end trace e656af0748cb3ff7 ]---
+[   83.193846] Kernel panic - not syncing: Fatal exception in interrupt
+[   83.200242] ---[ end Kernel panic - not syncing: Fatal exception in interrupt ]---
 
-[ 2763.875519] i2c1_class i2c1: pdc = 3, scll = 53. sclh = 55
-[ 2763.881219] i2c1_class i2c1: irqsts = 0x0
-[ 2763.885681] i2c1_class i2c1: Passed + ACK. sts = 0x101c
-[ 2763.890956] rx_buf: 0x57, 0x10, 0x10
 
+Why I got this error when scheduling work

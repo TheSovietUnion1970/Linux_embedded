@@ -6,6 +6,7 @@
 #include <linux/cdev.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
+#include <linux/workqueue.h>
 
 #define SLAVE_ADDRESS 0x68
 
@@ -28,9 +29,11 @@
 #define I2C_OA          0xA8  // Own address
 #define I2C_CNT         0x98  // Data count
 #define I2C_DATA        0x9C  // Data
+#define I2C_IRQENABLE_CLR 0x30  // Enable interrupts
 #define I2C_IRQENABLE_SET 0x2C  // Enable interrupts
 #define I2C_IRQSTATUS_RAW 0x24  // Interrupt raw status
 #define I2C_IRQSTATUS   0x28  // Interrupt status
+#define I2C_BUF         0x94  // Buffer
 
 #define I2C_IRQSTATUS_RAW_XRDY BIT(4)
 #define I2C_IRQSTATUS_RAW_BB BIT(12)
@@ -39,24 +42,83 @@
 #define I2C_IRQSTATUS_RAW_NACK BIT(1)
 #define I2C_IRQSTATUS_RAW_RRDY BIT(3)
 
+#define XRDY_IE BIT(4)
+#define RRDY_IE BIT(3)
+#define AAS_IE BIT(9)
+
+#define I2C_BUF_RXTRSH 8 // [13:8]
+#define I2C_BUF_RXFIFO_CLR BIT(14)
+
+#define RX_TRIGGER 0
 #define DELAY_MS 3000
 
 #define DRIVER_NAME "i2c1_device_driver"
 #define DEVICE_NAME "i2c1"
 
+#define IRQ_USED 1
+
 struct i2c_device_data {
+    struct i2c_adapter *adap;
 
     dev_t dev_num;
     struct cdev cdev;
     struct class *class;
     struct device *dev;
 
-    void __iomem *base;  // Mapped base address of I2c1 registers
+    void __iomem *base;  // Mapped base address of i2c1 registers
     void __iomem *base_gpio;
     struct clk *clk;
 
     int irq;
+    int count;
+    int data_count;
+
+    u8* rx;
+    u8 byte;
+
+    struct work_struct re_request_work;
+    bool is_scheduled;
 };
+
+static irqreturn_t irqHandler(int irq, void *d)
+{
+    struct i2c_device_data *data = d;
+    u32 irqsts;
+
+    if (!data) {
+        pr_err("NULL data in irqHandler\n");
+        return IRQ_NONE;
+    }
+
+    irqsts = ioread32(data->base + I2C_IRQSTATUS);
+
+    if ((irqsts & RRDY_IE) == RRDY_IE) {
+
+        data->rx[0] = ioread32(data->base + I2C_DATA); // Read bytes
+
+        data->byte = 1;
+
+        // Clear the XRDY interrupt
+        iowrite32(RRDY_IE, data->base + I2C_IRQSTATUS);
+    }
+
+    if ((irqsts & AAS_IE) == AAS_IE) {
+
+        // used when an address slave is choosen by master
+        // Clear the AAS interrupt
+        iowrite32(AAS_IE, data->base + I2C_IRQSTATUS);
+    }
+
+    data->count++;
+    if (data->count > 100){
+        printk("Too many interrupts, 0x%x\n", ioread32(data->base + I2C_IRQSTATUS));
+        iowrite32(0, data->base + I2C_IRQENABLE_SET); 
+        iowrite32(0xFF, data->base + I2C_IRQENABLE_CLR); 
+        data->count = 0;
+    }
+
+    return IRQ_HANDLED;
+}
 
 void init_clk2(struct i2c_device_data *data, u32 fclk_rate, u32 internal_speed, u32 speed)
 {
@@ -112,7 +174,10 @@ void i2c1_master_init(struct i2c_device_data *data) {
     i2c_con |= (1u << 15)|(1u << 10)|(1u << 9); // [15] enable i2c module, [MST:10]: master mode, [TRX:9]: MST = 1, TRX = 1, Operating Modes = Master transmitter
     iowrite32(i2c_con, data->base + I2C_CON);
 
-    //i2c1[I2C_IRQENABLE_SET / 4] = 0x64C;  // Enable XRDY, RRDY, BB interrupts
+#if (IRQ_USED)
+    iowrite32((RX_TRIGGER << I2C_BUF_RXTRSH) | I2C_BUF_RXFIFO_CLR, data->base + I2C_BUF); // clear RX FIFO, RX threshold is 1 byte
+    iowrite32(RRDY_IE | AAS_IE, data->base + I2C_IRQENABLE_SET); // Receive data ready interrupt enabled
+#endif
 }
 
 static int i2c1_master_open(struct inode *inode, struct file *file)
@@ -155,7 +220,9 @@ void i2c_reinit_master_receive(struct i2c_device_data *data){
 
 int i2c_wait_BB(struct i2c_device_data *data){
     unsigned long timeout;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
+    u32 i2c_con = 0;
+
+    // printk("cnt BB = %d\n", ioread32(data->base + I2C_CNT));
 
     timeout = jiffies + msecs_to_jiffies(DELAY_MS);
     while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&I2C_IRQSTATUS_RAW_BB) == I2C_IRQSTATUS_RAW_BB)  // Wait for bus to be free
@@ -172,42 +239,13 @@ int i2c_wait_BB(struct i2c_device_data *data){
         }
         cpu_relax();
     } 
-
-    // i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
-    // i2c_sts_raw |= I2C_IRQSTATUS_RAW_BB; // Clear BB
-    // iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
     return 0;
 }
 
-int i2c_wait_BB_for_restart(struct i2c_device_data *data){
-    unsigned long timeout;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
-
-    timeout = jiffies + msecs_to_jiffies(DELAY_MS);
-    while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&I2C_IRQSTATUS_RAW_BB) != I2C_IRQSTATUS_RAW_BB)  // make sure bus is occupied
-    {
-        if (time_after(jiffies, timeout)) {
-            dev_err(data->dev, "Timeout BB for restart, irqsts_raw = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-
-            i2c_con = ioread32(data->base + I2C_CON);
-            i2c_con &=~ 0x1; 
-            i2c_con |= 0x2; // Stop condition
-            iowrite32(i2c_con, data->base + I2C_CON);
-
-            return -ETIMEDOUT;
-        }
-        cpu_relax();
-    } 
-
-    i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
-    i2c_sts_raw |= I2C_IRQSTATUS_RAW_BB; // Clear BB
-    iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-    return 0;
-}
 
 int i2c_wait_XRDY(struct i2c_device_data *data){
     unsigned long timeout;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
+    u32 i2c_con = 0;
 
     timeout = jiffies + msecs_to_jiffies(DELAY_MS);
     while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_XRDY)) != I2C_IRQSTATUS_RAW_XRDY)  // Wait for XRDY (transmit data ready)
@@ -224,17 +262,21 @@ int i2c_wait_XRDY(struct i2c_device_data *data){
         }
         cpu_relax();
     }
+    return 0;
+}
+
+void i2c_clr_XRDY(struct i2c_device_data *data){
+    u32 i2c_sts_raw = 0;
 
     i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
     i2c_sts_raw |= I2C_IRQSTATUS_RAW_XRDY; // Clear XRDY
     iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-
-    return 0;
 }
+
 
 int i2c_wait_RRDY(struct i2c_device_data *data){
     unsigned long timeout;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
+    u32 i2c_con = 0;
 
     timeout = jiffies + msecs_to_jiffies(DELAY_MS);
     while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_RRDY)) != I2C_IRQSTATUS_RAW_RRDY)  // Wait for RRDY (receive data ready)
@@ -251,17 +293,21 @@ int i2c_wait_RRDY(struct i2c_device_data *data){
         }
         cpu_relax();
     }
+    return 0;
+}
+
+void i2c_clr_RRDY(struct i2c_device_data *data){
+    u32 i2c_sts_raw = 0;
 
     i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
     i2c_sts_raw |= I2C_IRQSTATUS_RAW_RRDY; // Clear RRDY
     iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-
-    return 0;
 }
+
 
 int i2c_wait_ARDY(struct i2c_device_data *data){
     unsigned long timeout;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
+    u32 i2c_con = 0;
 
     timeout = jiffies + msecs_to_jiffies(DELAY_MS);
     while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_ARDY)) != I2C_IRQSTATUS_RAW_ARDY)  // Wait for RRDY (receive data ready)
@@ -278,17 +324,21 @@ int i2c_wait_ARDY(struct i2c_device_data *data){
         }
         cpu_relax();
     }
+    return 0;
+}
+
+void i2c_clr_ARDY(struct i2c_device_data *data){
+    u32 i2c_sts_raw = 0;
 
     i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
     i2c_sts_raw |= I2C_IRQSTATUS_RAW_ARDY; // Clear ARDY
     iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-
-    return 0;
 }
+
 
 int i2c_wait_ACK(struct i2c_device_data *data){
     unsigned long timeout;
-    u32 i2c_sts_raw = 0, i2c_con = 0;
+    u32 i2c_con = 0;
 
     timeout = jiffies + msecs_to_jiffies(DELAY_MS);
     while ((ioread32(data->base + I2C_IRQSTATUS_RAW)&(I2C_IRQSTATUS_RAW_NACK)) == I2C_IRQSTATUS_RAW_NACK)  // Wait for ACK (addr)
@@ -305,12 +355,23 @@ int i2c_wait_ACK(struct i2c_device_data *data){
         }
         cpu_relax();
     } 
-
-    // i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
-    // i2c_sts_raw |= I2C_IRQSTATUS_RAW_NACK; // Clear ACK
-    // iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
-
     return 0;
+}
+
+void i2c_clr_NACK(struct i2c_device_data *data){
+    u32 i2c_sts_raw = 0;
+
+    i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
+    i2c_sts_raw |= I2C_IRQSTATUS_RAW_NACK; // Clear NACK
+    iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
+}
+
+void i2c_clr_ALL(struct i2c_device_data *data){
+    u32 i2c_sts_raw = 0;
+
+    i2c_sts_raw = ioread32(data->base + I2C_IRQSTATUS_RAW);
+    i2c_sts_raw &=~ 0xFF; // Clear NACK
+    iowrite32(i2c_sts_raw, data->base + I2C_IRQSTATUS_RAW);
 }
 
 // Write data (internal register) to slave
@@ -382,20 +443,15 @@ int i2c1_write(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8
     return 0;
 }
 
-
 // Read data from slave
 int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 *rx, size_t len){
     uint32_t i;
     int ret;
-    u32 i2c_sts_raw;
-
-    iowrite32(0x2, data->base + I2C_SYSC); // Set soft reset
-    init_clk2(data, 48000000, 12000000, 100000);
-
-    dev_info(data->dev, "irqsts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
 
     // ===================== Master sends START. ===========================
+
     i2c_reinit_master_transmit(data);
+
 
     ret = i2c_wait_BB(data);
     if (ret < 0) {
@@ -404,9 +460,12 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
 
     iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
     iowrite32(1, data->base + I2C_CNT); // Number of bytes to write (here 1 byte for register address )
+
+    // dev_info(data->dev, "irqsts = 0x%x, con = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW), ioread32(data->base + I2C_CON));
     // ===================== MMaster sends [slave address + write bit]. ===========================
     // Start I2C
     i2c_start(data);
+
 
     // wait ACK from slave
     ret = i2c_wait_ACK(data);
@@ -421,29 +480,26 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
         
     iowrite32(register_addr, data->base + I2C_DATA); // Write internal register address
 
+    i2c_clr_XRDY(data); // clear XRDY
+
     // wait ACK from slave
     ret = i2c_wait_ACK(data);
     if (ret < 0){
         return ret;
     }
 
-    // we need to wait until registers are accessed again
-    ret = i2c_wait_ARDY(data);
-    if (ret < 0){
-        return ret;
-    }
+
+    udelay(150);
     // ===================== Master sends REPEATED START. ===========================
     i2c_reinit_master_receive(data);
 
     // do not need to check BB as we are in transfer (BB must be 1 to generate restart condition)
 
     iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
-    iowrite32(len, data->base + I2C_CNT); // Number of bytes to write
+    iowrite32(1, data->base + I2C_CNT); // Number of bytes to write
 
-    ret = i2c_wait_BB_for_restart(data);
-    if (ret < 0) {
-        return ret;
-    }
+
+    // Bus should be occupied to generate restart
     // ===================== Master sends [slave address + read bit].. ===========================
 
 
@@ -458,16 +514,28 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
 
     // Read data from DS3231
     // ===================== Master reads data from slave. ===========================
+#if (!IRQ_USED)
     for (i = 0; i < len; i++){
         // wait data is received
         ret = i2c_wait_RRDY(data);
         if (ret < 0){
             return ret;
         }
-        rx[i] = ioread32(data->base + I2C_DATA); // read data
-    }
 
-    // // NACK, do not wait ACK
+        rx[i] = ioread32(data->base + I2C_DATA); // read data
+
+
+        i2c_clr_RRDY(data); // clear RRDY
+
+    }
+#else
+    while(!data->byte);
+    data->byte = 0;
+#endif
+
+
+    // NACK, do not wait ACK
+    //i2c_clr_NACK(data); // clear NACK
 
     ret = i2c_wait_ARDY(data);
     if (ret < 0){
@@ -477,102 +545,91 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
     // Stop i2c
     i2c_stop(data);
 
-    // i2c1_master_init(data);
-
+    i2c_clr_ARDY(data); // clear ARDY
 
     return 0;
+}
+
+static void re_request_irq_work(struct work_struct *work)
+{
+    struct i2c_device_data *data = container_of(work, struct i2c_device_data, re_request_work);
+    int ret = 0;
+
+    if (!data) {
+        pr_err("NULL data in re_request_irq_work\n");
+        return;
+    }
+
+    u8 h = 1, m = 2, s = 3;
+    u8 rx_buf[3] = {0};
+
+    ret = i2c1_write(data, SLAVE_ADDRESS, 0x00, &h, 1);
+    if (ret == 0) {
+        dev_info(data->dev, "Passed + ACK\n");
+    }
+    else {
+        dev_info(data->dev, "error, ret = %d\n", ret);
+    }
+
+    ret = i2c1_write(data, SLAVE_ADDRESS, 0x01, &m, 1);
+    if (ret == 0) {
+        dev_info(data->dev, "Passed + ACK\n");
+    }
+    else {
+        dev_info(data->dev, "error, ret = %d\n", ret);
+    }
+
+    ret = i2c1_write(data, SLAVE_ADDRESS, 0x02, &s, 1);
+    if (ret == 0) {
+        dev_info(data->dev, "Passed + ACK\n");
+    }
+    else {
+        dev_info(data->dev, "error, ret = %d\n", ret);
+    }
+
+    while(1){
+        ret = i2c1_read(data, SLAVE_ADDRESS, 0x00, &rx_buf[0], 1);
+        if (ret == 0) {
+            //dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
+            rx_buf[0] = data->rx[0];
+        }
+        else {
+            dev_info(data->dev, "Status error\n");
+        }
+
+        ret = i2c1_read(data, SLAVE_ADDRESS, 0x01, &rx_buf[1], 1);
+        if (ret == 0) {
+            //dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
+            rx_buf[1] = data->rx[0];
+        }
+        else {
+            dev_info(data->dev, "Status error\n");
+        }
+
+        ret = i2c1_read(data, SLAVE_ADDRESS, 0x02, &rx_buf[2], 1);
+        if (ret == 0) {
+            //dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
+            rx_buf[2] = data->rx[0];
+        }
+        else {
+            dev_info(data->dev, "Status error\n");
+        }
+
+        printk("%d:%d:%d\n", rx_buf[0], rx_buf[1], rx_buf[2]);
+
+        msleep(1000);
+    }
 }
 
 static ssize_t i2c1_master_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
 {
     struct i2c_device_data *data = filp->private_data;
-    u8 *tx_buf;
-    u8 *rx_buf;
-    int ret = 0;
 
-    count = 3;
-
-    // Allocate buffer for TX data
-    tx_buf = kmalloc(count, GFP_KERNEL);
-    if (!tx_buf)
-        return -ENOMEM;
-
-    rx_buf = kmalloc(count, GFP_KERNEL);
-    if (!rx_buf)
-        return -ENOMEM;
-
-    if (copy_from_user(tx_buf, buf, count)) {
-        kfree(tx_buf);
-        return -EFAULT;
+    if (!data->is_scheduled){
+        schedule_work(&data->re_request_work);
+        data->is_scheduled = 1;
     }
 
-
-
-    memset(tx_buf, 0x64, count);
-    memset(rx_buf, 0x10, count);
-    dev_info(data->dev, "Writing %zu bytes: %*ph\n", count, (int)count, tx_buf);
-
-    // ret = i2c1_write(data, SLAVE_ADDRESS, 0x0, &tx_buf[0], 1);
-    // if (ret == 0) {
-    //     dev_info(data->dev, "Passed + ACK\n");
-    // }
-    // else {
-    //     dev_info(data->dev, "error, ret = %d\n", ret);
-    // }
-
-    // ret = i2c1_write(data, SLAVE_ADDRESS, 0x1, tx_buf, 1);
-    // if (ret == 0) {
-    //     dev_info(data->dev, "Passed + ACK\n");
-    // }
-    // else {
-    //     dev_info(data->dev, "error, ret = %d\n", ret);
-    // }
-
-    // ret = i2c1_write(data, SLAVE_ADDRESS, 0x2, tx_buf, 1);
-    // if (ret == 0) {
-    //     dev_info(data->dev, "Passed + ACK\n");
-    // }
-    // else {
-    //     dev_info(data->dev, "error, ret = %d\n", ret);
-    // }
-
-    // printk("====\n");
-    // msleep(2000);
-
-    ret = i2c1_read(data, 0x68, 0x0, &rx_buf[0], 1);
-    if (ret == 0) {
-        dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-    }
-    else {
-        dev_info(data->dev, "Status error\n");
-    }
-
-    // msleep(100);
-
-    // ret = i2c1_read(data, SLAVE_ADDRESS, 0x2, &rx_buf[1], 1);
-    // if (ret == 0) {
-    //     dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-    // }
-    // else {
-    //     dev_info(data->dev, "Status error\n");
-    // }
-
-    // msleep(100);
-
-    // ret = i2c1_read(data, SLAVE_ADDRESS, 0x2, &rx_buf[2], 1);
-    // if (ret == 0) {
-    //     dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-    // }
-    // else {
-    //     dev_info(data->dev, "Status error\n");
-    // }
-
-
-
-    printk("rx_buf: 0x%x, 0x%x, 0x%x\n", rx_buf[0], rx_buf[1], rx_buf[2]);
-
-    kfree(tx_buf);
-    kfree(rx_buf);
     return count;
 }
 
@@ -602,6 +659,8 @@ static int i2c1_probe(struct platform_device *pdev)
     data->base = ioremap(I2C1_BASE, 0x1000);
     data->base_gpio = ioremap(GPIO_BASE, 0x1000);
     data->dev = &pdev->dev;
+    data->byte = 0;
+    data->is_scheduled = 0;
 
     /* Clock setup (assuming this part is unchanged) */
     data->clk = devm_clk_get(&pdev->dev, "fck-i2c1");
@@ -619,6 +678,22 @@ static int i2c1_probe(struct platform_device *pdev)
     GPIO_init(data);
     // Initialize hardware
     i2c1_master_init(data);
+
+    INIT_WORK(&data->re_request_work, re_request_irq_work); 
+
+    // ========== Request IRQ (hwirq 30 maps to swirq x on AM33xx) ==========
+    data->irq = platform_get_irq(pdev, 0);
+    if (data->irq < 0) {
+        dev_err(&pdev->dev, "Failed Formatted: Unable to get IRQ: %d\n", data->irq);
+        return data->irq;
+    }
+    ret = devm_request_irq(&pdev->dev, data->irq, irqHandler, 0, "i2c1", data);
+    if (ret < 0) {
+        dev_err(&pdev->dev, "Unable to request IRQ %d: %d\n", data->irq, ret);
+        return ret;
+    }
+
+    dev_info(&pdev->dev, "IRQ num = %d\n", data->irq);
 
     // Create character device
     ret = alloc_chrdev_region(&data->dev_num, 0, 1, DEVICE_NAME);
@@ -664,6 +739,9 @@ static int i2c1_probe(struct platform_device *pdev)
 static int i2c1_remove(struct platform_device *pdev)
 {
     struct i2c_device_data *data = platform_get_drvdata(pdev);
+
+    if (data->is_scheduled)
+        cancel_work_sync(&data->re_request_work);
     
     if (data->dev)
         device_destroy(data->class, data->dev_num);
