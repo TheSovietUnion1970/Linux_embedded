@@ -49,13 +49,16 @@
 #define I2C_BUF_RXTRSH 8 // [13:8]
 #define I2C_BUF_RXFIFO_CLR BIT(14)
 
-#define RX_TRIGGER 0
-#define DELAY_MS 3000
-
 #define DRIVER_NAME "i2c1_device_driver"
 #define DEVICE_NAME "i2c1"
 
+
+/* ************* CONTROL >> ************ */
+#define RX_TRIGGER 0
+#define DELAY_MS 3000
+
 #define IRQ_USED 1
+/* ************* << CONTROL ************ */
 
 struct i2c_device_data {
     struct i2c_adapter *adap;
@@ -73,8 +76,9 @@ struct i2c_device_data {
     int count;
     int data_count;
 
-    u8* rx;
+    u8* rx; // used as a pointer to read user data
     u8 byte;
+    u8 len;
 
     struct work_struct re_request_work;
     bool is_scheduled;
@@ -94,7 +98,7 @@ static irqreturn_t irqHandler(int irq, void *d)
 
     if ((irqsts & RRDY_IE) == RRDY_IE) {
 
-        data->rx[0] = ioread32(data->base + I2C_DATA); // Read bytes
+        data->rx[data->data_count++] = ioread32(data->base + I2C_DATA); // Read bytes
 
         data->byte = 1;
 
@@ -445,8 +449,9 @@ int i2c1_write(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8
 
 // Read data from slave
 int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 *rx, size_t len){
-    uint32_t i;
     int ret;
+
+    data->rx = rx; // assign pointer to user data
 
     // ===================== Master sends START. ===========================
 
@@ -515,6 +520,7 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
     // Read data from DS3231
     // ===================== Master reads data from slave. ===========================
 #if (!IRQ_USED)
+    int i = 0;
     for (i = 0; i < len; i++){
         // wait data is received
         ret = i2c_wait_RRDY(data);
@@ -522,20 +528,20 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
             return ret;
         }
 
-        rx[i] = ioread32(data->base + I2C_DATA); // read data
+        data->rx[i] = ioread32(data->base + I2C_DATA); // read data
 
 
         i2c_clr_RRDY(data); // clear RRDY
 
     }
 #else
+    data->data_count = 0; // reset index
     while(!data->byte);
     data->byte = 0;
 #endif
 
 
     // NACK, do not wait ACK
-    //i2c_clr_NACK(data); // clear NACK
 
     ret = i2c_wait_ARDY(data);
     if (ret < 0){
@@ -550,13 +556,13 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
     return 0;
 }
 
-static void re_request_irq_work(struct work_struct *work)
+static void scheduled_work(struct work_struct *work)
 {
     struct i2c_device_data *data = container_of(work, struct i2c_device_data, re_request_work);
     int ret = 0;
 
     if (!data) {
-        pr_err("NULL data in re_request_irq_work\n");
+        pr_err("NULL data in scheduled_work\n");
         return;
     }
 
@@ -591,7 +597,6 @@ static void re_request_irq_work(struct work_struct *work)
         ret = i2c1_read(data, SLAVE_ADDRESS, 0x00, &rx_buf[0], 1);
         if (ret == 0) {
             //dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-            rx_buf[0] = data->rx[0];
         }
         else {
             dev_info(data->dev, "Status error\n");
@@ -600,7 +605,6 @@ static void re_request_irq_work(struct work_struct *work)
         ret = i2c1_read(data, SLAVE_ADDRESS, 0x01, &rx_buf[1], 1);
         if (ret == 0) {
             //dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-            rx_buf[1] = data->rx[0];
         }
         else {
             dev_info(data->dev, "Status error\n");
@@ -609,7 +613,6 @@ static void re_request_irq_work(struct work_struct *work)
         ret = i2c1_read(data, SLAVE_ADDRESS, 0x02, &rx_buf[2], 1);
         if (ret == 0) {
             //dev_info(data->dev, "Passed + ACK. sts = 0x%x\n", ioread32(data->base + I2C_IRQSTATUS_RAW));
-            rx_buf[2] = data->rx[0];
         }
         else {
             dev_info(data->dev, "Status error\n");
@@ -679,7 +682,7 @@ static int i2c1_probe(struct platform_device *pdev)
     // Initialize hardware
     i2c1_master_init(data);
 
-    INIT_WORK(&data->re_request_work, re_request_irq_work); 
+    INIT_WORK(&data->re_request_work, scheduled_work); 
 
     // ========== Request IRQ (hwirq 30 maps to swirq x on AM33xx) ==========
     data->irq = platform_get_irq(pdev, 0);
@@ -771,4 +774,4 @@ module_platform_driver(i2c_device_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Your Name");
-MODULE_DESCRIPTION("Custom I2C Device Driver for BeagleBone Black SPI0");
+MODULE_DESCRIPTION("Custom I2C Device Driver for BeagleBone Black I2C1");
