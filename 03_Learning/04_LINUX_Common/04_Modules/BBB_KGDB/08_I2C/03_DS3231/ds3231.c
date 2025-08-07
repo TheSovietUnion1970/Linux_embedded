@@ -410,15 +410,15 @@ int i2c1_write(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8
     int ret;
 
     // ===================== Master sends START. ===========================
-    i2c_reinit_master_transmit(data);
-
     ret = i2c_wait_BB(data);
     if (ret < 0) {
         return ret;
     }
 
+    // make sure STOP is done before this as it will clear bit master mode at stop condition
     iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
     iowrite32(len + 1, data->base + I2C_CNT); // Number of bytes to write (number of bytes + 1 byte (addr))
+    i2c_reinit_master_transmit(data);
 
     // ===================== MMaster sends [slave address + write bit]. ===========================
     // Start I2C
@@ -492,18 +492,15 @@ int i2c1_read(struct i2c_device_data *data, u8 slave_addr, u8 register_addr, u8 
     data->rx = rx; // assign pointer to user data
 
     // ===================== Master sends START. ===========================
-
-    i2c_reinit_master_transmit(data);
-
-
     ret = i2c_wait_BB(data);
     if (ret < 0) {
         return ret;
     }
 
-
+    // make sure STOP is done before this as it will clear bit master mode at stop condition
     iowrite32(slave_addr, data->base + I2C_SA); // Set slave address
     iowrite32(1, data->base + I2C_CNT); // Number of bytes to write (here 1 byte for register address )
+    i2c_reinit_master_transmit(data);
     // i2c_reinit_master_transmit(data);
     //printk("1-0x%x\n", ioread32(data->base + I2C_CON));
     // while((ioread32(data->base + I2C_CON)&0x8600) != 0x8600);
