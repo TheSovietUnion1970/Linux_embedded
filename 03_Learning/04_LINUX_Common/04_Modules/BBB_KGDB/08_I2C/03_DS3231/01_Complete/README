@@ -1,0 +1,8 @@
+For i2c used for writting/reading data to/from register address of slave device:
+
+Note for ARDY indications:
+W: STT + Slave address (+ ACK) + register address W (+ ACK) + data (+ ACK) (+ ARDY) + STP
+R: STT + Slave address (+ ACK) + register address W (+ ARDY) (+ ACK) (+ ARDY) + register address R (+ ACK) + data (+ NACK) (+ ARDY) + STP
+
++ Can check by see by the number of jumps of ardy for interrupt: 1 ardy IRQ for write and 3 ardy IRQ for read.
++ 1 additional ardy is needed for re-configuring from master transmit to master recieve
