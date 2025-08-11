@@ -11,6 +11,8 @@
 
 #define DRIVER_NAME "can0_driver"
 
+#define MS_DELAY 2000
+
 #define CAN0_BASE       0x481cc000
 #define GPIO_BASE       0x44e10000
 
@@ -32,6 +34,22 @@ struct can_device_data {
     struct clk *clk;
 };
 
+static int wait_register_update(struct can_device_data *data, u8 offset, u8 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
+    unsigned long timeout;
+    timeout = jiffies + msecs_to_jiffies(delay_ms);
+
+    while ((ioread32(data->base + offset)&(1u << bit_offset)) != (bit_val << bit_offset))  // Wait register updated
+    {
+        if (time_after(jiffies, timeout)) {
+            dev_err(data->dev, "Timeout %s\n", name_register);
+            return -ETIMEDOUT;
+        }
+        cpu_relax();
+    } 
+
+    return 0;
+}
+
 void can0_bit_timing(struct can_device_data *data){
     u32 fq = 500000; // Frequency Quantum: 500kHz
     u32 val = 0;
@@ -51,7 +69,6 @@ void can0_bit_timing(struct can_device_data *data){
 
     iowrite32(val, data->base + CAN_BTR);
 
-
 }
 
 void can0_init(struct can_device_data *data) {
@@ -59,15 +76,17 @@ void can0_init(struct can_device_data *data) {
 
     can_ctl = CAN_CTL_INIT | CAN_CTL_CCE;
     iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
-    while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) == CAN_CTL_INIT); // wait init = 0;
+    //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) == CAN_CTL_INIT); // wait init = 0;
+    wait_register_update(data, CAN_CTL, CAN_CTL_INIT, 1, MS_DELAY, "INIT mode");
 
     // Bit timing values into BTR
     can0_bit_timing(data);
 
     // clear init, CCE
-    can_tcl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
+    can_ctl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
     iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
-    while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) != CAN_CTL_INIT); // wait init = 0;
+    //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) != CAN_CTL_INIT); // wait init = 0;
+    wait_register_update(data, CAN_CTL, CAN_CTL_INIT, 0, MS_DELAY, "Normal mode");
 
 
 }
@@ -125,6 +144,10 @@ static int can0_probe(struct platform_device *pdev)
         return ret;
     }
 
+    // ====== Can init
+    can0_init(data);
+
+    // ====== Create device character
     cdev_init(&data->cdev, &can_device_fops);
     data->cdev.owner = THIS_MODULE;
     ret = cdev_add(&data->cdev, data->dev_num, 1);
