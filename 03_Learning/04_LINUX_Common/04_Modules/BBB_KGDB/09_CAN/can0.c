@@ -18,9 +18,40 @@
 
 #define CAN_CTL 0x00
 #define CAN_BTR 0x0C
+#define CAN_IF1CMD 0x100
+#define CAN_IF1MSK 0x104
+#define CAN_IF1ARB 0x108
+#define CAN_IF1MCTL 0x10C
+#define CAN_IF1DATA 0x110
 
 #define CAN_CTL_INIT BIT(0)
 #define CAN_CTL_CCE BIT(6)
+
+#define CAN_IFxCMD_msgnum 0xff // [7:0]
+#define CAN_IFxCMD_Busy BIT(15)
+#define CAN_IFxCMD_WR_RD BIT(23)
+
+// #define CAN_IFxMSK_Msk 0x1fffffff // [28:0]
+// #define CAN_IFxMSK_MDir BIT(30)
+// #define CAN_IFxMSK_MXtd BIT(31)
+#define CAN_IFxCMD_Arb BIT(21)
+
+#define CAN_IFxARB_MsgVal BIT(31)
+#define CAN_IFxARB_Dir BIT(29)
+#define CAN_IFxARB_Xtd BIT(30)
+#define CAN_IFxARB_ID 0x1fffffff // [28:0]
+
+#define CAN_IFxMCTL_UMask BIT(12)
+#define CAN_IFxMCTL_EoB BIT(7)
+#define CAN_IFxMCTL_NewDat BIT(15)
+#define CAN_IFxMCTL_TxRqst BIT(8)
+#define CAN_IFxMCTL_DLC 0xf // [3:0]
+
+#define CAN_IFxDATA_0 0xff // [7:0]
+#define CAN_IFxDATA_1 0xff00 // [15:8]
+
+#define ID_CAN0 0x01
+u8 TX[2] = {0x01, 0x02};
 
 struct can_device_data {
 
@@ -34,7 +65,7 @@ struct can_device_data {
     struct clk *clk;
 };
 
-static int wait_register_update(struct can_device_data *data, u8 offset, u8 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
+static int wait_register_update(struct can_device_data *data, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
     timeout = jiffies + msecs_to_jiffies(delay_ms);
 
@@ -71,6 +102,42 @@ void can0_bit_timing(struct can_device_data *data){
 
 }
 
+void can0_msg_obj_Data_Frames(struct can_device_data *data){
+    u32 if1cmd = 0, if1msk = 0, if1mctl = 0, if1arb = 0, if1data = 0;
+
+    if1cmd = (1u << 21)&(CAN_IFxCMD_Arb); // Access arbitration bits
+    if1cmd &=~ (1u << 22); // no use mask
+    iowrite32(if1cmd, data->base + CAN_IF1CMD);
+
+    iowrite32(if1msk, data->base + CAN_IF1MSK); // no use of mask bits
+
+    if1mctl &=~ (1u << 12); // CAN_IFxMCTL_UMask: mask ignored
+    if1mctl |= (1u << 7); // CAN_IFxMCTL_EoB: a single msg obj
+    if1mctl &=~ (1u << 15); // CAN_IFxMCTL_NewDat: msg_hler/CPU write no new data
+    if1mctl &=~ (1u << 8); // CAN_IFxMCTL_TxRqst: message object is not waiting for a transmission
+    if1mctl |= (0x2)&CAN_IFxMCTL_DLC; // DLC = 2 bytes
+    iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
+
+    if1arb = (1u << 31)&(CAN_IFxARB_MsgVal); // The message object is to be used by the message handler.
+    if1arb &=~ (1U << 30); // CAN_IFxARB_Xtd: no Extended Identifier
+    if1arb |= (1U << 29); // CAN_IFxARB_Dir: transmit
+    if1arb |= (ID_CAN0 << 18)&(CAN_IFxARB_ID); // 11-bit ID for [28:18]
+    iowrite32(if1arb, data->base + CAN_IF1ARB); 
+
+    if1data |= TX[0]&(CAN_IFxDATA_0);
+    if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
+    iowrite32(if1data, data->base + CAN_IF1DATA); 
+
+    // config cmd
+    if1cmd = ioread32(data->base + CAN_IF1CMD);
+    if1cmd |= (1u << 23); // CAN_IFxCMD_WR_RD: Write
+    if1cmd |= (1u << 20); // access control bits
+    if1cmd &=~ (1u << 18); // handled by msg number, not by TxRqst_NewDa
+    if1cmd |= (1u << 17); // use DATA_A
+    iowrite32(if1cmd, data->base + CAN_IF1CMD);
+
+}
+
 void can0_init(struct can_device_data *data) {
     u32 can_ctl = 0;
 
@@ -88,7 +155,6 @@ void can0_init(struct can_device_data *data) {
     //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) != CAN_CTL_INIT); // wait init = 0;
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT, 0, MS_DELAY, "Normal mode");
 
-
 }
 
 static int can0_open(struct inode *inode, struct file *file){
@@ -100,6 +166,19 @@ static int can0_open(struct inode *inode, struct file *file){
 static ssize_t can0_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
 {
     struct can_device_data *data = filp->private_data;
+    u32 can_if1cmd = 0;
+
+    // Config message object
+    can0_msg_obj_Data_Frames(data);
+
+    can_if1cmd = ioread32(data->base + CAN_IF1CMD);
+    can_if1cmd |= 1u << 0; // CAN_IFxCMD_msgnum = 1, trigger transfer
+    iowrite32(can_if1cmd, data->base + CAN_IF1CMD);
+
+    // wait the hanler send msg object from IF1 registers to msg RAM
+    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy, 0, MS_DELAY, "Busy bit");
+
+    dev_info(data->dev, "Done transmitting data frame \n");
 
     return count;
 }
