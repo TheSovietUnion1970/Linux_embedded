@@ -1,0 +1,25 @@
+debian@arm:~$ sudo m 0x481cc100
+/dev/mem opened.
+Memory mapped at address 0xb6f72000.
+Value at address 0x481CC100 (0xb6f72100): 0xB20001
+
+debian@arm:~$ sudo m 0x481cc10C
+/dev/mem opened.
+Memory mapped at address 0xb6fdf000.
+Value at address 0x481CC10C (0xb6fdf10c): 0x81
+
+debian@arm:~$ sudo m 0x481cc108
+/dev/mem opened.
+Memory mapped at address 0xb6fe1000.
+Value at address 0x481CC108 (0xb6fe1108): 0xA0040000
+
+debian@arm:~$ sudo m 0x481cc110
+/dev/mem opened.
+Memory mapped at address 0xb6fc3000.
+Value at address 0x481CC110 (0xb6fc3110): 0x1
+
+debian@arm:~$ sudo m 0x481cc000
+/dev/mem opened.
+Memory mapped at address 0xb6f48000.
+Value at address 0x481CC000 (0xb6f48000): 0x1
+
