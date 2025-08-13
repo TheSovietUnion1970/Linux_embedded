@@ -86,8 +86,7 @@ static int wait_register_update(struct can_device_data *data, u16 offset, u16 bi
     return 0;
 }
 
-void can0_bit_timing(struct can_device_data *data){
-    u32 fq = 500000; // Frequency Quantum: 500kHz
+void can0_bit_timing(struct can_device_data *data, u32 can_clk, u32 bitrate){
     u32 val = 0;
 
     u8 SJW = 1;
@@ -95,7 +94,7 @@ void can0_bit_timing(struct can_device_data *data){
     u8 TSeg2 = 3;
 
     /* CAN_CLK is 24MHz */
-    u16 BRP = clk_get_rate(data->clk)/(fq*(SJW + TSeg1 + TSeg2)); // 5
+    u16 BRP = can_clk/(bitrate*(SJW + TSeg1 + TSeg2)); // 5
     printk("BRP = 0x%x\n", BRP);
 
     BRP = BRP - 1;
@@ -161,8 +160,8 @@ void can0_init(struct can_device_data *data) {
     //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) == CAN_CTL_INIT); // wait init = 1;
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 1, MS_DELAY, "INIT mode");
 
-    // Bit timing values into BTR
-    can0_bit_timing(data);
+    // Bit timing values into BTR, output bitrate is 500KHz
+    can0_bit_timing(data, clk_get_rate(data->clk), 500000);
 
     // clear init, CCE
     can_ctl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
