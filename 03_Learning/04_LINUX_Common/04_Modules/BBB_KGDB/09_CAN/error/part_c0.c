@@ -1,3 +1,27 @@
+void can0_init(struct can_device_data *data) {
+    u32 can_ctl = 0, if1cmd = 0, if1mctl = 0;
+
+    can_ctl = CAN_CTL_INIT | CAN_CTL_CCE | CAN_CTL_DAR; // CAN_CTL_DAR is used to disable auto retransmission
+    iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
+    //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) == CAN_CTL_INIT); // wait init = 1;
+    wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 1, MS_DELAY, "INIT mode");
+
+    // Bit timing values into BTR, output bitrate is 500KHz
+    can0_bit_timing(data, clk_get_rate(data->clk), 500000);
+
+    // clear init, CCE
+    can_ctl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
+    iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
+    //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) != CAN_CTL_INIT); // wait init = 0;
+    wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 0, MS_DELAY, "Normal mode");
+    printk("ctl[0] = 0x%x\n", ioread32(data->base + CAN_CTL));
+
+    if1mctl = ioread32(data->base + CAN_IF1MCTL);
+    if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is not waiting for a transmission
+    iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
+    iowrite32(if1cmd, data->base + CAN_IF1CMD); // Apply the update
+}
+
 void can0_msg_obj_Data_Frames(struct can_device_data *data){
     u32 if1cmd = 0, if1msk = 0, if1mctl = 0, if1arb = 0, if1data = 0;
 
@@ -11,7 +35,8 @@ void can0_msg_obj_Data_Frames(struct can_device_data *data){
 
     // Transfer the data bytes of a message into a message object 
     if1data |= TX[0]&(CAN_IFxDATA_0);
-    //if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
+    if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
+    if1data |= (TX[2] << 16)&(CAN_IFxDATA_2);
     iowrite32(if1data, data->base + CAN_IF1DATA); 
 
     // config msg control,  set TxRqst 
@@ -19,7 +44,7 @@ void can0_msg_obj_Data_Frames(struct can_device_data *data){
     if1mctl |= (1u << 7); // CAN_IFxMCTL_EoB: a single msg obj
     if1mctl &=~ (1u << 15); // CAN_IFxMCTL_NewDat: msg_hler/CPU write no new data
     if1mctl |= (1u << 8); // :CAN_IFxMCTL_TxRqst message object is waiting for a transmission
-    if1mctl |= (0x1)&CAN_IFxMCTL_DLC; // DLC = 1 byte
+    if1mctl |= (0x3); // DLC = 1 byte
     if1mctl |= (1u << 11); // TxIE
     iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
 
@@ -43,7 +68,7 @@ void can0_msg_obj_Data_Frames(struct can_device_data *data){
 static ssize_t can0_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
 {
     struct can_device_data *data = filp->private_data;
-    u32 can_if1cmd = 0;
+    u32 can_if1cmd = 0, if1mctl = 0;
 
     // Config message object
     can0_msg_obj_Data_Frames(data);
@@ -56,6 +81,11 @@ static ssize_t can0_write(struct file *filp, const char __user *buf, size_t coun
 
     // wait the hanler send msg object from IF1 registers to msg RAM
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
+
+    if1mctl = ioread32(data->base + CAN_IF1MCTL);
+    if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is not waiting for a transmission
+    iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
+    iowrite32(can_if1cmd, data->base + CAN_IF1CMD);
 
     // Check IntPnd
     if ((ioread32(data->base + CAN_IF1MCTL)&BIT(13)) == BIT(13)) printk("cmd -> sent\n");

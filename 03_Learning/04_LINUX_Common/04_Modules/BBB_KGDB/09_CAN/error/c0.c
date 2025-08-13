@@ -30,6 +30,7 @@
 #define CAN_CTL_INIT_OFFSET 0
 #define CAN_CTL_CCE BIT(6)
 #define CAN_CTL_CCE_OFFSET 6
+#define CAN_CTL_DAR BIT(5)
 
 #define CAN_IFxCMD_msgnum 0xff // [7:0]
 #define CAN_IFxCMD_Busy BIT(15)
@@ -163,7 +164,7 @@ void GPIO_init(struct can_device_data *data){
 void can0_init(struct can_device_data *data) {
     u32 can_ctl = 0, if1cmd = 0, if1mctl = 0;
 
-    can_ctl = CAN_CTL_INIT | CAN_CTL_CCE;
+    can_ctl = CAN_CTL_INIT | CAN_CTL_CCE | CAN_CTL_DAR; // CAN_CTL_DAR is used to disable auto retransmission
     iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
     //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) == CAN_CTL_INIT); // wait init = 1;
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 1, MS_DELAY, "INIT mode");
@@ -173,7 +174,7 @@ void can0_init(struct can_device_data *data) {
 
     // clear init, CCE
     can_ctl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
-    iowrite32(0x0, data->base + CAN_CTL); // enter init mode, access to registers
+    iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
     //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) != CAN_CTL_INIT); // wait init = 0;
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 0, MS_DELAY, "Normal mode");
     printk("ctl[0] = 0x%x\n", ioread32(data->base + CAN_CTL));
@@ -181,6 +182,7 @@ void can0_init(struct can_device_data *data) {
     if1mctl = ioread32(data->base + CAN_IF1MCTL);
     if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is not waiting for a transmission
     iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
+    iowrite32(if1cmd, data->base + CAN_IF1CMD); // Apply the update
 }
 
 static int can0_open(struct inode *inode, struct file *file){
@@ -209,6 +211,7 @@ static ssize_t can0_write(struct file *filp, const char __user *buf, size_t coun
     if1mctl = ioread32(data->base + CAN_IF1MCTL);
     if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is not waiting for a transmission
     iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
+    iowrite32(can_if1cmd, data->base + CAN_IF1CMD);
 
     // Check IntPnd
     if ((ioread32(data->base + CAN_IF1MCTL)&BIT(13)) == BIT(13)) printk("cmd -> sent\n");
