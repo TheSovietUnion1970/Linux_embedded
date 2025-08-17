@@ -1,0 +1,13 @@
+#include <linux/atomic.h>
+
+atomic_t should_stop; // Use atomic_t instead of bool
+
+(PROBE)
+atomic_set(&data->should_stop, 0); // Initialize to 0 (false) 
+
+(REMOVE)
+atomic_set(&data->should_stop, 1); // Set to 1 (true)
+smp_mb(); // Memory barrier to ensure should_stop is visible
+
+(handler)
+while (!atomic_read(&data->should_stop))
