@@ -1,0 +1,46 @@
+IE0/IE1 -> determine which msgnum raises interrupt
+SIE -> determine status change even msgVal = 0 when data frame is received
+    -> clear by read ES register
+    
+    if (Int0ID != 0x8000){ // after clearing status and error (below), data transfer interrupt is raised
+        // es is 0x7 as there is no CAN activity after transmit
+        can0_transmit_obj_Data_Frames(data, ID_CAN0, Int0ID, 0); 
+    } 
+    else { // es = 0x8 (TxOk) -> source is from status change interrupt -> clear by read ES
+        es = ioread32(data->base + CAN_ES);
+        /* Int0ID = 0x8000 */
+    }
+
+================= mask
+CAN_IFxMCTL_UMask -> mask used (Msk[28:0], MXtd, and MDir)
+CAN_IFxCMD_Mask => transfer msk to/from IFx and msg obj
+================= mask dir
+If some bits of the mask bits are set to “don’t care,” the corresponding bits of the arbitration
+register will be overwritten by the bits of the stored data frame.
+Ex: 
+if1arb |= (1u << 29); // W
+if1msk &=~ (1u << 30); // mask = no acceptance filtering
+	=> still works for reading data frame as the bit 29 of data frame will overwrite bit 29 of arb register
+	
+if1arb |= (1u << 29); // W
+if1msk |= (1u << 30); // mask = acceptance filtering
+	=> don't works for reading data frame as the bit 29 of data frame will not overwrite bit 29 of arb register (arb bit 29 still remains 1)
+	
+================= mask ID
+if1arb |= 0x100 << 18;
+if1msk |= (0x700 << 18); 
+	=> 0h1xx will be accepted >< 0h0xx will not be accepted as bit 8 must be 1 for matching
+	
+================= msgVal = x or x + 64 will transfter data between IF and msg obj x
+Ex: msgVal = 2 or 66, transfter data is executed between IF and msg obj 2
+	
+================= ???
+DCAN has initiated a wake up of the system due to
+dominant CAN bus while module power down.
+
+NewDat
+==
+can0_transmit_obj_Data_Frames(data, ID_CAN0, i+1, 0) -> work for clearing
+Reset_msg_obj(data, RD, i+1, 0); -> not work for clearing
+
+If not using can0_transmit_obj_Data_Frames, when new msgVal is used, the old one is still in msg obj 
