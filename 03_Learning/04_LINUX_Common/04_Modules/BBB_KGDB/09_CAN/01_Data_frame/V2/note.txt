@@ -1,0 +1,4 @@
+In this V2:
++ Update Reading_received_msg with control, arb, msk bit set
++ TX: NewDat and TxRq is set at first then they're automatically clear when handler is called
++ RX: can choose which msg slot for receiving data, just make sure configure dir with no mask, all msg obj init with write dir -> configure read dir with the desired msg obj
