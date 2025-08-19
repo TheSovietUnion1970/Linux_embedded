@@ -1,0 +1,20 @@
+The last message object may be configured to accept
+any data frame or remote frame that was not accepted by any other message object,
+=> try to pre-config last msg obj as a received obj -> received frame is only logged into last msg boj
+
+=====
+The valid message object with the
+highest priority pending transmission request is loaded into the shift register by the message handler and
+the transmission is started. The message object’s NewDat bit is reset. The message object’s NewDat bit is reset.
+=> maybe the msg obj 1 always raise interrupt
+
+=====
+After a successful transmission and if no new data was written to the message object (NewDat = ‘0’) since
+the start of the transmission, the TxRqst bit will be reset
+=> consider NewData
+=> check Txrqst and NewData in handler
+
+=====
+The NewDat bit is set to indicate that new data (not yet seen by the CPU) has been received.
+The CPU should reset the NewDat bit when it reads the message object.
+=> when Reception of Data Frames, check NewData

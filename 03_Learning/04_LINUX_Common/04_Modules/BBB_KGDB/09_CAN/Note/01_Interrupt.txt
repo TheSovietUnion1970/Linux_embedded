@@ -1,0 +1,28 @@
+3 interrupt sources:
+	+ IE0/IE1 (raised if no SIE and EIE enabled) -> clear by making msg obj invalid
+	+ SIE (if enabled, IE0/IE1 is not used) -> clear by reading ES register
+	+ EIE -> clear by reading ES register
+Ex:
+CASE1:
+if only IE0/IE1 enabled:
+    if (Int0ID = xxx){ 
+        can0_transmit_obj_Data_Frames(data, ID_CAN0, Int0ID, 0); 
+    } 
+	==> Int0ID will point directly to current msg obj
+
+CASE2:
+    // SIE raised as es is 0x7 because there is no CAN activity after transmit
+    if (Int0ID != 0x8000){ 
+        can0_transmit_obj_Data_Frames(data, ID_CAN0, Int0ID, 0); 
+    } 
+    // SIE raised es = 0x8 (TxOk) 
+    else { 
+        es = ioread32(data->base + CAN_ES);
+    }
+
+=> to avoid es = 0x7 raised again: make msg obj invalid to avoid No CAN bus event change status:
+    if (Int0ID == 0x8000){ 
+	es = ioread32(data->base + CAN_ES); // clearing SIE interrupt
+        can0_transmit_obj_Data_Frames(data, ID_CAN0, Int0ID, 0); // avoid msg obj valid after transmit, then es(0x7) never triggered
+    } 
+

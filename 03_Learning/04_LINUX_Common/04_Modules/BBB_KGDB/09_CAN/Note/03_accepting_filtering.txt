@@ -1,0 +1,10 @@
+If some bits of the mask bits are set to “don’t care,” the corresponding bits of the arbitration
+register will be overwritten by the bits of the stored data frame = bits used for accepting filtering is checked for matching, the others (not using accepting filtering) is not checked for matching
+
+Ex:
+For ID can:
+if all 11 bits are not for accepting filtering: if1msk &=~ (0x7FF << 18) => accepting all message
+
+if only bit 8 is for accepting filtering: if1arb |= 0x100 << 18 (specifying bit 8 for CAN ID is 1) , if1msk |= (0x100 << 18) 
+	=> accepting all message with 0h1xx (0h113, 0h17F, ...)
+	=> not accepting all message with the other IDs (0h234, 0h356, 0h013, ...)

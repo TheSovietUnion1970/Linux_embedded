@@ -1,0 +1,12 @@
+msgVal = x or 64 + x will use the same msg obj x
+Ex: msgVal = 3 or msgVal = 67 will use the msg obj 3 in RAM msg slot
+
+INTPND_X and INTPNDxx:
+Ex: 
+if msg obj 3 raised interrupt -> INTPND_X = 0x1 (byte 1), INTPND12 = 0x04 (bit 2 is set)
+if msg obj 40 raised interrupt -> INTPND_X = 0x3 (byte 3), INTPND34 = 0x80 (bit 7 is set)
+
+MSGVAL_X and MSGVALxx
+Ex:
+if msg obj 3 is valid -> MSGVAL_X = 0x1 (byte 1), MSGVAL12 = 0x4 (bit 2 is set)
+if msg obj 40 is valid -> MSGVAL_X = 0x3 (byte 3), MSGVAL12 = 0x80 (bit 7 is set)
