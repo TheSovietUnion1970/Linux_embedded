@@ -1,7 +1,9 @@
 For TX interrupt: cleard by
 	+ clear TxRqst in mctl
-	+ write updated value (reset TxRqst) to msg obj
+	+ write updated value (by msgnum) (reset TxRqst) to msg obj
 	
 For RX interrupt: cleard by
 	+ set ClrIntPnd in cmd
-	+ write updated value (set ClrIntPnd) to msg obj
+	+ write updated value (by msgnum) (set ClrIntPnd) to msg obj
+	
+If clearing msgnum, the CAN controller will use the default 0x40 msg obj (the last obj)
