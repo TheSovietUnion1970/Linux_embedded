@@ -1,0 +1,17 @@
+IF3:
+All valid message objects in message RAM which are configured for automatic update, will be checked for active NewDat flags:
+-> check NewDat in IF3MCTL 
+===
+The observation flags (Bits [4:0]) in the IF3 observation register are used to determine, which data sections of the IF3 interface register set have to be read in order to complete a DMA read cycle:
+If IF3 Update Enable is used and no Observation flag is set, the corresponding message objects will be copied to IF3 without activating the DMA request line and without waiting for DMA read accesses:
+-> set DataB and DataA in IF3OBS 
+===
+A write access to this register aborts a pending DMA cycle by resetting the DMA line and
+enables updating of IF3 interface register set with new data
+-> maybe the way to clear DMA
+
+if1:
+IF1CMD and IF2CMD (clear of DMAActive flag by read/write) - auto clear
+===
+DMA is requested after completed transfer between IF1 register set and message RAM. The DMA request remains active until the first read or write to one of the IF1 registers; an exception is a write to Message Number (Bits [7:0]) when DMAactive is one
+-> w/r to one of those IF1 register -> clear DMA
