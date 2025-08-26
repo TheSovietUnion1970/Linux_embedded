@@ -1,0 +1,107 @@
+debian@arm:~$ sudo insmod b3.ko 
+[sudo] password for debian: 
+[  134.399152] b3: loading out-of-tree module taints kernel.
+[  134.408608] can0_driver 481cc000.can0_device: can0 clock rate: 24000000 Hz
+[  134.415752] BRP = 0x6
+[  134.418172] ctl[0] = 0x0
+[  134.420781] Int0ID = 0xc, intpnd_x = 0x2, es = 0x210
+[  134.425773] cmd[reading] = 0x7f400c
+[  134.429275] msg obj [DMA] - raw1 = 0x0, raw2 = 0x0, dlc = 0x0, id = 0x0, cmd = 0x7f000c
+[  134.437431] can0_driver 481cc000.can0_device: IRQ num = 18
+[  134.443017] can0_driver 481cc000.can0_device: Edma clock rate: 200000000 Hz
+[  134.450128] can0_driver 481cc000.can0_device: Using DMA for CAN0 transfers
+[  134.457080] can0_driver 481cc000.can0_device: if1 DMA channel configured
+[  134.463837] can0_driver 481cc000.can0_device: Succeed to configure DMA
+[  134.472845] [1]DMA - DMAactive = 0x0
+[  134.485767] can0_driver 481cc000.can0_device: Submitting if1 DMA descriptor
+[  134.492888] can0_driver 481cc000.can0_device: Issuing if1 DMA pending
+[  134.504190] can0_driver 481cc000.can0_device: Created /dev/can0
+[  134.510317] ctl[2] = 0x6000a
+debian@arm:~$ [  135.371035] Int0ID = 0xc, intpnd_x = 0x2, es = 0x10
+[  135.375989] cmd[reading] = 0x7f400c
+[  135.379495] msg obj [DMA] - raw1 = 0x0, raw2 = 0x0, dlc = 0x0, id = 0x19f6b00, cmd = 0x7f000c
+[  135.388109] can0_class can0: RX DMA callback called
+[  135.393085] Buffer received (4):
+[  135.396333] '0x19' 
+[  135.396339] '0x40' 
+[  135.398511] '0x40' 
+[  135.400621] '0x40' 
+[  135.402747] 
+[  135.406361] [2]DMA - DMAactive = 0x0
+[  135.416565] [1]DMA - DMAactive = 0x0
+[  135.420304] ------------[ cut here ]------------
+[  135.425008] WARNING: CPU: 0 PID: 114 at kernel/dma/mapping.c:494 dma_alloc_attrs+0xf0/0x128
+[  135.433450] Modules linked in: b3(O) g_ether evdev uio_pdrv_genirq uio ip_tables x_tables
+[  135.441736] CPU: 0 PID: 114 Comm: kworker/0:15 Tainted: G           O      5.15.177+ #5
+[  135.449782] Hardware name: Generic AM33XX (Flattened Device Tree)
+[  135.455906] Workqueue: events re_request_irq_work [b3]
+[  135.461104] Backtrace: 
+[  135.463564] [<c108351c>] (dump_backtrace) from [<c1083768>] (show_stack+0x20/0x24)
+[  135.471200]  r7:000001ee r6:00000009 r5:00070013 r4:c14db51c
+[  135.476882] [<c1083748>] (show_stack) from [<c108e7a4>] (dump_stack_lvl+0x48/0x54)
+[  135.484503] [<c108e75c>] (dump_stack_lvl) from [<c108e7c8>] (dump_stack+0x18/0x1c)
+[  135.492118]  r5:c01d237c r4:c14d5d1c
+[  135.495705] [<c108e7b0>] (dump_stack) from [<c013d4d4>] (__warn+0x98/0x138)
+[  135.502720] [<c013d43c>] (__warn) from [<c1083f88>] (warn_slowpath_fmt+0x70/0xcc)
+[  135.510249]  r7:00000009 r6:000001ee r5:c14d5d1c r4:00000000
+[  135.515930] [<c1083f1c>] (warn_slowpath_fmt) from [<c01d237c>] (dma_alloc_attrs+0xf0/0x128)
+[  135.524330]  r8:ca1fbeb4 r7:00000004 r6:c110182c r5:00000cc1 r4:c3c5cc00
+[  135.531058] [<c01d228c>] (dma_alloc_attrs) from [<bf01f758>] (dma_alloc_coherent+0x44/0x54 [b3])
+[  135.539905]  r8:00000000 r7:df923600 r6:df920280 r5:ca1ea980 r4:c7bb56c0
+[  135.546634] [<bf01f714>] (dma_alloc_coherent [b3]) from [<bf01fd74>] (Dma_read+0x80/0x2c0 [b3])
+[  135.555396] [<bf01fcf4>] (Dma_read [b3]) from [<bf01fff0>] (re_request_irq_work+0x3c/0x48 [b3])
+[  135.564158]  r4:c7bb56c0
+[  135.566700] [<bf01ffb4>] (re_request_irq_work [b3]) from [<c015eacc>] (process_one_work+0x1e0/0x51
+0)
+[  135.575894] [<c015e8ec>] (process_one_work) from [<c015ee64>] (worker_thread+0x68/0x57c)
+[  135.584034]  r10:df920280 r9:00000008 r8:c1804d00 r7:df920298 r6:ca1ea998 r5:df920280
+[  135.591896]  r4:ca1ea980
+[  135.594437] [<c015edfc>] (worker_thread) from [<c016771c>] (kthread+0x150/0x170)
+[  135.601880]  r10:ca1ebda0 r9:ca1b3e8c r8:ca1fa000 r7:ca1ea980 r6:c015edfc r5:ca1ebd80
+[  135.609743]  r4:ca1eb8c0
+[  135.612285] [<c01675cc>] (kthread) from [<c0100134>] (ret_from_fork+0x14/0x20)
+[  135.619548] Exception stack(0xca1fbfb0 to 0xca1fbff8)
+[  135.624623] bfa0:                                     00000000 00000000 00000000 00000000
+[  135.632840] bfc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[  135.641055] bfe0: 00000000 00000000 00000000 00000000 00000013 00000000
+[  135.647702]  r10:00000000 r9:00000000 r8:00000000 r7:00000000 r6:00000000 r5:c01675cc
+[  135.655565]  r4:ca1eb8c0 r3:00000001
+[  135.659248] ---[ end trace b66472e890552698 ]---
+[  135.679313] can0_class can0: Submitting if1 DMA descriptor
+[  135.685002] can0_class can0: Issuing if1 DMA pending
+[  136.722109] can0_class can0: DMA if1 timeout
+[  136.726515] Buffer received (4):
+[  136.729762] '0x40' 
+[  136.729768] '0x40' 
+[  136.731941] '0x40' 
+[  136.734050] '0x40' 
+[  136.736176] 
+[  136.739788] [2]DMA - DMAactive = 0x0
+[  138.374533] Int0ID = 0xc, intpnd_x = 0x2, es = 0x10
+[  138.379482] cmd[reading] = 0x7f400c
+[  138.382987] msg obj [DMA] - raw1 = 0x0, raw2 = 0x0, dlc = 0x0, id = 0x19f6b00, cmd = 0x7f000c
+[  138.391591] [1]DMA - DMAactive = 0x0
+[  138.398793] can0_class can0: Submitting if1 DMA descriptor
+[  138.404441] can0_class can0: Issuing if1 DMA pending
+[  139.421534] can0_class can0: DMA if1 timeout
+[  139.425933] Buffer received (4):
+[  139.429180] '0x40' 
+[  139.429186] '0x40' 
+[  139.431350] '0x40' 
+[  139.433458] '0x40' 
+[  139.435584] 
+[  139.439197] [2]DMA - DMAactive = 0x0
+[  141.378025] Int0ID = 0xc, intpnd_x = 0x2, es = 0x10
+[  141.382973] cmd[reading] = 0x7f400c
+[  141.386478] msg obj [DMA] - raw1 = 0x0, raw2 = 0x0, dlc = 0x0, id = 0x19f6b00, cmd = 0x7f000c
+[  141.395077] [1]DMA - DMAactive = 0x0
+[  141.401717] can0_class can0: Submitting if1 DMA descriptor
+[  141.407348] can0_class can0: Issuing if1 DMA pending
+[  142.440243] can0_class can0: DMA if1 timeout
+[  142.444646] Buffer received (4):
+[  142.447894] '0x40' 
+[  142.447901] '0x40' 
+[  142.450075] '0x40' 
+[  142.452183] '0x40' 
+
+why only the first time, DMA works with DMA_USED is set and DMA_REG is clear
