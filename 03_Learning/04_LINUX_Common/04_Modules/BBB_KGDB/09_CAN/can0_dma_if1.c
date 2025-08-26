@@ -263,7 +263,7 @@ void Dma_read(struct can_device_data* data, u8 byte_num){
     iowrite32(dma_dst_addr, data->base_edma + param_addr + 0xC);  /** DST */
 
     xxxBIDX &=~ ((1u << 16)|(1u)); // no incrementing addr as constant addr
-    iowrite32(dma_dst_addr, data->base_edma + param_addr + 0x10);  /** xxxBIDX */
+    iowrite32(xxxBIDX, data->base_edma + param_addr + 0x10);  /** xxxBIDX */
 
     iowrite32(0xFFFF, data->base_edma + param_addr + 0x14);  /* LINK=0xFFFF */
 
