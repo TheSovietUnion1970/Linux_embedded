@@ -238,10 +238,10 @@ void Dma_read(struct can_device_data* data, u8 byte_num){
 
     /* Control */
     int ch = 40; /* Channel 40 */
-    param_num = (ioread32(data->base_edma + EDMA_DCHMAP_OFFSET + ch*4) >> 5)&0x1FF;
+    param_num = (ioread32(data->base_edma + EDMA_DCHMAP_OFFSET + ch*4) >> 5)&0x1FF; // incremented by 4 bytes
     printk("[DMA] - param_num = %d\n", param_num);
 
-    param_addr = 0x4000 + param_num*4; /* 0x4000 + param_num*4 */
+    param_addr = 0x4000 + param_num*0x20; /* 0x4000 + param_num*0x20 (incremented by 32 bytes) */
     printk("[DMA] - param_addr = 0x%x\n", param_addr);
 
     //AB_Cnt = (byte_num)<<16 | 1;
