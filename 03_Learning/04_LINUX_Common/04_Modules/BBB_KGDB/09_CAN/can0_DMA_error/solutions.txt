@@ -1,0 +1,24 @@
+=== clear after transfer
+if (ret > 0) {
+    dmaengine_terminate_async(data->if1_chan);  // Reset channel for reuse
+}
+=== check status
+dmaengine_tx_status
+
+==== Read DMA reg
+Read IPR, IPRH, ...
+
+===== >>>>> make IF1 complete transfer between DMA pending and timeout
+[  134.492888] can0_driver 481cc000.can0_device: Issuing if1 DMA pending
+
+
+
+[  134.504190] can0_driver 481cc000.can0_device: Created /dev/can0
+[  134.510317] ctl[2] = 0x6000a
+debian@arm:~$ [  135.371035] Int0ID = 0xc, intpnd_x = 0x2, es = 0x10
+[  135.375989] cmd[reading] = 0x7f400c
+[  135.379495] msg obj [DMA] - raw1 = 0x0, raw2 = 0x0, dlc = 0x0, id = 0x19f6b00, cmd = 0x7f000c
+
+
+
+[  135.388109] can0_class can0: RX DMA callback called
