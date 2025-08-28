@@ -12,7 +12,6 @@
 #include <linux/dmaengine.h>
 #include <linux/dma-mapping.h>
 #include <linux/completion.h>
-#include "/home/vinh/BBB/linux-stable-rcn-ee/drivers/dma/virt-dma.h"
 
 #define DRIVER_NAME "can0_driver"
 #define DEVICE_NAME "can0"
@@ -130,10 +129,17 @@ struct can_device_data {
     struct completion if1_completion;
     bool use_dma; /* Flag to indicate if DMA is used */
     struct clk *edma_clk;
+    int dma_channel;
+    u8 *dma_buffer;
+    dma_addr_t dma_buffer_phys;
+    u8 byte_num;
+    bool is_DMAtriggered;
 
     struct work_struct re_request_work;
     bool is_scheduled;
 };
+
+int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr);
 
 static int wait_register_update(struct can_device_data *data, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
@@ -143,6 +149,22 @@ static int wait_register_update(struct can_device_data *data, u16 offset, u16 bi
     {
         if (time_after(jiffies, timeout)) {
             dev_err(data->dev, "Timeout %s\n", name_register);
+            return -ETIMEDOUT;
+        }
+        cpu_relax();
+    } 
+
+    return 0;
+}
+
+static int wait_val_update(struct can_device_data *data, u16 var, u16 value, u16 delay_ms, u8* name_var){
+    unsigned long timeout;
+    timeout = jiffies + msecs_to_jiffies(delay_ms);
+
+    while (var != value)  // Wait register updated
+    {
+        if (time_after(jiffies, timeout)) {
+            dev_err(data->dev, "Timeout %s\n", name_var);
             return -ETIMEDOUT;
         }
         cpu_relax();
@@ -167,6 +189,14 @@ void can0_DMA_init(struct can_device_data *data){
     can_ctl = ioread32(data->base + CAN_CTL);
     can_ctl |= 1u << 18; // DE1
     iowrite32(can_ctl, data->base + CAN_CTL);
+
+    data->dma_channel = 40; // CAN0_IF1 uses DMA channel 40
+
+    data->dma_buffer = dma_alloc_coherent(data->dev, 256, &data->dma_buffer_phys, GFP_KERNEL | GFP_DMA);
+    if (!data->dma_buffer) {
+        dev_err(data->dev, "Failed to allocate DMA buffer\n");
+        return;
+    }
 }
 
 void can0_DMAactive_IF1(struct can_device_data *data){
@@ -186,20 +216,62 @@ void print_DMA_reg(struct can_device_data *data){
 
     printk("opt = 0x%x\n", ioread32(data->base_edma + param_addr + 0));
     printk("src = 0x%x\n", ioread32(data->base_edma + param_addr + 0x4));
+    printk("dst = 0x%x\n", ioread32(data->base_edma + param_addr + 0xC));
+
+    printk("abcnt = 0x%x\n", ioread32(data->base_edma + param_addr + 0x8));
+    printk("cnt = 0x%x\n", ioread32(data->base_edma + param_addr + 0x1C));
+
+    printk("bidx = 0x%x\n", ioread32(data->base_edma + param_addr + 0x10));
+    printk("cidx = 0x%x\n", ioread32(data->base_edma + param_addr + 0x18));
     printk(" ===== >> DMA end ========\n");
+}
+
+void dma_start(struct can_device_data* data, int ch){
+    /* Clear any flags */
+    iowrite32(1 << (ch - 31), data->base_edma + DMA_ECRH);  
+    iowrite32(1 << (ch - 31), data->base_edma + DMA_EMCRH);  
+    iowrite32(1 << (ch - 31), data->base_edma + DMA_SECRH); 
+
+    dev_info(data->dev, "Issuing if1 DMA pending\n");
+    iowrite32(1 << (ch - 31), data->base_edma + DMA_EESRH);  /* EESR , HW-TRIGGER*/
 }
 
 static void can0_if1_dma_callback(void *data)
 {
     struct can_device_data *can0 = data;
+    int i;
+    int ret;
+
     //printk("DMA_IPRH = 0x%x\n", ioread32(can0->base_edma + DMA_IPR));
     dev_info(can0->dev, "RX DMA callback called\n");
     //Disable_all_INT(data);
-    complete(&can0->if1_completion);
+
+    printk("Buffer received (%d):\n", can0->byte_num);
+    for (i = 0; i < can0->byte_num; i++){
+        printk("'0x%x' ", ((char*)can0->dma_buffer)[i]);
+    }
+    printk("\n");
+    can0->is_DMAtriggered = 1;
+
+    /* Set this only once time */
+    ret = dma_param_set(data, can0->dma_channel, can0->byte_num, (dma_addr_t)can0->dma_buffer_phys);
+    if (ret == -1) {
+        printk("Fail dma_param_set");
+        return;
+    }
+    else {
+        //print_DMA_reg(can0);
+    }
+
+    memset(can0->dma_buffer, 0x40, 256);
+    // pending DMA for next DMA transfer
+    dma_start(can0, can0->dma_channel);
 }
 
 int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr){
     struct dma_async_tx_descriptor *if1_desc;
+    u32 param_addr, param_num, opt = 0;
+    u32 AB_Cnt = 0, xxxBIDX = 0;
 #if(!DMA_REG)
     reinit_completion(&data->if1_completion);
     if1_desc = dmaengine_prep_slave_single(data->if1_chan, dma_dst_addr, 1,
@@ -249,10 +321,6 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
     dev_info(data->dev, "Submitting if1 DMA descriptor\n");
     dmaengine_submit(if1_desc);
 
-
-    u32 param_addr, param_num, opt = 0;
-    u32 AB_Cnt = 0, xxxBIDX = 0;
-
     /* Control */
     param_num = (ioread32(data->base_edma + EDMA_DCHMAP_OFFSET + ch*4) >> 5)&0x1FF; // incremented by 4 bytes
     printk("[DMA] - param_num = %d\n", param_num);
@@ -260,7 +328,7 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
     param_addr = 0x4000 + param_num*0x20; /* 0x4000 + param_num*0x20 (incremented by 32 bytes) */
     printk("[DMA] - param_addr = 0x%x\n", param_addr);
 
-    dev_info(data->dev, "Issuing if1 DMA pending\n");
+    // dev_info(data->dev, "Issuing if1 DMA pending\n");
     dma_async_issue_pending(data->if1_chan);
 
     opt &=~ ((1u << 0) | (1u << 1)); // constant address mode (SAM, DAM)
@@ -288,84 +356,30 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
     iowrite32(0x1, data->base_edma + param_addr + 0x1C);  /* CCNT */
 
     return 0;
+#endif
 }
 
-void dma_start(struct can_device_data* data, int ch){
-    /* Clear any flags */
-    iowrite32(1 << (ch - 31), data->base_edma + DMA_ECRH);  
-    iowrite32(1 << (ch - 31), data->base_edma + DMA_EMCRH);  
-    iowrite32(1 << (ch - 31), data->base_edma + DMA_SECRH); 
-
-    iowrite32(1 << (ch - 31), data->base_edma + DMA_EESRH);  /* EESR , HW-TRIGGER*/
-}
-
-void Dma_read(struct can_device_data* data, u8 byte_num){
-    void *kbuf;
-    dma_addr_t dma_dst_addr;
-    int i;
+void Dma_read1(struct can_device_data* data){
     int ret;
 
-    /* Allocate DMA-coherent buffer */
-    kbuf = dma_alloc_coherent(data->dev, byte_num, &dma_dst_addr, GFP_KERNEL | GFP_DMA);
-    if (!kbuf) {
-        dev_err(data->dev, "Failed to allocate DMA-coherent buffer\n");
-        return;
-    }
-    memset(kbuf, 0x40, byte_num);
+    memset(data->dma_buffer, 0x40, 256);
 
     /* Set this only once time */
-   ret = dma_param_set(data, 40, 8, dma_dst_addr);
-   if (ret == -1) goto free_buf;
+    ret = dma_param_set(data, data->dma_channel, data->byte_num, (dma_addr_t)data->dma_buffer_phys);
+    if (ret == -1) {
+        printk("Fail dma_param_set");
+        return;
+    }
+    else {
+        //print_DMA_reg(data);
+    }
 
     /* Start for the first time */
-    dma_start(data, 40);
-    // due to every 2ms, msg is sent, so the timeout should be 2ms
-    ret = wait_for_completion_timeout(&data->if1_completion, msecs_to_jiffies(5000));
-    if (ret == 0) {
-        dev_err(data->dev, "DMA if1 timeout\n");
-        dmaengine_terminate_sync(data->if1_chan);
-        goto free_buf;
-    }
-
-    goto print_buf;
-
-    while(1){
-        init_completion(&data->if1_completion);
-
-        /* Start for the second time and so on*/
-        dma_start(data, 40);
-
-        // due to every 2ms, msg is sent, so the timeout should be 2ms
-        ret = wait_for_completion_timeout(&data->if1_completion, msecs_to_jiffies(5000));
-        if (ret == 0) {
-            dev_err(data->dev, "DMA if1 timeout\n");
-            dmaengine_terminate_sync(data->if1_chan);
-            goto free_buf;
-        }
-
-        goto print_buf;
-    }
-
-#endif
-
-free_buf:
-    dma_free_coherent(data->dev, byte_num, kbuf, dma_dst_addr);
-    return;
-
-print_buf:
-    printk("Buffer received (%d):\n", byte_num);
-    for (i = 0; i < byte_num; i++){
-        printk("'0x%x' ", ((char*)kbuf)[i]);
-    }
-    printk("\n");
+    dma_start(data, data->dma_channel);
 
 }
 
-static void re_request_irq_work(struct work_struct *work)
-{
-    struct can_device_data *data = container_of(work, struct can_device_data, re_request_work);
-    Dma_read(data, 8);
-}
+
 
 static int can0_configure_dma(struct can_device_data *data)
 {
@@ -376,7 +390,7 @@ static int can0_configure_dma(struct can_device_data *data)
         if1_conf.direction = DMA_DEV_TO_MEM;
         if1_conf.src_addr = (dma_addr_t)(CAN0_BASE + CAN_IF1DATA); // will include CAN_IF1DATA and CAN_IF1DATB
         if1_conf.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE; /* UART uses 8-bit transfers */
-        //if1_conf.src_maxburst = 1; /* Single byte per transfer */
+        if1_conf.src_maxburst = 1; /* Single byte per transfer */
         ret = dmaengine_slave_config(data->if1_chan, &if1_conf);
         if (ret) {
             dev_err(data->dev, "Failed to configure if1 DMA channel: %d\n", ret);
@@ -435,6 +449,36 @@ void DMA_probe(struct can_device_data *data){
 
     init_completion(&data->if1_completion);
 }
+
+void dma_cleanup(struct can_device_data *data) {
+    int off;
+
+    u32 shift = data->dma_channel - 31;  // For channels 32-63 (ch=40 -> shift=9)
+
+    // /* Disable event enable for the channel */
+    // iowrite32(1u << shift, data->base_edma + DMA_EECRH);  // Event Enable Clear High
+
+    // /* Disable interrupt enable for the channel */
+    // iowrite32(1u << shift, data->base_edma + DMA_IECRH);  // Interrupt Enable Clear High
+
+    /* Clear any pending flags/interrupts */
+    iowrite32(1u << shift, data->base_edma + DMA_ECRH);   // Event Clear High
+    iowrite32(1u << shift, data->base_edma + DMA_SECRH);  // Secondary Event Clear High
+    iowrite32(1u << shift, data->base_edma + DMA_EMCRH);  // Event Miss Clear High
+    // iowrite32(1u << shift, data->base_edma + DMA_ICRH);   // Interrupt Clear High (IPR clear)
+
+    /* Calculate PaRAM address (same as in dma_param_set) */
+    u32 param_num = (ioread32(data->base_edma + EDMA_DCHMAP_OFFSET + data->dma_channel * 4) >> 5) & 0x1FF;
+    u32 param_addr = 0x4000 + param_num * 0x20;
+
+    /* Zero out the entire PaRAM set (32 bytes) */
+    for (off = 0; off < 0x20; off += 4) {
+        iowrite32(0, data->base_edma + param_addr + off);
+    }
+
+    dev_info(data->dev, "Cleaned up eDMA channel %d\n", data->dma_channel);
+}
+
 #endif
 /* ==== [END DMA] === */
 void can0_transmit_obj_Data_Frames_msk(struct can_device_data *data, u8 can_id, u8 msg_num, u8 msg_handler){
@@ -497,7 +541,7 @@ void Reading_received_msg(struct can_device_data *data, u8 msg_num){
     iowrite32(if1cmd, data->base + CAN_IF1CMD);
 
     // can0_DMAactive_IF1(data);
-    printk("cmd[reading] = 0x%x\n", ioread32(data->base + CAN_IF1CMD));
+    //printk("cmd[reading] = 0x%x\n", ioread32(data->base + CAN_IF1CMD));
 
     // wait the hanler send msg object from IF1 registers to msg RAM
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
@@ -587,7 +631,7 @@ static irqreturn_t irqHandler(int irq, void *d){
     //cmd = ioread32(data->base + CAN_IF1CMD);
     // can0_DMAactive_IF1(data);
     // printk("Int0ID = 0x%x, es = 0x%x, cmd = 0x%x, arb = 0x%x, mctl = 0x%x\n", Int0ID, es, can_cmd, can_arb, can_mctl);
-    printk("Int0ID = 0x%x, intpnd_x = 0x%x, es = 0x%x\n", Int0ID, intpnd_x, es);
+    //printk("Int0ID = 0x%x, intpnd_x = 0x%x, es = 0x%x\n", Int0ID, intpnd_x, es);
 
 #if(!DMA_USED)
     if (Int0ID == 0x8000){ // Error and status interuupt
@@ -632,7 +676,7 @@ static irqreturn_t irqHandler(int irq, void *d){
             dlc = can_mctl&0xF;
             id = can_mctl&CAN_IFxARB_ID;
             //cmd = ioread32(data->base + CAN_IF1CMD);
-            printk("0x8000 [DMA] - raw1 = 0x%x, raw2 = 0x%x, dlc = 0x%x, id = 0x%x, cmd = 0x%x\n", raw_data1, raw_data2, dlc, id, cmd);
+            printk("0x8000 [DMA] - dlc = 0x%x, id = 0x%x\n", dlc, id);
 
             //Disable_all_INT(data);
             //schedule_work(&data->re_request_work);
@@ -644,9 +688,9 @@ static irqreturn_t irqHandler(int irq, void *d){
             dlc = can_mctl&0xF;
             id = can_mctl&CAN_IFxARB_ID;
             //cmd = ioread32(data->base + CAN_IF1CMD);
-            printk("msg obj [DMA] - raw1 = 0x%x, raw2 = 0x%x, dlc = 0x%x, id = 0x%x, cmd = 0x%x\n", raw_data1, raw_data2, dlc, id, cmd);
+            printk("msg obj [DMA] - dlc = 0x%x, id = 0x%x\n", dlc, id);
 
-        Disable_all_INT(data);
+        //Disable_all_INT(data);
         //schedule_work(&data->re_request_work);
     }
 #endif
@@ -836,7 +880,7 @@ static int can0_probe(struct platform_device *pdev){
     can0_INT_init(data);
 #if(DMA_USED)
     can0_DMA_init(data);
-    INIT_WORK(&data->re_request_work, re_request_irq_work);
+    //INIT_WORK(&data->re_request_work, re_request_irq_work);
 #endif
     // ========== Request IRQ (hwirq 30 maps to swirq x on AM33xx) ==========
     data->irq = platform_get_irq(pdev, 0);
@@ -897,7 +941,9 @@ static int can0_probe(struct platform_device *pdev){
     printk("ctl[2] = 0x%x\n", ioread32(data->base + CAN_CTL));
     
 #if (DMA_USED)
-    Dma_read(data, 8);
+    // Dma_read(data);
+    data->byte_num = 8;
+    Dma_read1(data);
 #endif
 
     return 0;
@@ -917,11 +963,12 @@ static int can0_remove(struct platform_device *pdev){
     clk_disable_unprepare(data->clk);
 
 #if(DMA_USED)
-    if (data->if1_chan)
+    if (data->if1_chan){
+        dma_free_coherent(data->dev, 256, data->dma_buffer, data->dma_buffer_phys);
+        dmaengine_terminate_sync(data->if1_chan);
+        //dma_cleanup(data);
         dma_release_channel(data->if1_chan);
-
-    if (&data->re_request_work)
-        cancel_work_sync(&data->re_request_work);
+    }
 #endif
 
     if (data->dev)
