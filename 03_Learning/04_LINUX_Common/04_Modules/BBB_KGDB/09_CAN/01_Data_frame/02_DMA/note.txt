@@ -1,0 +1,5 @@
+In order to make DMA is triggered properly:
++ On DMA side, make sure DMA pending first
++ On module side (SPI, CAN, ...), when DMA triggrer condition is met => DMA controller will transfer data
+
+Cnt = 0 while DMA is triggered => undefined behaviour
