@@ -319,62 +319,6 @@ void Reset_msg_obj(struct can_device_data *data, u8 rd_wr, u8 msg_num, u8 msg_ha
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
-void Clear_IntPnd_mctl(struct can_device_data *data){
-    u32 mctl;
-
-    mctl = ioread32(data->base + CAN_IF1MCTL);
-    mctl &=~ (1u << 13);
-    iowrite32(mctl, data->base + CAN_IF1MCTL);
-}
-
-void Set_IntPnd_mctl(struct can_device_data *data){
-    u32 mctl;
-
-    mctl = ioread32(data->base + CAN_IF1MCTL);
-    mctl |= (1u << 13);
-    iowrite32(mctl, data->base + CAN_IF1MCTL);
-}
-
-void Clear_ClrIntPnd_cmd(struct can_device_data *data){
-    u32 cmd;
-
-    cmd = ioread32(data->base + CAN_IF1CMD);
-    cmd &=~ (1u << 19);
-    iowrite32(cmd, data->base + CAN_IF1CMD);
-}
-
-void Set_ClrIntPnd_cmd(struct can_device_data *data){
-    u32 cmd;
-
-    cmd = ioread32(data->base + CAN_IF1CMD);
-    cmd |= (1u << 19);
-    iowrite32(cmd, data->base + CAN_IF1CMD);
-}
-
-void Clear_TxRqst_NewDat_cmd(struct can_device_data *data){
-    u32 cmd;
-
-    cmd = ioread32(data->base + CAN_IF1CMD);
-    cmd &=~ (1u << 18);
-    iowrite32(cmd, data->base + CAN_IF1CMD);
-}
-
-void Set_TxRqst_NewDat_cmd(struct can_device_data *data){
-    u32 cmd;
-
-    cmd = ioread32(data->base + CAN_IF1CMD);
-    cmd |= (1u << 18);
-    iowrite32(cmd, data->base + CAN_IF1CMD);
-}
-
-void Clear_MsgNum_cmd(struct can_device_data *data){
-    u32 cmd;
-
-    cmd = ioread32(data->base + CAN_IF1CMD);
-    cmd &=~ (0xFF);
-    iowrite32(cmd, data->base + CAN_IF1CMD);
-}
-
 void Set_MsgNum_cmd(struct can_device_data *data, u8 msgnum){
     u32 cmd;
 
@@ -384,14 +328,6 @@ void Set_MsgNum_cmd(struct can_device_data *data, u8 msgnum){
     iowrite32(cmd, data->base + CAN_IF1CMD);
 
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
-}
-
-void Set_TxRqst_mctl(struct can_device_data *data){
-    u32 mctl;
-
-    mctl = ioread32(data->base + CAN_IF1MCTL);
-    mctl |= (1u << 8);
-    iowrite32(mctl, data->base + CAN_IF1MCTL);
 }
 
 void Clear_TxRqst_mctl(struct can_device_data *data){
@@ -575,71 +511,10 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
     iowrite32(0x1, data->base_edma + param_addr + 0x1C);  /* CCNT */
 
     return 0;
-}
-
-void Dma_read(struct can_device_data* data){
-    void *kbuf;
-    dma_addr_t dma_dst_addr;
-    int i;
-    int ret;
-
-    /* Allocate DMA-coherent buffer */
-    kbuf = dma_alloc_coherent(data->dev, data->byte_num, &dma_dst_addr, GFP_KERNEL);
-    if (!kbuf) {
-        dev_err(data->dev, "Failed to allocate DMA-coherent buffer\n");
-        return;
-    }
-    memset(kbuf, 0x40, data->byte_num);
-
-    /* Set this only once time */
-   ret = dma_param_set(data, data->dma_channel, data->byte_num, dma_dst_addr);
-   if (ret == -1) goto free_buf;
-
-    /* Start for the first time */
-    dma_start(data, 40);
-    // due to every 2ms, msg is sent, so the timeout should be 2ms
-    ret = wait_for_completion_timeout(&data->if1_completion, msecs_to_jiffies(5000));
-    if (ret == 0) {
-        dev_err(data->dev, "DMA if1 timeout\n");
-        dmaengine_terminate_sync(data->if1_chan);
-        goto free_buf;
-    }
-
-    goto print_buf;
-
-    while(1){
-        init_completion(&data->if1_completion);
-
-        /* Start for the second time and so on*/
-        dma_start(data, 40);
-
-        // due to every 2ms, msg is sent, so the timeout should be 2ms
-        ret = wait_for_completion_timeout(&data->if1_completion, msecs_to_jiffies(5000));
-        if (ret == 0) {
-            dev_err(data->dev, "DMA if1 timeout\n");
-            dmaengine_terminate_sync(data->if1_chan);
-            goto free_buf;
-        }
-
-        goto print_buf;
-    }
-
 #endif
-
-free_buf:
-    dma_free_coherent(data->dev, data->byte_num, kbuf, dma_dst_addr);
-    return;
-
-print_buf:
-    printk("Buffer received (%d):\n", data->byte_num);
-    for (i = 0; i < data->byte_num; i++){
-        printk("'0x%x' ", ((char*)kbuf)[i]);
-    }
-    printk("\n");
-
 }
 
-void Dma_read1(struct can_device_data* data){
+void Dma_write(struct can_device_data* data){
     int ret;
 
     memset(data->dma_buffer, 0x40, 256);
@@ -701,10 +576,7 @@ void DMA_probe(struct can_device_data *data){
     data->use_dma = (data->if1_chan);
     if (data->use_dma){
         dev_info(data->dev, "Using DMA for CAN0 transfers\n");
-//#if(!DMA_REG)
         ret = can0_configure_dma(data);
-        //ret  =0;
-//#endif
         if (ret) {
             dev_info(data->dev, "Failed to configure DMA, falling back to non-DMA mode\n");
             if (data->if1_chan)
@@ -721,6 +593,7 @@ void DMA_probe(struct can_device_data *data){
 
     init_completion(&data->if1_completion);
 }
+
 #endif
 
 static irqreturn_t irqHandler(int irq, void *d){
@@ -991,6 +864,11 @@ static int can0_probe(struct platform_device *pdev)
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 0, MS_DELAY, "Normal mode 1");
     printk("ctl1[0] = 0x%x\n", ioread32(data->base + CAN_CTL));
 
+#if (DMA_USED)
+    Dma_write(data);
+#endif
+    schedule_work(&data->re_request_work);
+
     return 0;
 }
 
@@ -1005,6 +883,15 @@ static int can0_remove(struct platform_device *pdev)
     smp_mb(); // Memory barrier to ensure should_stop is visible
 
     cancel_work_sync(&data->re_request_work);
+
+#if(DMA_USED)
+    //if (data->if1_chan){
+        //dma_free_coherent(data->dev, 256, data->dma_buffer, data->dma_buffer_phys);
+        dmaengine_terminate_sync(data->if1_chan);
+        //dma_cleanup(data);
+        dma_release_channel(data->if1_chan);
+    //}
+#endif
 
     can_ctl = CAN_CTL_INIT | CAN_CTL_CCE | CAN_CTL_SWR ; // CAN_CTL_DAR is used to disable auto retransmission
     iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
