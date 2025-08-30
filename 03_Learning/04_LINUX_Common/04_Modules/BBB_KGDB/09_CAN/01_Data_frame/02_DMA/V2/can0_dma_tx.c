@@ -306,6 +306,8 @@ void can0_DMAactive_IF1(struct can_device_data *data){
     can_cmd = ioread32(data->base + CAN_IF1CMD);
     can_cmd |= 1u << 14; // DMAactive
     iowrite32(can_cmd, data->base + CAN_IF1CMD);
+    
+    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
 void print_DMA_reg(struct can_device_data *data){

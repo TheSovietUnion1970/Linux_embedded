@@ -1,5 +1,25 @@
+1. === DMA and CAN setup order
 In order to make DMA is triggered properly:
 + On DMA side, make sure DMA pending first
 + On module side (SPI, CAN, ...), when DMA triggrer condition is met => DMA controller will transfer data
 
+2. === Error undefined behaviour
 Cnt = 0 while DMA is triggered => undefined behaviour
+
+3. === DMAactive order
++ can0_DMAactive_IF1(data);
+  
+  ...
+  iowrite32(if1cmd, data->base + CAN_IF1CMD);
+  printk("msg OBJ sent ...\n");
+  wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
+  
+  => DMA is triggered after can0_DMAactive_IF1, then INT is triggered after printk("msg OBJ sent ...\n");
+  
++ ...
+  can_cmd |= 1u << 14; // DMAactive
+  iowrite32(if1cmd, data->base + CAN_IF1CMD);
+  printk("msg OBJ sent ...\n");
+  wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
+  
+  => DMA is triggered first right followed by INT 
