@@ -213,7 +213,7 @@ void can0_receive_obj_Remote_Frames_init(struct can_device_data *data, u16 can_i
     if1mctl |= (1u << 7); // CAN_IFxMCTL_EoB: a single msg obj
     if1mctl &=~ (1u << 15); // CAN_IFxMCTL_NewDat: 
 
-    if1mctl &=~ (1u << 9); //  RmtEn: At the reception of a remote frame, TxRqst is set. /* Remote frame only */
+    if1mctl |= (1u << 9); //  RmtEn: At the reception of a remote frame, TxRqst is set. /* Remote frame only */
     if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is set by rmtEn at reception /* Remote frame only */
 
     if1mctl |= (size); // DLC = size byte
