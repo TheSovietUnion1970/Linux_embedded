@@ -3,6 +3,8 @@
 
 #define CAN_ID 0x112  // Define the CAN ID this node responds to (11-bit standard ID)
 
+int n = 0;
+
 struct can_frame receivedFrame;
 MCP2515 mcp2515(10);  // Chip Select pin connected to digital pin 10 (adjust if needed)
 
@@ -42,8 +44,10 @@ void loop() {
       // Fill the data buffer with example data (e.g., incremental bytes)
       // You can modify this to send actual data from sensors or variables
       for (uint8_t i = 0; i < dataFrame.can_dlc; i++) {
-        dataFrame.data[i] = i + 1;  // Example: 0x01, 0x02, ..., up to DLC
+        dataFrame.data[i] = i + n;  // Example: 0x01, 0x02, ..., up to DLC
       }
+
+      n++;
 
       // Send the data frame
       if (mcp2515.sendMessage(&dataFrame) == MCP2515::ERROR_OK) {

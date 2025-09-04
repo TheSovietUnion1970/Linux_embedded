@@ -159,7 +159,7 @@ void can0_transmit_obj_Remote_Frames_read(struct can_device_data *data, u8 msg_n
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
-void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u8 msg_num, u8 msg_handler){
+void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u16 len, u8 msg_num, u8 msg_handler){
     u32 if1cmd = 0, if1mctl = 0, if1arb = 0, if1msk = 0;
 
     // ID: accept any ID comming from any node
@@ -183,8 +183,8 @@ void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u
     if1mctl |= (1u << 15); // CAN_IFxMCTL_NewDat: 
 
     if1mctl |= (1u << 8); // :CAN_IFxMCTL_TxRqst message object is set to send remote frame
-
     if1mctl |= (1u << 10); // RxIE to receive corresponding data frame
+    if1mctl |= (len << 0)&0xF; // len of data
     iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
 
  
@@ -233,6 +233,25 @@ void Reset_msg_obj(struct can_device_data *data, u8 rd_wr, u8 msg_num, u8 msg_ha
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
+void Clear_TxRqst_mctl(struct can_device_data *data){
+    u32 mctl;
+
+    mctl = ioread32(data->base + CAN_IF1MCTL);
+    mctl &=~ (1u << 8);
+    iowrite32(mctl, data->base + CAN_IF1MCTL);
+}
+
+void Set_MsgNum_cmd(struct can_device_data *data, u8 msgnum){
+    u32 cmd;
+
+    cmd = ioread32(data->base + CAN_IF1CMD);
+    cmd |= msgnum&(0xFF);
+    if (msgnum == 0) cmd &=~ (0xFF);
+    iowrite32(cmd, data->base + CAN_IF1CMD);
+
+    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
+}
+
 static irqreturn_t irqHandler(int irq, void *d){
     struct can_device_data *data = d;
     u32 canctl, Int0ID, can_mctl, can_cmd, can_arb;
@@ -247,14 +266,14 @@ static irqreturn_t irqHandler(int irq, void *d){
     }
 
     // reset
-    iowrite32(0x0, data->base + CAN_IF1ARB);
-    iowrite32(0x0, data->base + CAN_IF1MCTL);
+    //iowrite32(0x0, data->base + CAN_IF1ARB);
+    //iowrite32(0x0, data->base + CAN_IF1MCTL);
 
     // read data at DMA_OBJ_MSG_NUM
     // can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
     Int0ID = ioread32(data->base + CAN_INT);
-    can_cmd = ioread32(data->base + CAN_IF1CMD);
+    //can_cmd = ioread32(data->base + CAN_IF1CMD);
 
 
     msgval12 = ioread32(data->base + CAN_MSGVAL12);
@@ -268,17 +287,44 @@ static irqreturn_t irqHandler(int irq, void *d){
     tx12 = ioread32(data->base + CAN_TXRQ12);
     mux12 = ioread32(data->base + CAN_INTMUX12);
 
+    //es = ioread32(data->base + CAN_ES);
+
+    //printk("es = 0x%x, Int0ID = 0x%x\n", es, Int0ID);
 
     if (Int0ID != 0x8000){ 
-        /* Not applicable for Remote frame */
+        // read data at DMA_OBJ_MSG_NUM
+        can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
+
+        can_mctl = ioread32(data->base + CAN_IF1MCTL);
+        can_arb = ioread32(data->base + CAN_IF1ARB);
+        intpnd12 = ioread32(data->base + CAN_INTPND12);
+        intpnd_x = ioread32(data->base + CAN_INTPND_X);
+
+        data->buffer[0] = ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_0;
+        data->buffer[1] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_1) >> 8;
+        data->buffer[2] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
+        data->buffer[3] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
+
+        id = (can_arb >> 18)&0x7FF; // take the ID of data frame
+
+        printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
+        printk("obj - Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+
+        can_cmd = ioread32(data->base + CAN_IF1CMD);
+        can_cmd |= (1u << 19); // ClrIntPnd
+        //can_cmd &=~ (0xFF);
+
+        // write ClrIntPnd to msg RAM to erase RX interrupt flag
+        iowrite32(can_cmd, data->base + CAN_IF1CMD);
+        wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
     } 
     else { /* Int0ID = 0x8000 */
+        es = ioread32(data->base + CAN_ES);
         if ((es&(1u << 4u)) == 1u << 4u){ // RxOk -> Read new data
 
             // read data at DMA_OBJ_MSG_NUM
             can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
-            es = ioread32(data->base + CAN_ES);
             can_mctl = ioread32(data->base + CAN_IF1MCTL);
             can_arb = ioread32(data->base + CAN_IF1ARB);
             intpnd12 = ioread32(data->base + CAN_INTPND12);
@@ -292,7 +338,15 @@ static irqreturn_t irqHandler(int irq, void *d){
             id = (can_arb >> 18)&0x7FF; // take the ID of data frame
 
             printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
-            printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+            printk("8000 - Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+
+            can_cmd = ioread32(data->base + CAN_IF1CMD);
+            can_cmd |= (1u << 19); // ClrIntPnd
+            //can_cmd &=~ (0xFF);
+
+            // write ClrIntPnd to msg RAM to erase RX interrupt flag
+            iowrite32(can_cmd, data->base + CAN_IF1CMD);
+            wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
         }
         else {
             // TxOk (Remote frame is sent)
@@ -377,8 +431,11 @@ static void re_request_irq_work(struct work_struct *work)
     u32 txx, tx12, mux12;
     
     while (!atomic_read(&data->should_stop)){
+        msleep(2000);
+        
         // Config message object
-        can0_transmit_obj_Remote_Frames(data, ID_CAN0, DMA_OBJ_MSG_NUM, 1);
+        can0_transmit_obj_Remote_Frames(data, ID_CAN0, 4, DMA_OBJ_MSG_NUM, 1);
+        //can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
         txx = ioread32(data->base + CAN_TXRQ_X);
         tx12 = ioread32(data->base + CAN_TXRQ12);
@@ -386,7 +443,6 @@ static void re_request_irq_work(struct work_struct *work)
     
         printk("WORK -> txrq = 0x%x, can_mctl = 0x%x\n", ioread32(data->base + CAN_TXRQ12), ioread32(data->base + CAN_IF1MCTL));
 
-        msleep(2000);
     }
 }
 

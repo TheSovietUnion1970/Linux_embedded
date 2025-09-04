@@ -128,6 +128,7 @@ struct can_device_data {
     struct clk *clk;
 
     u8 buffer[8];
+    u32 tmpBuffer[2]; // DatA and DatB
 
     u8 increment;
     struct work_struct re_request_work;
@@ -145,13 +146,33 @@ struct can_device_data {
     int dma_channel;
     u8 dma_buffer[256];
     u8 byte_num;
+    bool RX_dma;
 };
+
+void Dma_read(struct can_device_data* data);
+int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr);
 
 static int wait_register_update(struct can_device_data *data, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
     timeout = jiffies + msecs_to_jiffies(delay_ms);
 
     while ((ioread32(data->base + offset)&(1u << bit_offset)) != (bit_val << bit_offset))  // Wait register updated
+    {
+        if (time_after(jiffies, timeout)) {
+            dev_err(data->dev, "Timeout %s\n", name_register);
+            return -ETIMEDOUT;
+        }
+        cpu_relax();
+    } 
+
+    return 0;
+}
+
+static int wait_val_update(struct can_device_data *data, u8 var, u8 val, u16 delay_ms, u8* name_register){
+    unsigned long timeout;
+    timeout = jiffies + msecs_to_jiffies(delay_ms);
+
+    while (var != val)  // Wait var updated
     {
         if (time_after(jiffies, timeout)) {
             dev_err(data->dev, "Timeout %s\n", name_register);
@@ -194,13 +215,14 @@ void can0_transmit_obj_Remote_Frames_read(struct can_device_data *data, u8 msg_n
 
     if1cmd = ioread32(data->base + CAN_IF1CMD);
     if1cmd &=~ (1u << 23); // CAN_IFxCMD_WR_RD: Read
+    //if1cmd |= 1u << 14; // DMAactive
     if1cmd |= msg_num&(0xFF);
     iowrite32(if1cmd, data->base + CAN_IF1CMD);
 
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
-void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u8 msg_num, u8 msg_handler){
+void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u16 len, u8 msg_num, u8 msg_handler){
     u32 if1cmd = 0, if1mctl = 0, if1arb = 0, if1msk = 0;
 
     // ID: accept any ID comming from any node
@@ -224,8 +246,8 @@ void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u
     if1mctl |= (1u << 15); // CAN_IFxMCTL_NewDat: 
 
     if1mctl |= (1u << 8); // :CAN_IFxMCTL_TxRqst message object is set to send remote frame
-
     if1mctl |= (1u << 10); // RxIE to receive corresponding data frame
+    if1mctl |= (len << 0)&0xF; // len of data
     iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
 
  
@@ -240,6 +262,10 @@ void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u
 
     if1cmd |= (1u << 20); // access control bits: msg control bits is transfered FROM IF1 register set TO message object by message number (Bits [7:0]).
     if1cmd |= (1u << 17); // use DATA_A: The data bytes 0-3 will be   transfered FROM IF1 register set TO message object by message number (Bits [7:0]).
+
+// #if (DMA_USED)
+//     if1cmd |= 1u << 14; // DMAactive
+// #endif
 
     if1cmd |= msg_num << 0; // CAN_IFxCMD_msgnum = 1, trigger transfer
 
@@ -292,6 +318,9 @@ void can0_DMAactive_IF1(struct can_device_data *data){
     can_cmd = ioread32(data->base + CAN_IF1CMD);
     can_cmd |= 1u << 14; // DMAactive
     iowrite32(can_cmd, data->base + CAN_IF1CMD);
+
+    // wait the hanler send msg object from IF1 registers to msg RAM
+    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
 void print_DMA_reg(struct can_device_data *data){
@@ -318,9 +347,25 @@ void dma_start(struct can_device_data* data, int ch){
 static void can0_if1_dma_callback(void *data)
 {
     struct can_device_data *can0 = data;
+    int ret;
     // int i;
     //printk("DMA_IPRH = 0x%x\n", ioread32(can0->base_edma + DMA_IPR));
-    dev_info(can0->dev, "TX DMA callback called\n");
+    dev_info(can0->dev, "RX DMA callback called\n");
+    can0->RX_dma = 1;
+
+    can0->buffer[0] = ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_0;
+    can0->buffer[1] = (ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_1) >> 8;
+    can0->buffer[2] = (ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
+    can0->buffer[3] = (ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
+
+    printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", can0->buffer[0], can0->buffer[1], can0->buffer[2], can0->buffer[3]);
+
+    /* Set this only once time */
+    ret = dma_param_set(can0, can0->dma_channel, can0->byte_num, (dma_addr_t)&can0->tmpBuffer[0]);
+    if (ret == -1) return;
+
+    /* Start for the first time */
+    dma_start(can0, can0->dma_channel);
     //Disable_all_INT(data)
 }
 
@@ -419,9 +464,10 @@ void Dma_read(struct can_device_data* data){
     int ret;
 
     memset(data->buffer, 0x40, sizeof(data->buffer));
+    memset(data->tmpBuffer, 0x00, sizeof(data->tmpBuffer));
 
     /* Set this only once time */
-    ret = dma_param_set(data, data->dma_channel, data->byte_num, (dma_addr_t)&data->buffer[0]);
+    ret = dma_param_set(data, data->dma_channel, data->byte_num, (dma_addr_t)&data->tmpBuffer[0]);
     if (ret == -1) return;
 
     /* Start for the first time */
@@ -534,15 +580,44 @@ static irqreturn_t irqHandler(int irq, void *d){
 
 
     if (Int0ID != 0x8000){ 
-        /* Not applicable for Remote frame */
+        // read data at DMA_OBJ_MSG_NUM
+        can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
+
+        es = ioread32(data->base + CAN_ES);
+        can_mctl = ioread32(data->base + CAN_IF1MCTL);
+        can_arb = ioread32(data->base + CAN_IF1ARB);
+        intpnd12 = ioread32(data->base + CAN_INTPND12);
+        intpnd_x = ioread32(data->base + CAN_INTPND_X);
+
+#if(!DMA_USED)
+        data->buffer[0] = ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_0;
+        data->buffer[1] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_1) >> 8;
+        data->buffer[2] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
+        data->buffer[3] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
+#else
+        Dma_read(data); // enable DMA on DMA side
+        can0_DMAactive_IF1(data); // enable DMA on CAN side
+#endif
+        id = (can_arb >> 18)&0x7FF; // take the ID of data frame
+
+        printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
+        // printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+
+        can_cmd = ioread32(data->base + CAN_IF1CMD);
+        can_cmd |= (1u << 19); // ClrIntPnd
+        //can_cmd &=~ (0xFF);
+
+        // write ClrIntPnd to msg RAM to erase RX interrupt flag
+        iowrite32(can_cmd, data->base + CAN_IF1CMD);
+        wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
     } 
     else { /* Int0ID = 0x8000 */
+        es = ioread32(data->base + CAN_ES);
         if ((es&(1u << 4u)) == 1u << 4u){ // RxOk -> Read new data
 
             // read data at DMA_OBJ_MSG_NUM
             can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
-            es = ioread32(data->base + CAN_ES);
             can_mctl = ioread32(data->base + CAN_IF1MCTL);
             can_arb = ioread32(data->base + CAN_IF1ARB);
             intpnd12 = ioread32(data->base + CAN_INTPND12);
@@ -554,13 +629,29 @@ static irqreturn_t irqHandler(int irq, void *d){
             data->buffer[2] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
             data->buffer[3] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
 #else
-            Dma_read(data); // enable DMA on DMA side
+            // Dma_read(data); // enable DMA on DMA side
             can0_DMAactive_IF1(data); // enable DMA on CAN side
+
+            // wait_val_update(data, data->RX_dma, 1, MS_DELAY, "data->RX_dma");
+            // data->RX_dma = 0;
+
+            data->buffer[0] = data->tmpBuffer[0]&CAN_IFxDATA_0;
+            data->buffer[1] = (data->tmpBuffer[0]&CAN_IFxDATA_1) >> 8;
+            data->buffer[2] = (data->tmpBuffer[0]&CAN_IFxDATA_2) >> 16;
+            data->buffer[3] = (data->tmpBuffer[0]&CAN_IFxDATA_3) >> 24;
 #endif
             id = (can_arb >> 18)&0x7FF; // take the ID of data frame
 
             printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
-            printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+            // printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+
+            can_cmd = ioread32(data->base + CAN_IF1CMD);
+            can_cmd |= (1u << 19); // ClrIntPnd
+            //can_cmd &=~ (0xFF);
+
+            // write ClrIntPnd to msg RAM to erase RX interrupt flag
+            iowrite32(can_cmd, data->base + CAN_IF1CMD);
+            wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
         }
         else {
             // TxOk (Remote frame is sent)
@@ -645,8 +736,10 @@ static void re_request_irq_work(struct work_struct *work)
     u32 txx, tx12, mux12;
     
     while (!atomic_read(&data->should_stop)){
+        msleep(2000);
+
         // Config message object
-        can0_transmit_obj_Remote_Frames(data, ID_CAN0, DMA_OBJ_MSG_NUM, 1);
+        can0_transmit_obj_Remote_Frames(data, ID_CAN0, 4, DMA_OBJ_MSG_NUM, 1);
 
         txx = ioread32(data->base + CAN_TXRQ_X);
         tx12 = ioread32(data->base + CAN_TXRQ12);
@@ -654,7 +747,6 @@ static void re_request_irq_work(struct work_struct *work)
     
         printk("WORK -> txrq = 0x%x, can_mctl = 0x%x\n", ioread32(data->base + CAN_TXRQ12), ioread32(data->base + CAN_IF1MCTL));
 
-        msleep(2000);
     }
 }
 
@@ -734,6 +826,14 @@ static int can0_probe(struct platform_device *pdev)
     }
     dev_info(&pdev->dev, "IRQ num = %d\n", data->irq);
 
+    /* =============== DMA ================= */
+#if(DMA_USED)
+    DMA_probe(data);
+    data->byte_num = 4;
+    data->RX_dma = 0;
+    Dma_read(data); // enable HW on DMA side first
+#endif
+
     // ====== Create device character
     cdev_init(&data->cdev, &can_device_fops);
     data->cdev.owner = THIS_MODULE;
@@ -787,6 +887,13 @@ static int can0_remove(struct platform_device *pdev)
     smp_mb(); // Memory barrier to ensure should_stop is visible
 
     cancel_work_sync(&data->re_request_work);
+
+#if(DMA_USED)
+    if (data->if1_chan){
+        dmaengine_terminate_sync(data->if1_chan);
+        dma_release_channel(data->if1_chan);
+    }
+#endif
 
     can_ctl = CAN_CTL_INIT | CAN_CTL_CCE | CAN_CTL_SWR ; // CAN_CTL_DAR is used to disable auto retransmission
     iowrite32(can_ctl, data->base + CAN_CTL); // enter init mode, access to registers
