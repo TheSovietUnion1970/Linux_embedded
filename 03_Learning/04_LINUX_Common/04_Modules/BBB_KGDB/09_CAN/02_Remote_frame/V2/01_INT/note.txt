@@ -1,0 +1,14 @@
+I. =====
+• Dir = ‘1’ (direction = transmit), RmtEn = ‘1’, UMask = ‘1’ or ‘0’
+The TxRqst bit of this message object is set at the reception of a matching remote frame. The rest of the message object remains unchanged. => msg obj is unchanged except TxRqst meaning id in arb is not updated
+
+
+• Dir = ‘1’ (direction = transmit), RmtEn = ‘0’, UMask = ‘1’
+The remote frame is treated similar to a received data frame. At the reception of a matching Remote
+Message Frame, the TxRqst bit of this message object is reset. The arbitration and control bits
+(Identifier + IDE + RTR + DLC) from the shift register are stored in the message object in the message RAM and the NewDat bit of this message object is set. The data bytes of the message object remain unchanged.
+
+=> Use Status and Error INT to set for remote frame
+
+II. =====
+To update TX value -> need to re-configure msg obj into a transmit obj so that new updated data can be written into msg RAM
