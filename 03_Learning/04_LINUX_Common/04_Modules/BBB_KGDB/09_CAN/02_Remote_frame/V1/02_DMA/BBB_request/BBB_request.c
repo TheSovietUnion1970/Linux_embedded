@@ -560,6 +560,7 @@ static irqreturn_t irqHandler(int irq, void *d){
             id = (can_arb >> 18)&0x7FF; // take the ID of data frame
 
             printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
+            printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
         }
         else {
             // TxOk (Remote frame is sent)
