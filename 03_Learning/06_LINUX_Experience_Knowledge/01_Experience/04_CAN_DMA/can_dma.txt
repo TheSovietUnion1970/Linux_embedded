@@ -1,0 +1,8 @@
+For BBB is requested to send the corresponding data frame after receiving remote frame:
+=> approach: send data first to RAM, then when remote frame requests, this data residue in RAM will be transmitted serially
+
+=> requirement: use DMA
+
+=> situation: DMAcom int (DMA transfer completion) is triggered after TxOk (corresponding data frame sent successfully), leading to the first and second transmission contains the same data
+
+=> solution: use DMA to transfer data first, then this data is transfered (TxOk), then DMAcom int is triggered, so USE this DMAcom int to transfer the new updated data for the next remote frame request
