@@ -109,14 +109,12 @@
 
 u8 TX[4] = {0x00, 0x01, 0x02, 0x03};
 u8 size = sizeof(TX);
+#define DMA_REG 1
 
 /* CONTROL */
 #define ID_CAN0 0x112
 #define DMA_OBJ_MSG_NUM 12
 #define DMA_USED 1
-
-
-#define DMA_REG 1
 /* ******* */
 
 struct can_device_data {
@@ -245,28 +243,9 @@ void can0_receive_obj_Remote_Frames_write(struct can_device_data *data, u8 msg_n
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
-void can0_receive_obj_Remote_Frames_write_tmp(struct can_device_data *data, u8 msg_num){
-    u32 if1cmd = 0, if1mctl = 0;
-
-    Dma_write(data); // enable HW DMA on DMA side
-    can0_DMAactive_IF1(data, DMA_OBJ_MSG_NUM); // enable DMA on CAN side
-
-
-    if1cmd = ioread32(data->base + CAN_IF1CMD);
-    if1cmd |= (1u << 23); // CAN_IFxCMD_WR_RD: Write
-    if1cmd |= msg_num&(0xFF);
-    iowrite32(if1cmd, data->base + CAN_IF1CMD);
-
-    printk("KK tmp\n");
-    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
-}
-
 void can0_receive_obj_Remote_Frames_init(struct can_device_data *data, u16 can_id, u8 msg_num, u8 msg_handler){
     u32 if1cmd = 0, if1mctl = 0, if1arb = 0, if1msk = 0;
-//#if (!DMA_USED)
     u32 if1data = 0;
-    //data->tmpBuffer[0] = (TX[3] << 24) | (TX[2] << 16) | (TX[1] << 8) | (TX[0] << 0);
-//#endif
 
     // ID: accept any ID comming from any node
     if1msk &=~ (1u << 31); // Mask Extended Identifier or acceptance filtering.
@@ -283,17 +262,12 @@ void can0_receive_obj_Remote_Frames_init(struct can_device_data *data, u16 can_i
     if1arb |= (can_id << 18)&(CAN_IFxARB_ID); // 11-bit ID for [28:18]
     iowrite32(if1arb, data->base + CAN_IF1ARB); 
 
-// #if (!DMA_USED)
     // Transfer the data bytes of a message into a message object 
     if1data = TX[0]&(CAN_IFxDATA_0);
     if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
     if1data |= (TX[2] << 16)&(CAN_IFxDATA_2);
     if1data |= (TX[3] << 24)&(CAN_IFxDATA_3);
     iowrite32(if1data, data->base + CAN_IF1DATA); 
-// #else 
-//     Dma_write(data); // enable HW DMA on DMA side
-//     can0_DMAactive_IF1(data); // enable DMA on CAN side
-// #endif
 
     // config msg control,  set TxRqst 
     if1mctl = (1u << 12); // CAN_IFxMCTL_UMask: mask used (Msk[28:0], MXtd, and MDir)
@@ -657,6 +631,7 @@ static irqreturn_t irqHandler(int irq, void *d){
             TX[3]++;
 
 #if (DMA_USED)
+            // DMA INT is triggered after TxOk, so this new data by DMA will be used for the next remote frame request 
             data->tmpBuffer[0] = (TX[3] << 24) | (TX[2] << 16) | (TX[1] << 8) | (TX[0] << 0);
 #endif
             can0_receive_obj_Remote_Frames_write(data, DMA_OBJ_MSG_NUM);
@@ -723,11 +698,8 @@ void can0_init(struct can_device_data *data) {
     for (i = 0; i < 64; i ++){
         Reset_msg_obj(data, RD, i+1, 0); // reset msg obj including msgVal
     }
-    // init transmit obj with remote frame configuration
+    // init transmit obj with remote frame configuration (no use DMA)
     can0_receive_obj_Remote_Frames_init(data, ID_CAN0, DMA_OBJ_MSG_NUM, 1);
-    //msleep(2000);
-    // re-configure tramsmit obj into receive obj
-    //can0_receive_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
     // clear init, CCE
     can_ctl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
@@ -736,10 +708,6 @@ void can0_init(struct can_device_data *data) {
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 0, MS_DELAY, "Normal mode");
     printk("ctl[0] = 0x%x\n", ioread32(data->base + CAN_CTL));
 
-    // if1mctl = ioread32(data->base + CAN_IF1MCTL);
-    // if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is not waiting for a transmission
-    // iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
-    // iowrite32(if1cmd, data->base + CAN_IF1CMD); // Apply the update
 }
 
 static int can0_open(struct inode *inode, struct file *file){
@@ -861,8 +829,6 @@ static int can0_probe(struct platform_device *pdev)
 
     dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
 
-    //iowrite32(0x0, data->base + CAN_CTL); // enter init mode, access to registers
-    //while((ioread32(data->base + CAN_CTL)&CAN_CTL_INIT) == CAN_CTL_INIT); // wait init = 0;
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 0, MS_DELAY, "Normal mode 1");
     printk("ctl1[0] = 0x%x\n", ioread32(data->base + CAN_CTL));
 
@@ -875,8 +841,9 @@ static int can0_probe(struct platform_device *pdev)
     TX[3]++;
     data->tmpBuffer[0] = (TX[3] << 24) | (TX[2] << 16) | (TX[1] << 8) | (TX[0] << 0);
 
+    // this new updated data by DMA will be used for the next remote frame request
     Dma_write(data); // enable HW DMA on DMA side
-    can0_DMAactive_IF1(data, DMA_OBJ_MSG_NUM);
+    can0_DMAactive_IF1(data, DMA_OBJ_MSG_NUM); 
     printk("Done Init DMA\n");
 #endif
 

@@ -107,16 +107,12 @@
 #define RD 0
 #define WR 1
 
-u8 TX[4] = {0x00, 0x01, 0x02, 0x03};
-u8 size = sizeof(TX);
+#define DMA_REG 1
 
 /* CONTROL */
 #define ID_CAN0 0x112
 #define DMA_OBJ_MSG_NUM 12
 #define DMA_USED 1
-
-
-#define DMA_REG 1
 /* ******* */
 
 struct can_device_data {
@@ -131,6 +127,9 @@ struct can_device_data {
     void __iomem *base_edma;
     struct clk *clk;
 
+    u8 buffer[8];
+    u32 tmpBuffer[2]; // DatA and DatB
+
     u8 increment;
     struct work_struct re_request_work;
     bool is_scheduled;
@@ -138,7 +137,6 @@ struct can_device_data {
 
     int irq;
     u8 count_many;
-    u32 tmpBuffer[2]; // for datA and datB
 
     /* DMA-related fields */
     struct dma_chan *if1_chan;
@@ -148,8 +146,11 @@ struct can_device_data {
     int dma_channel;
     u8 dma_buffer[256];
     u8 byte_num;
-    u8 isDMAInit;
+    bool RX_dma;
 };
+
+void Dma_read(struct can_device_data* data);
+int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr);
 
 static int wait_register_update(struct can_device_data *data, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
@@ -167,9 +168,21 @@ static int wait_register_update(struct can_device_data *data, u16 offset, u16 bi
     return 0;
 }
 
-void Dma_write(struct can_device_data* data);
-void can0_DMAactive_IF1(struct can_device_data *data, u8 msg_num);
-int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_src_addr);
+static int wait_val_update(struct can_device_data *data, u8 var, u8 val, u16 delay_ms, u8* name_register){
+    unsigned long timeout;
+    timeout = jiffies + msecs_to_jiffies(delay_ms);
+
+    while (var != val)  // Wait var updated
+    {
+        if (time_after(jiffies, timeout)) {
+            dev_err(data->dev, "Timeout %s\n", name_register);
+            return -ETIMEDOUT;
+        }
+        cpu_relax();
+    } 
+
+    return 0;
+}
 
 void can0_bit_timing(struct can_device_data *data, u32 can_clk, u32 bitrate){
     u32 val = 0;
@@ -193,80 +206,24 @@ void can0_bit_timing(struct can_device_data *data, u32 can_clk, u32 bitrate){
 
 }
 
-void can0_receive_obj_Remote_Frames_read(struct can_device_data *data, u8 msg_num){
+void can0_transmit_obj_Remote_Frames_read(struct can_device_data *data, u8 msg_num){
     u32 if1cmd = 0;
+
+    // if1mctl = ioread32(data->base + CAN_IF1MCTL);
+    // if1mctl &=~ (1u << 8); // clear TxRqst
+    // iowrite32(if1cmd, data->base + CAN_IF1MCTL);
 
     if1cmd = ioread32(data->base + CAN_IF1CMD);
     if1cmd &=~ (1u << 23); // CAN_IFxCMD_WR_RD: Read
+    //if1cmd |= 1u << 14; // DMAactive
     if1cmd |= msg_num&(0xFF);
     iowrite32(if1cmd, data->base + CAN_IF1CMD);
 
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
-void can0_receive_obj_Remote_Frames_write(struct can_device_data *data, u8 msg_num){
-    u32 if1cmd = 0, if1mctl = 0;
-
-#if (!DMA_USED)
-    u32 if1data = 0;
-    // Transfer the data bytes of a message into a message object 
-    if1data = TX[0]&(CAN_IFxDATA_0);
-    if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
-    if1data |= (TX[2] << 16)&(CAN_IFxDATA_2);
-    if1data |= (TX[3] << 24)&(CAN_IFxDATA_3);
-    iowrite32(if1data, data->base + CAN_IF1DATA);
-#else 
-    if (data->isDMAInit == 1){
-        Dma_write(data); // enable HW DMA on DMA side
-        can0_DMAactive_IF1(data, DMA_OBJ_MSG_NUM); // enable DMA on CAN side
-    }
-    else {
-        u32 if1data = 0;
-        // Transfer the data bytes of a message into a message object 
-        if1data = TX[0]&(CAN_IFxDATA_0);
-        if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
-        if1data |= (TX[2] << 16)&(CAN_IFxDATA_2);
-        if1data |= (TX[3] << 24)&(CAN_IFxDATA_3);
-        iowrite32(if1data, data->base + CAN_IF1DATA);   
-    }
-#endif
-
-    // config msg control
-    if1mctl = ioread32(data->base + CAN_IF1MCTL);
-    if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is set by rmtEn at reception /* Remote frame only */
-    iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
-
-    if1cmd = ioread32(data->base + CAN_IF1CMD);
-    if1cmd |= (1u << 23); // CAN_IFxCMD_WR_RD: Write
-    if1cmd |= msg_num&(0xFF);
-    iowrite32(if1cmd, data->base + CAN_IF1CMD);
-
-    printk("KK\n");
-    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
-}
-
-void can0_receive_obj_Remote_Frames_write_tmp(struct can_device_data *data, u8 msg_num){
-    u32 if1cmd = 0, if1mctl = 0;
-
-    Dma_write(data); // enable HW DMA on DMA side
-    can0_DMAactive_IF1(data, DMA_OBJ_MSG_NUM); // enable DMA on CAN side
-
-
-    if1cmd = ioread32(data->base + CAN_IF1CMD);
-    if1cmd |= (1u << 23); // CAN_IFxCMD_WR_RD: Write
-    if1cmd |= msg_num&(0xFF);
-    iowrite32(if1cmd, data->base + CAN_IF1CMD);
-
-    printk("KK tmp\n");
-    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
-}
-
-void can0_receive_obj_Remote_Frames_init(struct can_device_data *data, u16 can_id, u8 msg_num, u8 msg_handler){
+void can0_transmit_obj_Remote_Frames(struct can_device_data *data, u16 can_id, u16 len, u8 msg_num, u8 msg_handler){
     u32 if1cmd = 0, if1mctl = 0, if1arb = 0, if1msk = 0;
-//#if (!DMA_USED)
-    u32 if1data = 0;
-    //data->tmpBuffer[0] = (TX[3] << 24) | (TX[2] << 16) | (TX[1] << 8) | (TX[0] << 0);
-//#endif
 
     // ID: accept any ID comming from any node
     if1msk &=~ (1u << 31); // Mask Extended Identifier or acceptance filtering.
@@ -279,32 +236,18 @@ void can0_receive_obj_Remote_Frames_init(struct can_device_data *data, u16 can_i
     if (msg_handler == 1) if1arb = (1u << 31)&(CAN_IFxARB_MsgVal); // The message object is to be used by the message handler.
     else if1arb &=~ (1u << 31)&(CAN_IFxARB_MsgVal);
     if1arb &=~ (1U << 30); // CAN_IFxARB_Xtd: no Extended Identifier
-    if1arb |= (1U << 29); // CAN_IFxARB_Dir: transmit
+    if1arb &=~ (1U << 29); // CAN_IFxARB_Dir: receive obj 
     if1arb |= (can_id << 18)&(CAN_IFxARB_ID); // 11-bit ID for [28:18]
     iowrite32(if1arb, data->base + CAN_IF1ARB); 
-
-// #if (!DMA_USED)
-    // Transfer the data bytes of a message into a message object 
-    if1data = TX[0]&(CAN_IFxDATA_0);
-    if1data |= (TX[1] << 8)&(CAN_IFxDATA_1);
-    if1data |= (TX[2] << 16)&(CAN_IFxDATA_2);
-    if1data |= (TX[3] << 24)&(CAN_IFxDATA_3);
-    iowrite32(if1data, data->base + CAN_IF1DATA); 
-// #else 
-//     Dma_write(data); // enable HW DMA on DMA side
-//     can0_DMAactive_IF1(data); // enable DMA on CAN side
-// #endif
 
     // config msg control,  set TxRqst 
     if1mctl = (1u << 12); // CAN_IFxMCTL_UMask: mask used (Msk[28:0], MXtd, and MDir)
     if1mctl |= (1u << 7); // CAN_IFxMCTL_EoB: a single msg obj
-    if1mctl &=~ (1u << 15); // CAN_IFxMCTL_NewDat: 
+    if1mctl |= (1u << 15); // CAN_IFxMCTL_NewDat: 
 
-    if1mctl |= (1u << 9); //  RmtEn: At the reception of a remote frame, TxRqst is set. /* Remote frame only */
-    if1mctl &=~ (1u << 8); // :CAN_IFxMCTL_TxRqst message object is set by rmtEn at reception /* Remote frame only */
-
-    if1mctl |= (size); // DLC = size byte
-    if1mctl |= (1u << 10); // RxIE /* Remote frame only */
+    if1mctl |= (1u << 8); // :CAN_IFxMCTL_TxRqst message object is set to send remote frame
+    if1mctl |= (1u << 10); // RxIE to receive corresponding data frame
+    if1mctl |= (len << 0)&0xF; // len of data
     iowrite32(if1mctl, data->base + CAN_IF1MCTL); 
 
  
@@ -314,11 +257,15 @@ void can0_receive_obj_Remote_Frames_init(struct can_device_data *data, u16 can_i
     if1cmd = (1u << 21)&(CAN_IFxCMD_Arb); // ****** Access arbitration bits -> to update the next time
     if1cmd |= (1u << 22); // use mask
 
-    if1cmd |= (1u << 23); // CAN_IFxCMD_WR_RD: Write
+    if1cmd |= (1u << 23); // CAN_IFxCMD_WR_RD: Write msg obj to RAM
     if1cmd &=~ (1u << 18); // TxRqst_NewDat will by handled by CAN_IFxMCTL_TxRqst or CAN_IFxMCTL_NewDat in CAN_IFxMCTL
 
     if1cmd |= (1u << 20); // access control bits: msg control bits is transfered FROM IF1 register set TO message object by message number (Bits [7:0]).
     if1cmd |= (1u << 17); // use DATA_A: The data bytes 0-3 will be   transfered FROM IF1 register set TO message object by message number (Bits [7:0]).
+
+// #if (DMA_USED)
+//     if1cmd |= 1u << 14; // DMAactive
+// #endif
 
     if1cmd |= msg_num << 0; // CAN_IFxCMD_msgnum = 1, trigger transfer
 
@@ -365,26 +312,14 @@ void can0_DMA_init(struct can_device_data *data){
     data->dma_channel = 40; // CAN0_IF1 uses DMA channel 40
 }
 
-void can0_DMAactive_IF1(struct can_device_data *data, u8 msg_num){
+void can0_DMAactive_IF1(struct can_device_data *data){
     u32 can_cmd = 0;
 
     can_cmd = ioread32(data->base + CAN_IF1CMD);
-    can_cmd |= 1u << 23; // W
     can_cmd |= 1u << 14; // DMAactive
-    can_cmd |= msg_num&(0xFF);
     iowrite32(can_cmd, data->base + CAN_IF1CMD);
-    
-    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
-}
 
-void can0_DMAdeactive_IF1(struct can_device_data *data){
-    u32 can_cmd = 0;
-
-    can_cmd = ioread32(data->base + CAN_IF1CMD);
-    can_cmd |= 1u << 23; // W
-    can_cmd &=~ (1u << 14); // DMAactive
-    iowrite32(can_cmd, data->base + CAN_IF1CMD);
-    
+    // wait the hanler send msg object from IF1 registers to msg RAM
     wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
 }
 
@@ -406,7 +341,6 @@ void dma_start(struct can_device_data* data, int ch){
     iowrite32(1 << (ch - 31), data->base_edma + DMA_EMCRH);  
     iowrite32(1 << (ch - 31), data->base_edma + DMA_SECRH); 
 
-    dev_info(data->dev, "Issuing if1 DMA ch %d pending\n", ch);
     iowrite32(1 << (ch - 31), data->base_edma + DMA_EESRH);  /* EESR , HW-TRIGGER*/
 }
 
@@ -414,16 +348,28 @@ static void can0_if1_dma_callback(void *data)
 {
     struct can_device_data *can0 = data;
     int ret;
+    // int i;
+    //printk("DMA_IPRH = 0x%x\n", ioread32(can0->base_edma + DMA_IPR));
+    dev_info(can0->dev, "RX DMA callback called\n");
+    can0->RX_dma = 1;
 
-    dev_info(can0->dev, "***TX DMA -> tmp = 0x%x\n", can0->tmpBuffer[0]);
+    can0->buffer[0] = ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_0;
+    can0->buffer[1] = (ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_1) >> 8;
+    can0->buffer[2] = (ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
+    can0->buffer[3] = (ioread32(can0->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
 
-    ret = dma_param_set(data, can0->dma_channel, can0->byte_num, (dma_addr_t)&can0->tmpBuffer[0]);
+    printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", can0->buffer[0], can0->buffer[1], can0->buffer[2], can0->buffer[3]);
+
+    /* Set this only once time */
+    ret = dma_param_set(can0, can0->dma_channel, can0->byte_num, (dma_addr_t)&can0->tmpBuffer[0]);
     if (ret == -1) return;
 
+    /* Start for the first time */
     dma_start(can0, can0->dma_channel);
+    //Disable_all_INT(data)
 }
 
-int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_src_addr){
+int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr){
     struct dma_async_tx_descriptor *if1_desc;
     u32 param_addr, param_num, opt = 0;
     u32 AB_Cnt = 0, xxxBIDX = 0;
@@ -463,8 +409,8 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
 #else
 
     reinit_completion(&data->if1_completion);
-    if1_desc = dmaengine_prep_slave_single(data->if1_chan, dma_src_addr, 1,
-                                            DMA_MEM_TO_DEV, DMA_CTRL_ACK | DMA_PREP_INTERRUPT);
+    if1_desc = dmaengine_prep_slave_single(data->if1_chan, dma_dst_addr, 1,
+                                            DMA_DEV_TO_MEM, DMA_CTRL_ACK | DMA_PREP_INTERRUPT);
     if (!if1_desc) {
         dev_err(data->dev, "Failed to prepare if1 DMA descriptor\n");
         return -1;
@@ -483,7 +429,7 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
     param_addr = 0x4000 + param_num*0x20; /* 0x4000 + param_num*0x20 (incremented by 32 bytes) */
     printk("[DMA] - param_addr = 0x%x\n", param_addr);
 
-    //dev_info(data->dev, "Issuing if1 DMA pending\n");
+    dev_info(data->dev, "Issuing if1 DMA pending\n");
     dma_async_issue_pending(data->if1_chan);
 
     opt &=~ ((1u << 0) | (1u << 1)); // constant address mode (SAM, DAM)
@@ -495,12 +441,12 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
     iowrite32(opt, data->base_edma + param_addr + 0x0);  /** OPT */
 
     // CAN0_BASE + CAN_IF1DATA
-    iowrite32(dma_src_addr, data->base_edma + param_addr + 0x4);  /** SRC */
+    iowrite32(CAN0_BASE + CAN_IF1DATA, data->base_edma + param_addr + 0x4);  /** SRC */
 
     AB_Cnt = 1<<16 | byte_num; // send byte_num bytes at once
     iowrite32(AB_Cnt, data->base_edma + param_addr + 0x8);  /** ACNT/BCNT */
 
-    iowrite32(CAN0_BASE + CAN_IF1DATA, data->base_edma + param_addr + 0xC);  /** DST */
+    iowrite32(dma_dst_addr, data->base_edma + param_addr + 0xC);  /** DST */
 
     xxxBIDX &=~ ((1u >> 16) | 1u); // no incrementing addr as constant addr
     iowrite32(xxxBIDX, data->base_edma + param_addr + 0x10);  /** xxxBIDX */
@@ -514,10 +460,11 @@ int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t 
 #endif
 }
 
-void Dma_write(struct can_device_data* data){
+void Dma_read(struct can_device_data* data){
     int ret;
 
-    //memset(TX, 0x40, sizeof(TX));
+    memset(data->buffer, 0x40, sizeof(data->buffer));
+    memset(data->tmpBuffer, 0x00, sizeof(data->tmpBuffer));
 
     /* Set this only once time */
     ret = dma_param_set(data, data->dma_channel, data->byte_num, (dma_addr_t)&data->tmpBuffer[0]);
@@ -534,10 +481,10 @@ static int can0_configure_dma(struct can_device_data *data)
     int ret;
 
     if (data->if1_chan) {
-        if1_conf.direction = DMA_MEM_TO_DEV;
-        if1_conf.dst_addr = (dma_addr_t)(CAN0_BASE + CAN_IF1DATA); // will include CAN_IF1DATA and CAN_IF1DATB
-        if1_conf.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE; /* UART uses 8-bit transfers */
-        if1_conf.dst_maxburst = 1; /* Single byte per transfer */
+        if1_conf.direction = DMA_DEV_TO_MEM;
+        if1_conf.src_addr = (dma_addr_t)(CAN0_BASE + CAN_IF1DATA); // will include CAN_IF1DATA and CAN_IF1DATB
+        if1_conf.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE; /* UART uses 8-bit transfers */
+        if1_conf.src_maxburst = 1; /* Single byte per transfer */
         ret = dmaengine_slave_config(data->if1_chan, &if1_conf);
         if (ret) {
             dev_err(data->dev, "Failed to configure if1 DMA channel: %d\n", ret);
@@ -612,15 +559,13 @@ static irqreturn_t irqHandler(int irq, void *d){
     // reset
     iowrite32(0x0, data->base + CAN_IF1ARB);
     iowrite32(0x0, data->base + CAN_IF1MCTL);
-    // read data at DMA_OBJ_MSG_NUM
-    can0_receive_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
-    intpnd12 = ioread32(data->base + CAN_INTPND12);
-    intpnd_x = ioread32(data->base + CAN_INTPND_X);
+    // read data at DMA_OBJ_MSG_NUM
+    // can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
+
     Int0ID = ioread32(data->base + CAN_INT);
-    can_mctl = ioread32(data->base + CAN_IF1MCTL);
     can_cmd = ioread32(data->base + CAN_IF1CMD);
-    can_arb = ioread32(data->base + CAN_IF1ARB);
+
 
     msgval12 = ioread32(data->base + CAN_MSGVAL12);
     msgval34 = ioread32(data->base + CAN_MSGVAL34);
@@ -633,41 +578,84 @@ static irqreturn_t irqHandler(int irq, void *d){
     tx12 = ioread32(data->base + CAN_TXRQ12);
     mux12 = ioread32(data->base + CAN_INTMUX12);
 
-    id = (can_arb >> 18)&0x7FF;
 
     if (Int0ID != 0x8000){ 
-        /* Not applicable for Remote frame */
+        // read data at DMA_OBJ_MSG_NUM
+        can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
+
+        es = ioread32(data->base + CAN_ES);
+        can_mctl = ioread32(data->base + CAN_IF1MCTL);
+        can_arb = ioread32(data->base + CAN_IF1ARB);
+        intpnd12 = ioread32(data->base + CAN_INTPND12);
+        intpnd_x = ioread32(data->base + CAN_INTPND_X);
+
+#if(!DMA_USED)
+        data->buffer[0] = ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_0;
+        data->buffer[1] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_1) >> 8;
+        data->buffer[2] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
+        data->buffer[3] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
+#else
+        Dma_read(data); // enable DMA on DMA side
+        can0_DMAactive_IF1(data); // enable DMA on CAN side
+#endif
+        id = (can_arb >> 18)&0x7FF; // take the ID of data frame
+
+        printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
+        // printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+
+        can_cmd = ioread32(data->base + CAN_IF1CMD);
+        can_cmd |= (1u << 19); // ClrIntPnd
+        //can_cmd &=~ (0xFF);
+
+        // write ClrIntPnd to msg RAM to erase RX interrupt flag
+        iowrite32(can_cmd, data->base + CAN_IF1CMD);
+        wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
     } 
     else { /* Int0ID = 0x8000 */
-        //can0_receive_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
         es = ioread32(data->base + CAN_ES);
-        printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
+        if ((es&(1u << 4u)) == 1u << 4u){ // RxOk -> Read new data
 
-        if ((es&(1u << 4u)) == 1u << 4u){ // RxOk -> update Tx value
-            printk("IRQ - R\n");
+            // read data at DMA_OBJ_MSG_NUM
+            can0_transmit_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
-            if (TX[0] == 0x1F) TX[0] = 0;
-            if (TX[1] == 0x1F) TX[1] = 0;
-            if (TX[2] == 0x1F) TX[2] = 0;
-            if (TX[3] == 0x1F) TX[3] = 0;
+            can_mctl = ioread32(data->base + CAN_IF1MCTL);
+            can_arb = ioread32(data->base + CAN_IF1ARB);
+            intpnd12 = ioread32(data->base + CAN_INTPND12);
+            intpnd_x = ioread32(data->base + CAN_INTPND_X);
 
-            TX[0]++;
-            TX[1]++;
-            TX[2]++;
-            TX[3]++;
+#if(!DMA_USED)
+            data->buffer[0] = ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_0;
+            data->buffer[1] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_1) >> 8;
+            data->buffer[2] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_2) >> 16;
+            data->buffer[3] = (ioread32(data->base + CAN_IF1DATA)&CAN_IFxDATA_3) >> 24;
+#else
+            // Dma_read(data); // enable DMA on DMA side
+            can0_DMAactive_IF1(data); // enable DMA on CAN side
 
-#if (DMA_USED)
-            data->tmpBuffer[0] = (TX[3] << 24) | (TX[2] << 16) | (TX[1] << 8) | (TX[0] << 0);
+            // wait_val_update(data, data->RX_dma, 1, MS_DELAY, "data->RX_dma");
+            // data->RX_dma = 0;
+
+            data->buffer[0] = data->tmpBuffer[0]&CAN_IFxDATA_0;
+            data->buffer[1] = (data->tmpBuffer[0]&CAN_IFxDATA_1) >> 8;
+            data->buffer[2] = (data->tmpBuffer[0]&CAN_IFxDATA_2) >> 16;
+            data->buffer[3] = (data->tmpBuffer[0]&CAN_IFxDATA_3) >> 24;
 #endif
-            can0_receive_obj_Remote_Frames_write(data, DMA_OBJ_MSG_NUM);
+            id = (can_arb >> 18)&0x7FF; // take the ID of data frame
 
+            printk("es = 0x%x, mctl = 0x%x, intpnd_x = 0x%x, id = 0x%x, pd12 = 0x%x\n", es, can_mctl, intpnd_x, id, intpnd12);
+#if (!DMA_USED)
+            printk("Data: [0] = 0x%x, [1] = 0x%x, [2] = 0x%x, [3] = 0x%x\n", data->buffer[0], data->buffer[1], data->buffer[2], data->buffer[3]);
+#endif
+            can_cmd = ioread32(data->base + CAN_IF1CMD);
+            can_cmd |= (1u << 19); // ClrIntPnd
+            //can_cmd &=~ (0xFF);
+
+            // write ClrIntPnd to msg RAM to erase RX interrupt flag
+            iowrite32(can_cmd, data->base + CAN_IF1CMD);
+            wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
         }
         else {
-            printk("IRQ - W\n");
-            // raised after responding to send data frame back
-#if (DMA_USED)
-            can0_DMAdeactive_IF1(data);
-#endif
+            // TxOk (Remote frame is sent)
         }
     }
 
@@ -723,11 +711,6 @@ void can0_init(struct can_device_data *data) {
     for (i = 0; i < 64; i ++){
         Reset_msg_obj(data, RD, i+1, 0); // reset msg obj including msgVal
     }
-    // init transmit obj with remote frame configuration
-    can0_receive_obj_Remote_Frames_init(data, ID_CAN0, DMA_OBJ_MSG_NUM, 1);
-    //msleep(2000);
-    // re-configure tramsmit obj into receive obj
-    //can0_receive_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
     // clear init, CCE
     can_ctl &=~ (CAN_CTL_INIT | CAN_CTL_CCE);
@@ -748,9 +731,32 @@ static int can0_open(struct inode *inode, struct file *file){
     return 0;
 }
 
+static void re_request_irq_work(struct work_struct *work)
+{
+    struct can_device_data *data = container_of(work, struct can_device_data, re_request_work);
+    u32 txx, tx12, mux12;
+    
+    while (!atomic_read(&data->should_stop)){
+        msleep(2000);
+
+        // Config message object
+        can0_transmit_obj_Remote_Frames(data, ID_CAN0, 4, DMA_OBJ_MSG_NUM, 1);
+
+        txx = ioread32(data->base + CAN_TXRQ_X);
+        tx12 = ioread32(data->base + CAN_TXRQ12);
+        mux12 = ioread32(data->base + CAN_INTMUX12);
+    
+        printk("WORK -> txrq = 0x%x, can_mctl = 0x%x\n", ioread32(data->base + CAN_TXRQ12), ioread32(data->base + CAN_IF1MCTL));
+
+    }
+}
+
 static ssize_t can0_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
 {
     struct can_device_data *data = filp->private_data;
+
+    schedule_work(&data->re_request_work);
+
     return count;
 }
 
@@ -774,8 +780,6 @@ static int can0_probe(struct platform_device *pdev)
     data->base = ioremap(CAN0_BASE, 0x1000);
     data->base_gpio = ioremap(GPIO_BASE, 0x1000);
     data->base_edma = ioremap(EDMA_BASE, 0x8000);
-
-    data->isDMAInit = 0;
     data->dev = &pdev->dev;
     data->increment = 0;
     data->is_scheduled = 0;
@@ -804,7 +808,7 @@ static int can0_probe(struct platform_device *pdev)
     // ====== Can init
     GPIO_init(data);
     can0_init(data);
-    //INIT_WORK(&data->re_request_work, re_request_irq_work);
+    INIT_WORK(&data->re_request_work, re_request_irq_work);
     can0_INT_init(data);
 #if(DMA_USED)
     can0_DMA_init(data);
@@ -826,7 +830,9 @@ static int can0_probe(struct platform_device *pdev)
     /* =============== DMA ================= */
 #if(DMA_USED)
     DMA_probe(data);
-    data->isDMAInit = 1;
+    data->byte_num = 4;
+    data->RX_dma = 0;
+    Dma_read(data); // enable HW on DMA side first
 #endif
 
     // ====== Create device character
@@ -866,19 +872,7 @@ static int can0_probe(struct platform_device *pdev)
     wait_register_update(data, CAN_CTL, CAN_CTL_INIT_OFFSET, 0, MS_DELAY, "Normal mode 1");
     printk("ctl1[0] = 0x%x\n", ioread32(data->base + CAN_CTL));
 
-#if (DMA_USED)
-    data->byte_num = 4;
-
-    TX[0]++;
-    TX[1]++;
-    TX[2]++;
-    TX[3]++;
-    data->tmpBuffer[0] = (TX[3] << 24) | (TX[2] << 16) | (TX[1] << 8) | (TX[0] << 0);
-
-    Dma_write(data); // enable HW DMA on DMA side
-    can0_DMAactive_IF1(data, DMA_OBJ_MSG_NUM);
-    printk("Done Init DMA\n");
-#endif
+    schedule_work(&data->re_request_work);
 
     return 0;
 }
@@ -892,6 +886,8 @@ static int can0_remove(struct platform_device *pdev)
 
     atomic_set(&data->should_stop, 1); // Set to 1 (true)
     smp_mb(); // Memory barrier to ensure should_stop is visible
+
+    cancel_work_sync(&data->re_request_work);
 
 #if(DMA_USED)
     if (data->if1_chan){
@@ -936,4 +932,3 @@ module_platform_driver(can_device_driver);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Soviet");
 MODULE_DESCRIPTION("Custom CAN Device Driver for BeagleBone Black CAN0");
-
