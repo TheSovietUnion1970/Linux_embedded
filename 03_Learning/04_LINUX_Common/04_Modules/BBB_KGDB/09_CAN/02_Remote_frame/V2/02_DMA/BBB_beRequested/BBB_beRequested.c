@@ -191,17 +191,6 @@ void can0_bit_timing(struct can_device_data *data, u32 can_clk, u32 bitrate){
 
 }
 
-void can0_receive_obj_Remote_Frames_read(struct can_device_data *data, u8 msg_num){
-    u32 if1cmd = 0;
-
-    if1cmd = ioread32(data->base + CAN_IF1CMD);
-    if1cmd &=~ (1u << 23); // CAN_IFxCMD_WR_RD: Read
-    if1cmd |= msg_num&(0xFF);
-    iowrite32(if1cmd, data->base + CAN_IF1CMD);
-
-    wait_register_update(data, CAN_IF1CMD, CAN_IFxCMD_Busy_OFFSET, 0, MS_DELAY, "Busy bit");
-}
-
 void can0_receive_obj_Remote_Frames_write(struct can_device_data *data, u8 msg_num){
     u32 if1cmd = 0, if1mctl = 0;
 
@@ -582,12 +571,6 @@ static irqreturn_t irqHandler(int irq, void *d){
         pr_err("NULL data in irqHandler\n");
         return IRQ_NONE;
     }
-
-    // reset
-    iowrite32(0x0, data->base + CAN_IF1ARB);
-    iowrite32(0x0, data->base + CAN_IF1MCTL);
-    // read data at DMA_OBJ_MSG_NUM
-    can0_receive_obj_Remote_Frames_read(data, DMA_OBJ_MSG_NUM);
 
     intpnd12 = ioread32(data->base + CAN_INTPND12);
     intpnd_x = ioread32(data->base + CAN_INTPND_X);
