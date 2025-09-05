@@ -1,0 +1,114 @@
+debian@arm:~$ sudo insmod a2.ko 
+[  493.737073] a2: loading out-of-tree module taints kernel.
+[  493.744382] can0_driver 481cc000.can0_device: can0 clock rate: 24000000 Hz
+[  493.751517] BRP = 0x6
+[  493.753902] ctl[0] = 0x0
+[  493.756555] can0_driver 481cc000.can0_device: Edma clock rate: 200000000 Hz
+[  493.763623] can0_driver 481cc000.can0_device: Using DMA for CAN0 transfers
+[  493.770534] can0_driver 481cc000.can0_device: if1 DMA channel configured
+[  493.777266] can0_driver 481cc000.can0_device: Succeed to configure DMA
+[  493.783830] es = 0x318, mctl = 0x1684, intpnd_x = 0x0, id = 0x112, pd12 = 0x
+0
+[  493.790999] IRQ - R
+[  493.793116] can0_driver 481cc000.can0_device: Submitting if1 DMA descriptor
+[  493.800111] [DMA] - param_num = 65
+[  493.803525] [DMA] - param_addr = 0x4820
+[  493.807385] can0_driver 481cc000.can0_device: Issuing if1 DMA ch 40 pending
+[  493.814381] KK
+[  496.262350] es = 0x10, mctl = 0x1784, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[  496.269442] IRQ - R
+[  496.271556] can0_driver 481cc000.can0_device: Submitting if1 DMA descriptor
+[  496.278550] [DMA] - param_num = 65
+[  496.281964] [DMA] - param_addr = 0x4820
+[  496.285818] can0_driver 481cc000.can0_device: Issuing if1 DMA ch 40 pending
+[  496.292812] KK
+[  496.294522] es = 0x8, mctl = 0x1684, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[  496.301519] IRQ - W
+[  496.303634] edma 49000000.dma: dma_ccerr_handler: Error interrupt without er
+ror event!
+[  499.278564] es = 0x10, mctl = 0x1784, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[  499.285651] IRQ - R
+[  499.287761] can0_driver 481cc000.can0_device: Submitting if1 DMA descriptor
+[  499.294754] [DMA] - param_num = 65
+[  499.298167] [DMA] - param_addr = 0x4820
+[  499.302021] can0_driver 481cc000.can0_device: Issuing if1 DMA ch 40 pending
+[  499.309016] KK
+[  499.310721] es = 0x8, mctl = 0x1684, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[  499.317717] IRQ - W
+[  499.319829] edma 49000000.dma: dma_ccerr_handler: Error interrupt without er
+ror event!
+
+=> if (data->isDMAInit == 0) DMA_probe(data);
+
+
+===============
+with current implementation -> 
+ 1391.494514] IRQ - R
+[ 1391.496622] KK
+[ 1391.498360] can0_driver 481cc000.can0_device: IRQ num = 18
+[ 1391.503949] can0_driver 481cc000.can0_device: Edma clock rate: 200000000 Hz
+[ 1391.511039] can0_driver 481cc000.can0_device: Using DMA for CAN0 transfers
+[ 1391.517984] can0_driver 481cc000.can0_device: if1 DMA channel configured
+[ 1391.524744] can0_driver 481cc000.can0_device: Succeed to configure DMA
+[ 1391.540294] can0_driver 481cc000.can0_device: Created /dev/can0
+[ 1391.546400] ctl1[0] = 0x6000e
+[ 1391.549451] can0_class can0: Submitting if1 DMA descriptor
+[ 1391.554996] [DMA] - param_num = 65
+[ 1391.558436] [DMA] - param_addr = 0x4820
+[ 1391.562331] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1391.567900] can0_class can0: ***TX DMA -> tmp = 0x4030201
+[ 1391.573372] can0_class can0: Submitting if1 DMA descriptor
+[ 1391.578907] [DMA] - param_num = 65
+[ 1391.582345] [DMA] - param_addr = 0x4820
+[ 1391.586224] can0_class can0: Issuing if1 DMA ch 40 pending
+debian@arm:~$ [ 1393.446012] es = 0x10, mctl = 0x1784, intpnd_x = 0x0, id = 0x1
+12, pd12 = 0x0
+[ 1393.453148] IRQ - R
+[ 1393.455279] can0_class can0: Submitting if1 DMA descriptor
+[ 1393.460797] [DMA] - param_num = 65
+[ 1393.464212] [DMA] - param_addr = 0x4820
+[ 1393.468068] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1393.473583] KK
+[ 1393.475286] es = 0x8, mctl = 0x1684, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[ 1393.482281] IRQ - W
+[ 1393.484398] can0_class can0: ***TX DMA -> tmp = 0x5040302
+[ 1393.489826] can0_class can0: Submitting if1 DMA descriptor
+[ 1393.495337] [DMA] - param_num = 65
+[ 1393.498752] [DMA] - param_addr = 0x4820
+[ 1393.502606] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1396.462231] es = 0x10, mctl = 0x1784, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[ 1396.469366] IRQ - R
+[ 1396.471493] can0_class can0: Submitting if1 DMA descriptor
+[ 1396.477013] [DMA] - param_num = 65
+[ 1396.480428] [DMA] - param_addr = 0x4820
+[ 1396.484284] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1396.489799] KK
+[ 1396.491541] es = 0x8, mctl = 0x1684, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[ 1396.498542] IRQ - W
+[ 1396.504227] can0_class can0: ***TX DMA -> tmp = 0x6050403
+[ 1396.509753] can0_class can0: Submitting if1 DMA descriptor
+ 1396.515299] [DMA] - param_num = 65
+[ 1396.518738] [DMA] - param_addr = 0x4820
+[ 1396.522618] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1399.478440] es = 0x10, mctl = 0x1784, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[ 1399.485574] IRQ - R
+[ 1399.487702] can0_class can0: Submitting if1 DMA descriptor
+[ 1399.493223] [DMA] - param_num = 65
+[ 1399.496638] [DMA] - param_addr = 0x4820
+[ 1399.500495] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1399.506009] KK
+[ 1399.507712] es = 0x8, mctl = 0x1684, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[ 1399.514709] IRQ - W
+[ 1399.516825] can0_class can0: ***TX DMA -> tmp = 0x7060504
+[ 1399.522252] can0_class can0: Submitting if1 DMA descriptor
+[ 1399.527762] [DMA] - param_num = 65
+[ 1399.531176] [DMA] - param_addr = 0x4820
+[ 1399.535029] can0_class can0: Issuing if1 DMA ch 40 pending
+[ 1402.494648] es = 0x10, mctl = 0x1784, intpnd_x = 0x0, id = 0x112, pd12 = 0x0
+[ 1402.501785] IRQ - R
+[ 1402.503912] can0_class can0: Submitting if1 DMA descriptor
+[ 1402.509431] [DMA] - param_num = 65
+[ 1402.512846] [DMA] - param_addr = 0x4820
+[ 1402.516702] can0_class can0: Issuing if1 DMA ch 40 pending
+
+
