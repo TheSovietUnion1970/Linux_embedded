@@ -1,0 +1,13 @@
+hub_probe -> INIT_WORK(&hub->events, hub_event);
+
+port_event(hub, i);
+
+hub_port_connect_change(hub, port1, portstatus, portchange);
+
+hub_port_connect(hub, port1, portstatus, portchange);
+
+status = usb_new_device(udev);
+
+err = usb_enumerate_device(udev);	/* Read descriptors */
++
+announce_device(udev);
