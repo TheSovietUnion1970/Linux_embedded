@@ -27,6 +27,8 @@ struct usb_device_data {
     void __iomem *base_usb1phy;
     void __iomem *base_usb1core;
     struct clk *clk;
+
+
 };
 
 static int wait_register_update(struct usb_device_data *data, void __iomem *mem, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
@@ -42,6 +44,22 @@ static int wait_register_update(struct usb_device_data *data, void __iomem *mem,
         cpu_relax();
     } 
 
+    return 0;
+}
+// static int USB1_SetToken(struct usb_device_data *data, const u8* TokenSet){
+//     u8 i = 0;
+//     for (i = 0; i < 8; i++){
+//         iowrite
+//     }
+//     return 0;
+// }
+
+void USB1_init(struct usb_device_data *data){
+    iowrite32(1u << 7, data->base_usb1ctl + USB1CTL_MODE); // host mode by sw
+    iowrite32(MUSB_DEVCTL_SESSION, data->base_usb1core + MUSB_DEVCTL); // When the USB controller go into session, it will assume the role of a host
+}
+
+static int USB1_Control_Transfer(struct usb_device_data *data){
     return 0;
 }
 
