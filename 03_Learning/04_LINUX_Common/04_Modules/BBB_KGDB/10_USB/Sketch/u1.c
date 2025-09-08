@@ -1,4 +1,6 @@
 #include <linux/module.h>
+#include <linux/fs.h> // alloc_chrdev_region
+#include <linux/pci.h> // ioremap
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/device.h>
@@ -27,11 +29,11 @@ struct usb_device_data {
     struct clk *clk;
 };
 
-static int wait_register_update(struct usb_device_data *data, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
+static int wait_register_update(struct usb_device_data *data, void __iomem *mem, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
     timeout = jiffies + msecs_to_jiffies(delay_ms);
 
-    while ((ioread32(data->base + offset)&(1u << bit_offset)) != (bit_val << bit_offset))  // Wait register updated
+    while ((ioread32(mem + offset)&(1u << bit_offset)) != (bit_val << bit_offset))  // Wait register updated
     {
         if (time_after(jiffies, timeout)) {
             dev_err(data->dev, "Timeout %s\n", name_register);
@@ -42,6 +44,25 @@ static int wait_register_update(struct usb_device_data *data, u16 offset, u16 bi
 
     return 0;
 }
+
+static int usb1_open(struct inode *inode, struct file *file){
+    struct usb_device_data *data = container_of(inode->i_cdev, struct usb_device_data, cdev);
+    file->private_data = data;
+    return 0;
+}
+static ssize_t usb1_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+    struct usb_device_data *data = filp->private_data;
+
+    //schedule_work(&data->re_request_work);
+
+    return count;
+}
+static const struct file_operations usb_device_fops = {
+    .owner = THIS_MODULE,
+    .open = usb1_open,
+    .write = usb1_write,
+};
 
 static int usb1_probe(struct platform_device *pdev)
 {
@@ -80,13 +101,16 @@ static int usb1_probe(struct platform_device *pdev)
         return ret;
     }
 
-    cdev_init(&data->cdev, &can_device_fops);
+    cdev_init(&data->cdev, &usb_device_fops);
     data->cdev.owner = THIS_MODULE;
     ret = cdev_add(&data->cdev, data->dev_num, 1);
     if (ret < 0) {
         dev_err(&pdev->dev, "Failed to add cdev: %d\n", ret);
         //unregister_chrdev_region(&data->dev_num, 1);
-        iounmap(data->base);
+        iounmap(data->base_usbss);
+        iounmap(data->base_usb1ctl);
+        iounmap(data->base_usb1phy);
+        iounmap(data->base_usb1core);
         return ret;
     }
 
@@ -95,7 +119,10 @@ static int usb1_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "Failed to create class: %ld\n", PTR_ERR(data->class));
         cdev_del(&data->cdev);
         //unregister_chrdev_region(&data->dev_num, 1);
-        iounmap(data->base);
+        iounmap(data->base_usbss);
+        iounmap(data->base_usb1ctl);
+        iounmap(data->base_usb1phy);
+        iounmap(data->base_usb1core);
         return PTR_ERR(data->class);
     }
 
@@ -105,7 +132,10 @@ static int usb1_probe(struct platform_device *pdev)
         class_destroy(data->class);
         cdev_del(&data->cdev);
         //unregister_chrdev_region(&data->dev_num, 1);
-        iounmap(data->base);
+        iounmap(data->base_usbss);
+        iounmap(data->base_usb1ctl);
+        iounmap(data->base_usb1phy);
+        iounmap(data->base_usb1core);
         return PTR_ERR(data->dev);
     }
 
