@@ -7,8 +7,10 @@
 #include <linux/cdev.h>
 #include <linux/clk.h>
 
-/* USBSS */
+/* ============= USBSS ===================== */
 #define BASE_USBSS 0x47400000
+#define USBSS_IRQSTAT 0x28
+
 /* USB1 CTL */
 #define BASE_USB1CTL 0x47401800
 #define USB1CTL_MODE 0x18e3
@@ -60,7 +62,6 @@
 
 /* ============ ENDPOINT registers =============== */
 #define USB1EP0_base    0x47401D00
-#define USB1EP0_FIFO_base    0x47401D00 /* 8-bit */
 
 /* Offsets to endpoint registers */
 #define MUSB_TXMAXP		0x00
@@ -119,14 +120,66 @@
 #define USB_REQ_SET_SEL			0x30
 #define USB_REQ_SET_ISOCH_DELAY		0x31
 
-typedef struct usb_devRequest {
+/* ================== enum variables ================= */
+typedef enum ret_usb {
+    NONE,
+    ACK,
+    RXSTALL,
+    ERROR,
+    NAK_TIMEOUT,
+    RXPKTRDY 
+} usb_t;
+
+/* ================ Main structure ============== */
+struct usb_devRequest {
 	u8 bRequestType;
 	u8 bRequest;
 	u16 wValue;
 	u16 wIndex;
 	u16 wLength;
-} usbDevReq;
 
+    u16 maxLengthEntryFIFO;
+    u16 actualLength;
+    u16 leftLength;
+};
+
+struct usb_device_data {
+
+    dev_t dev_num;
+    struct cdev cdev;
+    struct class *class;
+    struct device *dev;
+
+    void __iomem *base_usbss;  
+    void __iomem *base_usb1ctl;
+    void __iomem *base_usb1phy;
+    void __iomem *base_usb1core;
+    void __iomem *base_usb1ep0;
+
+    struct clk *clk;
+    struct usb_devRequest InsReq;
+
+    u8 TX[256];
+    u16 TX_len;
+    u8 RX[256];
+    u16 RX_len;
+};
+
+/* ================== Utils ===================== */
+u32 fifo_offset(u8 epnum);
+int wait_register_update(struct usb_device_data *data, void __iomem *mem, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register);
+int wait_val_update(struct usb_device_data *data, u16 var, u16 val, u16 delay_ms, u8* name_val);
+void USB1_SetToken(struct usb_device_data *data, const u8* TokenSet);
+void USB1_ClrToken(struct usb_device_data *data);
+void USB1_ApplyToken(struct usb_device_data *data, u8 epnum);
+
+/* ================== API for Control Transfer ===================== */
+int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data);
+int USB1_IN_Transaction_GetDesc(struct usb_device_data *data, u8* buffer, u16* outlen);
+int USB1_STATUS_Transaction_GetDesc(struct usb_device_data *data);
+int USB1_GetDesc_Transfer(struct usb_device_data *data); /* main */
+
+/* ================ Const data packet =======================*/
 const u8 GetDesc_pkt[8] = {
     0x80,       // bmRequestType: Device-to-host, Standard, Device
     0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR

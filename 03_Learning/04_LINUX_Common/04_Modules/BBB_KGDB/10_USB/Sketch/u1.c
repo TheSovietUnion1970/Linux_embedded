@@ -1,4 +1,5 @@
 #include <linux/module.h>
+#include <linux/init.h>
 #include <linux/fs.h> // alloc_chrdev_region
 #include <linux/pci.h> // ioremap
 #include <linux/platform_device.h>
@@ -12,26 +13,17 @@
 #include <linux/delay.h>
 #include "u1.h"
 
-#define DRIVER_NAME "usb1_driver"
-#define DEVICE_NAME "usb1"
+/* ================== Tmp variables ================= */
+u8 Tx1_flag = 0, Rx1_flag = 0;
+usb_t ret = NONE;
 
-struct usb_device_data {
+/* ================== Utils ===================== */
+u32 fifo_offset(u8 epnum)
+{
+	return 0x20 + (epnum * 4);
+}
 
-    dev_t dev_num;
-    struct cdev cdev;
-    struct class *class;
-    struct device *dev;
-
-    void __iomem *base_usbss;  
-    void __iomem *base_usb1ctl;
-    void __iomem *base_usb1phy;
-    void __iomem *base_usb1core;
-    struct clk *clk;
-
-
-};
-
-static int wait_register_update(struct usb_device_data *data, void __iomem *mem, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
+int wait_register_update(struct usb_device_data *data, void __iomem *mem, u16 offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
     timeout = jiffies + msecs_to_jiffies(delay_ms);
 
@@ -46,152 +38,254 @@ static int wait_register_update(struct usb_device_data *data, void __iomem *mem,
 
     return 0;
 }
-// static int USB1_SetToken(struct usb_device_data *data, const u8* TokenSet){
-//     u8 i = 0;
-//     for (i = 0; i < 8; i++){
-//         iowrite
-//     }
-//     return 0;
-// }
 
-void USB1_init(struct usb_device_data *data){
-    iowrite32(1u << 7, data->base_usb1ctl + USB1CTL_MODE); // host mode by sw
-    iowrite32(MUSB_DEVCTL_SESSION, data->base_usb1core + MUSB_DEVCTL); // When the USB controller go into session, it will assume the role of a host
-}
+int wait_val_update(struct usb_device_data *data, u16 var, u16 val, u16 delay_ms, u8* name_val){
+    unsigned long timeout;
+    timeout = jiffies + msecs_to_jiffies(delay_ms);
 
-static int USB1_Control_Transfer(struct usb_device_data *data){
+    while (var != val)  // Wait val updated
+    {
+        if (time_after(jiffies, timeout)) {
+            dev_err(data->dev, "Timeout %s\n", name_val);
+            return -ETIMEDOUT;
+        }
+        cpu_relax();
+    } 
+
     return 0;
 }
 
-static int usb1_open(struct inode *inode, struct file *file){
-    struct usb_device_data *data = container_of(inode->i_cdev, struct usb_device_data, cdev);
-    file->private_data = data;
+void USB1_SetToken(struct usb_device_data *data, const u8* TokenSet){
+    data->InsReq.bRequestType = TokenSet[0];
+    data->InsReq.bRequest = TokenSet[1];
+    data->InsReq.wValue = (TokenSet[3] << 8 | TokenSet[2]);
+    data->InsReq.wIndex = (TokenSet[5] << 8 | TokenSet[4]);
+    data->InsReq.wLength = (TokenSet[7] << 8 | TokenSet[6]);
+}
+
+void USB1_ClrToken(struct usb_device_data *data){
+    u16 i = 0;
+
+    u8* p = (u8*)(&data->InsReq);
+    u16 s = sizeof(data->InsReq);
+
+    for (i = 0; i < s; i++){
+        p[i] = 0;
+    }
+}
+
+void USB1_ApplyToken(struct usb_device_data *data, u8 epnum){
+    u32 FIFO0_offset = fifo_offset(epnum);
+    u32 val[2]; // entry to FIFO has size of 8 bytes
+
+    val[0] = (data->InsReq.wValue << 16) | (data->InsReq.bRequest << 8) | (data->InsReq.bRequestType);
+    val[1] = (data->InsReq.wLength << 8) | (data->InsReq.wIndex);
+
+    iowrite32(val[0], data->base_usb1core + FIFO0_offset);
+    iowrite32(val[1], data->base_usb1core + FIFO0_offset);
+}
+
+u32 USB1_ReadFIFO(struct usb_device_data *data, u8 epnum){
+    u32 FIFO0_offset = fifo_offset(epnum);
+    return ioread32(data->base_usb1core + FIFO0_offset);
+}
+
+/* ================== Handler =================*/
+irqreturn_t USB1_handler(int irq, void *d){
+    struct usb_device_data *data = d;
+    u32 irqsts;
+    u32 h_csr0;
+
+    irqsts = ioread32(data->base_usbss + USBSS_IRQSTAT);
+
+    // Interrupt status for USB1 Tx CPPI DMA packet completion status
+    if ((irqsts&(1u << 10)) == 1u << 10){
+        Tx1_flag = 1;
+    }
+    // Interrupt status for USB1 Rx CPPI DMA packet completion status
+    if ((irqsts&(1u << 11)) == 1u << 11){
+        Rx1_flag = 1;
+        h_csr0 = ioread32(data->base_usb1ep0 + MUSB_CSR0);
+        if ((h_csr0&(MUSB_CSR0_H_RXSTALL)) == MUSB_CSR0_H_RXSTALL){
+            ret = RXSTALL;
+        }
+        else if ((h_csr0&(MUSB_CSR0_H_ERROR)) == MUSB_CSR0_H_ERROR){
+            ret = ERROR;
+        }
+        else if ((h_csr0&(MUSB_CSR0_H_NAKTIMEOUT)) == MUSB_CSR0_H_NAKTIMEOUT){
+            ret = NAK_TIMEOUT;
+        }
+        else if ((h_csr0&(MUSB_CSR0_RXPKTRDY)) == MUSB_CSR0_RXPKTRDY){
+            ret = RXPKTRDY;
+        }
+        else {
+            ret = ACK;
+        }
+    }
+
+    return IRQ_HANDLED;
+}
+
+/* ================== API for Control Transfer ===================== */
+int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data){
+    u16 host_csr0 = 0;
+
+    USB1_ClrToken(data);
+    USB1_SetToken(data, GetDesc_pkt);
+    USB1_ApplyToken(data, 0); // Load the 8 bytes of the required Device request command into the Endpoint 0 FIFO
+
+    host_csr0 = ioread32(data->base_usb1ep0 + MUSB_CSR0);
+    host_csr0 |= MUSB_CSR0_H_SETUPPKT | MUSB_CSR0_TXPKTRDY; // Set SETUPPKT and TXPKTRDY 
+    iowrite32(host_csr0, data->base_usb1ep0 + MUSB_CSR0);
+
+    // wait for Endpoint 0 interrupt (after TX transfer completion - Token + Data0/1 packet)
+    wait_val_update(data, Tx1_flag, 1, 2000, "SETUP: Token + Data0/1");
+    Tx1_flag = 0;
+
+    // wait for Endpoint 0 interrupt (after RX transfer completion - Handshake packet)
+    wait_val_update(data, Rx1_flag, 1, 2000, "SETUP: Handshake");
+    Rx1_flag = 0;
+    // Check error
+    if (ret == RXSTALL) {
+        dev_info(data->dev, "RXSTALL\n");
+        return -1;
+    }
+    else if (ret == ERROR) {
+        dev_info(data->dev, "ERROR\n"); // send additional 2 times
+        return -1;
+    }
+    else if (ret == NAK_TIMEOUT) {
+        dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
+        return -1;
+    } 
+    else if (ret == ACK){
+        dev_info(data->dev, "data packet received!\n");
+        data->InsReq.leftLength = data->InsReq.wLength;
+    }
     return 0;
 }
-static ssize_t usb1_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
-{
-    struct usb_device_data *data = filp->private_data;
 
-    //schedule_work(&data->re_request_work);
+int USB1_IN_Transaction_GetDesc(struct usb_device_data *data, u8* buffer, u16* outlen){
+    u16 host_csr0 = 0;
+    int i = 0;
+    u32 tmp[2];
 
-    return count;
+    // handle Length
+    data->InsReq.maxLengthEntryFIFO = 8;
+    if (data->InsReq.leftLength < 8){
+        *outlen = data->InsReq.leftLength;
+        data->InsReq.leftLength = 0;
+    } 
+    else {
+        data->InsReq.leftLength = data->InsReq.leftLength - data->InsReq.maxLengthEntryFIFO;
+        *outlen = data->InsReq.maxLengthEntryFIFO;
+    }
+
+    host_csr0 = ioread32(data->base_usb1ep0 + MUSB_CSR0);
+    host_csr0 |= MUSB_CSR0_H_REQPKT; // Set REQPKT 
+    iowrite32(host_csr0, data->base_usb1ep0 + MUSB_CSR0);
+
+    // wait for Endpoint 0 interrupt (IN token packet)
+    wait_val_update(data, Tx1_flag, 1, 2000, "IN: Token");
+    Tx1_flag = 0;
+
+    // wait for Endpoint 0 interrupt (Data packet)
+    wait_val_update(data, Rx1_flag, 1, 2000, "IN: Data0/1");
+    Rx1_flag = 0;
+
+    // wait for Endpoint 0 interrupt (Handshake packet)
+    wait_val_update(data, Tx1_flag, 1, 2000, "IN: Handshake");
+    Tx1_flag = 0;
+
+    // Check error
+    if (ret == RXSTALL) {
+        dev_info(data->dev, "RXSTALL\n");
+        return -1;
+    }
+    else if (ret == ERROR) {
+        dev_info(data->dev, "ERROR\n"); // the controller has tried to send the required IN token three times without getting any response
+        return -1;
+    }
+    else if (ret == NAK_TIMEOUT) {
+        dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
+        return -1;
+    } 
+    else if (ret == RXPKTRDY) {
+        dev_info(data->dev, "RXPKTRDY - read FIFO\n"); 
+        tmp[0] = USB1_ReadFIFO(data, 0);
+        tmp[1] = USB1_ReadFIFO(data, 0);
+
+        // read buffer from FIFO
+        for (i = 0; i < *outlen; i++){
+            if (i < 4){
+                buffer[i] = *((u8*)&(tmp[0]) + i);
+            }
+            else {
+                buffer[i] = *((u8*)&(tmp[1]) + i - 4);
+            }
+        }
+
+        // clear RXPKTRDY
+        host_csr0 = ioread32(data->base_usb1ep0 + MUSB_CSR0);
+        host_csr0 &=~ MUSB_CSR0_RXPKTRDY; 
+        iowrite32(host_csr0, data->base_usb1ep0 + MUSB_CSR0);
+    } 
+    return 0;
 }
-static const struct file_operations usb_device_fops = {
-    .owner = THIS_MODULE,
-    .open = usb1_open,
-    .write = usb1_write,
-};
 
-static int usb1_probe(struct platform_device *pdev)
-{
-    struct usb_device_data *data;
+int USB1_STATUS_Transaction_GetDesc(struct usb_device_data *data){
+    u16 host_csr0 = 0;
+
+    host_csr0 = ioread32(data->base_usb1ep0 + MUSB_CSR0);
+    host_csr0 |= MUSB_CSR0_H_STATUSPKT | MUSB_CSR0_TXPKTRDY; // Set STATUSPKT and TXPKTRDY 
+    iowrite32(host_csr0, data->base_usb1ep0 + MUSB_CSR0);
+
+    // Wait while the controller sends the OUT token and a zero-length DATA1 packet
+    // wait for Endpoint 0 interrupt (after TX transfer completion - Token + zero Data0/1 packet)
+    wait_val_update(data, Tx1_flag, 1, 2000, "STATUS: Token + zero Data0/1");
+    Tx1_flag = 0;
+
+    // wait for Endpoint 0 interrupt (after RX transfer completion - Handshake packet)
+    wait_val_update(data, Rx1_flag, 1, 2000, "STATUS: Handshake");
+    Rx1_flag = 0;
+
+    // Check error
+    if (ret == RXSTALL) {
+        dev_info(data->dev, "RXSTALL\n");
+        return -1;
+    }
+    else if (ret == ERROR) {
+        dev_info(data->dev, "ERROR\n"); // the controller has tried to send the required IN token three times without getting any response
+        return -1;
+    }
+    else if (ret == NAK_TIMEOUT) {
+        dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
+        return -1;
+    } 
+    else if (ret == ACK){
+        dev_info(data->dev, "status acked!\n");
+    }
+    return 0;
+}
+
+int USB1_GetDesc_Transfer(struct usb_device_data *data){
     int ret;
 
-    data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
-    if (!data)
-        return -ENOMEM;
+    ret = USB1_SETUP_Transaction_GetDesc(data);
 
-    platform_set_drvdata(pdev, data);
-
-    data->dev = &pdev->dev;
-    data->base_usbss = ioremap(BASE_USBSS, 0x1000);
-    data->base_usb1ctl = ioremap(BASE_USB1CTL, 0x200);
-    data->base_usb1phy = ioremap(BASE_USB1PHY, 0x100);
-    data->base_usb1core = ioremap(BASE_USB1CORE, 0x400);
-
-    /* ===== Clock setup (assuming this part is unchanged) */
-    data->clk = devm_clk_get(&pdev->dev, "fck-usb1");
-    if (IS_ERR(data->clk)) {
-        dev_err(&pdev->dev, "Failed to get clock: %ld\n", PTR_ERR(data->clk));
-        return PTR_ERR(data->clk);
-    }
-    ret = clk_prepare_enable(data->clk);
-    if (ret) {
-        dev_err(&pdev->dev, "Failed to enable clock: %d\n", ret);
-        return ret;
-    }
-    dev_info(&pdev->dev, "can0 clock rate: %lu Hz\n", clk_get_rate(data->clk));
-
-    // ===== Create character device
-    ret = alloc_chrdev_region(&data->dev_num, 0, 1, DRIVER_NAME);
-    if (ret < 0) {
-        dev_err(&pdev->dev, "Failed to allocate chrdev region: %d\n", ret);
-        return ret;
+    if (ret == 0){
+        do {
+            ret = USB1_IN_Transaction_GetDesc(data, data->TX, &data->TX_len);
+        } while(data->InsReq.leftLength != 0);
     }
 
-    cdev_init(&data->cdev, &usb_device_fops);
-    data->cdev.owner = THIS_MODULE;
-    ret = cdev_add(&data->cdev, data->dev_num, 1);
-    if (ret < 0) {
-        dev_err(&pdev->dev, "Failed to add cdev: %d\n", ret);
-        //unregister_chrdev_region(&data->dev_num, 1);
-        iounmap(data->base_usbss);
-        iounmap(data->base_usb1ctl);
-        iounmap(data->base_usb1phy);
-        iounmap(data->base_usb1core);
-        return ret;
+    if (ret == 0){
+        ret = USB1_STATUS_Transaction_GetDesc(data);
     }
 
-    data->class = class_create(THIS_MODULE, "can0_class");
-    if (IS_ERR(data->class)) {
-        dev_err(&pdev->dev, "Failed to create class: %ld\n", PTR_ERR(data->class));
-        cdev_del(&data->cdev);
-        //unregister_chrdev_region(&data->dev_num, 1);
-        iounmap(data->base_usbss);
-        iounmap(data->base_usb1ctl);
-        iounmap(data->base_usb1phy);
-        iounmap(data->base_usb1core);
-        return PTR_ERR(data->class);
-    }
-
-    data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, DEVICE_NAME);
-    if (IS_ERR(data->dev)) {
-        dev_err(&pdev->dev, "Failed to create device: %ld\n", PTR_ERR(data->dev));
-        class_destroy(data->class);
-        cdev_del(&data->cdev);
-        //unregister_chrdev_region(&data->dev_num, 1);
-        iounmap(data->base_usbss);
-        iounmap(data->base_usb1ctl);
-        iounmap(data->base_usb1phy);
-        iounmap(data->base_usb1core);
-        return PTR_ERR(data->dev);
-    }
-
-    dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
-
-    return 0;
+    return ret;
 }
 
-static int usb1_remove(struct platform_device *pdev)
-{
-    struct usb_device_data *data = platform_get_drvdata(pdev);
-
-    if (data->dev)
-        device_destroy(data->class, data->dev_num);
-    if (data->class)
-        class_destroy(data->class);
-    cdev_del(&data->cdev);
-
-    return 0;
-}
-
-static const struct of_device_id usb_device_of_match[] = {
-    { .compatible = "usb1-based" },
-    { /* sentinel */ }
-};
-MODULE_DEVICE_TABLE(of, usb_device_of_match);
-
-static struct platform_driver usb_device_driver = {
-    .probe = usb1_probe,
-    .remove = usb1_remove,
-    .driver = {
-        .name = DRIVER_NAME,
-        .of_match_table = usb_device_of_match,
-    },
-};
-
-module_platform_driver(usb_device_driver);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Soviet");
-MODULE_DESCRIPTION("Custom USB1 Device Driver for BeagleBone Black USB1");
+MODULE_LICENSE("GPL");   // <-- REQUIRED
+MODULE_AUTHOR("Your Name");
+MODULE_DESCRIPTION("Test module with u1.c helper");
