@@ -17,11 +17,6 @@
 
 extern irqreturn_t USB1_handler(int irq, void *d);
 
-void USB1_init(struct usb_device_data *data){
-    iowrite32(1u << 7, data->base_usb1ctl + USB1CTL_MODE); // host mode by sw
-    iowrite32(MUSB_DEVCTL_SESSION, data->base_usb1core + MUSB_DEVCTL); // When the USB controller go into session, it will assume the role of a host
-}
-
 static int usb1_open(struct inode *inode, struct file *file){
     struct usb_device_data *data = container_of(inode->i_cdev, struct usb_device_data, cdev);
     file->private_data = data;
@@ -59,6 +54,7 @@ static int usb1_probe(struct platform_device *pdev)
     data->base_usb1phy = ioremap(BASE_USB1PHY, 0x100);
     data->base_usb1core = ioremap(BASE_USB1CORE, 0x400);
     data->base_usb1ep0 = ioremap(USB1EP0_base, 0x10); // 16 bytes
+    data->base_con_usb1ctrl1 = ioremap(CONTROL_MODULE, 0x1000);
 
     /* ===== Clock setup (assuming this part is unchanged) */
     data->clk = devm_clk_get(&pdev->dev, "fck-usb1");
@@ -88,6 +84,7 @@ static int usb1_probe(struct platform_device *pdev)
 
     // ===== USB1 init
     USB1_init(data);
+    PHY1_init(data);
 
     // ===== Create character device
     ret = alloc_chrdev_region(&data->dev_num, 0, 1, DRIVER_NAME);

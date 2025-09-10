@@ -7,12 +7,39 @@
 #include <linux/cdev.h>
 #include <linux/clk.h>
 
+/* ============= CONTROL MODULE ===================== */
+#define CONTROL_MODULE 0x44e10000
+#define USB_CTRL1 0x628
+
+#define USBPHY_CM_PWRDN		(1 << 0)
+#define USBPHY_OTG_PWRDN	(1 << 1)
+#define USBPHY_CHGDET_DIS	(1 << 2)
+#define USBPHY_CHGDET_RSTRT	(1 << 3)
+#define USBPHY_SRCONDM		(1 << 4)
+#define USBPHY_SINKONDP		(1 << 5)
+#define USBPHY_CHGISINK_EN	(1 << 6)
+#define USBPHY_CHGVSRC_EN	(1 << 7)
+#define USBPHY_DMPULLUP		(1 << 8)
+#define USBPHY_DPPULLUP		(1 << 9)
+#define USBPHY_CDET_EXTCTL	(1 << 10)
+#define USBPHY_GPIO_MODE	(1 << 12)
+#define USBPHY_DPOPBUFCTL	(1 << 13)
+#define USBPHY_DMOPBUFCTL	(1 << 14)
+#define USBPHY_DPINPUT		(1 << 15)
+#define USBPHY_DMINPUT		(1 << 16)
+#define USBPHY_DPGPIO_PD	(1 << 17)
+#define USBPHY_DMGPIO_PD	(1 << 18)
+#define USBPHY_OTGVDET_EN	(1 << 19)
+#define USBPHY_OTGSESSEND_EN	(1 << 20)
+#define USBPHY_DATA_POLARITY	(1 << 23)
+
 /* ============= USBSS ===================== */
 #define BASE_USBSS 0x47400000
 #define USBSS_IRQSTAT 0x28
 
 /* USB1 CTL */
 #define BASE_USB1CTL 0x47401800
+#define USB1CTL_IRQENSET0 0x1838
 #define USB1CTL_MODE 0x18e3
 /* USB1 PHY */
 #define BASE_USB1PHY 0x47401b00
@@ -155,6 +182,7 @@ struct usb_device_data {
     void __iomem *base_usb1phy;
     void __iomem *base_usb1core;
     void __iomem *base_usb1ep0;
+    void __iomem *base_con_usb1ctrl1;
 
     struct clk *clk;
     struct usb_devRequest InsReq;
@@ -172,6 +200,10 @@ int wait_val_update(struct usb_device_data *data, u16 var, u16 val, u16 delay_ms
 void USB1_SetToken(struct usb_device_data *data, const u8* TokenSet);
 void USB1_ClrToken(struct usb_device_data *data);
 void USB1_ApplyToken(struct usb_device_data *data, u8 epnum);
+
+/* ================ Init funcs ============= */
+void USB1_init(struct usb_device_data *data);
+void PHY1_init(struct usb_device_data *data);
 
 /* ================== API for Control Transfer ===================== */
 int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data);

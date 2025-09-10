@@ -126,6 +126,32 @@ irqreturn_t USB1_handler(int irq, void *d){
     return IRQ_HANDLED;
 }
 
+/* ================ Init funcs ============= */
+void USB1_init(struct usb_device_data *data){
+    u32 usbcore_pwr = 0;
+
+    iowrite32(1u << 7, data->base_usb1ctl + USB1CTL_MODE); // host mode by sw
+
+    usbcore_pwr = MUSB_POWER_ISOUPDATE;
+    usbcore_pwr &=~(MUSB_POWER_HSENAB); /* LOW/FULL speed */
+    iowrite32(usbcore_pwr, data->base_usb1core + MUSB_POWER);
+
+    iowrite16(0xFFFF, data->base_usb1core + MUSB_INTRTXE); // enable TX ep0 and 15 eps
+    iowrite16(0xFFFE, data->base_usb1core + MUSB_INTRRXE); // enable RX 15 eps
+    iowrite8(0xF7, data->base_usb1core + MUSB_INTRUSBE); // 
+
+    iowrite32(MUSB_DEVCTL_SESSION, data->base_usb1core + MUSB_DEVCTL); // When the USB controller go into session, it will assume the role of a host
+}
+
+void PHY1_init(struct usb_device_data *data){
+    u32 usb1_ctrl = 0;
+
+    usb1_ctrl &= ~(USBPHY_CM_PWRDN | USBPHY_OTG_PWRDN | USBPHY_OTGVDET_EN); // power: normal mode, no Vbus detect as host mode
+    usb1_ctrl |= USBPHY_OTGSESSEND_EN;
+
+    iowrite32(usb1_ctrl, data->base_con_usb1ctrl1 + USB_CTRL1);
+}
+
 /* ================== API for Control Transfer ===================== */
 int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data){
     u16 host_csr0 = 0;
