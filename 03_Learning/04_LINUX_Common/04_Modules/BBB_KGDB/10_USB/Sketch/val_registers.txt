@@ -7,6 +7,7 @@ debian@arm:~$ sudo m 0x474000010
 /dev/mem opened.
 Memory mapped at address 0xb6f23000.
 Value at address 0xFFFFFFFF (0xb6f23fff): 0xF2401888
+=> force-standby mode
 debian@arm:~$ sudo m 0x474000024
 /dev/mem opened.
 Memory mapped at address 0xb6f96000.
