@@ -92,5 +92,74 @@ void musb_start(struct musb *musb)
 }
 
 ==================
+	/**
+	 * According to Mentor Graphics' documentation, flowchart on page 98,
+	 * IRQ should be handled as follows:
+	 *
+	 * . Resume IRQ
+	 * . Session Request IRQ
+	 * . VBUS Error IRQ
+	 * . Suspend IRQ
+	 * . Connect IRQ
+	 * . Disconnect IRQ
+	 * . Reset/Babble IRQ
+	 * . SOF IRQ (we're not using this one)
+	 * . Endpoint 0 IRQ
+	 * . TX Endpoints
+	 * . RX Endpoints
+	 *
+	 * We will be following that flowchart in order to avoid any problems
+	 * that might arise with internal Finite State Machine.
+	 */
+
+===
+
+static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
+				u8 devctl)
+{
+	irqreturn_t handled = IRQ_NONE;
+
+	musb_dbg(musb, "<== DevCtl=%02x, int_usb=0x%x", devctl, int_usb);
+
+	/* in host mode, the peripheral may issue remote wakeup.
+	 * in peripheral mode, the host may resume the link.
+	 * spurious RESUME irqs happen too, paired with SUSPEND.
+	 */
+	if (int_usb & MUSB_INTR_RESUME) {
+		musb_handle_intr_resume(musb, devctl);
+		handled = IRQ_HANDLED;
+	}
+
+	/* see manual for the order of the tests */
+	if (int_usb & MUSB_INTR_SESSREQ) {
+		if (musb_handle_intr_sessreq(musb, devctl))
+			return IRQ_HANDLED;
+		handled = IRQ_HANDLED;
+	}
+
+	if (int_usb & MUSB_INTR_VBUSERROR) {
+		musb_handle_intr_vbuserr(musb, devctl);
+		handled = IRQ_HANDLED;
+	}
+
+	if (int_usb & MUSB_INTR_SUSPEND) {
+		musb_handle_intr_suspend(musb, devctl);
+		handled = IRQ_HANDLED;
+	}
+
+	if (int_usb & MUSB_INTR_CONNECT) {
+		musb_handle_intr_connect(musb, devctl, int_usb);
+		handled = IRQ_HANDLED;
+	}
+
+	if (int_usb & MUSB_INTR_DISCONNECT) {
+		musb_handle_intr_disconnect(musb, devctl);
+		handled = IRQ_HANDLED;
+	}
+
+	if (int_usb & MUSB_INTR_RESET) {
+		musb_handle_intr_reset(musb);
+		handled = IRQ_HANDLED;
+	}
 config->maximum_speed = usb_get_maximum_speed(&parent->dev);
 => can use this to set speed
