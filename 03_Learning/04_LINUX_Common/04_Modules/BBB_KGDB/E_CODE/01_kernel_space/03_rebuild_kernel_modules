@@ -1,0 +1,17 @@
+/* Make sure these kernel module is mark 'm' */
+
+On PC:
+-> export CC_x86_for_arm=/home/vinh/build_BBB_custom/gcc-11.3.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
+/* Rebuild module kernel obj */
+-> sudo make ARCH=arm CROSS_COMPILE=${CC_x86_for_arm} -C /home/vinh/build_BBB_custom/linux-stable-rcn-ee M=drivers/usb/musb modules
+
+/* cpy */
+-> scp drivers/usb/musb/musb_hdrc.ko debian@192.168.137.2:/home/debian (PC side)
+-> sudo cp musb_hdrc.ko /lib/modules/5.15.177/kernel/drivers/usb/musb/ (BBB side)
+
+On BBB:
+Inside: /usr/src/linux-headers-5.15.177/drivers/usb/musb/
+=> copy *.ko
+
+/* Update initramfs */
+-> sudo update-initramfs -u -k $(uname -r)
