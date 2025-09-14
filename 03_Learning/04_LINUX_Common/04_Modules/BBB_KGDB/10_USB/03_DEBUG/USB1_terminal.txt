@@ -1,0 +1,53 @@
+[ 2318.282185] _V: phy pwr = 0x3c106007
+[ 2318.282185] , with reg = 0x8
+
+[ 2324.706368] _V: 1. phy init
+[ 2324.716252] _V: phy pwr = 0x3c106004
+[ 2324.716252] , with reg = 0x8
+[ 2328.412431] _V: 2. musb_core_init
+[ 2328.422300] _V: musb-hdrc: ConfigData=0xde (UTMI-8, dyn FIFOs, bu
+lk combine, bulk split, HB-ISO Rx, HB-ISO Tx, SoftConn)
+[ 2340.629999] epnum = 0, c_size = 0x3, c_off = 0x0
+[ 2340.634689] epnum = 13, c_size = 0x9, c_off = 0x500
+[ 2340.639615] epnum = 14, c_size = 0x7, c_off = 0x700
+[ 2340.644537] epnum = 15, c_size = 0x7, c_off = 0x780
+[ 2477.436653] _V: 3. musb->isr = bf00a908, musb->nIrq = ffffffed
+[ 2477.442966] musb-hdrc musb-hdrc.1: MUSB HDRC host driver
+[ 2477.448415] musb-hdrc musb-hdrc.1: new USB bus registered, assign
+ed bus number 1
+[ 2477.455911] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.480410] _V: length = 18
+[ 2477.483528] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.490452] _V: length = 9
+[ 2477.493380] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.499276] _V: length = 25
+[ 2477.502236] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.508003] _V: length = 4
+[ 2477.510823] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.516706] _V: length = 44
+[ 2477.519630] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.525362] _V: length = 48
+[ 2477.528214] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x6
+[ 2477.534066] _V: length = 24
+[ 2477.536999] usb usb1: New USB device found, idVendor=1d6b, idProd
+uct=0002, bcdDevice= 5.15
+[ 2477.545371] usb usb1: New USB device strings: Mfr=3, Product=2, S
+erialNumber=1
+[ 2477.552655] usb usb1: Product: MUSB HDRC host driver
+[ 2477.557667] usb usb1: Manufacturer: Linux 5.15.177 musb-hcd
+[ 2477.563289] usb usb1: SerialNumber: musb-hdrc.1
+[ 2477.569781] _V-m: pipe = 0x80000100, rqt = 0x0, t = 0x9
+[ 2477.576739] _V: length = 0
+[ 2477.579954] hub 1-0:1.0: USB hub found
+[ 2477.583844] _V-m: pipe = 0x80000180, rqt = 0xa0, t = 0x6
+[ 2477.595886] _V: length = 15
+[ 2477.598919] hub 1-0:1.0: 1 port detected
+[ 2477.602965] _V-m: pipe = 0x80000180, rqt = 0x80, t = 0x0
+[ 2477.609856] _V: length = 2
+[ 2477.612649] _V-m: pipe = 0x80000180, rqt = 0xa0, t = 0x0
+[ 2477.618920] _V: length = 4
+[ 2477.622002] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x3
+[ 2477.628367] _V: length = 0
+[ 2477.645052] _V-m: pipe = 0x80000180, rqt = 0xa3, t = 0x0
+[ 2477.663493] _V: length = 4
+
