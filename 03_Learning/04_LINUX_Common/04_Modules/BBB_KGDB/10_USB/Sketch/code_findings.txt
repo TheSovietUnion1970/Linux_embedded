@@ -163,3 +163,101 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 	}
 config->maximum_speed = usb_get_maximum_speed(&parent->dev);
 => can use this to set speed
+
+
+===========
+
+======================= Func findings
+static inline void
+set_bit(unsigned long nr, volatile void * addr)
+{
+	unsigned long temp;
+	int *m = ((int *) addr) + (nr >> 5);
+
+	__asm__ __volatile__(
+	"1:	ldl_l %0,%3\n"
+	"	bis %0,%2,%0\n"
+	"	stl_c %0,%1\n"
+	"	beq %0,2f\n"
+	".subsection 2\n"
+	"2:	br 1b\n"
+	".previous"
+	:"=&r" (temp), "=m" (*m)
+	:"Ir" (1UL << (nr & 31)), "m" (*m));
+}
+
+=====
+
+static const struct hc_driver musb_hc_driver = {
+	.description		= "musb-hcd",
+	.product_desc		= "MUSB HDRC host driver",
+	.hcd_priv_size		= sizeof(struct musb *),
+	.flags			= HCD_USB2 | HCD_DMA | HCD_MEMORY,
+
+	/* not using irq handler or reset hooks from usbcore, since
+	 * those must be shared with peripheral code for OTG configs
+	 */
+
+	.start			= musb_h_start,
+	.stop			= musb_h_stop,
+
+	.get_frame_number	= musb_h_get_frame_number,
+
+	.urb_enqueue		= musb_urb_enqueue,
+	.urb_dequeue		= musb_urb_dequeue,
+	.endpoint_disable	= musb_h_disable,
+
+#ifndef CONFIG_MUSB_PIO_ONLY
+	.map_urb_for_dma	= musb_map_urb_for_dma,
+	.unmap_urb_for_dma	= musb_unmap_urb_for_dma,
+#endif
+
+	.hub_status_data	= musb_hub_status_data,
+	.hub_control		= musb_hub_control,
+	.bus_suspend		= musb_bus_suspend,
+	.bus_resume		= musb_bus_resume,
+	/* .start_port_reset	= NULL, */
+	/* .hub_irq_enable	= NULL, */
+};
+
+static const struct hc_driver musb_hc_driver = {
+	.description		= "musb-hcd",
+	.product_desc		= "MUSB HDRC host driver",
+	.hcd_priv_size		= sizeof(struct musb *),
+	.flags			= HCD_USB2 | HCD_DMA | HCD_MEMORY,
+
+	/* not using irq handler or reset hooks from usbcore, since
+	 * those must be shared with peripheral code for OTG configs
+	 */
+
+	.start			= musb_h_start,
+	.stop			= musb_h_stop,
+
+	.get_frame_number	= musb_h_get_frame_number,
+
+	.urb_enqueue		= musb_urb_enqueue,
+	.urb_dequeue		= musb_urb_dequeue,
+	.endpoint_disable	= musb_h_disable,
+
+#ifndef CONFIG_MUSB_PIO_ONLY
+	.map_urb_for_dma	= musb_map_urb_for_dma,
+	.unmap_urb_for_dma	= musb_unmap_urb_for_dma,
+#endif
+
+	.hub_status_data	= musb_hub_status_data,
+	.hub_control		= musb_hub_control,
+	.bus_suspend		= musb_bus_suspend,
+	.bus_resume		= musb_bus_resume,
+	/* .start_port_reset	= NULL, */
+	/* .hub_irq_enable	= NULL, */
+}; ==> check flags and product_desc
+
+============== backlog:
+	if (musb->ops->fifo_mode)
+		fifo_mode = musb->ops->fifo_mode;
+	else
+		fifo_mode = 4;  ==> check fifo_mode
+
+((musb->int_tx&0x1) == 1) printk("_V: IRQ: irqn = 0x%x, epintr_status = 0x%x\n", irq, wrp->coreintr_status);
+
+also add here: retval |= musb_h_ep0_irq(musb);
