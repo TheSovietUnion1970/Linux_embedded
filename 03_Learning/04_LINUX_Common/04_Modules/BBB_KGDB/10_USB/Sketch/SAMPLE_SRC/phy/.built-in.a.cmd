@@ -1,0 +1,1 @@
+cmd_drivers/usb/phy/built-in.a := echo >/dev/null; rm -f drivers/usb/phy/built-in.a; /home/vinh/build_BBB_custom/gcc-11.3.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-ar cDPrST drivers/usb/phy/built-in.a drivers/usb/phy/phy.o drivers/usb/phy/of.o drivers/usb/phy/phy-generic.o drivers/usb/phy/phy-gpio-vbus-usb.o drivers/usb/phy/phy-ulpi.o drivers/usb/phy/phy-ulpi-viewport.o

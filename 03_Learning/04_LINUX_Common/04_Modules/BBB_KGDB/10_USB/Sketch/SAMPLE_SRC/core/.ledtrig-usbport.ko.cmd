@@ -1,0 +1,1 @@
+cmd_drivers/usb/core/ledtrig-usbport.ko := /home/vinh/build_BBB_custom/gcc-11.3.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-ld -r -EL -z noexecstack --build-id=sha1  -T scripts/module.lds -o drivers/usb/core/ledtrig-usbport.ko drivers/usb/core/ledtrig-usbport.o drivers/usb/core/ledtrig-usbport.mod.o;  true
