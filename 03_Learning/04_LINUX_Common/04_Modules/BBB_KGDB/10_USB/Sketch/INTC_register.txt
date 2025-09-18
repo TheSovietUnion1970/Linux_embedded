@@ -1,0 +1,5 @@
+/* ============= INTC ============*/
+#define ACTIVEIRQ_MASK 0x7F
+#define INTC_SIR 0x0040
+#define INTC_BASE 48200000
+
