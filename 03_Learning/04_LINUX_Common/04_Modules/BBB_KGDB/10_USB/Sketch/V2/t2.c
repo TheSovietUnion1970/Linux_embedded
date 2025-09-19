@@ -14,11 +14,7 @@
 #define DRIVER_NAME "usb1_driver"
 #define DEVICE_NAME "usb1"
 
-extern irqreturn_t USB1_handler(int irq, void *d);
-extern irqreturn_t USBS_handler(int irq, void *d);
-
-static void re_request_irq_work(struct work_struct *work)
-{
+static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
@@ -159,26 +155,16 @@ static int usb1_probe(struct platform_device *pdev)
 
     dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
 
-    // enable all interrupts
-    iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQENSET0);
-    iowrite32(0xFFFFFFFF, data->base_usb1ctl + USB1CTL_IRQENSET1);
-
-    iowrite16(0xFFFF, data->base_usb1core + MUSB_INTRTXE); // enable TX ep0 and 15 eps
-    iowrite16(0xFFFE, data->base_usb1core + MUSB_INTRRXE); // enable RX 15 eps
-    iowrite8(0xF7, data->base_usb1core + MUSB_INTRUSBE); // 
-
     // ===== USB1 init
-    USB1_reset(data);
-    PHY1_init(data);
-    ret = USB1_init(data);
-    // if (ret < 0) {
-    //     cancel_work_sync(&data->re_request_work);
-    //     return -1;
-    // }
+    // USB1_reset(data);
+    // PHY1_init(data);
+    // USB1_init(data);
+    musb_init_controller_V(data);
+
     INIT_WORK(&data->re_request_work, re_request_irq_work);
     atomic_set(&data->should_stop, 0); // Initialize to 0 (false)
 
-    schedule_work(&data->re_request_work);
+    //schedule_work(&data->re_request_work);
 
     return 0;
 }

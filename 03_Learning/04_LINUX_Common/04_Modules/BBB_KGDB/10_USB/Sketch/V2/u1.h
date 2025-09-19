@@ -50,14 +50,13 @@
 /* USB1 CTL */
 #define BASE_USB1CTL 0x47401800
 
+#define USB1CTL_REV 0x00
 #define USB1CTL_CTRL 0x14
-#define USB1CTL_IRQSTAT0 0x30
-#define USB1CTL_IRQSTAT1 0x34
-#define USB1CTL_IRQENSET0 0x38
-#define USB1CTL_IRQENSET1 0x3c
-#define USB1CTL_IRQENCLR0 0x40
-#define USB1CTL_IRQENCLR1 0x44
+#define USB1CTL_EPINT_CLR 0x40
+#define USB1CTL_COREINT_CLR 0x44
+#define USB1CTL_UTMI 0xe0
 #define USB1CTL_MODE 0xe8
+
 /* USB1 PHY */
 #define BASE_USB1PHY 0x47401b00
 
@@ -240,6 +239,9 @@ struct usb_device_data {
     u8 count_many;
 };
 
+/* ================== Handler ====================*/
+irqreturn_t USB1_handler(int irq, void *d);
+
 /* ================== Utils ===================== */
 void setIndex(struct usb_device_data *data, u8 epnum);
 u32 fifo_offset(u8 epnum);
@@ -253,6 +255,7 @@ void USB1_ApplyToken(struct usb_device_data *data, u8 epnum);
 void USB1_reset(struct usb_device_data *data);
 int USB1_init(struct usb_device_data *data);
 void PHY1_init(struct usb_device_data *data);
+void musb_init_controller_V(struct usb_device_data *data);
 
 /* ================== API for Control Transfer ===================== */
 int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data);

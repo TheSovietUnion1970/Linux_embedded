@@ -14,14 +14,6 @@
 #include "u1.h"
 
 /* ================ Const data packet =======================*/
-// const u8 GetStat_pkt[8] = {
-//     0x80,       // bmRequestType: Device-to-host, Standard, Device
-//     0x00,       // bRequest: USB_REQ_GET_STATUS
-//     0x00, 0x01, // wValue: Descriptor Index = 0 (LOW), Type = DEVICE (1) (HIGH)
-//     0x00, 0x00, // wIndex: 0
-//     0x12, 0x00  // wLength: 18 bytes (Device descriptor length)
-// };
-
 const u8 GetDesc_pkt[8] = {
     0x80,       // bmRequestType: Device-to-host, Standard, Device
     0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
@@ -151,71 +143,61 @@ u32 USB1_ReadFIFO(struct usb_device_data *data, u8 epnum){
     return ioread32(data->base_usb1core + FIFO0_offset);
 }
 
-void USB1_IRQ_clr(struct usb_device_data *data, u32 reg_offset, u32 val){
-    u32 reg = ioread32(data->base_usb1ctl + reg_offset);
+void USB1_IRQ_clr8(struct usb_device_data *data, u8 reg_offset, u16 val){
+    u8 reg = ioread8(data->base_usb1core + reg_offset);
     reg |= val;
-    iowrite32(reg, data->base_usb1ctl + reg_offset);
+    iowrite8(reg, data->base_usb1core + reg_offset);
+}
+
+void USB1_IRQ_clr16(struct usb_device_data *data, u16 reg_offset, u16 val){
+    u16 reg = ioread16(data->base_usb1core + reg_offset);
+    reg |= val;
+    iowrite16(reg, data->base_usb1core + reg_offset);
 }
 /* ================== Handler =================*/
 irqreturn_t USB1_handler(int irq, void *d){
     struct usb_device_data *data = d;
     u16 irqtx, irqrx, irqusb;
-    u32 irqsts;
-    u32 irqsts0, irqsts1;
-
-    // if ((data->base_usb1core == NULL) || (data->base_usb1ctl == NULL) || (data->base_usbss == NULL)){
-    //     printk("Not yet init\n");
-    //     return IRQ_HANDLED;
-    // }
 
     irqtx = ioread16(data->base_usb1core + MUSB_INTRTX);
     irqrx = ioread16(data->base_usb1core + MUSB_INTRRX);
-    irqusb = ioread16(data->base_usb1core + MUSB_INTRUSB)&0x00FF;
+    irqusb = ioread8(data->base_usb1core + MUSB_INTRUSB);
 
-    irqsts0 = ioread32(data->base_usb1ctl + USB1CTL_IRQSTAT0);
-    irqsts1 = ioread32(data->base_usb1ctl + USB1CTL_IRQSTAT1);
-    printk("irqtx = 0x%x, irqrx = 0x%x, irqusb = 0x%x, irqsts0 = 0x%x, s1 = 0x%x", irqtx, irqrx, irqusb, irqsts0, irqsts1);
+    printk("TX = 0x%x, RX = 0x%x, USB = 0x%x", irqtx, irqrx, irqusb);
 
-    irqsts = ioread32(data->base_usbss + USBSS_IRQSTAT);
-    if ((irqsts1)&(1u << 7)){
-        printk("< VBUS valid threshold>\n");
-        // iowrite32(0x8, data->base_usb1ctl + USB1CTL_IRQENCLR1);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR1, 1u << 7);
+    if (irqtx){
+        printk("ISR -> TX\n");
+        USB1_IRQ_clr16(data, MUSB_INTRTX, irqtx);
     }
-    // sts0
-    if ((irqsts0&(1u << 0)) == (1u << 0)){
-        Tx1_flag = 1;
-        printk("TX endpoint 0\n");
-        //iowrite32(1u << 0, data->base_usb1ctl + USB1CTL_IRQENCLR0);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR0, 1u << 0);
+    if (irqrx){
+        printk("ISR -> RX\n");
+        USB1_IRQ_clr16(data, MUSB_INTRRX, irqrx);
     }
-
-    // sts1
-    if ((irqsts1&(1u << 3)) == (1u << 3)){
-        printk("SOF started\n");
-        Tx1_flag = 1;
-        //iowrite32(1u << 3, data->base_usb1ctl + USB1CTL_IRQENCLR1);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR1, 1u << 3);
-    }
-    if ((irqsts1&(1u << 2)) == (1u << 2)){
-        printk("Babble detected\n");
-        //iowrite32(1u << 2, data->base_usb1ctl + USB1CTL_IRQENCLR1);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR1, 1u << 2);
-    }
-    if ((irqsts1&(1u << 4)) == (1u << 4)){
-        printk("Device connected\n");
-        //iowrite32(1u << 4, data->base_usb1ctl + USB1CTL_IRQENCLR1);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR1, 1u << 4);
-    }
-    if ((irqsts1&(1u << 5)) == (1u << 5)){
-        printk("Device disconnected\n");
-        //iowrite32(1u << 5, data->base_usb1ctl + USB1CTL_IRQENCLR1);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR1, 1u << 5);
-    }
-    if ((irqsts1&(1u << 8)) == (1u << 8)){
-        printk("DRVVBUS level change\n");
-        //iowrite32(1u << 8, data->base_usb1ctl + USB1CTL_IRQENCLR1);
-        USB1_IRQ_clr(data, USB1CTL_IRQENCLR1, 1u << 8);
+    if (irqusb){
+        if ((irqusb)&(1u << 7)){
+            printk("< VBUS valid threshold>\n");
+            USB1_IRQ_clr8(data, MUSB_INTRUSB, 1u << 7);
+        } 
+        if ((irqusb)&(1u << 3)){
+            printk("SOF started\n");
+            USB1_IRQ_clr8(data, MUSB_INTRUSB, 1u << 3);
+        }  
+        if ((irqusb)&(1u << 2)){
+            printk("Babble detected\n");
+            USB1_IRQ_clr8(data, MUSB_INTRUSB, 1u << 2);
+        } 
+        if ((irqusb)&(1u << 4)){
+            printk("Device connected\n");
+            USB1_IRQ_clr8(data, MUSB_INTRUSB, 1u << 4);
+        }   
+        if ((irqusb)&(1u << 5)){
+            printk("Device disconnected\n");
+            USB1_IRQ_clr8(data, MUSB_INTRUSB, 1u << 5);
+        }     
+        if ((irqusb)&(1u << 8)){
+            printk("DRVVBUS level change\n");
+            USB1_IRQ_clr8(data, MUSB_INTRUSB, 1u << 8);
+        }     
     }
 
     data->count_many++;
@@ -223,22 +205,8 @@ irqreturn_t USB1_handler(int irq, void *d){
         printk("Too many interrupts\n");
         data->count_many = 0;
 
-        iowrite8(0x0, data->base_usb1core + MUSB_DEVCTL);
-        iowrite32(0x0, data->base_usb1ctl + USB1CTL_IRQENSET0);
-        iowrite32(0x0, data->base_usb1ctl + USB1CTL_IRQENSET1);
-
-        iowrite16(0x0, data->base_usb1core + MUSB_INTRTXE); // enable TX ep0 and 15 eps
-        iowrite16(0x0, data->base_usb1core + MUSB_INTRRXE); // enable RX 15 eps
-        iowrite8(0x0, data->base_usb1core + MUSB_INTRUSBE); // 
-
         USB1_reset(data);
     }
-
-    return IRQ_HANDLED;
-}
-
-irqreturn_t USBS_handler(int irq, void *d){
-
 
     return IRQ_HANDLED;
 }
@@ -249,11 +217,7 @@ void USB1_reset(struct usb_device_data *data){
 
     iowrite32((1u << 0) | (1u << 5), data->base_usb1ctl + USB1CTL_CTRL); // soft reset + isolation
     wait_register_update(data, data->base_usb1ctl, USB1CTL_CTRL, 0, 0, 2000, "RESET"); // wait reset
-
-    // clear soft reset isolation
-    usb1ctl = ioread32(data->base_usb1ctl + USB1CTL_CTRL);
-    usb1ctl &=~ (1u << 5);
-    iowrite32(usb1ctl, data->base_usb1ctl + USB1CTL_CTRL);
+    wait_register_update(data, data->base_usb1ctl, USB1CTL_CTRL, 5, 0, 2000, "RESET ISOLATION"); // wait reset
 
 }
 
@@ -285,8 +249,8 @@ int USB1_init(struct usb_device_data *data){
     if (ret < 0) return -1;
 
     // enable all interrupts after session
-    iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQENSET0);
-    iowrite32(0xFFFFFFFF, data->base_usb1ctl + USB1CTL_IRQENSET1);
+    // iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQENSET0);
+    // iowrite32(0xFFFFFFFF, data->base_usb1ctl + USB1CTL_IRQENSET1);
 
     iowrite16(0xFFFF, data->base_usb1core + MUSB_INTRTXE); // enable TX ep0 and 15 eps
     iowrite16(0xFFFE, data->base_usb1core + MUSB_INTRRXE); // enable RX 15 eps
@@ -311,12 +275,15 @@ int USB1_init(struct usb_device_data *data){
 }
 
 void PHY1_init(struct usb_device_data *data){
-    u32 usb1_ctrl = 0, usb_wkup = 0;
+    u32 usb1_ctlreg = 0;
+    u32 usb1_ctrl = 0;
 
-    // usb wkup
-    usb_wkup = ioread32(data->base_con_usb1ctrl1 + USB_WKUP);
-    usb_wkup |= (1u << 0) | (1u << 8);
-    iowrite32(usb_wkup, data->base_con_usb1ctrl1 + USB_WKUP);
+    // return 0 if not clocked
+    usb1_ctrl = ioread32(data->base_usb1ctl + USB1CTL_REV);
+    if (!usb1_ctrl){
+        printk("REV = 0 -> error\n");
+        return;
+    }
 
     // usb1 ctrl
     usb1_ctrl = ioread32(data->base_con_usb1ctrl1 + USB_CTRL1);
@@ -328,6 +295,113 @@ void PHY1_init(struct usb_device_data *data){
     msleep(1); // Give the PHY ~1ms to complete the power up operation.
 }
 
+// ====== helper func =======
+/* dsps_musb_disable - disable HDRC and flush interrupts */
+void dsps_musb_disable_V(struct usb_device_data *data){
+    iowrite32(0x1ff, data->base_usb1ctl + USB1CTL_COREINT_CLR);
+    iowrite32(0xfffeffff, data->base_usb1ctl + USB1CTL_EPINT_CLR);
+
+    // consider ...
+    // del_timer_sync(&musb->dev_timer);
+}
+void musb_disable_interrupts_V(struct usb_device_data *data){
+    /* disable interrupts */
+    iowrite8(0, data->base_usb1core + MUSB_INTRUSBE);
+    iowrite16(0, data->base_usb1core + MUSB_INTRTXE);
+    iowrite16(0, data->base_usb1core + MUSB_INTRRXE);
+
+    /*  flush pending interrupts */
+    iowrite8(0xff, data->base_usb1core + MUSB_INTRUSB);
+    iowrite16(0xffff, data->base_usb1core + MUSB_INTRTX);
+    iowrite16(0xffff, data->base_usb1core + MUSB_INTRRX);
+}
+void fifo0_setup_V(struct usb_device_data *data){
+    iowrite8(0, data->base_usb1core + MUSB_INDEX); // @1C0E
+
+    // TX
+    iowrite8(0x03, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for TX FIFO0
+    iowrite16(0x00, data->base_usb1core + MUSB_TXFIFOADD); 
+
+    // RX
+    iowrite8(0x03, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
+    iowrite16(0x00, data->base_usb1core + MUSB_RXFIFOADD); 
+}
+void dsps_musb_set_mode_V(struct usb_device_data *data){
+    u32 usb1_ctrl = 0;
+
+    usb1_ctrl = ioread32(data->base_usb1ctl + USB1CTL_MODE);
+    usb1_ctrl &=~ (1u << 8); // A type
+    usb1_ctrl |= (1u << 7); // iddig_mux
+    iowrite32(usb1_ctrl, data->base_usb1ctl + USB1CTL_MODE);
+
+    iowrite32(0x2, data->base_usb1ctl + USB1CTL_UTMI);
+}
+
+// 1st
+void dsps_musb_init_V(struct usb_device_data *data){
+    u32 usb1_ctrl = 0;
+    u8 musb1_babble = 0;
+
+    // return 0 if not clocked
+    usb1_ctrl = ioread32(data->base_usb1ctl + USB1CTL_REV);
+    if (!usb1_ctrl){
+        printk("REV = 0 -> error\n");
+        return;
+    }
+
+    iowrite32(1 << 0, data->base_usb1ctl + USB1CTL_CTRL); // soft reset
+
+    /* reset the otgdisable bit, needed for host mode to work */
+	usb1_ctrl = ioread32(data->base_usb1ctl + USB1CTL_UTMI);
+	usb1_ctrl &= ~(1 << 21); // wrp->otg_disable
+	iowrite32(usb1_ctrl, data->base_usb1ctl + USB1CTL_UTMI);
+
+    // MUSB_BABBLE_CTL
+    musb1_babble = ioread8(data->base_usb1core + MUSB_BABBLE_CTL);
+    if (musb1_babble&MUSB_BABBLE_RCV_DISABLE){
+        musb1_babble |= MUSB_BABBLE_SW_SESSION_CTRL;
+        iowrite8(musb1_babble, data->base_usb1core + MUSB_BABBLE_CTL);
+    }
+
+    msleep(2000); // dsps_mod_timer(glue, -1);
+}
+// 2nd
+void am335x_phy_power_V(struct usb_device_data *data){
+    u32 usb1_ctrl = 0;
+
+    // usb1 ctrl
+    usb1_ctrl = ioread32(data->base_con_usb1ctrl1 + USB_CTRL1);
+    usb1_ctrl &= ~(USBPHY_CM_PWRDN | USBPHY_OTG_PWRDN | USBPHY_OTGVDET_EN); // power: normal mode, no Vbus detect as host mode
+    usb1_ctrl |= USBPHY_OTGSESSEND_EN;
+
+    iowrite32(usb1_ctrl, data->base_con_usb1ctrl1 + USB_CTRL1);
+
+    msleep(1); // Give the PHY ~1ms to complete the power up operation.
+}
+
+void musb_init_controller_V(struct usb_device_data *data){
+    /* status = musb_platform_init(musb); */
+    dsps_musb_init_V(data);
+
+    /* status = usb_phy_init(musb->xceiv); */
+    am335x_phy_power_V(data);
+
+    /* be sure interrupts are disabled before connecting ISR */
+    dsps_musb_disable_V(data);
+    musb_disable_interrupts_V(data);
+    iowrite8(0, data->base_usb1core + MUSB_DEVCTL);
+
+    /* MUSB_POWER_SOFTCONN might be already set, JZ4740 does this. */
+    iowrite8(0, data->base_usb1core + MUSB_POWER);
+
+    /* status = ep_config_from_table(musb); */
+    fifo0_setup_V(data);
+
+    /* status = musb_host_setup(musb, plat->power); */
+    // .. consider to find code that enables int
+    /* status = musb_platform_set_mode(musb, MUSB_HOST); */
+    dsps_musb_set_mode_V(data);
+}
 /* ================== API for Control Transfer ===================== */
 int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data){
     u16 host_csr0 = 0;
