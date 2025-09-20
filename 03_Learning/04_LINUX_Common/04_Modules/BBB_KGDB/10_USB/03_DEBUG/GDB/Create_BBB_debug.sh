@@ -23,7 +23,7 @@ target remote /dev/pts/${X}
 add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/usb/musb/musb_dsps.ko ${a1}
 add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/usb/musb/musb_hdrc.ko ${a2}
 
-add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/usb/phy/phy-am335x_control.ko ${b1}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/usb/phy/phy-am335x-control.ko ${b1}
 add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/usb/phy/phy-am335x.ko ${b2}
 
 add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/usb/core/usbcore.ko ${c1}
