@@ -1,0 +1,385 @@
+#0  musb_start (musb=musb@entry=0xc55f4040)
+    at drivers/usb/musb/musb_core.c:1192
+#1  0xbf0de5a4 in musb_hub_control (hcd=hcd@entry=0xcabbb000, 
+    typeReq=typeReq@entry=8963, wValue=wValue@entry=8, 
+    wIndex=wIndex@entry=1, buf=buf@entry=0xcb5041c0 "", 
+    wLength=wLength@entry=0) at drivers/usb/musb/musb_virthub.c:439
+#2  0xbf0221f0 in rh_call_control (urb=0xcf0cdc80, hcd=0xcabbb000)
+    at drivers/usb/core/hcd.c:683
+#3  rh_urb_enqueue (urb=0xcf0cdc80, hcd=0xcabbb000)
+    at drivers/usb/core/hcd.c:848
+#4  usb_hcd_submit_urb (urb=urb@entry=0xcf0cdc80, 
+    mem_flags=mem_flags@entry=3072) at drivers/usb/core/hcd.c:1556
+#5  0xbf024504 in usb_submit_urb (urb=urb@entry=0xcf0cdc80, 
+    mem_flags=mem_flags@entry=3072) at drivers/usb/core/urb.c:594
+#6  0xbf024998 in usb_start_wait_urb (urb=urb@entry=0xcf0cdc80, 
+    timeout=timeout@entry=1000, actual_length=actual_length@entry=0xc9d17690)
+    at drivers/usb/core/message.c:58
+#7  0xbf024be4 in usb_internal_control_msg (timeout=1000, len=0, data=0x0, 
+    cmd=0xcb504e80, pipe=2147483904, usb_dev=0xcb46b000)
+    at drivers/usb/core/message.c:104
+#8  usb_control_msg (dev=0xcb46b000, pipe=2147483904, 
+    request=request@entry=3 '\003', requesttype=requesttype@entry=35 '#', 
+    value=8, index=1, data=0x0, size=0, timeout=timeout@entry=1000)
+    at drivers/usb/core/message.c:156
+#9  0xbf0180a0 in usb_clear_port_feature (feature=8, port1=1, 
+    hdev=<optimized out>) at drivers/usb/core/hub.c:439
+#10 hub_power_on (hub=hub@entry=0xcb4a3c00, do_delay=do_delay@entry=false)
+    at drivers/usb/core/hub.c:936
+#11 0xbf018b90 in hub_activate (hub=hub@entry=0xcb4a3c00, 
+    type=type@entry=HUB_INIT) at drivers/usb/core/hub.c:1093
+#12 0xbf01fae0 in hub_configure (endpoint=<optimized out>, hub=0xcb4a3c00)
+    at drivers/usb/core/hub.c:1700
+#13 hub_probe (intf=0xcb4a3800, id=<optimized out>)
+    at drivers/usb/core/hub.c:1912
+#14 0xbf02971c in usb_probe_interface (dev=0xcb4a3820)
+    at drivers/usb/core/driver.c:396
+#15 0xc0b0932c in call_driver_probe (drv=0xbf0420b4, dev=0xcb4a3820)
+    at drivers/base/dd.c:516
+#16 really_probe (dev=dev@entry=0xcb4a3820, drv=drv@entry=0xbf0420b4)
+    at drivers/base/dd.c:595
+#17 0xc0b09784 in __driver_probe_device (drv=drv@entry=0xbf0420b4, 
+    dev=dev@entry=0xcb4a3820) at drivers/base/dd.c:755
+#18 0xc0b09804 in driver_probe_device (drv=drv@entry=0xbf0420b4, 
+    dev=dev@entry=0xcb4a3820) at drivers/base/dd.c:785
+#19 0xc0b09ec0 in __device_attach_driver (drv=0xbf0420b4, _data=0xc9d17914)
+    at drivers/base/dd.c:907
+#20 0xc0b06b08 in bus_for_each_drv (bus=<optimized out>, 
+    start=start@entry=0x0, data=data@entry=0xc9d17914, 
+    fn=fn@entry=0xc0b09e18 <__device_attach_driver>)
+    at drivers/base/bus.c:429
+#21 0xc0b09ad8 in __device_attach (dev=0xcb4a3820, 
+    allow_async=allow_async@entry=true) at drivers/base/dd.c:979
+#22 0xc0b0a100 in device_initial_probe (dev=<optimized out>)
+    at drivers/base/dd.c:1028
+
+============
+
+debian@arm:~$ [   76.286068] 19 -> tx = 0x0, rx = 0x0, usb = 0x10
+[   76.290842] _V: RESET STOPPED, nIrq = 17
+[   76.294887] _V-m: pipe = 0x80000180, rqt = 0xa3, t = 0x0
+[   76.303169] _V: length = 4
+[   76.306029] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   76.312986] _V: length = 0
+[   76.315871] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   76.322964] _V: length = 0
+[   76.325716] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   76.332793] _V: length = 0
+[   76.335672] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   76.343046] _V: length = 0
+[   76.453894] _V-m: pipe = 0x80000180, rqt = 0xa3, t = 0x0
+[   76.459406] _V: length = 4
+[   76.462246] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x3
+[   76.467623] _V: RESET, nIrq = 17
+[   76.473179] _V: length = 0
+[   76.521826] _V: RESET STOPPED, nIrq = 17
+[   76.541810] _V-m: pipe = 0x80000180, rqt = 0xa3, t = 0x0
+[   76.547287] _V: length = 4
+[   76.550072] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   76.557535] _V: length = 0
+[   76.617835] usb 1-1: new full-speed USB device number 2 using musb-hdrc
+[   76.624558] _V-m: pipe = 0x80000080, rqt = 0x80, t = 0x6
+[   76.629964] _V: --> hw0 urb 29041abc spd2 dev0 ep0out h_addr00 h_port00 byt
+es 8
+[   76.629999] START ... ->
+[   76.639874] mbase = 0xe02a8c00
+[   76.642941] core -> 0xe000 0xffff0000 0xf708fffe 0x76
+[   76.648015] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   76.652826] devctl + BABBLE -> 0x445d
+[   76.656502] FIFOSZ -> 0x0
+[   76.659131] FIFOADDR -> 0x0
+[   76.661973] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.666530] WWW -> csr: 0x20
+[   76.669447] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.674002] WWW -> csr: 0x842
+[   76.677003] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.681610] _V: length = 8
+[   76.684355] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x3
+[   76.689719] _V: RESET, nIrq = 17
+[   76.699718] _V: length = 0
+[   76.741838] _V: RESET STOPPED, nIrq = 17
+[   76.770132] _V-m: pipe = 0x80000180, rqt = 0xa3, t = 0x0
+[   76.775643] _V: length = 4
+[   76.778435] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   76.785595] _V: length = 0
+[   76.845808] _V-m: pipe = 0x80000000, rqt = 0x0, t = 0x5
+[   76.851140] _V: --> hw0 urb 29041abc spd2 dev0 ep0out h_addr00 h_port00 byt
+es 8
+[   76.851176] START ... ->
+[   76.861053] mbase = 0xe02a8c00
+[   76.864118] core -> 0xe000 0xffff0000 0xf708fffe 0x77
+[   76.869192] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   76.874003] devctl + BABBLE -> 0x445d
+[   76.877678] FIFOSZ -> 0x0
+[   76.880306] FIFOADDR -> 0x0
+[   76.883173] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.887733] WWW -> csr: 0x860
+[   76.890738] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.895344] _V: length = 0
+[   76.917820] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   76.923241] _V: --> hw0 urb 29041abc spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   76.923284] START ... ->
+[   76.933160] mbase = 0xe02a8c00
+[   76.936227] core -> 0xe000 0xffff0000 0xf708fffe 0xbf
+[   76.941301] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   76.946112] devctl + BABBLE -> 0x445d
+[   76.949787] FIFOSZ -> 0x0
+[   76.952415] FIFOADDR -> 0x0
+[   76.955288] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.959847] WWW -> csr: 0x20
+[   76.962766] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.967321] WWW -> csr: 0x20
+[   76.970235] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.974789] WWW -> csr: 0x20
+[   76.977702] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.982255] WWW -> csr: 0x842
+[   76.985255] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   76.989842] _V: length = 18
+[   76.992697] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   76.998084] _V: --> hw0 urb 29041abc spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   76.998104] START ... ->
+[   77.007981] mbase = 0xe02a8c00
+[   77.011046] core -> 0xe000 0xffff0000 0xf708fffe 0x10a
+[   77.016207] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   77.021018] devctl + BABBLE -> 0x445d
+[   77.024694] FIFOSZ -> 0x0
+[   77.027321] FIFOADDR -> 0x0
+[   77.030150] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.034704] WWW -> csr: 0x20
+[   77.037617] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.042170] WWW -> csr: 0x20
+[   77.045082] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.049635] WWW -> csr: 0x842
+[   77.052636] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.057214] _V: length = 9
+[   77.059949] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.065306] _V: --> hw0 urb 29041abc spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.065324] START ... ->
+[   77.075198] mbase = 0xe02a8c00
+[   77.078264] core -> 0xe000 0xffff0000 0xf708fffe 0x14d
+[   77.083424] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   77.088235] devctl + BABBLE -> 0x445d
+[   77.091909] FIFOSZ -> 0x0
+[   77.094537] FIFOADDR -> 0x0
+[   77.097363] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.101915] WWW -> csr: 0x20
+[   77.104832] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.109386] WWW -> csr: 0x20
+[   77.112300] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.116853] WWW -> csr: 0x20
+[   77.119766] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.124319] WWW -> csr: 0x20
+[   77.127232] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.131785] WWW -> csr: 0x20
+[   77.134698] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.139252] WWW -> csr: 0x20
+[   77.142165] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.146718] WWW -> csr: 0x20
+[   77.149631] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.154184] WWW -> csr: 0x20
+[   77.157097] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.161650] WWW -> csr: 0x842
+[   77.164650] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.169244] _V: length = 62
+[   77.172088] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.177450] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.177468] START ... ->
+[   77.187343] mbase = 0xe02a8c00
+[   77.190408] core -> 0xe000 0xffff0000 0xf708fffe 0x1bd
+[   77.195568] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   77.200379] devctl + BABBLE -> 0x445d
+[   77.204055] FIFOSZ -> 0x0
+[   77.206683] FIFOADDR -> 0x0
+[   77.209508] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.214062] WWW -> csr: 0x20
+[   77.216977] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.221530] WWW -> csr: 0x842
+[   77.224531] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.229107] _V: length = 4
+[   77.231842] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.237199] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.237216] START ... ->
+[   77.247091] mbase = 0xe02a8c00
+[   77.250157] core -> 0xe000 0xffff0000 0xf708fffe 0x1f9
+[   77.255317] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   77.260128] devctl + BABBLE -> 0x445d
+[   77.263803] FIFOSZ -> 0x0
+[   77.266432] FIFOADDR -> 0x0
+[   77.269257] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.273810] WWW -> csr: 0x20
+[   77.276724] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.281302] _V: length = 0
+[   77.284036] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.289394] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.289410] START ... ->
+[   77.299284] mbase = 0xe02a8c00
+[   77.302350] core -> 0xe000 0xffff0000 0xf708fffe 0x22d
+[   77.307510] ep0 csr -> 0x2000000 0x0 0x800000 0xde000000
+[   77.312845] devctl + BABBLE -> 0x445d
+[   77.316521] FIFOSZ -> 0x0
+[   77.319149] FIFOADDR -> 0x0
+[   77.321973] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.326525] WWW -> csr: 0x20
+[   77.329438] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.334015] _V: length = 0
+[   77.336734] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.342092] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.342109] START ... ->
+[   77.351984] mbase = 0xe02a8c00
+[   77.355050] core -> 0xe000 0xffff0000 0xf708fffe 0x262
+[   77.360211] ep0 csr -> 0x2000000 0x0 0x800000 0xde000000
+[   77.365545] devctl + BABBLE -> 0x445d
+[   77.369220] FIFOSZ -> 0x0
+[   77.371849] FIFOADDR -> 0x0
+[   77.374672] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.379225] WWW -> csr: 0x20
+[   77.382139] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.386716] _V: length = 0
+[   77.389436] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.394792] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.394809] START ... ->
+[   77.404683] mbase = 0xe02a8c00
+[   77.407749] core -> 0xe000 0xffff0000 0xf708fffe 0x296
+[   77.412910] ep0 csr -> 0x2000000 0x0 0x800000 0xde000000
+[   77.418243] devctl + BABBLE -> 0x445d
+[   77.421918] FIFOSZ -> 0x0
+[   77.424546] FIFOADDR -> 0x0
+[   77.427384] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.431939] WWW -> csr: 0x20
+[   77.434857] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.439435] _V: length = 0
+[   77.442170] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.447527] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.447544] START ... ->
+[   77.457418] mbase = 0xe02a8c00
+[   77.460484] core -> 0xe000 0xffff0000 0xf708fffe 0x2cb
+[   77.465644] ep0 csr -> 0x2000000 0x0 0x800000 0xde000000
+[   77.470979] devctl + BABBLE -> 0x445d
+[   77.474654] FIFOSZ -> 0x0
+[   77.477282] FIFOADDR -> 0x0
+[   77.480109] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.484662] WWW -> csr: 0x20
+[   77.487576] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.492153] _V: length = 0
+[   77.494889] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.500247] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.500264] START ... ->
+[   77.510138] mbase = 0xe02a8c00
+[   77.513203] core -> 0xe000 0xffff0000 0xf708fffe 0x300
+[   77.518364] ep0 csr -> 0x2000000 0x0 0x800000 0xde000000
+[   77.523698] devctl + BABBLE -> 0x445d
+[   77.527373] FIFOSZ -> 0x0
+[   77.530001] FIFOADDR -> 0x0
+[   77.532833] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.537387] WWW -> csr: 0x20
+[   77.540302] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.591637] _V: length = 0
+[   77.594516] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.599940] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.599976] START ... ->
+[   77.609854] mbase = 0xe02a8c00
+[   77.612920] core -> 0xe000 0xffff0000 0xf708fffe 0x364
+[   77.618080] ep0 csr -> 0x2000000 0x0 0x800000 0xde000000
+[   77.623416] devctl + BABBLE -> 0x445d
+[   77.627091] FIFOSZ -> 0x0
+[   77.629719] FIFOADDR -> 0x0
+[   77.632562] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.637120] WWW -> csr: 0x20
+[   77.640039] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.644596] WWW -> csr: 0x20
+[   77.647512] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.652066] WWW -> csr: 0x20
+[   77.654980] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.659534] WWW -> csr: 0x20
+[   77.662447] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.667000] WWW -> csr: 0x20
+[   77.669915] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.674468] WWW -> csr: 0x20
+[   77.677381] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.681935] WWW -> csr: 0x20
+[   77.684847] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.689400] WWW -> csr: 0x842
+[   77.692402] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.696993] _V: length = 50
+[   77.699821] _V-m: pipe = 0x80000280, rqt = 0x80, t = 0x6
+[   77.705182] _V: --> hw0 urb a437aff1 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.705201] START ... ->
+[   77.715076] mbase = 0xe02a8c00
+[   77.718142] core -> 0xe000 0xffff0000 0xf708fffe 0x3cd
+[   77.723303] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   77.728114] devctl + BABBLE -> 0x445d
+[   77.731789] FIFOSZ -> 0x0
+[   77.734417] FIFOADDR -> 0x0
+[   77.737243] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.741797] WWW -> csr: 0x20
+[   77.744712] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.749266] WWW -> csr: 0x20
+[   77.752181] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.756734] WWW -> csr: 0x20
+[   77.759648] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.764201] WWW -> csr: 0x20
+[   77.767114] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.771667] WWW -> csr: 0x20
+[   77.774580] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.779134] WWW -> csr: 0x20
+[   77.782049] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.786602] WWW -> csr: 0x842
+[   77.789602] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.794178] _V: length = 42
+[   77.797000] usb 1-1: New USB device found, idVendor=2341, idProduct=0043, b
+cdDevice= 0.01
+[   77.805243] usb 1-1: New USB device strings: Mfr=1, Product=2, SerialNumber
+=220
+[   77.812608] usb 1-1: Manufacturer: Arduino (www.arduino.cc)
+[   77.818226] usb 1-1: SerialNumber: 9593233353235171F031
+[   77.849166] _V-m: pipe = 0x80000200, rqt = 0x0, t = 0x9
+[   77.854629] _V: --> hw0 urb a90ad301 spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   77.854666] START ... ->
+[   77.864545] mbase = 0xe02a8c00
+[   77.867611] core -> 0xe000 0xffff0000 0xf708fffe 0x462
+[   77.872772] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   77.877582] devctl + BABBLE -> 0x445d
+[   77.881258] FIFOSZ -> 0x0
+[   77.883887] FIFOADDR -> 0x0
+[   77.886770] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.891332] WWW -> csr: 0x860
+[   77.894341] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   77.898935] _V: length = 0
+[   77.924748] _V-m: pipe = 0x80000180, rqt = 0xa3, t = 0x0
+[   77.930927] _V: length = 4
+[   77.933715] _V-m: pipe = 0x80000100, rqt = 0x23, t = 0x1
+[   77.945610] _V: length = 0
+[   78.011747] _V-m: pipe = 0x80000200, rqt = 0x21, t = 0x20
+[   78.017316] _V: --> hw0 urb b2269c1d spd2 dev2 ep0out h_addr00 h_port00 byt
+es 8
+[   78.017363] START ... ->
+[   78.027243] mbase = 0xe02a8c00
+[   78.030310] core -> 0xe000 0xffff0000 0xf708fffe 0x505
+[   78.035472] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[   78.040282] devctl + BABBLE -> 0x445d
+[   78.043958] FIFOSZ -> 0x0
+[   78.046586] FIFOADDR -> 0x0
+[   78.049476] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   78.054038] WWW -> csr: 0x2
+[   78.056876] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   78.061430] WWW -> csr: 0x860
+[   78.064434] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[   78.069068] _V: length = 7
+[   78.080041] cdc_acm 1-1:1.0: ttyACM0: USB ACM device
+[   78.085429] usbcore: registered new interface driver cdc_acm
+[   78.091208] cdc_acm: USB Abstract Control Model driver for USB modems and I
+SDN adapters
+
