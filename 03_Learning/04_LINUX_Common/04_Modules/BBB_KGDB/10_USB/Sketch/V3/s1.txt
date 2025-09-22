@@ -1,0 +1,12 @@
+chan change the speed of USB
+
+/* Give the core 1 ms to clear MUSB_POWER_RESUME */ => consider to add prink here
+
+void musb_host_finish_resume(struct work_struct *work)
+int musb_port_suspend(struct musb *musb, bool do_suspend)
+static bool dsps_sw_babble_control(struct musb *musb)
+musb_recover_from_babble
+
+Add dbg at funcs having msecs_to_jiffies
+
+static int dsps_check_status(struct musb *musb, void *unused)
