@@ -18,14 +18,16 @@ static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
+    //msleep(2000);
+
     while (!atomic_read(&data->should_stop)){
         ret = USB1_GetDesc_Transfer(data);
-        if (ret < 0) {
-            printk("Fail USB1_GetDesc_Transfer\n");
-            break;
-        }
+        // if (ret < 0) {
+        //     printk("Fail USB1_GetDesc_Transfer\n");
+        //     break;
+        // }
 
-        msleep(2000);
+        msleep(300);
     }
 }
 
@@ -178,6 +180,8 @@ static int usb1_remove(struct platform_device *pdev)
     smp_mb(); // Memory barrier to ensure should_stop is visible
 
     cancel_work_sync(&data->re_request_work);
+
+    musb_exit_V(data);
 
     iounmap(data->base_usbss);
     iounmap(data->base_usb1ctl);

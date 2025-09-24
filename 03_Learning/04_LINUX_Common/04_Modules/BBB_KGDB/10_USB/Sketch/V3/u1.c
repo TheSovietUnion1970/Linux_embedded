@@ -49,17 +49,17 @@ void setFifo(struct usb_device_data *data){
     u8 babblectl = 0;
 
     // TX
-    iowrite8(0x03, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for TX FIFO0
+    iowrite8(3, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for TX FIFO0
     iowrite16(0x00, data->base_usb1core + MUSB_TXFIFOADD); 
 
     // RX
-    iowrite8(0x03, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
+    iowrite8(3, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
     iowrite16(0x00, data->base_usb1core + MUSB_RXFIFOADD); 
 
     // fifo type0 (8-bit)
     iowrite8(0, data->base_usb1core + MUSB_INDEX); // @1C0E
 
-    iowrite16(0x0200, data->base_usb1core + 0x10 + MUSB_CSR0);
+    //iowrite16(0x0200, data->base_usb1core + 0x10 + MUSB_CSR0);
     iowrite8(0x80, data->base_usb1core + 0x10 + MUSB_TYPE0);
     //iowrite8(0xDE, data->base_usb1core + 0x10 + MUSB_CONFIGDATA);
 
@@ -207,7 +207,7 @@ void temp_reset(struct usb_device_data *data){
 
     // tell the SoC to forward the USB core IRQ to the CPU.
     iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQEN0);
-    iowrite32(0xFFFE03F7, data->base_usb1ctl + USB1CTL_IRQEN1);
+    iowrite32(0x01F7, data->base_usb1ctl + USB1CTL_IRQEN1);
 
     // tell the USB core which events matter.
     iowrite16(0xFFFF, data->base_usb1core + MUSB_INTRTXE); // enable TX ep0 and 15 eps
@@ -292,6 +292,43 @@ void temp_reset1(struct usb_device_data *data, u32 int_val){
 
 void stop_reset(struct usb_device_data *data);
 void reset(struct usb_device_data *data);
+int USB1_SETUP_temp(struct usb_device_data *data);
+
+void IntoSuspendMode(struct usb_device_data *data){
+    u8 pwr = 0;
+
+    pwr = ioread8(data->base_usb1core + MUSB_POWER);
+    pwr |= MUSB_POWER_SUSPENDM;
+    iowrite8(pwr, data->base_usb1core + MUSB_POWER);
+}
+
+void OutSuspendMode(struct usb_device_data *data){
+    u8 pwr = 0;
+
+    pwr = ioread8(data->base_usb1core + MUSB_POWER);
+    pwr &=~ MUSB_POWER_SUSPENDM;
+    iowrite8(pwr, data->base_usb1core + MUSB_POWER);
+
+    //msleep(50);
+}
+
+void IntoResumeMode(struct usb_device_data *data){
+    u8 pwr = 0;
+
+    pwr = ioread8(data->base_usb1core + MUSB_POWER);
+    pwr |= MUSB_POWER_RESUME;
+    iowrite8(pwr, data->base_usb1core + MUSB_POWER);
+}
+
+void OutResumeMode(struct usb_device_data *data){
+    u8 pwr = 0;
+
+    pwr = ioread8(data->base_usb1core + MUSB_POWER);
+    pwr &=~ MUSB_POWER_RESUME;
+    iowrite8(pwr, data->base_usb1core + MUSB_POWER);
+
+    msleep(50);
+}
 
 irqreturn_t USB1_handler(int irq, void *d){
     struct usb_device_data *data = d;
@@ -315,10 +352,27 @@ irqreturn_t USB1_handler(int irq, void *d){
 
     if (irqst0){
         if (int_tx){
+        
+
             Tx1_flag = 1;
             printk("ISR -> TX[%d]\n", int_tx);
+
+
+    // u32 usb1_ctrl = 0;
+
+    // usb1_ctrl = ioread32(data->base_usb1ctl + USB1CTL_MODE);
+    // usb1_ctrl &=~ (1u << 8); // A type
+    // usb1_ctrl |= (1u << 7); // iddig_mux
+    // iowrite32(usb1_ctrl, data->base_usb1ctl + USB1CTL_MODE);
+
+    // iowrite32(0x2, data->base_usb1ctl + USB1CTL_UTMI);
+    iowrite8(0, data->base_usb1core + MUSB_INDEX); 
+    iowrite8(0x80, data->base_usb1core + 0x10 + MUSB_TYPE0);
+    iowrite16(MUSB_CSR0_H_REQPKT, data->base_usb1core + 0x10 + MUSB_CSR0);
+
         }
         if (int_rx){
+            Rx1_flag = 1;
             printk("ISR -> RX[%d]\n", int_rx);
         }
 
@@ -332,9 +386,9 @@ irqreturn_t USB1_handler(int irq, void *d){
         if ((irqst1)&(1u << 7)){
             printk("< VBUS valid threshold>\n");
         } 
-        if ((irqst1)&(1u << 3)){
-            printk("SOF started\n");
-        }  
+        // if ((irqst1)&(1u << 3)){
+        //     printk("SOF started\n");
+        // }  
         if ((irqst1)&(1u << 2)){
             printk("Babble detected\n");
             //restart_next_round(data);
@@ -354,7 +408,19 @@ irqreturn_t USB1_handler(int irq, void *d){
         if ((irqst1)&(1u << 8)){
             printk("DRVVBUS level change\n");
             //temp_reset(data);
-        }     
+        }   
+        if ((irqst1)&(1u << 6)){
+            printk("SRF ...\n");
+
+    printk(" ================= > < ============ \n");
+    printk("0x%x 0x%x 0x%x 0x%x\n", ioread32(data->base_usb1core), ioread32(data->base_usb1core + 0x4), ioread32(data->base_usb1core + 0x8), ioread32(data->base_usb1core + 0xc));
+    printk("0x%x 0x%x 0x%x 0x%x\n", ioread32(data->base_usb1core + 0x10), ioread32(data->base_usb1core + 0x14), ioread32(data->base_usb1core + 0x18), ioread32(data->base_usb1core + 0x1c));
+    //printk("0x%x\n", ioread32(data->base_usb1core + 0x20));
+    printk("devctl -> 0x%x\n", ioread8(data->base_usb1core + 0x60));
+    // printk("BABBLE -> 0x%x\n", ioread8(data->base_usb1core + 0x61));
+    // printk("FIFOSZ -> 0x%x\n", ioread16(data->base_usb1core + 0x62));
+    // printk("FIFOADDR -> 0x%x\n", ioread32(data->base_usb1core + 0x64));
+        }    
     }
 
     // reset(data);
@@ -373,12 +439,14 @@ irqreturn_t USB1_handler(int irq, void *d){
     if (irqst1)
         iowrite32(irqst1, data->base_usb1ctl + USB1CTL_IRQCLR1);
 
-    //iowrite32(0, data->base_usb1ctl + USB1CTL_IRQCLR0);
-    //iowrite32(1, data->base_usb1ctl + USB1CTL_IRQCLR0);
+    // iowrite32(0, data->base_usb1ctl + USB1CTL_IRQCLR0);
+    // iowrite32(1, data->base_usb1ctl + USB1CTL_IRQCLR0);
 
     // // tell the SoC to forward the USB core IRQ to the CPU.
     //iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQEN0);
     //iowrite32(0x02FF, data->base_usb1ctl + USB1CTL_IRQEN1);
+
+    //IntoSuspendMode(data);
 
     data->count_many++;
     if (data->count_many > 100){
@@ -499,11 +567,11 @@ void fifo0_setup_V(struct usb_device_data *data){
     iowrite8(0, data->base_usb1core + MUSB_INDEX); // @1C0E
 
     // TX
-    iowrite8(0x03, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for TX FIFO0
+    iowrite8(3, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for TX FIFO0
     iowrite16(0x00, data->base_usb1core + MUSB_TXFIFOADD); 
 
     // RX
-    iowrite8(0x03, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
+    iowrite8(3, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
     iowrite16(0x00, data->base_usb1core + MUSB_RXFIFOADD); 
 }
 void dsps_musb_set_mode_V(struct usb_device_data *data){
@@ -554,15 +622,79 @@ void musb_start_V(struct usb_device_data *data){
     iowrite32(0, data->base_usb1core + MUSB_TESTMODE); // no test mode
 
     // init high speed
-    iowrite8(MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB, data->base_usb1core + MUSB_POWER);
+    // iowrite8(MUSB_POWER_ISOUPDATE | MUSB_POWER_HSENAB, data->base_usb1core + MUSB_POWER);
+    iowrite8(MUSB_POWER_ISOUPDATE, data->base_usb1core + MUSB_POWER);
 
     // tell the SoC to forward the USB core IRQ to the CPU.
     iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQEN0);
-    iowrite32(0xFFFE03FF, data->base_usb1ctl + USB1CTL_IRQEN1);
+    iowrite32(0xFFFE03F7, data->base_usb1ctl + USB1CTL_IRQEN1);
 
     // go into session
     iowrite8(MUSB_DEVCTL_SESSION, data->base_usb1core + MUSB_DEVCTL); // When the USB controller go into session, it will assume the role of a host
 }
+void musb_ep_program_V(struct usb_device_data *data){
+    u16 int_tx = 0, csr;
+    u8 i = 0;
+
+    /* disable interrupt in case we flush */
+    int_tx = ioread16(data->base_usb1core + MUSB_INTRTXE);
+    int_tx &=~ (1u << 0);
+    iowrite16(int_tx, data->base_usb1core + MUSB_INTRTXE); // no test mode
+
+    for (i = 0; i < 5; i++){
+        csr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+        iowrite16(MUSB_CSR0_FLUSHFIFO, data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+        csr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+        udelay(10);
+    }
+    /* and reset for the next transfer */
+    iowrite16(0, data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+    /* target addr and (for multipoint) hub addr/port */
+    // ...
+    iowrite32(0x1000680, data->base_usb1core + 0x20);
+    iowrite32(0x1200, data->base_usb1core + 0x20);
+
+    /* re-enable interrupt */
+    int_tx = ioread16(data->base_usb1core + MUSB_INTRTXE);
+    int_tx |= (1u << 0);
+    iowrite16(int_tx, data->base_usb1core + MUSB_INTRTXE); // no test mode
+}
+
+// void musb_ep_program_V2(struct usb_device_data *data){
+//     u16 int_rx = 0, csr;
+//     u8 i = 0;
+
+//     /* disable interrupt in case we flush */
+//     int_rx = ioread16(data->base_usb1core + MUSB_INTRRXE);
+//     int_rx &=~ (1u << 0);
+//     iowrite16(int_rx, data->base_usb1core + MUSB_INTRRXE); // no test mode
+
+//     for (i = 0; i < 5; i++){
+//         csr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+//         iowrite16(MUSB_CSR0_FLUSHFIFO, data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+//         csr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+//         udelay(10);
+//     }
+//     /* and reset for the next transfer */
+//     iowrite16(0, data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+//     /* target addr and (for multipoint) hub addr/port */
+//     // ...
+//     iowrite32(0x1000680, data->base_usb1core + 0x20);
+//     iowrite32(0x1200, data->base_usb1core + 0x20);
+
+//     /* re-enable interrupt */
+//     int_tx = ioread16(data->base_usb1core + MUSB_INTRRXE);
+//     int_tx |= (1u << 0);
+//     iowrite16(int_tx, data->base_usb1core + MUSB_INTRRXE); // no test mode
+// }
 
 // 1st
 void dsps_musb_init_V(struct usb_device_data *data){
@@ -611,7 +743,7 @@ void dsps_musb_init_start_V(struct usb_device_data *data){
 
     // tell the SoC to forward the USB core IRQ to the CPU.
     iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQEN0);
-    iowrite32(0xFFFE03FF, data->base_usb1ctl + USB1CTL_IRQEN1);
+    iowrite32(0x01F7, data->base_usb1ctl + USB1CTL_IRQEN1);
 
     // tell the USB core which events matter.
     iowrite16(0xFFFF, data->base_usb1core + MUSB_INTRTXE); // enable TX ep0 and 15 eps
@@ -664,11 +796,23 @@ void musb_init_controller_V(struct usb_device_data *data){
     //dsps_musb_init_start_V(data);
     // musb_start_V(data);
 }
+
+void musb_exit_V(struct usb_device_data *data){
+    dsps_musb_disable_V(data);
+    musb_disable_interrupts_V(data);
+
+    iowrite8(0, data->base_usb1core + MUSB_DEVCTL);
+}
 /* ================== API for Control Transfer ===================== */
 int USB1_SETUP_temp(struct usb_device_data *data){
     u16 host_csr0 = 0;
     int ret = 0;
     int i = 0;
+
+    reset(data);
+    msleep(10);
+    stop_reset(data);
+    // musb_ep_program_V(data);
 
     // set index region
     iowrite8(0, data->base_usb1core + MUSB_INDEX); // @1C0E
@@ -685,8 +829,9 @@ int USB1_SETUP_temp(struct usb_device_data *data){
     iowrite8(0x80, data->base_usb1core + 0x10 + MUSB_TYPE0);
 
     // val[0] = 0x1000680, val[1] = 0x1200
-    iowrite32(0x1000680, data->base_usb1core + 0x20);
-    iowrite32(0x1200, data->base_usb1core + 0x20);
+    // iowrite32(0x1000680, data->base_usb1core + 0x20);
+    // iowrite32(0x1200, data->base_usb1core + 0x20);
+    musb_ep_program_V(data);
 
 
 
@@ -700,8 +845,10 @@ int USB1_SETUP_temp(struct usb_device_data *data){
 
 
         host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0);
-        host_csr0 |= MUSB_CSR0_H_SETUPPKT | MUSB_CSR0_TXPKTRDY; // Set SETUPPKT and TXPKTRDY 
+        host_csr0 = MUSB_CSR0_H_SETUPPKT | MUSB_CSR0_TXPKTRDY; // Set SETUPPKT and TXPKTRDY 
         iowrite16(host_csr0, data->base_usb1core + 0x10 + MUSB_CSR0);
+
+    //msleep(100);
 
         //printk("0 = %x, 1 = %x, 3 = %x\n", ioread16(data->base_usb1core + MUSB_INTRTX), ioread16(data->base_usb1core + MUSB_INTRRX), ioread8(data->base_usb1core + MUSB_INTRUSB) );
 
@@ -713,29 +860,29 @@ int USB1_SETUP_temp(struct usb_device_data *data){
     if (ret < 0) return -1;
     Tx1_flag = 0;
 
-    ret = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0)&0xFF;
-    printk("ret = 0x%x\n", ret);
+    // ret = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0)&0xFF;
+    // printk("ret = 0x%x\n", ret);
 
-    // Check error
-    if (ret == MUSB_CSR0_H_RXSTALL) {
-        dev_info(data->dev, "RXSTALL\n");
-        return -1;
-    }
-    if (ret == MUSB_CSR0_H_ERROR) {
-        dev_info(data->dev, "ERROR\n"); // send additional 2 times
-        return -1;
-    }
-    if (ret == MUSB_CSR0_H_NAKTIMEOUT) {
-        dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
-        return -1;
-    } 
-    else{
-        dev_info(data->dev, "ACKed!\n");
-        // dev_info(data->dev, "data1 = 0x%x\n", ioread32(data->base_usb1core + 0x20));
-        // dev_info(data->dev, "data2 = 0x%x\n", ioread32(data->base_usb1core + 0x20));
-        data->InsReq.leftLength = data->InsReq.wLength;
-    }
-    return -1;
+    // // Check error
+    // if (ret == MUSB_CSR0_H_RXSTALL) {
+    //     dev_info(data->dev, "RXSTALL\n");
+    //     return -1;
+    // }
+    // if (ret == MUSB_CSR0_H_ERROR) {
+    //     dev_info(data->dev, "ERROR\n"); // send additional 2 times
+    //     return -1;
+    // }
+    // if (ret == MUSB_CSR0_H_NAKTIMEOUT) {
+    //     dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
+    //     return -1;
+    // } 
+    // else{
+    //     dev_info(data->dev, "ACKed!\n");
+    //     // dev_info(data->dev, "data1 = 0x%x\n", ioread32(data->base_usb1core + 0x20));
+    //     // dev_info(data->dev, "data2 = 0x%x\n", ioread32(data->base_usb1core + 0x20));
+    //     data->InsReq.leftLength = data->InsReq.wLength;
+    // }
+    return 0;
 }
 
 
@@ -744,12 +891,16 @@ int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data){
     int ret = 0;
     int i = 0;
 
-    iowrite16(0, data->base_usb1core + 0x10 + MUSB_CSR0);
+    reset(data);
+    msleep(5);
+    stop_reset(data);
 
 #if (INDEX_USED)
     setIndex(data, 0);
 #endif
     setFifo(data);
+
+    musb_ep_program_V(data);
 
     USB1_ClrToken(data);
     USB1_SetToken(data, GetDesc_pkt);
@@ -811,9 +962,21 @@ int USB1_IN_Transaction_GetDesc(struct usb_device_data *data, u8* buffer, u16* o
     int i = 0;
     u32 tmp[2];
 
-    reset(data);
-    msleep(20);
-    stop_reset(data);
+    // printk(" ================= > < ============ \n");
+    // printk("0x%x 0x%x 0x%x 0x%x\n", ioread32(data->base_usb1core), ioread32(data->base_usb1core + 0x4), ioread32(data->base_usb1core + 0x8), ioread32(data->base_usb1core + 0xc));
+    // printk("0x%x 0x%x 0x%x 0x%x\n", ioread32(data->base_usb1core + 0x10), ioread32(data->base_usb1core + 0x14), ioread32(data->base_usb1core + 0x18), ioread32(data->base_usb1core + 0x1c));
+    // //printk("0x%x\n", ioread32(data->base_usb1core + 0x20));
+    // printk("devctl -> 0x%x\n", ioread8(data->base_usb1core + 0x60));
+    // printk("BABBLE -> 0x%x\n", ioread8(data->base_usb1core + 0x61));
+    // printk("FIFOSZ -> 0x%x\n", ioread16(data->base_usb1core + 0x62));
+    // printk("FIFOADDR -> 0x%x\n", ioread32(data->base_usb1core + 0x64));
+
+    //udelay(10);
+
+// #if (INDEX_USED)
+//     setIndex(data, 0);
+// #endif
+//     setFifo(data);
 
     // handle Length
     data->InsReq.maxLengthEntryFIFO = 8;
@@ -826,21 +989,24 @@ int USB1_IN_Transaction_GetDesc(struct usb_device_data *data, u8* buffer, u16* o
         *outlen = data->InsReq.maxLengthEntryFIFO;
     }
 
+    //musb_ep_program_V(data);
+
     //host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0);
-    host_csr0 = MUSB_CSR0_H_REQPKT; // Set REQPKT 
+    // host_csr0 = MUSB_CSR0_H_REQPKT; // Set REQPKT 
+    host_csr0 = MUSB_CSR0_H_REQPKT;
     iowrite16(host_csr0, data->base_usb1core + 0x10 + MUSB_CSR0);
 
-    // wait for Endpoint 0 interrupt (IN token packet)
-    wait_val_update(data, &Tx1_flag, 1, 2000, "IN: Token");
-    Tx1_flag = 0;
+    // // wait for Endpoint 0 interrupt (IN token packet)
+    // wait_val_update(data, &Tx1_flag, 1, 2000, "IN: Token");
+    // Tx1_flag = 0;
 
     // wait for Endpoint 0 interrupt (Data packet)
     wait_val_update(data, &Rx1_flag, 1, 2000, "IN: Data0/1");
     Rx1_flag = 0;
 
-    // wait for Endpoint 0 interrupt (Handshake packet)
-    wait_val_update(data, &Tx1_flag, 1, 2000, "IN: Handshake");
-    Tx1_flag = 0;
+    // // wait for Endpoint 0 interrupt (Handshake packet)
+    // wait_val_update(data, &Tx1_flag, 1, 2000, "IN: Handshake");
+    // Tx1_flag = 0;
 
     // Check error
     if (ret == RXSTALL) {
@@ -915,23 +1081,45 @@ int USB1_STATUS_Transaction_GetDesc(struct usb_device_data *data){
 
 int USB1_GetDesc_Transfer(struct usb_device_data *data){
     int ret;
+    int i = 0;
 
-    reset(data);
-    msleep(20);
-    stop_reset(data);
-    
-    ret = USB1_SETUP_Transaction_GetDesc(data);
-    //printk("0 = %x, 1 = %x, 3 = %x\n", ioread16(data->base_usb1core + MUSB_INTRTX), ioread16(data->base_usb1core + MUSB_INTRRX), ioread8(data->base_usb1core + MUSB_INTRUSB) );
+    //musb_init_controller_V(data);
 
+    OutSuspendMode(data);
+    IntoResumeMode(data);
+
+    // // tell the SoC to forward the USB core IRQ to the CPU.
+    // iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQEN0);
+    // iowrite32(0xFFFE03FF, data->base_usb1ctl + USB1CTL_IRQEN1);
+
+    ret = USB1_SETUP_temp(data);
+
+
+
+
+
+
+    // //printk("0 = %x, 1 = %x, 3 = %x\n", ioread16(data->base_usb1core + MUSB_INTRTX), ioread16(data->base_usb1core + MUSB_INTRRX), ioread8(data->base_usb1core + MUSB_INTRUSB) );
+    // OutSuspendMode(data);
+    // IntoResumeMode(data);
+
+    // // tell the SoC to forward the USB core IRQ to the CPU.
+    // // iowrite32(0xFFFEFFFF, data->base_usb1ctl + USB1CTL_IRQEN0);
+    // // iowrite32(0xFFFE03FF, data->base_usb1ctl + USB1CTL_IRQEN1);
     if (ret == 0){
         do {
             ret = USB1_IN_Transaction_GetDesc(data, data->TX, &data->TX_len);
         } while(data->InsReq.leftLength != 0);
     }
 
-    if (ret == 0){
-        ret = USB1_STATUS_Transaction_GetDesc(data);
-    }
+    //msleep(300);
+
+    // musb_exit_V(data);
+    // musb_init_controller_V(data);
+
+    // if (ret == 0){
+    //     ret = USB1_STATUS_Transaction_GetDesc(data);
+    // }
 
     return ret;
 }

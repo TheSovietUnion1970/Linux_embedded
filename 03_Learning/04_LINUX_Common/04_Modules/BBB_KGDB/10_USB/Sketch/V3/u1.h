@@ -265,6 +265,8 @@ void PHY1_init(struct usb_device_data *data);
 void restart_next_round(struct usb_device_data *data);
 void musb_init_controller_V(struct usb_device_data *data);
 
+void musb_exit_V(struct usb_device_data *data);
+
 /* ================== API for Control Transfer ===================== */
 int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data);
 int USB1_IN_Transaction_GetDesc(struct usb_device_data *data, u8* buffer, u16* outlen);
