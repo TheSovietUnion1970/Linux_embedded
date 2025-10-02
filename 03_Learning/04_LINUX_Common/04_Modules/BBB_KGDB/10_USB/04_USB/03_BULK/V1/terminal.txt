@@ -1,0 +1,133 @@
+debian@arm:~$ echo "Hi" | sudo tee /dev/ttyACM0i
+[ 5725.730790] _V: <-- hw10 urb 3c7aa1c6 spd2 dev2 ep2in h_ad
+dr00 h_port00 bytes 8
+[ 5725.730841] ZZ - hw_ep->rx_reinit = 1
+[ 5725.741876] _V: RX toggle
+[ 5725.744504] ZZ - RXCSR10 := 1020
+[ 5725.747918] _V: <-- hw11 urb 3454f079 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5725.747945] ZZ - hw_ep->rx_reinit = 1
+[ 5725.759132] _V: RX toggle
+[ 5725.761759] ZZ - RXCSR11 := 0020
+[ 5725.765076] _V-m: pipe = 0x80000200, bRequestType = 0x21, 
+bRequest = 0x22
+[ 5725.771926] _V-m: wLength = 0x0, wIndex = 0x0, wValue = 0x
+3
+[ 5725.777556] _V: --> hw0 urb 879e9042 spd2 dev2 ep0out h_ad
+dr00 h_port00 bytes 8
+[ 5725.777591] ZZ - Jusrt re-enable MUSB_INTRTXE
+[ 5725.789298] START ... ->
+[ 5725.791840] mbase = 0xe02a8c00
+[ 5725.794906] core -> 0xe000 0xffff0000 0xf708fffe 0x61d
+[ 5725.800068] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[ 5725.804880] devctl + BABBLE -> 0x445d
+[ 5725.808556] FIFOSZ -> 0x0
+[ 5725.811184] FIFOADDR -> 0x0
+[ 5725.814028] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[ 5725.818587] WWW -> csr: 0x860
+[ 5725.821596] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[ 5725.826194] _V: length = 0, buffer = 0x0
+Hi[ 5725.838646] _V: --> hw10 urb 4037eac5 spd2 dev2 ep4out h
+_addr00 h_port00 bytes 2
+[ 5725.838707] ZZ - Jusrt re-enable MUSB_INTRTXE
+[ 5725.850517] START ... ->
+[ 5725.853058] mbase = 0xe02a8c00
+[ 5725.856124] core -> 0xe000 0xffff0000 0xf708fffe 0xa065b
+[ 5725.861459] ep0 csr -> 0x20001840 0x10200008 0xa40000 0x33
+00ffb2
+[ 5725.867491] devctl + BABBLE -> 0x445d
+[ 5725.871167] FIFOSZ -> 0x305
+[ 5725.873970] FIFOADDR -> 0x4a80488
+
+[ 5725.877420] 19 -> tx = 0x400, rx = 0x0, usb = 0x0
+[ 5725.882479] _V: --> hw10 urb 4037eac5 spd2 dev2 ep4out h_a
+ddr00 h_port00 bytes 2
+[ 5725.882506] ZZ - Jusrt re-enable MUSB_INTRTXE
+[ 5725.894303] START ... ->
+[ 5725.896843] mbase = 0xe02a8c00
+[ 5725.899909] core -> 0xe000 0xffff0000 0xf708fffe 0xa0686
+[ 5725.905244] ep0 csr -> 0x21001840 0x10200008 0xa40000 0x33
+00ffb2
+[ 5725.911278] devctl + BABBLE -> 0x445d
+[ 5725.914953] FIFOSZ -> 0x305
+[ 5725.917756] FIFOADDR -> 0x4a80488
+[ 5725.921125] 19 -> tx = 0x400, rx = 0x0, usb = 0x0
+[ 5725.933196] _V-m: pipe = 0x80000200, bRequestType = 0x21, 
+bRequest = 0x22
+[ 5725.940193] _V-m: wLength = 0x0, wIndex = 0x0, wValue = 0x
+0
+[ 5725.945892] _V: --> hw0 urb 879e9042 spd2 dev2 ep0out h_ad
+dr00 h_port00 bytes 8
+[ 5725.945937] ZZ - Jusrt re-enable MUSB_INTRTXE
+[ 5725.957649] START ... ->
+[ 5725.960189] mbase = 0xe02a8c00
+[ 5725.963255] core -> 0xe000 0xffff0000 0xf708fffe 0x6c6
+[ 5725.968417] ep0 csr -> 0x0 0x0 0x800000 0xde000000
+[ 5725.973228] devctl + BABBLE -> 0x445d
+[ 5725.976903] FIFOSZ -> 0x0
+[ 5725.979532] FIFOADDR -> 0x0
+[ 5725.982382] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[ 5725.986943] WWW -> csr: 0x860
+[ 5725.989953] 19 -> tx = 0x1, rx = 0x0, usb = 0x0
+[ 5725.994549] _V: length = 0, buffer = 0x0
+[ 5725.998558] _V: <-- hw11 urb 0eea8576 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5725.998579] ZZ - hw_ep->rx_reinit = 0
+[ 5726.009764] ZZ - RXCSR11 := 0020
+[ 5726.013059] _V: <-- hw11 urb 50e72c05 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.013077] ZZ - hw_ep->rx_reinit = 0
+[ 5726.024261] ZZ - RXCSR11 := 0020
+[ 5726.027535] _V: <-- hw11 urb db8c01c4 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.027551] ZZ - hw_ep->rx_reinit = 0
+[ 5726.038735] ZZ - RXCSR11 := 0020
+[ 5726.042005] _V: <-- hw11 urb 9b346157 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.042021] ZZ - hw_ep->rx_reinit = 0
+[ 5726.053205] ZZ - RXCSR11 := 0020
+[ 5726.056474] _V: <-- hw11 urb 599e14a9 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.056490] ZZ - hw_ep->rx_reinit = 0
+[ 5726.067674] ZZ - RXCSR11 := 0020
+[ 5726.070943] _V: <-- hw11 urb 95ac9c8d spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.070959] ZZ - hw_ep->rx_reinit = 0
+[ 5726.082144] ZZ - RXCSR11 := 0020
+[ 5726.085413] _V: <-- hw11 urb 64bfe16b spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.085429] ZZ - hw_ep->rx_reinit = 0
+[ 5726.096615] ZZ - RXCSR11 := 0020
+[ 5726.099883] _V: <-- hw11 urb fc3fa374 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.099899] ZZ - hw_ep->rx_reinit = 0
+[ 5726.111083] ZZ - RXCSR11 := 0020
+[ 5726.114352] _V: <-- hw11 urb 1efd0e4c spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.114368] ZZ - hw_ep->rx_reinit = 0
+[ 5726.125552] ZZ - RXCSR11 := 0020
+[ 5726.128822] _V: <-- hw11 urb e69770c6 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.128839] ZZ - hw_ep->rx_reinit = 0
+[ 5726.140021] ZZ - RXCSR11 := 0020
+[ 5726.143291] _V: <-- hw11 urb 8ccbc504 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.143307] ZZ - hw_ep->rx_reinit = 0
+[ 5726.154491] ZZ - RXCSR11 := 0020
+[ 5726.157761] _V: <-- hw11 urb 2ab10480 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.157776] ZZ - hw_ep->rx_reinit = 0
+[ 5726.168959] ZZ - RXCSR11 := 0020
+[ 5726.172231] _V: <-- hw11 urb 5f2ea745 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.172248] ZZ - hw_ep->rx_reinit = 0
+[ 5726.183432] ZZ - RXCSR11 := 0020
+[ 5726.186701] _V: <-- hw11 urb 6f754cc1 spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.186718] ZZ - hw_ep->rx_reinit = 0
+[ 5726.197902] ZZ - RXCSR11 := 0020
+[ 5726.201169] _V: <-- hw11 urb 1bffe57e spd2 dev2 ep3in h_ad
+dr00 h_port00 bytes 128
+[ 5726.201185] ZZ - hw_ep->rx_reinit = 0
+[ 5726.212368] ZZ - RXCSR11 := 0020
+
