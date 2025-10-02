@@ -1,0 +1,4 @@
+vinh@vinh-Inspiron-15-3520:~/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/10_USB/Sketch/SAMPLE_SRC$ sudo cp /home/vinh//build_BBB_custom/linux-stable-rcn-ee/drivers/usb/core/*.c ./core/
+vinh@vinh-Inspiron-15-3520:~/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/10_USB/Sketch/SAMPLE_SRC$ sudo cp /home/vinh//build_BBB_custom/linux-stable-rcn-ee/drivers/usb/phy/*.c ./phy/
+vinh@vinh-Inspiron-15-3520:~/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/10_USB/Sketch/SAMPLE_SRC$ sudo cp /home/vinh//build_BBB_custom/linux-stable-rcn-ee/drivers/usb/musb/*.c ./musb/
+

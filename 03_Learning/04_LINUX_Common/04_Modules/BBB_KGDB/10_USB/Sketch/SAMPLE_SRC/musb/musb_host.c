@@ -118,7 +118,7 @@ static void musb_h_tx_flush_fifo(struct musb_hw_ep *ep)
 	}
 }
 
-static void musb_h_ep0_flush_fifo(struct musb_hw_ep *ep)
+void musb_h_ep0_flush_fifo(struct musb_hw_ep *ep)
 {
 	void __iomem	*epio = ep->regs;
 	u16		csr;
@@ -140,12 +140,13 @@ static void musb_h_ep0_flush_fifo(struct musb_hw_ep *ep)
 	/* and reset for the next transfer */
 	musb_writew(epio, MUSB_TXCSR, 0);
 }
+EXPORT_SYMBOL_GPL(musb_h_ep0_flush_fifo);
 
 /*
  * Start transmit. Caller is responsible for locking shared resources.
  * musb must be locked.
  */
-static inline void musb_h_tx_start(struct musb_hw_ep *ep)
+void musb_h_tx_start(struct musb_hw_ep *ep)
 {
 	u16	txcsr;
 
@@ -160,6 +161,7 @@ static inline void musb_h_tx_start(struct musb_hw_ep *ep)
 	}
 
 }
+EXPORT_SYMBOL_GPL(musb_h_tx_start);
 
 static inline void musb_h_tx_dma_start(struct musb_hw_ep *ep)
 {
@@ -781,18 +783,22 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 			musb_writew(epio, MUSB_TXCSR, csr);
 			csr = musb_readw(epio, MUSB_TXCSR);
 		} else {
+			//printk("ZZ - musb_h_ep0_flush_fifo\n");
 			/* endpoint 0: just flush */
 			musb_h_ep0_flush_fifo(hw_ep);
 		}
 
 		/* target addr and (for multipoint) hub addr/port */
 		if (musb->is_multipoint) {
+			//printk("ZZ - is_multipoint = %d\n", musb->is_multipoint);
 			musb_write_txfunaddr(musb, epnum, qh->addr_reg);
 			musb_write_txhubaddr(musb, epnum, qh->h_addr_reg);
 			musb_write_txhubport(musb, epnum, qh->h_port_reg);
 /* FIXME if !epnum, do the same for RX ... */
-		} else
+		} else{
+			//printk("ZZ - qh->addr_reg = %d\n", qh->addr_reg);
 			musb_writeb(mbase, MUSB_FADDR, qh->addr_reg);
+		}
 
 		/* protocol/endpoint/interval/NAKlimit */
 		if (epnum) {
@@ -809,6 +815,7 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 			}
 			musb_writeb(epio, MUSB_TXINTERVAL, qh->intv_reg);
 		} else {
+			//printk("ZZ - qh->intv_reg = %d\n", qh->intv_reg);
 			musb_writeb(epio, MUSB_NAKLIMIT0, qh->intv_reg);
 			if (musb->is_multipoint)
 				musb_writeb(epio, MUSB_TYPE0,
@@ -852,12 +859,13 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 finish:
 		/* re-enable interrupt */
 		musb_writew(mbase, MUSB_INTRTXE, int_txe);
+		printk("ZZ - Jusrt re-enable MUSB_INTRTXE\n");
 
 	/* IN/receive */
 	} else {
 		u16 csr = 0;
 
-		printk("_V: RX\n");
+		printk("ZZ - hw_ep->rx_reinit = %d\n", hw_ep->rx_reinit);
 		if (hw_ep->rx_reinit) {
 			musb_rx_reinit(musb, qh, epnum);
 			printk("_V: RX toggle\n");
@@ -882,6 +890,7 @@ finish:
 		/* kick things off */
 
 		if ((is_cppi_enabled(musb) || tusb_dma_omap(musb)) && dma_channel) {
+			printk("ZZ - /* kick things off */\n");
 			/* Candidate for DMA */
 			dma_channel->actual_len = 0L;
 			qh->segsize = len;
@@ -908,6 +917,7 @@ finish:
 
 		csr |= MUSB_RXCSR_H_REQPKT;
 		musb_dbg(musb, "RXCSR%d := %04x", epnum, csr);
+		printk("ZZ - RXCSR%d := %04x\n", epnum, csr);
 		musb_writew(hw_ep->regs, MUSB_RXCSR, csr);
 		csr = musb_readw(hw_ep->regs, MUSB_RXCSR);
 	}
@@ -1013,6 +1023,7 @@ static bool musb_h_ep0_continue(struct musb *musb, u16 len, struct urb *urb)
 			urb->status = -EOVERFLOW;
 
 		musb_read_fifo(hw_ep, fifo_count, fifo_dest);
+		printk(">> fifo_count = 0x%x\n", fifo_count);
 
 		urb->actual_length += fifo_count;
 		if (len < qh->maxpacket) {
@@ -1164,6 +1175,16 @@ irqreturn_t musb_h_ep0_irq(struct musb *musb)
 			/* more packets required */
 			csr = (MUSB_EP0_IN == musb->ep0_stage)
 				?  MUSB_CSR0_H_REQPKT : MUSB_CSR0_TXPKTRDY;
+
+			if (MUSB_EP0_IN == musb->ep0_stage) {
+				printk("START in IRQ ->\n");
+				printk("mbase = 0x%x\n", musb->mregs);
+				printk("core -> 0x%x 0x%x 0x%x 0x%x\n", ioread32(musb->mregs + 0x0), ioread32(musb->mregs + 0x4), ioread32(musb->mregs + 0x8), ioread32(musb->mregs + 0xc));
+				printk("ep0 csr -> 0x%x 0x%x 0x%x 0x%x\n", ioread32(musb->mregs + 0x10), ioread32(musb->mregs + 0x14), ioread32(musb->mregs + 0x18), ioread32(musb->mregs + 0x1c));
+				printk("devctl + BABBLE -> 0x%x\n", ioread16(musb->mregs + 0x60));
+				printk("FIFOSZ -> 0x%x\n", ioread16(musb->mregs + 0x62));
+				printk("FIFOADDR -> 0x%x\n", ioread32(musb->mregs + 0x64));
+			}
 		} else {
 			/* data transfer complete; perform status phase */
 			if (usb_pipeout(urb->pipe)
@@ -1183,6 +1204,7 @@ irqreturn_t musb_h_ep0_irq(struct musb *musb)
 			musb_dbg(musb, "ep0 STATUS, csr %04x", csr);
 
 		}
+		printk("WWW -> csr: 0x%x\n", csr);
 		musb_writew(epio, MUSB_CSR0, csr);
 		retval = IRQ_HANDLED;
 	} else

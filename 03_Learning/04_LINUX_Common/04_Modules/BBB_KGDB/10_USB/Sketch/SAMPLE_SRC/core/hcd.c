@@ -979,7 +979,7 @@ static void usb_deregister_bus (struct usb_bus *bus)
  *
  * Return: 0 if successful. A negative error code otherwise.
  */
-static int register_root_hub(struct usb_hcd *hcd)
+int register_root_hub(struct usb_hcd *hcd)
 {
 	struct device *parent_dev = hcd->self.controller;
 	struct usb_device *usb_dev = hcd->self.root_hub;
@@ -1035,6 +1035,7 @@ static int register_root_hub(struct usb_hcd *hcd)
 
 	return retval;
 }
+EXPORT_SYMBOL_GPL(register_root_hub);
 
 /*
  * usb_hcd_start_port_resume - a root-hub port is sending a resume signal

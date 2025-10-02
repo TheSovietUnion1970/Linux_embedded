@@ -96,13 +96,14 @@ static int usb_internal_control_msg(struct usb_device *usb_dev,
 	if (!urb)
 		return -ENOMEM;
 
-	printk("_V-m: pipe = 0x%x, rqt = 0x%x, t = 0x%x\n", pipe, cmd->bRequestType, cmd->bRequest);
+	printk("_V-m: pipe = 0x%x, bRequestType = 0x%x, bRequest = 0x%x\n", pipe, cmd->bRequestType, cmd->bRequest);
+	printk("_V-m: wLength = 0x%x, wIndex = 0x%x, wValue = 0x%x\n", cmd->wLength, cmd->wIndex, cmd->wValue);
 
 	usb_fill_control_urb(urb, usb_dev, pipe, (unsigned char *)cmd, data,
 			     len, usb_api_blocking_completion, NULL);
 
 	retv = usb_start_wait_urb(urb, timeout, &length);
-	printk("_V: length = %d\n", length);
+	printk("_V: length = %d, buffer = 0x%x\n", length);
 	if (retv < 0)
 		return retv;
 	else

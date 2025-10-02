@@ -173,6 +173,8 @@ static void dsps_musb_enable(struct musb *musb)
 	void __iomem *reg_base = musb->ctrl_base;
 	u32 epmask, coremask;
 
+	printk("XXX -> en ctrl");
+
 	/* Workaround: setup IRQs through both register sets. */
 	epmask = ((musb->epmask & wrp->txep_mask) << wrp->txep_shift) |
 	       ((musb->epmask & wrp->rxep_mask) << wrp->rxep_shift);
@@ -198,6 +200,8 @@ static void dsps_musb_disable(struct musb *musb)
 	const struct dsps_musb_wrapper *wrp = glue->wrp;
 	void __iomem *reg_base = musb->ctrl_base;
 
+	printk("XXX -> dis ctrl");
+
 	musb_writel(reg_base, wrp->coreintr_clear, wrp->usb_bitmap);
 	musb_writel(reg_base, wrp->epintr_clear,
 			 wrp->txep_bitmap | wrp->rxep_bitmap);
@@ -214,6 +218,7 @@ static int dsps_check_status(struct musb *musb, void *unused)
 	u8 devctl;
 	int skip_session = 0;
 
+
 	if (glue->vbus_irq)
 		del_timer(&musb->dev_timer);
 
@@ -227,6 +232,7 @@ static int dsps_check_status(struct musb *musb, void *unused)
 
 	switch (musb->xceiv->otg->state) {
 	case OTG_STATE_A_WAIT_VRISE:
+		printk("YYYYZ - dsps_check OTG_STATE_A_WAIT_VRISE\n");
 		if (musb->port_mode == MUSB_HOST) {
 			musb->xceiv->otg->state = OTG_STATE_A_WAIT_BCON;
 			dsps_mod_timer_optional(glue);
@@ -235,6 +241,7 @@ static int dsps_check_status(struct musb *musb, void *unused)
 		fallthrough;
 
 	case OTG_STATE_A_WAIT_BCON:
+		//printk("YYYYZ - dsps_check OTG_STATE_A_WAIT_BCON\n");
 		/* keep VBUS on for host-only mode */
 		if (musb->port_mode == MUSB_HOST) {
 			dsps_mod_timer_optional(glue);
@@ -246,6 +253,7 @@ static int dsps_check_status(struct musb *musb, void *unused)
 
 	case OTG_STATE_A_IDLE:
 	case OTG_STATE_B_IDLE:
+		printk("YYYYZ - dsps_check OTG_STATE_A/B_IDLE\n");
 		if (!glue->vbus_irq) {
 			if (devctl & MUSB_DEVCTL_BDEVICE) {
 				musb->xceiv->otg->state = OTG_STATE_B_IDLE;
@@ -265,6 +273,7 @@ static int dsps_check_status(struct musb *musb, void *unused)
 		dsps_mod_timer_optional(glue);
 		break;
 	case OTG_STATE_A_WAIT_VFALL:
+		printk("YYYYZ - dsps_check OTG_STATE_A_WAIT_VFALL/B_IDLE\n");
 		musb->xceiv->otg->state = OTG_STATE_A_WAIT_VRISE;
 		musb_writel(musb->ctrl_base, wrp->coreintr_set,
 			    MUSB_INTR_VBUSERROR << wrp->usb_shift);
@@ -387,8 +396,24 @@ static irqreturn_t dsps_interrupt(int irq, void *hci)
 	}
 
 	if (musb->int_tx || musb->int_rx || musb->int_usb){
-		if (musb->int_tx == 1) printk("tx = 0x%x, rx = 0x%x, usb = 0x%x\n", musb->int_tx, musb->int_rx, musb->int_usb);
+		
+		void __iomem *tmp = ioremap(0x48200000, 0x1000);
+		// //void __iomem *tmp1 = ioremap(0x47401800, 0x1000);
+		u32 isr = (musb_readl(tmp, 0x40))&0x7F;
+
+		if (isr == 19) {
+			printk("19 -> tx = 0x%x, rx = 0x%x, usb = 0x%x\n", musb->int_tx, musb->int_rx, musb->int_usb);
+		}
+		// // if ((musb->int_usb == 0x10) && (isr == 19)){
+		// // 	printk("mtx_rx = 0x%x\n", ioread32(tmp1 + 0x400 + MUSB_INTRTXE));
+		// // 	printk("musb = 0x%x\n", ioread8(tmp1 + 0x400 + MUSB_INTRUSBE));
+
+		// // 	printk("ctl set0 = 0x%x, set1 = 0x%x\n", ioread32(tmp1 + 0x38), ioread32(tmp1 + 0x3c));
+		// // }
+
+
 		ret |= musb_interrupt(musb);
+	
 	}
 
 	/* Poll for ID change and connect */
@@ -519,6 +544,8 @@ static int dsps_musb_set_mode(struct musb *musb, u8 mode)
 
 	reg = musb_readl(ctrl_base, wrp->mode);
 
+	printk("MUSB SET MODE, mode = %d\n", mode);
+
 	switch (mode) {
 	case MUSB_HOST:
 		reg &= ~(1 << wrp->iddig);
@@ -574,6 +601,8 @@ static bool dsps_sw_babble_control(struct musb *musb)
 	if (babble_ctl & MUSB_BABBLE_STUCK_J) {
 		int timeout = 10;
 
+		printk("YYYYZ - MUSB_BABBLE_STUCK_J\n");
+
 		/*
 		 * babble is due to noise, then set transmit idle (d7 bit)
 		 * to resume normal operation
@@ -601,6 +630,7 @@ static bool dsps_sw_babble_control(struct musb *musb)
 			session_restart = true;
 		}
 	} else {
+		printk("YYYYZ - session_restart = true\n");
 		session_restart = true;
 	}
 
@@ -867,8 +897,6 @@ static int dsps_probe(struct platform_device *pdev)
 	const struct dsps_musb_wrapper *wrp;
 	struct dsps_glue *glue;
 	int ret;
-
-	printk("VINH ... VINH\n");
 
 	if (!strcmp(pdev->name, "musb-hdrc"))
 		return -ENODEV;

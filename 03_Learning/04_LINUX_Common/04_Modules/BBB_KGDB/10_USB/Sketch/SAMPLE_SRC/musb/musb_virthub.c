@@ -26,6 +26,8 @@ void musb_host_finish_resume(struct work_struct *work)
 
 	musb = container_of(work, struct musb, finish_resume_work.work);
 
+	printk("YYYYZ - finish_resume\n");
+
 	spin_lock_irqsave(&musb->lock, flags);
 
 	power = musb_readb(musb->mregs, MUSB_POWER);
@@ -64,12 +66,15 @@ int musb_port_suspend(struct musb *musb, bool do_suspend)
 	 */
 	power = musb_readb(mbase, MUSB_POWER);
 	if (do_suspend) {
+
+
 		int retries = 10000;
 
 		if (power & MUSB_POWER_RESUME)
 			return -EBUSY;
 
 		if (!(power & MUSB_POWER_SUSPENDM)) {
+			printk("YYYYZ - do_suspend -> ");
 			power |= MUSB_POWER_SUSPENDM;
 			musb_writeb(mbase, MUSB_POWER, power);
 
@@ -87,6 +92,7 @@ int musb_port_suspend(struct musb *musb, bool do_suspend)
 		musb->port1_status |= USB_PORT_STAT_SUSPEND;
 		switch (musb->xceiv->otg->state) {
 		case OTG_STATE_A_HOST:
+			printk("YYYYZ - A_HOST\n");
 			musb->xceiv->otg->state = OTG_STATE_A_SUSPEND;
 			musb->is_active = otg->host->b_hnp_enable;
 			if (musb->is_active)
@@ -96,6 +102,7 @@ int musb_port_suspend(struct musb *musb, bool do_suspend)
 			musb_platform_try_idle(musb, 0);
 			break;
 		case OTG_STATE_B_HOST:
+			printk("YYYYZ - B_HOST\n");
 			musb->xceiv->otg->state = OTG_STATE_B_WAIT_ACON;
 			musb->is_active = otg->host->b_hnp_enable;
 			musb_platform_try_idle(musb, 0);
@@ -105,6 +112,9 @@ int musb_port_suspend(struct musb *musb, bool do_suspend)
 				usb_otg_state_string(musb->xceiv->otg->state));
 		}
 	} else if (power & MUSB_POWER_SUSPENDM) {
+
+		printk("YYYYZ - not-do_suspend\n");
+
 		power &= ~MUSB_POWER_SUSPENDM;
 		power |= MUSB_POWER_RESUME;
 		musb_writeb(mbase, MUSB_POWER, power);
@@ -148,11 +158,14 @@ void musb_port_reset(struct musb *musb, bool do_reset)
 			long remain = (unsigned long) musb->rh_timer - jiffies;
 
 			if (musb->rh_timer > 0 && remain > 0) {
+				printk("YYYYZ - remain > 0\n");
 				/* take into account the minimum delay after resume */
 				schedule_delayed_work(
 					&musb->deassert_reset_work, remain);
 				return;
 			}
+
+			printk("YYYYZ - core 1 ms\n");
 
 			musb_writeb(mbase, MUSB_POWER,
 				    power & ~MUSB_POWER_RESUME);

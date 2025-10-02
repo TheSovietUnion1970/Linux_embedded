@@ -319,6 +319,8 @@ static void musb_default_write_fifo(struct musb_hw_ep *hw_ep, u16 len,
 	struct musb *musb = hw_ep->musb;
 	void __iomem *fifo = hw_ep->fifo;
 
+	//printk("FF - fifo = 0x%x\n", fifo);
+
 	if (unlikely(len == 0))
 		return;
 
@@ -1155,9 +1157,10 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 
 /*-------------------------------------------------------------------------*/
 
-static void musb_disable_interrupts(struct musb *musb)
+void musb_disable_interrupts(struct musb *musb)
 {
 	void __iomem	*mbase = musb->mregs;
+	printk("XXX -> dis core");
 
 	/* disable interrupts */
 	musb_writeb(mbase, MUSB_INTRUSBE, 0);
@@ -1171,10 +1174,13 @@ static void musb_disable_interrupts(struct musb *musb)
 	musb_clearw(mbase, MUSB_INTRTX);
 	musb_clearw(mbase, MUSB_INTRRX);
 }
+EXPORT_SYMBOL_GPL(musb_disable_interrupts);
 
-static void musb_enable_interrupts(struct musb *musb)
+void musb_enable_interrupts(struct musb *musb)
 {
 	void __iomem    *regs = musb->mregs;
+	printk("XXX -> en core");
+
 
 	/*  Set INT enable registers, enable interrupts */
 	musb->intrtxe = musb->epmask;
@@ -1184,6 +1190,7 @@ static void musb_enable_interrupts(struct musb *musb)
 	musb_writeb(regs, MUSB_INTRUSBE, 0xf7);
 
 }
+EXPORT_SYMBOL_GPL(musb_enable_interrupts);
 
 /*
  * Program the HDRC to start (enable interrupts, dma, etc.).
@@ -1225,10 +1232,12 @@ void musb_start(struct musb *musb)
 	} else {
 		devctl |= MUSB_DEVCTL_SESSION;
 	}
+	printk("MUSB start\n");
 
 	musb_platform_enable(musb);
 	musb_writeb(regs, MUSB_DEVCTL, devctl);
 }
+EXPORT_SYMBOL_GPL(musb_start);
 
 /*
  * Make the HDRC stop (disable interrupts, etc.);
@@ -1383,7 +1392,7 @@ static struct musb_fifo_cfg mode_5_cfg[] = {
  *
  * returns negative errno or offset for next fifo.
  */
-static int
+int
 fifo_setup(struct musb *musb, struct musb_hw_ep  *hw_ep,
 		const struct musb_fifo_cfg *cfg, u16 offset)
 {
@@ -1455,12 +1464,13 @@ fifo_setup(struct musb *musb, struct musb_hw_ep  *hw_ep,
 
 	return offset + (maxpacket << ((c_size & MUSB_FIFOSZ_DPB) ? 1 : 0));
 }
+EXPORT_SYMBOL_GPL(fifo_setup);
 
 static struct musb_fifo_cfg ep0_cfg = {
 	.style = FIFO_RXTX, .maxpacket = 64,
 };
 
-static int ep_config_from_table(struct musb *musb)
+int ep_config_from_table(struct musb *musb)
 {
 	const struct musb_fifo_cfg	*cfg;
 	unsigned		i, n;
@@ -1544,6 +1554,7 @@ done:
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(ep_config_from_table);
 
 
 /*
@@ -2113,6 +2124,8 @@ static void musb_recover_from_babble(struct musb *musb)
 {
 	int ret;
 	u8 devctl;
+
+	printk("YYYYZ - musb_recover_from_babble\n");
 
 	musb_disable_interrupts(musb);
 
@@ -2688,6 +2701,7 @@ static int musb_remove(struct platform_device *pdev)
 
 static void musb_save_context(struct musb *musb)
 {
+	//printk("YYYYZ - musb_save_context\n");
 	int i;
 	void __iomem *musb_base = musb->mregs;
 	void __iomem *epio;
@@ -2759,6 +2773,7 @@ static void musb_save_context(struct musb *musb)
 
 static void musb_restore_context(struct musb *musb)
 {
+	//printk("YYYYZ - musb_restore_context\n");
 	int i;
 	void __iomem *musb_base = musb->mregs;
 	void __iomem *epio;
@@ -2841,6 +2856,7 @@ static void musb_restore_context(struct musb *musb)
 
 static int musb_suspend(struct device *dev)
 {
+	printk("YYYYZ - musb_suspend\n");
 	struct musb	*musb = dev_to_musb(dev);
 	unsigned long	flags;
 	int ret;
@@ -2884,6 +2900,7 @@ static int musb_suspend(struct device *dev)
 
 static int musb_resume(struct device *dev)
 {
+	printk("YYYYZ - musb_resume\n");
 	struct musb *musb = dev_to_musb(dev);
 	unsigned long flags;
 	int error;
