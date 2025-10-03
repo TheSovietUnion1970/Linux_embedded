@@ -184,6 +184,7 @@
 #define MUSB_TXCSR_FLUSHFIFO		0x0008
 #define MUSB_TXCSR_FIFONOTEMPTY		0x0002
 #define MUSB_TXCSR_TXPKTRDY		0x0001
+#define MUSB_TXCSR_MODE		0x2000
 
 /* TXCSR in Host mode */
 #define MUSB_TXCSR_H_WR_DATATOGGLE	0x0200
@@ -195,6 +196,14 @@
 #define MUSB_TXCSR_H_WZC_BITS	\
 	(MUSB_TXCSR_H_NAKTIMEOUT | MUSB_TXCSR_H_RXSTALL \
 	| MUSB_TXCSR_H_ERROR | MUSB_TXCSR_FIFONOTEMPTY)
+
+/* TxType/RxType */
+#define MUSB_TYPE_SPEED		0xc0
+#define MUSB_TYPE_SPEED_SHIFT	6
+#define MUSB_TYPE_PROTO		0x30	/* Implicitly zero for ep0 */
+#define MUSB_TYPE_PROTO_SHIFT	4
+#define MUSB_TYPE_REMOTE_END	0xf	/* Implicitly zero for ep0 */
+
 
 /* ============ Address registers (0x80 + (0x08 * epnum) + offset;) =============== */
 /* endpoint 0 */

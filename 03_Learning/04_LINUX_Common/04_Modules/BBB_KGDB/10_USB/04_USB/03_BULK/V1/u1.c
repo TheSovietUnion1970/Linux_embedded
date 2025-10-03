@@ -89,7 +89,7 @@ USBCORE1 0x47401C00:
 @1C20-....: EP0_FIFO_entry(4)-...
  */
 
-/* ================== Utils ===================== */
+/* ================== Utils for control transfer ===================== */
 void setIndex(struct usb_device_data *data, u8 epnum){
     iowrite8(epnum, data->base_usb1core + MUSB_INDEX); // @1C0E
 }
@@ -808,6 +808,33 @@ void USB1_Print_DeviceDescriptorIf0(struct usb_device_data *data){
     printk("# ----------------------------------- #\n");
 }
 
+/* ================== Utils for bulk transfer ===================== */
+void USB1_Bulk_SetAddr(struct usb_device_data *data, u8 addr){
+    iowrite16(addr, data->base_usb1core + MUSB_TXFUNCADDR);
+}
+void USB1_Bulk_SetTypeTx(struct usb_device_data *data, u8 epnum, u8 speed){
+    u8 TxType = 0;
+
+    TxType = (speed << 6)&MUSB_TYPE_SPEED;
+    TxType |= (0x2 << 4)&MUSB_TYPE_PROTO; // bulk type
+    TxType |= (epnum << 0)&MUSB_TYPE_REMOTE_END;
+
+    iowrite8(TxType, data->base_usb1core + 0x10 + MUSB_TXTYPE);
+}
+void USB1_Bulk_SetMaxp(struct usb_device_data *data, u16 maxp){
+    iowrite16(maxp, data->base_usb1core + 0x10 + MUSB_TXMAXP);
+}
+void USB1_Bulk_SetTxInterval(struct usb_device_data *data, u8 txInterval){
+    iowrite8(txInterval, data->base_usb1core + 0x10 + MUSB_TXINTERVAL);
+}
+void USB1_Bulk_SetTXCSR(struct usb_device_data *data){
+    u16 txcsr = 0;
+
+    txcsr = MUSB_TXCSR_MODE; // MODE bit (bit 13) to 1 to ensure the FIFO is enabled
+    txcsr &=~ MUSB_TXCSR_FRCDATATOG; // 0 to allow normal data toggle operations
+    txcsr &=~ MUSB_TXCSR_AUTOSET; // 
+    iowrite8(txcsr, data->base_usb1core + 0x10 + MUSB_TXCSR);
+}
 /* ================== API for Bulk Transfer ===================== */
 int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u8* dataX, u32 len){
     u16 host_csr0 = 0, txcsr = 0;
@@ -815,10 +842,13 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
     u32 tmp[2] = {0};
 
     setIndex(data, epnum);
-    setFifo(data);
+    USB1_Bulk_SetAddr(data, addr);
+    USB1_Bulk_SetTypeTx(data, 0x4, 0x2); // 0x2 = full speed
+    USB1_Bulk_SetMaxp(data, 0x40); // max packet is 64 bytes
+    USB1_Bulk_SetTxInterval(data, 0x1); // as ep_bulk_out_bInterval = 0x1
+    USB1_Bulk_SetTXCSR(data);
 
-    // Set addr
-    iowrite16(addr, data->base_usb1core + MUSB_TXFUNCADDR);
+    // setFifo(data);
 
     // write data into ep num
     for (i = 0; i < len; i++){
@@ -832,7 +862,7 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
 
     txcsr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
     txcsr |= MUSB_TXCSR_TXPKTRDY | MUSB_TXCSR_H_WZC_BITS;
-    iowrite16(txcsr, data->base_usb1core + MUSB_TXCSR);
+    iowrite16(txcsr, data->base_usb1core + 0x10 + MUSB_TXCSR);
 
     // wait for Endpoint 0 interrupt (Data packet)
     ret = wait_val_update(data, &Tx1_flag, 1, 2000, "OUT Bulk: Data0/1");
@@ -854,6 +884,10 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
     }
     else if (host_csr0 == MUSB_CSR0_H_NAKTIMEOUT) {
         dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
+        return -1;
+    } 
+    else {
+        dev_info(data->dev, "ACKed!!\n"); // .... consider later
         return -1;
     } 
      
