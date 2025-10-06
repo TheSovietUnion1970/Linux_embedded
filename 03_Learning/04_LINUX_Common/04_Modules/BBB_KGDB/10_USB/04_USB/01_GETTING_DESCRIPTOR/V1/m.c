@@ -14,21 +14,39 @@
 #define DRIVER_NAME "usb1_driver"
 #define DEVICE_NAME "usb1"
 
+const u8 OutData[] = "Hello everyone! hahaha now!!. Germany vs Soviet\n";
+u8 InData[100];
+u16 InDataLen = 0;
+void print_arr(u8* d, u16 len, u8* name){
+    u16 i = 0;
+    printk("%s[%d] = \n", name, len);
+
+    for (i = 0; i < len; i++){
+        printk("'%c'", d[i]);
+    }
+
+    //printk("\n");
+}
+
 static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
-    //msleep(2000);
+    // send data to arduino device
+    ret = USB1_OUT_Phase_Bulk(data, 4, 0x1, OutData, sizeof(OutData));
 
-    //while (!atomic_read(&data->should_stop)){
-        ret = USB1_GetDesc_Transfer(data);
-        // if (ret < 0) {
-        //     printk("Fail USB1_GetDesc_Transfer\n");
-        //     break;
-        // }
+    // read data from arduino device
+    while(!data->isEnd) {
+        if (ret == 0) ret = USB1_IN_Phase_Bulk(data, 3, 0x1, InData, &InDataLen);
+        if (ret < 0) break;
+        if (data->isEnd) break;
+    };
 
-        //msleep(300);
-    //}
+    print_arr(InData, data->RX_index, "InData");
+    // reset
+    data->isEnd = 0;
+    data->RX_index = 0;
+
 }
 
 static int usb1_open(struct inode *inode, struct file *file){
@@ -76,11 +94,6 @@ static int usb1_probe(struct platform_device *pdev)
     data->base_usb1ep0 = ioremap(BASE_USB1CORE + 0x10, 0x10); // 16 bytes
 #endif
     data->base_con_usb1ctrl1 = ioremap(CONTROL_MODULE, 0x1000);
-    //msleep(500);
-
-    // iowrite8(0, data->base_usb1core + MUSB_INDEX); // @1C0E
-    // iowrite32(0x1234, data->base_usb1core + 0x20);
-    // printk("-->   0x%x\n", ioread32(data->base_usb1core + 0x20));
 
     /* ===== Clock setup (assuming this part is unchanged) */
     data->clk = devm_clk_get(&pdev->dev, "fck-usb1");
@@ -158,17 +171,34 @@ static int usb1_probe(struct platform_device *pdev)
     dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
 
     // ===== USB1 init
-    // USB1_reset(data);
-    // PHY1_init(data);
-    // USB1_init(data);
+    USB1_reset(data);
+    PHY1_init(data);
+    USB1_init(data);
+    data->isEnd = 0;
+    data->RX_index = 0;
 
-    musb_init_controller_V(data);
+    //musb_init_controller_V(data);
 
     INIT_WORK(&data->re_request_work, re_request_irq_work);
     atomic_set(&data->should_stop, 0); // Initialize to 0 (false)
 
-    msleep(1000);
-    schedule_work(&data->re_request_work);
+    msleep(2000);
+    /* Reset */
+    USB1_Reset_Speed(data);
+
+    /* Getting descriptor */
+    ret = USB1_GetDesc_Transfer(data);
+    if (ret < 0) {
+        printk("Fail USB1_GetDesc_Transfer\n");
+    }
+    else {
+        USB1_Print_DeviceDescriptor(data);
+        USB1_Print_DeviceDescriptor2(data);
+        USB1_Print_DeviceDescriptorIf0(data);
+    }
+    
+    // msleep(2000); // need 2s
+    // schedule_work(&data->re_request_work);
 
     return 0;
 }
@@ -182,7 +212,7 @@ static int usb1_remove(struct platform_device *pdev)
 
     cancel_work_sync(&data->re_request_work);
 
-    musb_exit_V(data);
+    USB1_exit(data);
 
     iounmap(data->base_usbss);
     iounmap(data->base_usb1ctl);

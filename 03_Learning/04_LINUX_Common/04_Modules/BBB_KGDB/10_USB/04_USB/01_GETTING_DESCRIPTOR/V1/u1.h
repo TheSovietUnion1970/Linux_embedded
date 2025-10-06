@@ -175,6 +175,76 @@
 #define MUSB_CONFIGDATA_SOFTCONE	0x02	/* SoftConnect */
 #define MUSB_CONFIGDATA_UTMIDW		0x01	/* Data width 0/1 => 8/16bits */
 
+/* TXCSR in Peripheral and Host mode */
+#define MUSB_TXCSR_AUTOSET		0x8000
+#define MUSB_TXCSR_DMAENAB		0x1000
+#define MUSB_TXCSR_FRCDATATOG		0x0800
+#define MUSB_TXCSR_DMAMODE		0x0400
+#define MUSB_TXCSR_CLRDATATOG		0x0040
+#define MUSB_TXCSR_FLUSHFIFO		0x0008
+#define MUSB_TXCSR_FIFONOTEMPTY		0x0002
+#define MUSB_TXCSR_TXPKTRDY		0x0001
+#define MUSB_TXCSR_MODE		0x2000
+
+/* TXCSR in Host mode */
+#define MUSB_TXCSR_H_WR_DATATOGGLE	0x0200
+#define MUSB_TXCSR_H_DATATOGGLE		0x0100
+#define MUSB_TXCSR_H_NAKTIMEOUT		0x0080
+#define MUSB_TXCSR_H_RXSTALL		0x0020
+#define MUSB_TXCSR_H_ERROR		0x0004
+
+#define MUSB_TXCSR_H_WZC_BITS	\
+	(MUSB_TXCSR_H_NAKTIMEOUT | MUSB_TXCSR_H_RXSTALL \
+	| MUSB_TXCSR_H_ERROR | MUSB_TXCSR_FIFONOTEMPTY)
+
+/* RXCSR in Host mode */
+#define MUSB_RXCSR_H_AUTOREQ		0x4000
+#define MUSB_RXCSR_H_WR_DATATOGGLE	0x0400
+#define MUSB_RXCSR_H_DATATOGGLE		0x0200
+#define MUSB_RXCSR_H_RXSTALL		0x0040
+#define MUSB_RXCSR_H_REQPKT		0x0020
+#define MUSB_RXCSR_H_ERROR		0x0004
+
+/* RXCSR in Peripheral and Host mode */
+#define MUSB_RXCSR_AUTOCLEAR		0x8000
+#define MUSB_RXCSR_DMAENAB		0x2000
+#define MUSB_RXCSR_DISNYET		0x1000
+#define MUSB_RXCSR_PID_ERR		0x1000
+#define MUSB_RXCSR_DMAMODE		0x0800
+#define MUSB_RXCSR_INCOMPRX		0x0100
+#define MUSB_RXCSR_CLRDATATOG		0x0080
+#define MUSB_RXCSR_FLUSHFIFO		0x0010
+#define MUSB_RXCSR_DATAERROR		0x0008
+#define MUSB_RXCSR_FIFOFULL		0x0002
+#define MUSB_RXCSR_RXPKTRDY		0x0001
+
+/* RXCSR in Host mode */
+#define MUSB_RXCSR_H_AUTOREQ		0x4000
+#define MUSB_RXCSR_H_WR_DATATOGGLE	0x0400
+#define MUSB_RXCSR_H_DATATOGGLE		0x0200
+#define MUSB_RXCSR_H_RXSTALL		0x0040
+#define MUSB_RXCSR_H_REQPKT		0x0020
+#define MUSB_RXCSR_H_ERROR		0x0004
+
+/* TxType/RxType */
+#define MUSB_TYPE_SPEED		0xc0
+#define MUSB_TYPE_SPEED_SHIFT	6
+#define MUSB_TYPE_PROTO		0x30	/* Implicitly zero for ep0 */
+#define MUSB_TYPE_PROTO_SHIFT	4
+#define MUSB_TYPE_REMOTE_END	0xf	/* Implicitly zero for ep0 */
+
+
+/* ============ Address registers (0x80 + (0x08 * epnum) + offset;) =============== */
+/* endpoint 0 */
+
+#define MUSB_TXFUNCADDR		0x80
+#define MUSB_TXHUBADDR		0x82
+#define MUSB_TXHUBPORT		0x83
+
+#define MUSB_RXFUNCADDR		0x84
+#define MUSB_RXHUBADDR		0x86
+#define MUSB_RXHUBPORT		0x87
+
 /* =============== TOKEN ============ */
 #define USB_REQ_GET_STATUS		0x00
 #define USB_REQ_CLEAR_FEATURE		0x01
@@ -182,23 +252,13 @@
 #define USB_REQ_SET_ADDRESS		0x05
 #define USB_REQ_GET_DESCRIPTOR		0x06
 #define USB_REQ_SET_DESCRIPTOR		0x07
-#define USB_REQ_GET_CONFIGURATION	0x08
+#define USB_REQ_GET_CONFIGURATION	0x08 
 #define USB_REQ_SET_CONFIGURATION	0x09
 #define USB_REQ_GET_INTERFACE		0x0A
 #define USB_REQ_SET_INTERFACE		0x0B
 #define USB_REQ_SYNCH_FRAME		0x0C
 #define USB_REQ_SET_SEL			0x30
 #define USB_REQ_SET_ISOCH_DELAY		0x31
-
-/* ================== enum variables ================= */
-typedef enum ret_usb {
-    NONE,
-    ACK,
-    RXSTALL,
-    ERROR,
-    NAK_TIMEOUT,
-    RXPKTRDY 
-} usb_t;
 
 /* ================ Main structure ============== */
 struct usb_devRequest {
@@ -212,6 +272,99 @@ struct usb_devRequest {
     u16 actualLength;
     u16 leftLength;
 };
+struct usb_DeviceDescriptor {
+    // 18 bytes
+	u8 bLength1;
+	u8 bDescriptorType1;
+	u16 bcdUSB;
+	u8 bDeviceClass;
+	u8 bDeviceSubClass;
+    u8 bDeviceProtocol;
+    u8 bMaxPacketSize;
+    u16 idVendor;
+    u16 idProduct;
+    u16 bcdDevice;
+    u8 iManufacturer;
+    u8 iProduct;
+    u8 iSerialNumber;
+    u8 bNumConfigurations;
+
+// Configuration Header (bytes 0-8 / offsets 18-26)
+    u8 bLength2;              // 0: 0x09
+    u8 bDescriptorType2;      // 1: 0x02 (Configuration)
+    u16 wTotalLenght;        // 2-3: 0x003E (62)
+    u8 bNumInterfaces;       // 4: 0x02 (2 interfaces: Comm + Data)
+    u8 bConfigurationValue;  // 5: 0x01 (config #1)
+    u8 iConfiguration;       // 6: 0x00 (no string)
+    u8 bmAttributes;         // 7: 0xC0 (self-powered, remote wakeup)
+    u8 bMaxPower;            // 8: 0x32 (100mA / 2 = 50mA units)
+
+    // Interface 0: Communications Class (CDC) (bytes 9-17 / offsets 27-35)
+    u8 if0_bLength;          // 9: 0x09
+    u8 if0_bDescriptorType;  // 10: 0x04 (Interface)
+    u8 if0_bInterfaceNumber; // 11: 0x00 (interface 0)
+    u8 if0_bAlternateSetting;// 12: 0x00 (alternate 0)
+    u8 if0_bNumEndpoints;    // 13: 0x01 (1 endpoint)
+    u8 if0_bInterfaceClass;  // 14: 0x02 (Communications)
+    u8 if0_bInterfaceSubClass; // 15: 0x02 (ACM)
+    u8 if0_bInterfaceProtocol; // 16: 0x01 (AT Commands v.25ter)
+    u8 if0_iInterface;       // 17: 0x00
+
+    // CDC Header Functional Descriptor (bytes 18-22 / offsets 36-40)
+    u8 cdc_header_bLength;   // 18: 0x05
+    u8 cdc_header_bDescriptorType; // 19: 0x24 (CS_INTERFACE)
+    u8 cdc_header_bDescriptorSubtype; // 20: 0x00 (Header)
+    u16 cdc_header_bcdCDC;   // 21-22: 0x0110 (CDC 1.10)
+
+    // CDC ACM Functional Descriptor (bytes 23-27 / offsets 41-45)
+    u8 cdc_acm_bLength;      // 23: 0x04 or 0x05 (varies; 0x05 standard)
+    u8 cdc_acm_bDescriptorType; // 24: 0x24 (CS_INTERFACE)
+    u8 cdc_acm_bDescriptorSubtype; // 25: 0x02 (ACM)
+    u8 cdc_acm_bmCapabilities; // 26: 0x06 (set line coding, get/set control, send break)
+
+    // CDC Union Functional Descriptor (bytes 28-32 / offsets 46-50)
+    u8 cdc_union_bLength;    // 28: 0x05
+    u8 cdc_union_bDescriptorType; // 29: 0x24 (CS_INTERFACE)
+    u8 cdc_union_bDescriptorSubtype; // 30: 0x06 (Union)
+    u8 cdc_union_bMasterInterface; // 31: 0x00 (master=0)
+    u8 cdc_union_bSlaveInterface0; // 32: 0x01 (slave=1)
+
+    // Endpoint for Interface 0: Interrupt IN (EP 2) (bytes 33-39 / offsets 51-57)
+    u8 ep_int_bLength;       // 33: 0x07
+    u8 ep_int_bDescriptorType; // 34: 0x05 (Endpoint)
+    u8 ep_int_bEndpointAddress; // 35: 0x82 (EP2 IN)
+    u8 ep_int_bmAttributes;  // 36: 0x03 (Interrupt)
+    u16 ep_int_wMaxPacketSize; // 37-38: 0x0008 (8 bytes)
+    u8 ep_int_bInterval;     // 39: 0xFF (255 ms)
+
+    // Interface 1: Data Class (CDC-Data) (bytes 40-48 / offsets 58-66)
+    u8 if1_bLength;          // 40: 0x09
+    u8 if1_bDescriptorType;  // 41: 0x04 (Interface)
+    u8 if1_bInterfaceNumber; // 42: 0x01 (interface 1)
+    u8 if1_bAlternateSetting;// 43: 0x00
+    u8 if1_bNumEndpoints;    // 44: 0x02 (2 endpoints)
+    u8 if1_bInterfaceClass;  // 45: 0x0A (CDC-Data)
+    u8 if1_bInterfaceSubClass; // 46: 0x00
+    u8 if1_bInterfaceProtocol; // 47: 0x00
+    u8 if1_iInterface;       // 48: 0x00
+
+    // Endpoint for Interface 1: Bulk OUT (EP 4) (bytes 49-55 / offsets 67-73)
+    u8 ep_bulk_out_bLength;  // 49: 0x07
+    u8 ep_bulk_out_bDescriptorType; // 50: 0x05
+    u8 ep_bulk_out_bEndpointAddress; // 51: 0x04 (EP4 OUT)
+    u8 ep_bulk_out_bmAttributes; // 52: 0x02 (Bulk)
+    u16 ep_bulk_out_wMaxPacketSize; // 53-54: 0x0040 (64 bytes)
+    u8 ep_bulk_out_bInterval; // 55: 0x00
+
+    // Endpoint for Interface 1: Bulk IN (EP 3) (bytes 56-62 / offsets 74-80)
+    u8 ep_bulk_in_bLength;   // 56: 0x07
+    u8 ep_bulk_in_bDescriptorType; // 57: 0x05
+    u8 ep_bulk_in_bEndpointAddress; // 58: 0x83 (EP3 IN)
+    u8 ep_bulk_in_bmAttributes; // 59: 0x02 (Bulk)
+    u16 ep_bulk_in_wMaxPacketSize; // 60-61: 0x0040 (64 bytes)
+    u8 ep_bulk_in_bInterval;  // 62: 0x00
+} __attribute__((packed));  // Prevents padding; total size now 80 bytes;
+
 
 struct usb_device_data {
 
@@ -230,6 +383,16 @@ struct usb_device_data {
     struct clk *clk;
     struct usb_devRequest InsReq;
 
+    struct usb_DeviceDescriptor InsDeviceDescriptor;
+    u8* DeviceDescriptorPtr;
+
+    // check addr
+    u8 isAddrChanged;
+    u16 oldAddr;
+
+    // struct usb_ConfigurationDescriptor InsConfigurationDescriptor;
+    // u8* ConfigurationDescriptorPtr;
+
     int irq1;
     int irqs;
 
@@ -237,6 +400,8 @@ struct usb_device_data {
     u16 TX_len;
     u8 RX[256];
     u16 RX_len;
+    bool isEnd;
+    u8 RX_index;
 
     struct work_struct re_request_work;
     bool is_scheduled;
@@ -261,17 +426,21 @@ void USB1_ApplyToken(struct usb_device_data *data, u8 epnum);
 void USB1_reset(struct usb_device_data *data);
 int USB1_init(struct usb_device_data *data);
 void PHY1_init(struct usb_device_data *data);
-
-void restart_next_round(struct usb_device_data *data);
-void musb_init_controller_V(struct usb_device_data *data);
-
-void musb_exit_V(struct usb_device_data *data);
+void USB1_exit(struct usb_device_data *data);
 
 /* ================== API for Control Transfer ===================== */
-int USB1_SETUP_Transaction_GetDesc(struct usb_device_data *data);
-int USB1_IN_Transaction_GetDesc(struct usb_device_data *data, u8* buffer, u16* outlen);
-int USB1_STATUS_Transaction_GetDesc(struct usb_device_data *data);
+void USB1_Reset_Speed(struct usb_device_data *data);
+// int USB1_SETUP_Phase_GetDesc(struct usb_device_data *data, const u8* pkt, u16 addr);
+// int USB1_IN_Phase_GetDesc(struct usb_device_data *data);
+// int USB1_STATUS_Phase_GetDesc(struct usb_device_data *data);
 int USB1_GetDesc_Transfer(struct usb_device_data *data); /* main */
 
+void USB1_Print_DeviceDescriptor(struct usb_device_data *data);
+void USB1_Print_DeviceDescriptor2(struct usb_device_data *data);
+void USB1_Print_DeviceDescriptorIf0(struct usb_device_data *data);
+
+/* ================== API for Bulk Transfer ===================== */  
+int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u8* dataX, u32 len);
+int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* dataX, u16* len);
 #endif
 
