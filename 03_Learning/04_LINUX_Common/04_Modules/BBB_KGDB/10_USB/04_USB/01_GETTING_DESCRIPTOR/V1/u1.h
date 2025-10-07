@@ -299,70 +299,36 @@ struct usb_DeviceDescriptor {
     u8 bmAttributes;         // 7: 0xC0 (self-powered, remote wakeup)
     u8 bMaxPower;            // 8: 0x32 (100mA / 2 = 50mA units)
 
-    // Interface 0: Communications Class (CDC) (bytes 9-17 / offsets 27-35)
-    u8 if0_bLength;          // 9: 0x09
-    u8 if0_bDescriptorType;  // 10: 0x04 (Interface)
-    u8 if0_bInterfaceNumber; // 11: 0x00 (interface 0)
-    u8 if0_bAlternateSetting;// 12: 0x00 (alternate 0)
-    u8 if0_bNumEndpoints;    // 13: 0x01 (1 endpoint)
-    u8 if0_bInterfaceClass;  // 14: 0x02 (Communications)
-    u8 if0_bInterfaceSubClass; // 15: 0x02 (ACM)
-    u8 if0_bInterfaceProtocol; // 16: 0x01 (AT Commands v.25ter)
-    u8 if0_iInterface;       // 17: 0x00
 
-    // CDC Header Functional Descriptor (bytes 18-22 / offsets 36-40)
-    u8 cdc_header_bLength;   // 18: 0x05
-    u8 cdc_header_bDescriptorType; // 19: 0x24 (CS_INTERFACE)
-    u8 cdc_header_bDescriptorSubtype; // 20: 0x00 (Header)
-    u16 cdc_header_bcdCDC;   // 21-22: 0x0110 (CDC 1.10)
+    
+    // Interface Descriptor (bytes 9-17 / offsets 27-35)
+    u8 bLength3; // 0x09
+    u8 bDescriptorType3; // 0x04 (Interface)
+    u8 bInterfaceNumber; // 0x00
+    u8 bAlternateSetting; // 0x00
+    u8 bNumEndpoints; // 0x01 (one interrupt endpoint)
+    u8 bInterfaceClass; // 0x03 (HID)
+    u8 bInterfaceSubClass; // 0x01 (Boot Interface)
+    u8 bInterfaceProtocol; // 0x02 (Mouse)
+    u8 iInterface; // 0x00 (no string)
 
-    // CDC ACM Functional Descriptor (bytes 23-27 / offsets 41-45)
-    u8 cdc_acm_bLength;      // 23: 0x04 or 0x05 (varies; 0x05 standard)
-    u8 cdc_acm_bDescriptorType; // 24: 0x24 (CS_INTERFACE)
-    u8 cdc_acm_bDescriptorSubtype; // 25: 0x02 (ACM)
-    u8 cdc_acm_bmCapabilities; // 26: 0x06 (set line coding, get/set control, send break)
+    // HID Descriptor (bytes 18-26 / offsets 36-44)
+    u8 bLength4; // 0x09
+    u8 bDescriptorType4; // 0x21 (HID)
+    u16 bcdHID; // 0x0111 (HID 1.11)
+    u8 bCountryCode; // 0x00 (not localized)
+    u8 bNumDescriptors; // 0x01 (one class descriptor)
+    u8 bDescriptorType5; // 0x22 (Report)
+    u16 wDescriptorLength; // Typically 0x0034 (52 bytes for mouse report descriptor)
+    
+    // Endpoint Descriptor (bytes 27-33 / offsets 45-51)
+    u8 bLength5; // 0x07
+    u8 bDescriptorType6; // 0x05 (Endpoint)
+    u8 bEndpointAddress; // 0x81 (Endpoint 1 IN)
+    u8 bmAttributes5; // 0x03 (Interrupt)
+    u16 wMaxPacketSize; // 0x0004 or 0x0008 (4 or 8 bytes for mouse reports)
+    u8 bInterval; // 0x0A (10ms polling interval)
 
-    // CDC Union Functional Descriptor (bytes 28-32 / offsets 46-50)
-    u8 cdc_union_bLength;    // 28: 0x05
-    u8 cdc_union_bDescriptorType; // 29: 0x24 (CS_INTERFACE)
-    u8 cdc_union_bDescriptorSubtype; // 30: 0x06 (Union)
-    u8 cdc_union_bMasterInterface; // 31: 0x00 (master=0)
-    u8 cdc_union_bSlaveInterface0; // 32: 0x01 (slave=1)
-
-    // Endpoint for Interface 0: Interrupt IN (EP 2) (bytes 33-39 / offsets 51-57)
-    u8 ep_int_bLength;       // 33: 0x07
-    u8 ep_int_bDescriptorType; // 34: 0x05 (Endpoint)
-    u8 ep_int_bEndpointAddress; // 35: 0x82 (EP2 IN)
-    u8 ep_int_bmAttributes;  // 36: 0x03 (Interrupt)
-    u16 ep_int_wMaxPacketSize; // 37-38: 0x0008 (8 bytes)
-    u8 ep_int_bInterval;     // 39: 0xFF (255 ms)
-
-    // Interface 1: Data Class (CDC-Data) (bytes 40-48 / offsets 58-66)
-    u8 if1_bLength;          // 40: 0x09
-    u8 if1_bDescriptorType;  // 41: 0x04 (Interface)
-    u8 if1_bInterfaceNumber; // 42: 0x01 (interface 1)
-    u8 if1_bAlternateSetting;// 43: 0x00
-    u8 if1_bNumEndpoints;    // 44: 0x02 (2 endpoints)
-    u8 if1_bInterfaceClass;  // 45: 0x0A (CDC-Data)
-    u8 if1_bInterfaceSubClass; // 46: 0x00
-    u8 if1_bInterfaceProtocol; // 47: 0x00
-    u8 if1_iInterface;       // 48: 0x00
-
-    // Endpoint for Interface 1: Bulk OUT (EP 4) (bytes 49-55 / offsets 67-73)
-    u8 ep_bulk_out_bLength;  // 49: 0x07
-    u8 ep_bulk_out_bDescriptorType; // 50: 0x05
-    u8 ep_bulk_out_bEndpointAddress; // 51: 0x04 (EP4 OUT)
-    u8 ep_bulk_out_bmAttributes; // 52: 0x02 (Bulk)
-    u16 ep_bulk_out_wMaxPacketSize; // 53-54: 0x0040 (64 bytes)
-    u8 ep_bulk_out_bInterval; // 55: 0x00
-
-    // Endpoint for Interface 1: Bulk IN (EP 3) (bytes 56-62 / offsets 74-80)
-    u8 ep_bulk_in_bLength;   // 56: 0x07
-    u8 ep_bulk_in_bDescriptorType; // 57: 0x05
-    u8 ep_bulk_in_bEndpointAddress; // 58: 0x83 (EP3 IN)
-    u8 ep_bulk_in_bmAttributes; // 59: 0x02 (Bulk)
-    u16 ep_bulk_in_wMaxPacketSize; // 60-61: 0x0040 (64 bytes)
-    u8 ep_bulk_in_bInterval;  // 62: 0x00
 } __attribute__((packed));  // Prevents padding; total size now 80 bytes;
 
 

@@ -214,6 +214,10 @@ static int usb1_remove(struct platform_device *pdev)
 
     USB1_exit(data);
 
+
+    // NEW: Disable clock (manual, since enable was manual)
+    clk_disable_unprepare(data->clk);
+
     iounmap(data->base_usbss);
     iounmap(data->base_usb1ctl);
     iounmap(data->base_usb1phy);

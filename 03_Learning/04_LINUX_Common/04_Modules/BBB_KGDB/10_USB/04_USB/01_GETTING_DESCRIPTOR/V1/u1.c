@@ -34,8 +34,8 @@ const u8 GetDescif0_pkt[8] = {
     0x80,       // bmRequestType: Device-to-host, Standard, 
     0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
     0x00, 0x02, // wValue: Index=0 (LOW), Type=INTERFACE (4) (HIGH) → 0x0400
-    0x00, 0x00, // wIndex: Interface number 0
-    0x3e, 0x00  // wLength: 9 bytes (Interface descriptor length)
+    0x00, 0x00, // wIndex: 
+    0x22, 0x00  // wLength: 34 bytes 
 };
 
 const u8 SetAddr_pkt[8] = {
@@ -475,11 +475,18 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
         // if
         if (data->isAddrChanged)
         {
+            printk("CHANGEDDDDD ADDR, addr 3 = 0x%x\n", &data->InsDeviceDescriptor.bLength3);
             data->DeviceDescriptorPtr = (u8*)(&data->InsDeviceDescriptor);
 
             data->oldAddr = ioread16(data->base_usb1core + MUSB_TXFUNCADDR);
             data->isAddrChanged = 0;
 
+        }
+
+        if (data->InsReq.wLength == 0x22) {
+            data->DeviceDescriptorPtr = (u8*)(&data->InsDeviceDescriptor) + 0x12;
+
+            data->InsReq.wLength = 0;
         }
         
 
@@ -739,10 +746,10 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
         ret = USB1_READ_Transaction(data, GetDesc_pkt2, 0x1, "GetDesc_pkt2");
     }
 
-    // /* Getting descriptor (Interface 0: Communications Class (CDC)) with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
-    // }
+    /* Getting descriptor (Interface 0: Communications Class (CDC)) with new address 0x1 */
+    if (ret == 0){
+        ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
+    }
 
     // /* Setting configuration with new address 0x1 */
     // if (ret == 0){
@@ -802,38 +809,35 @@ void USB1_Print_DeviceDescriptor2(struct usb_device_data *data){
 
 void USB1_Print_DeviceDescriptorIf0(struct usb_device_data *data){
     printk("# --------Device descriptor----------- #\n");
-    printk("# if0_bLength = 0x%x\n", data->InsDeviceDescriptor.if0_bLength);
-    printk("# if0_bDescriptorType = 0x%x\n", data->InsDeviceDescriptor.if0_bDescriptorType);
-    printk("# if0_bInterfaceNumber = 0x%x\n", data->InsDeviceDescriptor.if0_bInterfaceNumber);
-    printk("# if0_bAlternateSetting = 0x%x\n", data->InsDeviceDescriptor.if0_bAlternateSetting);
-    printk("# if0_bNumEndpoints = 0x%x\n", data->InsDeviceDescriptor.if0_bNumEndpoints);
-    printk("# if0_bInterfaceClass = 0x%x\n", data->InsDeviceDescriptor.if0_bInterfaceClass);
-    printk("# if0_bInterfaceSubClass = 0x%x\n", data->InsDeviceDescriptor.if0_bInterfaceSubClass);
-    printk("# if0_bInterfaceProtocol = 0x%x\n", data->InsDeviceDescriptor.if0_bInterfaceProtocol);
-    printk("# if0_iInterface = 0x%x\n", data->InsDeviceDescriptor.if0_iInterface);
+    printk("# bLength3 = 0x%x\n", data->InsDeviceDescriptor.bLength3);
+    printk("# bDescriptorType3 = 0x%x\n", data->InsDeviceDescriptor.bDescriptorType3);
+    printk("# bInterfaceNumber = 0x%x\n", data->InsDeviceDescriptor.bInterfaceNumber);
+    printk("# bAlternateSetting = 0x%x\n", data->InsDeviceDescriptor.bAlternateSetting);
+    printk("# bNumEndpoints = 0x%x\n", data->InsDeviceDescriptor.bNumEndpoints);
+    printk("# bInterfaceClass = 0x%x\n", data->InsDeviceDescriptor.bInterfaceClass);
+    printk("# bInterfaceSubClass = 0x%x\n", data->InsDeviceDescriptor.bInterfaceSubClass);
+    printk("# bInterfaceProtocol = 0x%x\n", data->InsDeviceDescriptor.bInterfaceProtocol);
+    printk("# iInterface = 0x%x\n", data->InsDeviceDescriptor.iInterface);
+
 
     printk("\n");
-    printk("# ep_int_bLength = 0x%x\n", data->InsDeviceDescriptor.ep_int_bLength);
-    printk("# if1_bLength = 0x%x\n", data->InsDeviceDescriptor.if1_bLength);
+    printk("# bLength4 = 0x%x\n", data->InsDeviceDescriptor.bLength4);
+    printk("# bDescriptorType4 = 0x%x\n", data->InsDeviceDescriptor.bDescriptorType4);
+    printk("# bcdHID = 0x%x\n", data->InsDeviceDescriptor.bcdHID);
+    printk("# bCountryCode = 0x%x\n", data->InsDeviceDescriptor.bCountryCode);
+    printk("# bNumDescriptors = 0x%x\n", data->InsDeviceDescriptor.bNumDescriptors);
+    printk("# bDescriptorType5 = 0x%x\n", data->InsDeviceDescriptor.bDescriptorType5);
+    printk("# wDescriptorLength = 0x%x\n", data->InsDeviceDescriptor.wDescriptorLength);
 
     printk("\n");
-    printk("# ep_bulk_out_bLength = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_out_bLength);
-    printk("# ep_bulk_out_bDescriptorType = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_out_bDescriptorType);
-    printk("# ep_bulk_out_bEndpointAddress = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_out_bEndpointAddress);
-    printk("# ep_bulk_out_bmAttributes = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_out_bmAttributes);
-    printk("# ep_bulk_out_wMaxPacketSize = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_out_wMaxPacketSize);
-    printk("# ep_bulk_out_bInterval = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_out_bInterval);
-
-    printk("\n");
-    printk("# ep_bulk_in_bLength = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bLength);
-    printk("# ep_bulk_in_bDescriptorType = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bDescriptorType);
-    printk("# ep_bulk_in_bEndpointAddress = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bEndpointAddress);
-    printk("# ep_bulk_in_bmAttributes = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bmAttributes);
-    printk("# ep_bulk_in_wMaxPacketSize = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_wMaxPacketSize);
-    printk("# ep_bulk_in_bInterval = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bInterval);
+    printk("# bLength5 = 0x%x\n", data->InsDeviceDescriptor.bLength5);
+    printk("# bDescriptorType5 = 0x%x\n", data->InsDeviceDescriptor.bDescriptorType5);
+    printk("# bEndpointAddress = 0x%x\n", data->InsDeviceDescriptor.bEndpointAddress);
+    printk("# bmAttributes5 = 0x%x\n", data->InsDeviceDescriptor.bmAttributes5);
+    printk("# wMaxPacketSize = 0x%x\n", data->InsDeviceDescriptor.wMaxPacketSize);
+    printk("# bInterval = 0x%x\n", data->InsDeviceDescriptor.bInterval);
     printk("# ----------------------------------- #\n");
 }
-
 /* ================== Utils for bulk transfer ===================== */
 
 /* TX */

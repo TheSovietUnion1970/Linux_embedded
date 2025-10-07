@@ -1,26 +1,53 @@
-[ 6226.065398] # ----------------------------------- #
-[ 6226.070321] # bLength1 = 0x12
-[ 6226.073301] # bDescriptorType1 = 0x1
-[ 6226.076911] # bcdUSB = 0x110
-[ 6226.079822] # bDeviceClass = 0x0
-[ 6226.083083] # bDeviceSubClass = 0x0
-[ 6226.086607] # bDeviceProtocol = 0x0
-[ 6226.090131] # bMaxPacketSize = 0x8
-[ 6226.093547] # idVendor = 0x62a
-[ 6226.096634] # idProduct = 0x4102
-[ 6226.099894] # bcdDevice = 0x108
-[ 6226.103069] # iManufacturer = 0x1
-[ 6226.106419] # iProduct = 0x2
-[ 6226.109311] # iSerialNumber = 0x0
-[ 6226.112658] # bNumConfigurations = 0x1
-[ 6226.116443] # ----------------------------------- #
-[ 6226.121361] # --------Device descriptor----------- #
-[ 6226.126367] # bLength2 = 0x9
-[ 6226.129260] # bDescriptorType2 = 0x2
-[ 6226.132868] # wTotalLenght = 0x22
-[ 6226.136216] # bNumInterfaces = 0x1
-[ 6226.139652] # bConfigurationValue = 0x1
-[ 6226.143524] # iConfiguration = 0x0
-[ 6226.146960] # bmAttributes = 0xa0
-[ 6226.150310] # bMaxPower = 0x32
+[ 2343.834121] # ----------------------------------- #
+[ 2343.839039] # bLength1 = 0x12
+[ 2343.842038] # bDescriptorType1 = 0x1
+[ 2343.845628] # bcdUSB = 0x110
+[ 2343.848538] # bDeviceClass = 0x0
+[ 2343.851799] # bDeviceSubClass = 0x0
+[ 2343.855319] # bDeviceProtocol = 0x0
+[ 2343.858842] # bMaxPacketSize = 0x8
+[ 2343.862278] # idVendor = 0x62a
+[ 2343.865345] # idProduct = 0x4102
+[ 2343.868603] # bcdDevice = 0x108
+[ 2343.871776] # iManufacturer = 0x1
+[ 2343.875122] # iProduct = 0x2
+[ 2343.878035] # iSerialNumber = 0x0
+[ 2343.881363] # bNumConfigurations = 0x1
+[ 2343.885145] # ----------------------------------- #
+[ 2343.890063] # --------Device descriptor----------- #
+[ 2343.895067] # bLength2 = 0x9
+[ 2343.897979] # bDescriptorType2 = 0x2
+[ 2343.901568] # wTotalLenght = 0x22
+[ 2343.904914] # bNumInterfaces = 0x1
+[ 2343.908349] # bConfigurationValue = 0x1
+[ 2343.912219] # iConfiguration = 0x0
+[ 2343.915655] # bmAttributes = 0xa0
+[ 2343.918999] # bMaxPower = 0x32
+[ 2343.922085] # ----------------------------------- #
+[ 2343.927003] # --------Device descriptor----------- #
+[ 2343.932006] # bLength3 = 0x9
+[ 2343.934916] # bDescriptorType3 = 0x4
+[ 2343.938531] # bInterfaceNumber = 0x0
+[ 2343.942142] # bAlternateSetting = 0x0
+[ 2343.945819] # bNumEndpoints = 0x1
+[ 2343.949166] # bInterfaceClass = 0x3
+[ 2343.952688] # bInterfaceSubClass = 0x1
+[ 2343.956473] # bInterfaceProtocol = 0x2
+[ 2343.960256] # iInterface = 0x0
+[ 2343.963340] 
+[ 2343.964835] # bLength4 = 0x9
+[ 2343.967745] # bDescriptorType4 = 0x21
+[ 2343.971442] # bcdHID = 0x110
+[ 2343.974353] # bCountryCode = 0x0
+[ 2343.977593] # bNumDescriptors = 0x1
+[ 2343.981114] # bDescriptorType5 = 0x22
+[ 2343.984810] # wDescriptorLength = 0x8d
+[ 2343.988595] 
+[ 2343.990107] # bLength5 = 0x7
+[ 2343.992999] # bDescriptorType5 = 0x22
+[ 2343.996694] # bEndpointAddress = 0x81
+[ 2344.000390] # bmAttributes5 = 0x3
+[ 2344.003738] # wMaxPacketSize = 0x7
+[ 2344.007171] # bInterval = 0x2
+[ 2344.010170] # ----------------------------------- #
 
