@@ -70,21 +70,6 @@ const u8 SetCoding_pkt[8] = {
     0x07, 0x00  // wLength: 7-byte data: DWORD baud, byte stop bits, byte parity, byte data bits
 };
 
-const u8 SetCodingData[] = {
-    0x80, 0x25, 0x00, 0x00,  // Baud: 9600 (little-endian DWORD)
-    0x00,                    // Stop bits: 0 (1 stop bit)
-    0x00,                    // Parity: 0 (none)
-    0x08                     // Data bits: 8
-};
-
-const u8 SetCtrlLine_pkt[8] = {
-    0x21,  // bmRequestType: Host-to-Device, Class, Interface
-    0x22,  // bRequest: SET_CONTROL_LINE_STATE
-    0x03, 0x00,  // wValue: DTR=1, RTS=1
-    0x00, 0x00,  // wIndex: Interface 0
-    0x00, 0x00   // wLength: 0
-};
-
 /* ================== Tmp variables ================= */
 u16 Tx1_flag = 0, Rx1_flag = 0;
 u8 ret;
@@ -467,7 +452,7 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
         return -1;
     } 
     else if (host_csr0 == MUSB_CSR0_RXPKTRDY) {
-        printk("Reading IN with ACKed!\n");
+        //printk("Reading IN with ACKed!\n");
         tmp[0] = USB1_ReadFIFO(data, 0);
         tmp[1] = USB1_ReadFIFO(data, 0);
 
@@ -475,7 +460,7 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
         // if
         if (data->isAddrChanged)
         {
-            printk("CHANGEDDDDD ADDR, addr 3 = 0x%x\n", &data->InsDeviceDescriptor.bLength3);
+            //printk("CHANGEDDDDD ADDR, addr 3 = 0x%x\n", &data->InsDeviceDescriptor.bLength3);
             data->DeviceDescriptorPtr = (u8*)(&data->InsDeviceDescriptor);
 
             data->oldAddr = ioread16(data->base_usb1core + MUSB_TXFUNCADDR);
@@ -507,8 +492,8 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
             data->DeviceDescriptorPtr+=(count - 4);
         }
 
-        printk("0x%x 0x%x, count = %d, data->DeviceDescriptorPtr = 0x%x\n", tmp[0], tmp[1], count, data->DeviceDescriptorPtr);
-        printk("Addr -> 0x%x, 0x%x\n", &data->InsDeviceDescriptor.bLength1, &data->InsDeviceDescriptor.bLength2);
+        //printk("0x%x 0x%x, count = %d, data->DeviceDescriptorPtr = 0x%x\n", tmp[0], tmp[1], count, data->DeviceDescriptorPtr);
+        //printk("Addr -> 0x%x, 0x%x\n", &data->InsDeviceDescriptor.bLength1, &data->InsDeviceDescriptor.bLength2);
 
 
         // clear RXPKTRDY
@@ -756,20 +741,10 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
         ret = USB1_WRITE_Transaction(data, SetConf_pkt, 0x1, NULL, 0, "SetConf_pkt");
     }
 
-    // /* Getting configuration with new address 0x1, data recieved should be 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
-    // }
-
-    // /* Setting line coding with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_WRITE_Transaction(data, SetCoding_pkt, 0x1, SetCodingData, 7, "SetCoding_pkt");
-    // }
-
-    // /* Setting control line coding with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_WRITE_Transaction(data, SetCtrlLine_pkt, 0x1, NULL, 0, "SetCtrlLine_pkt");
-    // }
+    /* Getting configuration with new address 0x1, data recieved should be 0x1 */
+    if (ret == 0){
+        ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
+    }
 
     return ret;
 }
@@ -838,126 +813,40 @@ void USB1_Print_DeviceDescriptorIf0(struct usb_device_data *data){
     printk("# bInterval = 0x%x\n", data->InsDeviceDescriptor.bInterval);
     printk("# ----------------------------------- #\n");
 }
-/* ================== Utils for bulk transfer ===================== */
-
-/* TX */
-void USB1_Bulk_SetAddrTx(struct usb_device_data *data, u8 addr, u8 epnum){
-    iowrite16(addr, data->base_usb1core + MUSB_TXFUNCADDR + (0x08 * epnum));
-}
-void USB1_Bulk_SetTypeTx(struct usb_device_data *data, u8 epnum, u8 speed){
-    u8 TxType = 0;
-
-    TxType = (speed << 6)&MUSB_TYPE_SPEED;
-    TxType |= (0x2 << 4)&MUSB_TYPE_PROTO; // bulk type
-    TxType |= (epnum << 0)&MUSB_TYPE_REMOTE_END;
-
-    iowrite8(TxType, data->base_usb1core + 0x10 + MUSB_TXTYPE);
-}
-void USB1_Bulk_SetTxMaxp(struct usb_device_data *data, u16 maxp){
-    iowrite16(maxp, data->base_usb1core + 0x10 + MUSB_TXMAXP);
-}
-void USB1_Bulk_SetTxInterval(struct usb_device_data *data, u8 txInterval){
-    iowrite8(txInterval, data->base_usb1core + 0x10 + MUSB_TXINTERVAL);
-}
-void USB1_Bulk_SetTXCSR(struct usb_device_data *data){
-    u16 txcsr = 0;
-
-    txcsr = MUSB_TXCSR_MODE; // MODE bit (bit 13) to 1 to ensure the FIFO is enabled
-    txcsr &=~ MUSB_TXCSR_FRCDATATOG; // 0 to allow normal data toggle operations
-    txcsr &=~ MUSB_TXCSR_AUTOSET; // 
-    iowrite8(txcsr, data->base_usb1core + 0x10 + MUSB_TXCSR);
-}
+/* ================== Utils for interrupt transfer ===================== */
 
 /* RX */
-void USB1_Bulk_SetAddrRx(struct usb_device_data *data, u8 addr, u8 epnum){
+void USB1_Interrupt_SetAddrRx(struct usb_device_data *data, u8 addr, u8 epnum){
     iowrite16(addr, data->base_usb1core + MUSB_RXFUNCADDR + (0x08 * epnum));
 }
-void USB1_Bulk_SetTypeRx(struct usb_device_data *data, u8 epnum, u8 speed){
+void USB1_Interrupt_SetTypeRx(struct usb_device_data *data, u8 epnum, u8 speed){
     u8 RxType = 0;
 
     RxType = (speed << 6)&MUSB_TYPE_SPEED;
-    RxType |= (0x2 << 4)&MUSB_TYPE_PROTO; // bulk type
+    RxType |= (0x3 << 4)&MUSB_TYPE_PROTO; // Interrupt type
     RxType |= (epnum << 0)&MUSB_TYPE_REMOTE_END;
 
     iowrite8(RxType, data->base_usb1core + 0x10 + MUSB_RXTYPE);
 }
-void USB1_Bulk_SetRxMaxp(struct usb_device_data *data, u16 maxp){
+void USB1_Interrupt_SetRxMaxp(struct usb_device_data *data, u16 maxp){
     iowrite16(maxp, data->base_usb1core + 0x10 + MUSB_RXMAXP);
 }
-void USB1_Bulk_SetRxInterval(struct usb_device_data *data, u8 rxInterval){
+void USB1_Interrupt_SetRxInterval(struct usb_device_data *data, u8 rxInterval){
     iowrite8(rxInterval, data->base_usb1core + 0x10 + MUSB_RXINTERVAL);
 }
 
 
-/* ================== API for Bulk Transfer ===================== */
-int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u8* dataX, u32 len){
-    u16 host_csr0 = 0, txcsr = 0;
-    int ret = 0, i = 0;
-    u32 tmp[16] = {0}; // holp up to 64 bytes
-
-    setIndex(data, epnum);
-    // TX
-    iowrite8(3, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
-    iowrite16(0x00, data->base_usb1core + MUSB_TXFIFOADD); 
-
-    USB1_Bulk_SetAddrTx(data, addr, epnum);
-    USB1_Bulk_SetTypeTx(data, epnum, 0x2); // 0x2 = full speed
-    USB1_Bulk_SetTxMaxp(data, 0x40); // max packet is 64 bytes
-    USB1_Bulk_SetTxInterval(data, 0x1); // as ep_bulk_out_bInterval = 0x1
-    USB1_Bulk_SetTXCSR(data);
-
-    for (i = 0; i < len; i++){
-        tmp[i/4] |= (dataX[i] << (i%4)*8);
-    }
-    for (i = 0; i < len/4; i++){
-        USB1_WriteDataFIFO(data, epnum, tmp[i]);
-    }
-    if (len%4) USB1_WriteDataFIFO(data, epnum, tmp[len/4]);
-
-
-    txcsr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
-    txcsr |= MUSB_TXCSR_TXPKTRDY | MUSB_TXCSR_H_WZC_BITS;
-    iowrite16(txcsr, data->base_usb1core + 0x10 + MUSB_TXCSR);
-
-    // wait for Endpoint 0 interrupt (Data packet)
-    ret = wait_val_update(data, &Tx1_flag, 1, 2000, "OUT Bulk: Data0/1");
-    if (ret < 0) return -1;
-    Tx1_flag = 0;
-    
-    count = ioread16(data->base_usb1core + 0x10 + MUSB_COUNT0)&0xFFFF;
-    // printk("ret = 0x%x, count = 0x%x\n", ret, count);
-
-    host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0)&0xFF;
-    // Check error
-    if (host_csr0 == MUSB_CSR0_H_RXSTALL) {
-        dev_info(data->dev, "RXSTALL - DATA\n");
-        return -1;
-    }
-    else if (host_csr0 == MUSB_CSR0_H_ERROR) {
-        dev_info(data->dev, "ERROR\n"); // the controller has tried to send the required IN token three times without getting any response
-        return -1;
-    }
-    else if (host_csr0 == MUSB_CSR0_H_NAKTIMEOUT) {
-        dev_info(data->dev, "NAK_TIMEOUT\n"); // .... consider later
-        return -1;
-    } 
-    else {
-        dev_info(data->dev, "ACKed!!\n"); // .... consider later
-    } 
-     
-    return 0;
-}
-
-int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* dataX, u16* len){
+/* ================== API for Interrupt Transfer ===================== */
+int USB1_IN_Phase_Interrupt(struct usb_device_data *data, u8 epnum, u8 addr, u8* dataX, u16* len){
     u16 host_csr0 = 0, rxcsr = 0;
     int ret = 0, i = 0;
     u32 tmp[16] = {0}; // holp up to 64 bytes
 
     setIndex(data, epnum);
-    USB1_Bulk_SetAddrRx(data, addr, epnum);
-    USB1_Bulk_SetTypeRx(data, epnum, 0x2); // 0x2 = full speed
-    USB1_Bulk_SetRxMaxp(data, 0x40); // max packet is 64 bytes
-    USB1_Bulk_SetRxInterval(data, 0x1); // as ep_bulk_in_bInterval = 0x1
+    USB1_Interrupt_SetAddrRx(data, addr, epnum);
+    USB1_Interrupt_SetTypeRx(data, epnum, 0x2); // 0x2 = full speed
+    USB1_Interrupt_SetRxMaxp(data, 0x08); // max packet is 7 bytes
+    USB1_Interrupt_SetRxInterval(data, 0x2); // as bInterval = 0x2
 
     // RX
     iowrite8(3, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
