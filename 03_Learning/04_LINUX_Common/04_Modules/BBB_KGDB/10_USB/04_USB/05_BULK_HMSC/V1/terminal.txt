@@ -1,0 +1,27 @@
+[ 4973.395739] # ----------------------------------- #
+[ 4973.400657] # bLength1 = 0x12
+[ 4973.403658] # bDescriptorType1 = 0x1
+[ 4973.407269] # bcdUSB = 0x210
+[ 4973.410182] # bDeviceClass = 0x0
+[ 4973.413424] # bDeviceSubClass = 0x0
+[ 4973.416948] # bDeviceProtocol = 0x0
+[ 4973.420478] # bMaxPacketSize = 0x40
+[ 4973.424005] # idVendor = 0xeaf3
+[ 4973.427179] # idProduct = 0x1ec2
+[ 4973.430441] # bcdDevice = 0x1bac
+[ 4973.433684] # iManufacturer = 0x0
+[ 4973.437032] # iProduct = 0x0
+[ 4973.439944] # iSerialNumber = 0x10
+[ 4973.443380] # bNumConfigurations = 0x38
+[ 4973.447252] # ----------------------------------- #
+[ 4973.452169] # --------Device descriptor----------- #
+[ 4973.457175] # bLength2 = 0x9
+[ 4973.460088] # bDescriptorType2 = 0x2
+[ 4973.463698] # wTotalLenght = 0x20
+[ 4973.467047] # bNumInterfaces = 0x1
+[ 4973.470482] # bConfigurationValue = 0x1
+[ 4973.474353] # iConfiguration = 0x0
+[ 4973.477790] # bmAttributes = 0x80
+[ 4973.481118] # bMaxPower = 0xf3
+[ 4973.484204] # ----------------------------------- #
+
