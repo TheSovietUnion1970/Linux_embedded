@@ -325,8 +325,6 @@ struct usb_DeviceDescriptor {
     u8 ep_bulk_in_bmAttributes;       // 0x02 (Bulk)
     u16 ep_bulk_in_wMaxPacketSize;    // 0x0200 (512 bytes)
     u8 ep_bulk_in_bInterval;          // 0x00
-
-    u8 tmp[30];
 } __attribute__((packed));  // Total: 50 bytes
 
 
