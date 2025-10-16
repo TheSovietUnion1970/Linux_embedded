@@ -186,6 +186,8 @@ static int usb1_probe(struct platform_device *pdev)
     /* Reset */
     USB1_Reset_Speed(data);
 
+    //msleep(2000);
+
     /* Getting descriptor */
     ret = USB1_GetDesc_Transfer(data);
     if (ret < 0) {
@@ -194,7 +196,7 @@ static int usb1_probe(struct platform_device *pdev)
     else {
         USB1_Print_DeviceDescriptor(data);
         USB1_Print_DeviceDescriptor2(data);
-        // USB1_Print_DeviceDescriptorIf0(data);
+        USB1_Print_DeviceDescriptorIf0(data);
     }
     
     // msleep(2000); // need 2s

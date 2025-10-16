@@ -35,7 +35,7 @@ const u8 GetDescif0_pkt[8] = {
     0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
     0x00, 0x02, // wValue: Index=0 (LOW), Type=INTERFACE (4) (HIGH) → 0x0400
     0x00, 0x00, // wIndex: Interface number 0
-    0x3e, 0x00  // wLength: 9 bytes (Interface descriptor length)
+    0x20, 0x00  // wLength: 20 bytes (Interface descriptor length)
 };
 
 const u8 SetAddr_pkt[8] = {
@@ -439,8 +439,8 @@ int USB1_SETUP_Phase_GetDesc(struct usb_device_data *data, const u8* pkt, u16 ad
 
 int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
     u16 host_csr0 = 0;
-    int ret = 0;
-    u32 tmp[2];
+    int ret = 0, i = 0, j = 0;
+    u32 tmp[16] = {0}; // up to 64 bytes
 
     iowrite16(MUSB_CSR0_H_REQPKT, data->base_usb1core + 0x10 + MUSB_CSR0);
 
@@ -450,7 +450,7 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
     Tx1_flag = 0;
     
     count = ioread16(data->base_usb1core + 0x10 + MUSB_COUNT0)&0xFFFF;
-    // printk("ret = 0x%x, count = 0x%x\n", ret, count);
+    printk("ret = 0x%x, count = 0x%x\n", ret, count);
 
     host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0)&0xFF;
     // Check error
@@ -468,8 +468,11 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
     } 
     else if (host_csr0 == MUSB_CSR0_RXPKTRDY) {
         printk("Reading IN with ACKed!\n");
-        tmp[0] = USB1_ReadFIFO(data, 0);
-        tmp[1] = USB1_ReadFIFO(data, 0);
+
+        for (i = 0; i < count/4; i++){
+            tmp[i] = USB1_ReadFIFO(data, 0);
+        }
+        if (count%4) tmp[i++] = USB1_ReadFIFO(data, 0); // in case count is odd
 
         if (data->oldAddr != ioread16(data->base_usb1core + MUSB_TXFUNCADDR)) data->isAddrChanged = 1;
         // if
@@ -483,25 +486,25 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
 
         }
 
-        if (count == 8) {
-            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[0], 4);
-            data->DeviceDescriptorPtr+=4;
-            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[1], 4);
-            data->DeviceDescriptorPtr+=4;
-        }
-        else if (count <= 4){
-            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[0], count);
-            data->DeviceDescriptorPtr+=(count);
-        }
-        else {
-            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[0], 4);
-            data->DeviceDescriptorPtr+=4;
-            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[1], count - 4);
-            data->DeviceDescriptorPtr+=(count - 4);
+        if (data->InsReq.wLength == 0x20) {
+            data->DeviceDescriptorPtr = (u8*)(&data->InsDeviceDescriptor) + 0x12;
+
+            data->InsReq.wLength = 0;
         }
 
-        //printk("0x%x 0x%x\n", tmp[0], tmp[1]);
-
+        // handle descriptor ptr
+        for (j = 0; j < i-1; j++){
+            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[j], 4);
+            data->DeviceDescriptorPtr+=4;    
+        }
+        if (count%4){ // in case count is odd
+            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[i-1], count%4);
+            data->DeviceDescriptorPtr+=count%4;            
+        }
+        else { // in case count is even
+            CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[i-1], 4);
+            data->DeviceDescriptorPtr+=4;       
+        }
 
         // clear RXPKTRDY
         host_csr0 = ioread32(data->base_usb1core + 0x10 + MUSB_CSR0);
@@ -738,10 +741,10 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
         ret = USB1_READ_Transaction(data, GetDesc_pkt2, 0x1, "GetDesc_pkt2");
     }
 
-    // /* Getting descriptor (Interface 0: Communications Class (CDC)) with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
-    // }
+    /* Getting descriptor (Interface 0: Communications Class (CDC)) with new address 0x1 */
+    if (ret == 0){
+        ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
+    }
 
     // /* Setting configuration with new address 0x1 */
     // if (ret == 0){

@@ -1,0 +1,52 @@
+[11767.346321] # ----------------------------------- #
+[11767.351244] # bLength1 = 0x12
+[11767.354246] # bDescriptorType1 = 0x1
+[11767.357861] # bcdUSB = 0x210
+[11767.360755] # bDeviceClass = 0x0
+[11767.364015] # bDeviceSubClass = 0x0
+[11767.367539] # bDeviceProtocol = 0x0
+[11767.371063] # bMaxPacketSize = 0x40
+[11767.374586] # idVendor = 0x21c4
+[11767.377741] # idProduct = 0xcd1
+[11767.380913] # bcdDevice = 0x110
+[11767.384086] # iManufacturer = 0x1
+[11767.387435] # iProduct = 0x2
+[11767.390347] # iSerialNumber = 0x3
+[11767.393677] # bNumConfigurations = 0x1
+[11767.397461] # ----------------------------------- #
+[11767.402379] # --------Device descriptor----------- #
+[11767.407385] # bLength2 = 0x9
+[11767.410297] # bDescriptorType2 = 0x2
+[11767.413908] # wTotalLength = 0x20
+[11767.417238] # bNumInterfaces = 0x1
+[11767.420673] # bConfigurationValue = 0x1
+[11767.424545] # iConfiguration = 0x0
+[11767.427980] # bmAttributes = 0x80
+[11767.431329] # bMaxPower = 0x4b
+[11767.434415] # ----------------------------------- #
+[11767.439333] # --------Device descriptor----------- #
+[11767.444339] # if0_bLength = 0x9
+[11767.447512] # if0_bDescriptorType = 0x4
+[11767.451383] # if0_bInterfaceNumber = 0x0
+[11767.455346] # if0_bAlternateSetting = 0x0
+[11767.459395] # if0_bNumEndpoints = 0x2
+[11767.463093] # if0_bInterfaceClass = 0x8
+[11767.466965] # if0_bInterfaceSubClass = 0x6
+[11767.471099] # if0_bInterfaceProtocol = 0x50
+[11767.475321] # if0_iInterface = 0x0
+[11767.478757] 
+[11767.480252] # ep_bulk_out_bLength = 0x7
+[11767.484122] # ep_bulk_out_bDescriptorType = 0x5
+[11767.488692] # ep_bulk_out_bEndpointAddress = 0x81
+[11767.493437] # ep_bulk_out_bmAttributes = 0x2
+[11767.497745] # ep_bulk_out_wMaxPacketSize = 0x40
+[11767.502315] # ep_bulk_out_bInterval = 0x0
+[11767.506362] 
+[11767.507858] # ep_bulk_in_bLength = 0x7
+[11767.511642] # ep_bulk_in_bDescriptorType = 0x5
+[11767.516126] # ep_bulk_in_bEndpointAddress = 0x2
+[11767.520696] # ep_bulk_in_bmAttributes = 0x2
+[11767.524931] # ep_bulk_in_wMaxPacketSize = 0x40
+[11767.529416] # ep_bulk_in_bInterval = 0x0
+[11767.533376] # ----------------------------------- #
+
