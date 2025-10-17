@@ -310,21 +310,21 @@ struct usb_DeviceDescriptor {
     u8 if0_bInterfaceProtocol;// 0x50 (Bulk-Only Transport)
     u8 if0_iInterface;        // 0x00
 
-    // Bulk OUT Endpoint (7 bytes; offsets 36-42; typically EP1 OUT)
-    u8 ep_bulk_out_bLength;           // 0x07
-    u8 ep_bulk_out_bDescriptorType;   // 0x05 (Endpoint)
-    u8 ep_bulk_out_bEndpointAddress;  // e.g., 0x01 (EP1 OUT)
-    u8 ep_bulk_out_bmAttributes;      // 0x02 (Bulk)
-    u16 ep_bulk_out_wMaxPacketSize;   // 0x0200 (512 bytes for HS)
-    u8 ep_bulk_out_bInterval;         // 0x00
-
-    // Bulk IN Endpoint (7 bytes; offsets 43-49; typically EP2 IN)
+    // Bulk IN Endpoint (7 bytes; offsets 36-42; typically EP2 OUT)
     u8 ep_bulk_in_bLength;            // 0x07
     u8 ep_bulk_in_bDescriptorType;    // 0x05
     u8 ep_bulk_in_bEndpointAddress;   // e.g., 0x82 (EP2 IN)
     u8 ep_bulk_in_bmAttributes;       // 0x02 (Bulk)
     u16 ep_bulk_in_wMaxPacketSize;    // 0x0200 (512 bytes)
     u8 ep_bulk_in_bInterval;          // 0x00
+
+    // Bulk OUT Endpoint (7 bytes; offsets 43-49; typically EP1 IN)
+    u8 ep_bulk_out_bLength;           // 0x07
+    u8 ep_bulk_out_bDescriptorType;   // 0x05 (Endpoint)
+    u8 ep_bulk_out_bEndpointAddress;  // e.g., 0x01 (EP1 OUT)
+    u8 ep_bulk_out_bmAttributes;      // 0x02 (Bulk)
+    u16 ep_bulk_out_wMaxPacketSize;   // 0x0200 (512 bytes for HS)
+    u8 ep_bulk_out_bInterval;         // 0x00
 } __attribute__((packed));  // Total: 50 bytes
 
 

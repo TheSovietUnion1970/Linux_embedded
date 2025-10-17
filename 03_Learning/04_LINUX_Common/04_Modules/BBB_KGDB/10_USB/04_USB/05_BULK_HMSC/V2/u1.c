@@ -51,7 +51,7 @@ const u8 GetConf_pkt[8] = {
     0x08,       // bRequest: USB_REQ_GET_CONFIGURATION
     0x00, 0x01, // wValue: Descriptor Index = 0 (LOW), Type = DEVICE (1) (HIGH)
     0x00, 0x00, // wIndex: 0
-    0x01, 0x00  // wLength: 9 bytes (Configuration descriptor length)
+    0x01, 0x00  // wLength: 1 bytes (Configuration descriptor length)
 };
 
 const u8 SetConf_pkt[8] = {
@@ -60,29 +60,6 @@ const u8 SetConf_pkt[8] = {
     0x01, 0x00, // wValue: Configuration value 1 (LOW), 0 (HIGH) → 0x0001
     0x00, 0x00, // wIndex: 0
     0x00, 0x00  // wLength: 0 (no data phase)
-};
-
-const u8 SetCoding_pkt[8] = {
-    0x21,       // bmRequestType: Host-to-Device, Class, Interface 0
-    0x20,       // bRequest: SET_LINE_CODING
-    0x00, 0x00, // wValue
-    0x00, 0x00, // wIndex
-    0x07, 0x00  // wLength: 7-byte data: DWORD baud, byte stop bits, byte parity, byte data bits
-};
-
-const u8 SetCodingData[] = {
-    0x80, 0x25, 0x00, 0x00,  // Baud: 9600 (little-endian DWORD)
-    0x00,                    // Stop bits: 0 (1 stop bit)
-    0x00,                    // Parity: 0 (none)
-    0x08                     // Data bits: 8
-};
-
-const u8 SetCtrlLine_pkt[8] = {
-    0x21,  // bmRequestType: Host-to-Device, Class, Interface
-    0x22,  // bRequest: SET_CONTROL_LINE_STATE
-    0x03, 0x00,  // wValue: DTR=1, RTS=1
-    0x00, 0x00,  // wIndex: Interface 0
-    0x00, 0x00   // wLength: 0
 };
 
 /* ================== Tmp variables ================= */
@@ -741,30 +718,20 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
         ret = USB1_READ_Transaction(data, GetDesc_pkt2, 0x1, "GetDesc_pkt2");
     }
 
-    /* Getting descriptor (Interface 0: Communications Class (CDC)) with new address 0x1 */
+    /* Getting descriptor (Interface 0: HMSC) with new address 0x1 */
     if (ret == 0){
         ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
     }
 
-    // /* Setting configuration with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_WRITE_Transaction(data, SetConf_pkt, 0x1, NULL, 0, "SetConf_pkt");
-    // }
+    /* Setting configuration with new address 0x1 */
+    if (ret == 0){
+        ret = USB1_WRITE_Transaction(data, SetConf_pkt, 0x1, NULL, 0, "SetConf_pkt");
+    }
 
-    // /* Getting configuration with new address 0x1, data recieved should be 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
-    // }
-
-    // /* Setting line coding with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_WRITE_Transaction(data, SetCoding_pkt, 0x1, SetCodingData, 7, "SetCoding_pkt");
-    // }
-
-    // /* Setting control line coding with new address 0x1 */
-    // if (ret == 0){
-    //     ret = USB1_WRITE_Transaction(data, SetCtrlLine_pkt, 0x1, NULL, 0, "SetCtrlLine_pkt");
-    // }
+    /* Getting configuration with new address 0x1, data recieved should be 0x1 */
+    if (ret == 0){
+        ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
+    }
 
     return ret;
 }
