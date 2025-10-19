@@ -83,7 +83,7 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 /*
  * Clear TX fifo. Needed to avoid BABBLE errors.
  */
-static void musb_h_tx_flush_fifo(struct musb_hw_ep *ep)
+void musb_h_tx_flush_fifo(struct musb_hw_ep *ep)
 {
 	struct musb	*musb = ep->musb;
 	void __iomem	*epio = ep->regs;
@@ -117,6 +117,7 @@ static void musb_h_tx_flush_fifo(struct musb_hw_ep *ep)
 		mdelay(1);
 	}
 }
+EXPORT_SYMBOL_GPL(musb_h_tx_flush_fifo);
 
 void musb_h_ep0_flush_fifo(struct musb_hw_ep *ep)
 {
@@ -399,7 +400,7 @@ static void musb_advance_schedule(struct musb *musb, struct urb *urb,
 	}
 }
 
-static u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
+u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
 {
 	/* we don't want fifo to fill itself again;
 	 * ignore dma (various models),
@@ -417,6 +418,7 @@ static u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
 	/* flush writebuffer */
 	return musb_readw(hw_ep->regs, MUSB_RXCSR);
 }
+EXPORT_SYMBOL_GPL(musb_h_flush_rxfifo);
 
 /*
  * PIO RX for a packet (or part of it).
@@ -499,6 +501,12 @@ musb_host_packet_rx(struct musb *musb, struct urb *urb, u8 epnum, u8 iso_err)
 
 	musb_read_fifo(hw_ep, length, buf);
 
+	u32 i = 0;
+	printk("DATA IN:");
+	for (i = 0; i < length; i++){
+		printk("0x%x ", buf[i]);
+	}
+
 	csr = musb_readw(epio, MUSB_RXCSR);
 	csr |= MUSB_RXCSR_H_WZC_BITS;
 	if (unlikely(do_flush))
@@ -522,7 +530,7 @@ musb_host_packet_rx(struct musb *musb, struct urb *urb, u8 epnum, u8 iso_err)
  * transfer might have left the endpoint busier than it should be.
  * the busy/not-empty tests are basically paranoia.
  */
-static void
+void
 musb_rx_reinit(struct musb *musb, struct musb_qh *qh, u8 epnum)
 {
 	struct musb_hw_ep *ep = musb->endpoints + epnum;
@@ -578,8 +586,24 @@ musb_rx_reinit(struct musb *musb, struct musb_qh *qh, u8 epnum)
 	musb_writew(ep->regs, MUSB_RXMAXP,
 			qh->maxpacket | ((qh->hb_mult - 1) << 11));
 
+	printk("ep->regs = 0x%x\n", ep->regs);
+	printk("Index = %x\n", ioread8(musb->mregs + MUSB_INDEX));
+	printk("FIFOSZ = %x\n", ioread16(musb->mregs + MUSB_TXFIFOSZ));
+	printk("FIFOADD = %x\n", ioread32(musb->mregs + MUSB_TXFIFOADD));
+	printk("MUSB_RXTYPE = %x, MUSB_RXINTERVAL = %x, MUSB_RXMAXP = %x, MUSB_RXCSR = %x\n", 
+																		 ioread8(ep->regs + MUSB_RXTYPE),
+																		 ioread8(ep->regs + MUSB_RXINTERVAL),
+																		 ioread16(ep->regs + MUSB_RXMAXP),
+																		 ioread16(ep->regs + MUSB_RXCSR));
+	printk("MUSB_TXTYPE = %x, MUSB_TXINTERVAL = %x, MUSB_TXMAXP = %x, MUSB_TXCSR = %x\n", 
+																		 ioread8(ep->regs + MUSB_TXTYPE),
+																		 ioread8(ep->regs + MUSB_TXINTERVAL),
+																		 ioread16(ep->regs + MUSB_TXMAXP),
+																		 ioread16(ep->regs + MUSB_TXCSR));
+
 	ep->rx_reinit = 0;
 }
+EXPORT_SYMBOL_GPL(musb_rx_reinit);
 
 static void musb_tx_dma_set_mode_mentor(struct musb_hw_ep *hw_ep, 
 					struct musb_qh *qh,
@@ -678,7 +702,7 @@ static bool musb_tx_dma_program(struct dma_controller *dma,
  * Program an HDRC endpoint as per the given URB
  * Context: irqs blocked, controller lock held
  */
-static void musb_ep_program(struct musb *musb, u8 epnum,
+void musb_ep_program(struct musb *musb, u8 epnum,
 			struct urb *urb, int is_out,
 			u8 *buf, u32 offset, u32 len)
 {
@@ -741,6 +765,8 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 		u16	csr;
 		u16	int_txe;
 		u16	load_count;
+
+		printk("WW epnum = %d\n", epnum);
 
 		csr = musb_readw(epio, MUSB_TXCSR);
 
@@ -853,8 +879,14 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 				musb_write_fifo(hw_ep, load_count, buf);
 				qh->sg_miter.consumed = load_count;
 				sg_miter_stop(&qh->sg_miter);
-			} else
+			} else {
+				u16 i = 0;
+				printk("DATA OUT:");
+				for (i = 0; i < load_count; i++){
+					printk("0x%x ", buf[i]);
+				}
 				musb_write_fifo(hw_ep, load_count, buf);
+			}
 		}
 finish:
 		/* re-enable interrupt */
@@ -864,12 +896,13 @@ finish:
 	/* IN/receive */
 	} else {
 		u16 csr = 0;
-
+		printk("RR epnum = %d\n", epnum);
 		printk("ZZ - hw_ep->rx_reinit = %d\n", hw_ep->rx_reinit);
 		if (hw_ep->rx_reinit) {
 			musb_rx_reinit(musb, qh, epnum);
-			printk("_V: RX toggle\n");
 			csr |= musb->io.set_toggle(qh, is_out, urb);
+
+			printk("_V: RX toggle, csr = 0x%x\n", csr);
 
 			if (qh->type == USB_ENDPOINT_XFER_INT)
 				csr |= MUSB_RXCSR_DISNYET;
@@ -922,6 +955,7 @@ finish:
 		csr = musb_readw(hw_ep->regs, MUSB_RXCSR);
 	}
 }
+//EXPORT_SYMBOL_GPL(musb_ep_program);
 
 /* Schedule next QH from musb->in_bulk/out_bulk and move the current qh to
  * the end; avoids starvation for other endpoints.
@@ -1786,6 +1820,7 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 	unsigned int sg_flags = SG_MITER_ATOMIC | SG_MITER_TO_SG;
 
 	musb_ep_select(mbase, epnum);
+	//printk("Choose index: %x\n", epnum);
 
 	urb = next_urb(qh);
 	dma = is_dma_capable() ? hw_ep->rx_channel : NULL;
@@ -2252,6 +2287,10 @@ static int musb_urb_enqueue(
 	default:
 		type_reg |= 0x40;
 	}
+
+	// /* TODO: testing */
+	// type_reg &=~ 0xF0;
+	// type_reg |= 0x80;
 	qh->type_reg = type_reg;
 
 	/* Precompute RXINTERVAL/TXINTERVAL register */

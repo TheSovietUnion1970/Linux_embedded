@@ -402,7 +402,7 @@ static irqreturn_t dsps_interrupt(int irq, void *hci)
 		u32 isr = (musb_readl(tmp, 0x40))&0x7F;
 
 		if (isr == 19) {
-			printk("19 -> tx = 0x%x, rx = 0x%x, usb = 0x%x\n", musb->int_tx, musb->int_rx, musb->int_usb);
+			printk("19 -> tx = 0x%x, rx = 0x%x, usb = 0x%x, Index = %x\n", musb->int_tx, musb->int_rx, musb->int_usb, ioread8(musb->mregs + MUSB_INDEX));
 		}
 		// // if ((musb->int_usb == 0x10) && (isr == 19)){
 		// // 	printk("mtx_rx = 0x%x\n", ioread32(tmp1 + 0x400 + MUSB_INTRTXE));

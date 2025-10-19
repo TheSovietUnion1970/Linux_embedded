@@ -1211,10 +1211,24 @@ void musb_start(struct musb *musb)
 	 * treating UNKNOWN as unspecified maximum speed, in which case
 	 * we will default to high-speed.
 	 */
+
+	// /* TODO: testing */
+	// musb->config->maximum_speed = USB_SPEED_FULL;
+
 	if (musb->config->maximum_speed == USB_SPEED_HIGH ||
-			musb->config->maximum_speed == USB_SPEED_UNKNOWN)
+			musb->config->maximum_speed == USB_SPEED_UNKNOWN) {
+		printk("Speed: high");
 		power |= MUSB_POWER_HSENAB;
+	}
+	else {
+		printk("Speed: full");
+	}
+
+	// /* TODO: testing */
+	// power &=~ MUSB_POWER_HSENAB;
+
 	musb_writeb(regs, MUSB_POWER, power);
+
 
 	musb->is_active = 0;
 	devctl = musb_readb(regs, MUSB_DEVCTL);
@@ -1778,6 +1792,8 @@ irqreturn_t musb_interrupt(struct musb *musb)
 	 * We will be following that flowchart in order to avoid any problems
 	 * that might arise with internal Finite State Machine.
 	 */
+
+	//printk("Choose index: %x\n", ioread8(musb->mregs + MUSB_INDEX));
 
 	if (musb->int_usb)
 		retval |= musb_stage0_irq(musb, musb->int_usb, devctl);
