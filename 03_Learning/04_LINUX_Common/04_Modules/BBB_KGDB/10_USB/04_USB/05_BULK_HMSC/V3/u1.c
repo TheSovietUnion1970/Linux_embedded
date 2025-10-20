@@ -64,6 +64,14 @@ const u8 SetConf_pkt[8] = {
     0x00, 0x00  // wLength: 0 (no data phase)
 };
 
+const u8 BulkReset_pkt[8] = {
+    0x21,  // bmRequestType: Class, Interface, host to device
+    0xFF,  // bRequest: Reset (MSC-specific)
+    0x00, 0x00,  // wValue: 0
+    0x00, 0x00,  // wIndex: Interface 0
+    0x00, 0x00   // wLength: 0 byte
+};
+
 const u8 GetMaxLUN_pkt[8] = {
     0xA1,  // bmRequestType: IN, Class, Interface
     0xFE,  // bRequest: Get Max LUN (MSC-specific)
@@ -753,6 +761,11 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
     /* Getting configuration with new address 0x1, data recieved should be 0x1 */
     if (ret == 0){
         ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
+    }
+
+    /* Reset USB devie */
+    if (ret == 0){
+        ret = USB1_WRITE_Transaction(data, BulkReset_pkt, 0x1, NULL, 0, "BulkReset_pkt");
     }
 
     /* Getting LUN with new address 0x1, data recieved should be 0x0 */
