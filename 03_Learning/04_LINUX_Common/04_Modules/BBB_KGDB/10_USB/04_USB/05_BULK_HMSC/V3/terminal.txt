@@ -1,185 +1,70 @@
-[ 1138.867484] # ----------------------------------- #
-[ 1138.872402] # bLength1 = 0x12
-[ 1138.875399] # bDescriptorType1 = 0x1
-[ 1138.879010] # bcdUSB = 0x210
-[ 1138.881923] # bDeviceClass = 0x0
-[ 1138.885165] # bDeviceSubClass = 0x0
-[ 1138.888688] # bDeviceProtocol = 0x0
-[ 1138.892211] # bMaxPacketSize = 0x40
-[ 1138.895735] # idVendor = 0x21c4
-[ 1138.898908] # idProduct = 0xcd1
-[ 1138.902083] # bcdDevice = 0x110
-[ 1138.905236] # iManufacturer = 0x1
-[ 1138.908583] # iProduct = 0x2
-[ 1138.911496] # iSerialNumber = 0x3
-[ 1138.914858] # bNumConfigurations = 0x1
-[ 1138.918646] # ----------------------------------- #
-[ 1138.923566] # --------Device descriptor----------- #
-[ 1138.928572] # bLength2 = 0x9
-[ 1138.931484] # bDescriptorType2 = 0x2
-[ 1138.935093] # wTotalLength = 0x20
-[ 1138.938448] # bNumInterfaces = 0x1
-[ 1138.941887] # bConfigurationValue = 0x1
-[ 1138.945760] # iConfiguration = 0x0
-[ 1138.949175] # bmAttributes = 0x80
-[ 1138.952523] # bMaxPower = 0x4b
-[ 1138.955610] # ----------------------------------- #
-[ 1138.960528] # --------Device descriptor----------- #
-[ 1138.965534] # if0_bLength = 0x9
-[ 1138.968708] # if0_bDescriptorType = 0x4
-[ 1138.972581] # if0_bInterfaceNumber = 0x0
-[ 1138.976540] # if0_bAlternateSetting = 0x0
-[ 1138.980588] # if0_bNumEndpoints = 0x2
-[ 1138.984286] # if0_bInterfaceClass = 0x8
-[ 1138.988158] # if0_bInterfaceSubClass = 0x6
-[ 1138.992292] # if0_bInterfaceProtocol = 0x50
-[ 1138.996512] # if0_iInterface = 0x0
-[ 1138.999948] 
-[ 1139.001444] # ep_bulk_out_bLength = 0x7
-[ 1139.005315] # ep_bulk_out_bDescriptorType = 0x5
-[ 1139.009914] # ep_bulk_out_bEndpointAddress = 0x2
-[ 1139.014582] # ep_bulk_out_bmAttributes = 0x2
-[ 1139.018891] # ep_bulk_out_wMaxPacketSize = 0x40
-[ 1139.023463] # ep_bulk_out_bInterval = 0x0
-[ 1139.027510] 
-[ 1139.029007] # ep_bulk_in_bLength = 0x7
-[ 1139.032790] # ep_bulk_in_bDescriptorType = 0x5
-[ 1139.037273] # ep_bulk_in_bEndpointAddress = 0x81
-[ 1139.041943] # ep_bulk_in_bmAttributes = 0x2
-[ 1139.046168] # ep_bulk_in_wMaxPacketSize = 0x40
-[ 1139.050652] # ep_bulk_in_bInterval = 0x0
-[ 1139.054612] # ----------------------------------- #
-
-
-
-[ 1267.662477] _V: --> hw2 urb 6a40ccec spd3 dev2 ep2out h_addr00 h_port00
- bytes 31
-[ 1267.662525] WW epnum = 2
-[ 1267.672510] DATA OUT:
-[ 1267.672515] 0x55 
-[ 1267.674794] 0x53 
-[ 1267.676725] 0x42 
-[ 1267.678656] 0x43 
-[ 1267.680585] 0x1 
-[ 1267.682516] 0x0 
-[ 1267.684358] 0x0 
-[ 1267.686201] 0x0 
-[ 1267.688043] 0x24 
-[ 1267.689887] 0x0 
-[ 1267.691817] 0x0 
-[ 1267.693660] 0x0 
-[ 1267.695503] 0x80 
-[ 1267.697346] 0x0 
-[ 1267.699276] 0x6 
-[ 1267.701118] 0x12 
-[ 1267.702961] 0x0 
-[ 1267.704891] 0x0 
-[ 1267.706734] 0x0 
-[ 1267.708576] 0x24 
-[ 1267.710419] 0x0 
-[ 1267.712350] 0x0 
-[ 1267.714192] 0x0 
-[ 1267.716035] 0x0 
-[ 1267.717877] 0x0 
-[ 1267.719720] 0x0 
-[ 1267.721564] 0x0 
-[ 1267.723407] 0x0 
-[ 1267.725249] 0x0 
-[ 1267.727093] 0x0 
-[ 1267.728935] 0x0 
-[ 1267.730780] ZZ - Jusrt re-enable MUSB_INTRTXE
-[ 1267.736991] START ... ->
-[ 1267.739531] mbase = 0xe02a8c00
-[ 1267.742597] core -> 0xf000 0xffff0000 0xf708fffe 0x201d0
-[ 1267.747933] ep0 csr -> 0x20000200 0x0 0x620000 0x55000000
-[ 1267.753355] devctl + BABBLE -> 0x445d
-[ 1267.757030] FIFOSZ -> 0x606
-[ 1267.759834] FIFOADDR -> 0xc80088
-[ 1267.763176] 19 -> tx = 0x4, rx = 0x0, usb = 0x0
-[ 1267.767844] _V: <-- hw2 urb 088ddc93 spd3 dev2 ep1in h_addr00 h_port00 
-bytes 36
-[ 1267.767864] RR epnum = 2
-[ 1267.777741] ZZ - hw_ep->rx_reinit = 1
-[ 1267.781419] ep->regs = 0xe02a8c10
-[ 1267.784745] Index = 2
-[ 1267.787025] FIFOSZ = 606
-[ 1267.789566] FIFOADD = c80088
-[ 1267.792457] MUSB_RXTYPE = 61, MUSB_RXINTERVAL = 0, MUSB_RXMAXP = 200, M
-USB_RXCSR = 0
-[ 1267.800235] MUSB_TXTYPE = 62, MUSB_TXINTERVAL = 0, MUSB_TXMAXP = 200, M
-USB_TXCSR = 2100
-[ 1267.808274] _V: RX toggle, csr = 0x0
-[ 1267.811862] ZZ - RXCSR2 := 0020
-[ 1267.815051] 19 -> tx = 0x0, rx = 0x4, usb = 0x0
-[ 1267.819618] DATA IN:
-[ 1267.819623] 0x0 
-[ 1267.821816] 0x80 
-[ 1267.823658] 0x0 
-[ 1267.825589] 0x1 
-[ 1267.827431] 0x1f 
-[ 1267.829273] 0x0 
-[ 1267.831203] 0x0 
-[ 1267.833045] 0x0 
-[ 1267.834888] 0x4d 
-[ 1267.836731] 0x61 
-[ 1267.838660] 0x73 
-[ 1267.840590] 0x73 
-[ 1267.842521] 0x20 
-[ 1267.844450] 0x20 
-[ 1267.846380] 0x20 
-[ 1267.848311] 0x20 
-[ 1267.850240] 0x53 
-[ 1267.852170] 0x74 
-[ 1267.854100] 0x6f 
-[ 1267.856029] 0x72 
-[ 1267.857959] 0x61 
-[ 1267.859889] 0x67 
-[ 1267.861819] 0x65 
-[ 1267.863748] 0x20 
-[ 1267.865678] 0x44 
-[ 1267.867608] 0x65 
-[ 1267.869538] 0x76 
-[ 1267.871468] 0x69 
-[ 1267.873398] 0x63 
-[ 1267.875328] 0x65 
-[ 1267.877258] 0x20 
-[ 1267.879187] 0x20 
-[ 1267.881117] 0x31 
-[ 1267.883046] 0x2e 
-[ 1267.884976] 0x30 
-[ 1267.886905] 0x30 
-[ 1267.888892] _V: <-- hw2 urb 6a40ccec spd3 dev2 ep1in h_addr00 h_port00 
-bytes 13
-[ 1267.890838] RR epnum = 2
-[ 1267.900712] ZZ - hw_ep->rx_reinit = 1
-[ 1267.904387] ep->regs = 0xe02a8c10
-[ 1267.907714] Index = 2
-[ 1267.909993] FIFOSZ = 606
-[ 1267.912533] FIFOADD = c80088
-[ 1267.915424] MUSB_RXTYPE = 61, MUSB_RXINTERVAL = 0, MUSB_RXMAXP = 200, M
-USB_RXCSR = 0
-[ 1267.923201] MUSB_TXTYPE = 62, MUSB_TXINTERVAL = 0, MUSB_TXMAXP = 200, M
-USB_TXCSR = 2100
-[ 1267.931239] _V: RX toggle, csr = 0x600
-[ 1267.935000] ZZ - RXCSR2 := 0620
-[ 1267.938180] 19 -> tx = 0x0, rx = 0x4, usb = 0x0
-[ 1267.942736] DATA IN:
-[ 1267.942741] 0x55 
-[ 1267.944934] 0x53 
-[ 1267.946864] 0x42 
-[ 1267.948794] 0x53 
-[ 1267.950724] 0x1 
-[ 1267.952654] 0x0 
-[ 1267.954496] 0x0 
-[ 1267.956338] 0x0 
-[ 1267.958182] 0x0 
-[ 1267.960024] 0x0 
-[ 1267.961866] 0x0 
-[ 1267.963709] 0x0 
-[ 1267.965551] 0x0 
-[ 1267.967698] scsi 0:0:0:0: Direct-Access     Mass     Storage Device   1
-.00 PQ: 0 ANSI: 0 CCS
-[ 1268.026399] sd 0:0:0:0: Attached scsi generic sg0 type 0
-
-This is the data terminal after getting LUN, sending CBW (31 bytes), then getting data (36 and 13 bytes), but all TX and RX happens on endpoint index 2 with MUSB_RXTYPE = 61 and MUSB_TXTYPE = 62
+[ 4553.556465] # ----------------------------------- #
+[ 4553.561383] # bLength1 = 0x12
+[ 4553.564383] # bDescriptorType1 = 0x1
+[ 4553.567991] # bcdUSB = 0x200
+[ 4553.570904] # bDeviceClass = 0x0
+[ 4553.574166] # bDeviceSubClass = 0x0
+[ 4553.577669] # bDeviceProtocol = 0x0
+[ 4553.581190] # bMaxPacketSize = 0x40
+[ 4553.584715] # idVendor = 0x14cd
+[ 4553.587886] # idProduct = 0x1212
+[ 4553.591148] # bcdDevice = 0x100
+[ 4553.594326] # iManufacturer = 0x1
+[ 4553.597657] # iProduct = 0x3
+[ 4553.600568] # iSerialNumber = 0x2
+[ 4553.603924] # bNumConfigurations = 0x1
+[ 4553.607710] # ----------------------------------- #
+[ 4553.612629] # --------Device descriptor----------- #
+[ 4553.617634] # bLength2 = 0x9
+[ 4553.620547] # bDescriptorType2 = 0x2
+[ 4553.624156] # wTotalLength = 0x20
+[ 4553.627505] # bNumInterfaces = 0x1
+[ 4553.630942] # bConfigurationValue = 0x1
+[ 4553.634815] # iConfiguration = 0x0
+[ 4553.638252] # bmAttributes = 0x80
+[ 4553.641582] # bMaxPower = 0x32
+[ 4553.644667] # ----------------------------------- #
+[ 4553.649586] # --------Device descriptor----------- #
+[ 4553.654591] # if0_bLength = 0x9
+[ 4553.657746] # if0_bDescriptorType = 0x4
+[ 4553.661618] # if0_bInterfaceNumber = 0x0
+[ 4553.665578] # if0_bAlternateSetting = 0x0
+[ 4553.669626] # if0_bNumEndpoints = 0x2
+[ 4553.673324] # if0_bInterfaceClass = 0x8
+[ 4553.677197] # if0_bInterfaceSubClass = 0x6
+[ 4553.681337] # if0_bInterfaceProtocol = 0x50
+[ 4553.685562] # if0_iInterface = 0x0
+[ 4553.689000] 
+[ 4553.690515] # ep_bulk_out_bLength = 0x7
+[ 4553.694387] # ep_bulk_out_bDescriptorType = 0x5
+[ 4553.698966] # ep_bulk_out_bEndpointAddress = 0x2
+[ 4553.703626] # ep_bulk_out_bmAttributes = 0x2
+[ 4553.707936] # ep_bulk_out_wMaxPacketSize = 0x40
+[ 4553.712506] # ep_bulk_out_bInterval = 0x0
+[ 4553.716554] 
+[ 4553.718067] # ep_bulk_in_bLength = 0x7
+[ 4553.721832] # ep_bulk_in_bDescriptorType = 0x5
+[ 4553.726332] # ep_bulk_in_bEndpointAddress = 0x81
+[ 4553.730990] # ep_bulk_in_bmAttributes = 0x2
+[ 4553.735210] # ep_bulk_in_wMaxPacketSize = 0x40
+[ 4553.739693] # ep_bulk_in_bInterval = 0x0
+[ 4553.743653] 
+[ 4553.745149] # LUN = 0x0
+[ 4553.747624] # ----------------------------------- #
+[ 4555.777949] ISR -> TX[0x4]
+[ 4555.780732] usb1_class usb1: ACKed!!
+[ 4555.784403] Index = 1
+[ 4555.786711] FIFOSZ = 600
+[ 4555.789255] FIFOADD = c80000
+[ 4555.792180] rxcsr = 0
+[ 4555.794488] MUSB_FIFOSIZE = 99
+[ 4555.797558] MUSB_POWER = c0
+[ 4555.800385] MUSB_RXTYPE = a1, MUSB_RXINTERVAL = 0, MUSB_RXMAXP = 40, MUSB_RXCSR =
+ 0
+[ 4555.808111] MUSB_TXTYPE = 0, MUSB_TXINTERVAL = 0, MUSB_TXMAXP = 0, MUSB_TXCSR = 0
+[ 4555.815699] ISR -> RX[0x2]
+[ 4555.818446] host_csr0 = 0x3, count = 0x24
+[ 4555.822500] usb1_class usb1: MUSB_RXCSR_FIFOFULL
+[ 4555.827164] Reading IN BULK with ACKed!
+[ 4555.831047] i = 9, tmp[0] = 0x1008000, count = 36
 

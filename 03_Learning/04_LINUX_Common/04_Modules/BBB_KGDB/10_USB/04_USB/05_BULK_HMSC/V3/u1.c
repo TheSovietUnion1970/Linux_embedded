@@ -14,6 +14,7 @@
 #include "u1.h"
 
 u8 Glob_Speed = USB_SPEED_FULL;
+#define Global_Address 0x02
 
 /* ================ Const data packet =======================*/
 const u8 GetDesc_pkt[8] = {
@@ -43,7 +44,7 @@ const u8 GetDescif0_pkt[8] = {
 const u8 SetAddr_pkt[8] = {
     0x00,       // bmRequestType: Host-to-device, Standard, Device
     0x05,       // bRequest: USB_REQ_SET_ADDRESS
-    0x01, 0x00, // wValue: Device address: 1
+    Global_Address, 0x00, // wValue: Device address: Global_Address
     0x00, 0x00, // wIndex: 0
     0x00, 0x00  // wLength: 0
 };
@@ -199,6 +200,11 @@ u32 USB1_ReadFIFO(struct usb_device_data *data, u8 epnum){
 void USB1_WriteDataFIFO(struct usb_device_data *data, u8 epnum, u32 dataX){
     u32 FIFO0_offset = fifo_offset(epnum);
     iowrite32(dataX, data->base_usb1core + FIFO0_offset);
+}
+
+void USB1_WriteU8DataFIFO(struct usb_device_data *data, u8 epnum, u8 dataX){
+    u32 FIFO0_offset = fifo_offset(epnum);
+    iowrite8(dataX, data->base_usb1core + FIFO0_offset);
 }
 
 /* ================== Handler =================*/
@@ -740,27 +746,32 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
 
     /* Getting descriptor with new address 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetDesc_pkt, 0x1, "GetDesc_pkt");
+        ret = USB1_READ_Transaction(data, GetDesc_pkt, Global_Address, "GetDesc_pkt");
     }
 
     /* Getting descriptor with new address 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetDesc_pkt2, 0x1, "GetDesc_pkt2");
+        ret = USB1_READ_Transaction(data, GetDesc_pkt2, Global_Address, "GetDesc_pkt2");
     }
 
     /* Getting descriptor (Interface 0: HMSC) with new address 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
+        ret = USB1_READ_Transaction(data, GetDescif0_pkt, Global_Address, "GetDescif0_pkt");
     }
 
     /* Setting configuration with new address 0x1 */
     if (ret == 0){
-        ret = USB1_WRITE_Transaction(data, SetConf_pkt, 0x1, NULL, 0, "SetConf_pkt");
+        ret = USB1_WRITE_Transaction(data, SetConf_pkt, Global_Address, NULL, 0, "SetConf_pkt");
     }
 
     /* Getting configuration with new address 0x1, data recieved should be 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
+        ret = USB1_READ_Transaction(data, GetConf_pkt, Global_Address, "GetConf_pkt");
+    }
+
+    /* Reset USB devie */
+    if (ret == 0){
+        ret = USB1_WRITE_Transaction(data, BulkReset_pkt, Global_Address, NULL, 0, "BulkReset_pkt");
     }
 
     /* Reset USB devie */
@@ -770,7 +781,7 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
 
     /* Getting LUN with new address 0x1, data recieved should be 0x0 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetMaxLUN_pkt, 0x1, "GetMaxLUN_pkt");
+        ret = USB1_READ_Transaction(data, GetMaxLUN_pkt, Global_Address, "GetMaxLUN_pkt");
     }
 
     return ret;
@@ -960,13 +971,20 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
     USB1_Bulk_SetTxInterval(data, 0x0); // as ep_bulk_out_bInterval = 0x0
     USB1_Bulk_SetTXCSR(data);
 
+    // for (i = 0; i < len; i++){
+    //     tmp[i/4] |= (dataX[i] << (i%4)*8);
+    // }
+    // for (i = 0; i < len/4; i++){
+    //     USB1_WriteDataFIFO(data, epnum, tmp[i]);
+    // }
+    // if (len%4) {
+    //     printk("tmp[%d] = 0x%x\n", len/4, tmp[len/4]);
+    //     USB1_WriteDataFIFO(data, epnum, tmp[len/4]);
+    // }
+
     for (i = 0; i < len; i++){
-        tmp[i/4] |= (dataX[i] << (i%4)*8);
+        USB1_WriteU8DataFIFO(data, epnum, dataX[i]);
     }
-    for (i = 0; i < len/4; i++){
-        USB1_WriteDataFIFO(data, epnum, tmp[i]);
-    }
-    if (len%4) USB1_WriteDataFIFO(data, epnum, tmp[len/4]);
 
 
     txcsr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
@@ -978,7 +996,7 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
     if (ret < 0) return -1;
     Tx1_flag = 0;
     
-    count = ioread16(data->base_usb1core + 0x10 + MUSB_COUNT0)&0xFFFF;
+    //count = ioread16(data->base_usb1core + 0x10 + MUSB_COUNT0)&0xFFFF;
     // printk("ret = 0x%x, count = 0x%x\n", ret, count);
 
     host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0)&0xFF;
@@ -1007,8 +1025,8 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
     int ret = 0, i = 0;
     u32 tmp[16] = {0}; // holp up to 64 bytes
 
-    setIndex(data, 0x2);
-    USB1_Bulk_RxReinit(data);
+    setIndex(data, epnum);
+    // USB1_Bulk_RxReinit(data);
     USB1_Bulk_SetAddrRx(data, addr, epnum);
     USB1_Bulk_SetTypeRx(data, epnum, Glob_Speed); // 0x2 = full speed
     USB1_Bulk_SetRxMaxp(data, data->InsDeviceDescriptor.ep_bulk_in_wMaxPacketSize); // max packet is 64 bytes
@@ -1051,8 +1069,8 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
     //if (ret < 0) return -1;
 
 
-    tmp[0] = USB1_ReadFIFO(data, 0x1);
-    printk("tmp[0] = 0x%x\n", tmp[0]);
+    // tmp[0] = USB1_ReadFIFO(data, 0x1);
+    // printk("tmp[0] = 0x%x\n", tmp[0]);
     
     count = ioread16(data->base_usb1core + 0x10 + MUSB_RXCOUNT)&0xFFFF;
 
@@ -1122,8 +1140,8 @@ int USB1_Send_INQUIRY(struct usb_device_data *data){
     data->usb1_cbw.CBWCB[1] = 0x00;  // LUN=0 (already in bCBWLUN)
     data->usb1_cbw.CBWCB[2] = 0x00;  // Page code=0
     data->usb1_cbw.CBWCB[3] = 0x00;  // Reserved
-    data->usb1_cbw.CBWCB[4] = 0x24;    // Alloc length=36
-    data->usb1_cbw.CBWCB[5] = 0x00;  // Control=0
+    data->usb1_cbw.CBWCB[4] = 0x00;    // Alloc length=36
+    data->usb1_cbw.CBWCB[5] = 0x24;  // Control=0
 
 // // Prepare CBW for REQUEST SENSE
 // data->usb1_cbw.dCBWSignature = 0x43425355;
@@ -1140,11 +1158,17 @@ int USB1_Send_INQUIRY(struct usb_device_data *data){
 // data->usb1_cbw.CBWCB[5] = 0x00; // Control=0
 
     // 1. Command: Bulk OUT CBW (31 bytes)
-    ret = USB1_OUT_Phase_Bulk(data, 0x2, 0x1, (u8*)&data->usb1_cbw, sizeof(data->usb1_cbw));
+    ret = USB1_OUT_Phase_Bulk(data, 0x2, Global_Address, (u8*)&data->usb1_cbw, sizeof(data->usb1_cbw));
     if (ret < 0) {
         printk("CBW OUT failed: %d\n", ret);
         return ret;
     }
+
+    // ret = USB1_OUT_Phase_Bulk(data, 0x2, 0x1, (u8*)&data->usb1_cbw, sizeof(data->usb1_cbw));
+    // if (ret < 0) {
+    //     printk("CBW OUT failed: %d\n", ret);
+    //     return ret;
+    // }
 
     // for (i = 0; i < 3; i++){
     //     ret = USB1_OUT_Phase_Bulk(data, 0x2, 0x1, (u8*)&data->usb1_cbw, 31);
@@ -1156,8 +1180,8 @@ int USB1_Send_INQUIRY(struct usb_device_data *data){
     //msleep(200);  // Brief settle
 
     // 2. Data: Bulk IN (36 bytes)
-    ret = USB1_IN_Phase_Bulk(data, 0x1, 0x1, inquiry_data, &InDataLen);
-    if (ret < 0 || InDataLen != 36) {
+    ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, inquiry_data, &InDataLen);
+    if (ret < 0) {
         printk("Data IN failed: %d (len=%d)\n", ret, InDataLen);
         return ret;
     }

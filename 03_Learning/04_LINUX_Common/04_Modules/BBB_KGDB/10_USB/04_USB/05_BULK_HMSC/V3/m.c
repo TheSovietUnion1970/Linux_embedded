@@ -201,7 +201,7 @@ static int usb1_probe(struct platform_device *pdev)
         USB1_Print_DeviceDescriptorIf0(data);
     }
     
-    //msleep(2000); // need 2s
+    msleep(2000); // need 2s
     // schedule_work(&data->re_request_work);
     USB1_Send_INQUIRY(data);
 
