@@ -204,7 +204,7 @@ static int usb1_probe(struct platform_device *pdev)
     
     //msleep(2000); // need 2s
     // schedule_work(&data->re_request_work);
-    ret = USB1_Send_INQUIRY(data);
+    ret = USB1_CBW(data);
 
     return 0;
 }
