@@ -74,7 +74,7 @@ void USB1_Print_SCSI_Inquiry(struct usb_device_data *data){
     data->scsi_inquiry.LBA = swap_endian32(data->scsi_inquiry.LBA);
     data->scsi_inquiry.Capacity = swap_endian32(data->scsi_inquiry.Capacity);
     printk("# Logical block address(LBA) = 0x%x\n", data->scsi_inquiry.LBA);
-    printk("# block size = 0x%llx\n", data->scsi_inquiry.Capacity);
+    printk("# block size = 0x%x\n", data->scsi_inquiry.Capacity);
 
     tmp[0] = data->scsi_inquiry.LBA;
     tmp[1] = data->scsi_inquiry.Capacity;
