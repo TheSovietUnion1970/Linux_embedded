@@ -1,5 +1,7 @@
 #include "u1.h"
 #include "ms.h"
+#include <linux/math64.h>
+
 
 /* const CBW */
 const u8 cbw_initial[31] = {
@@ -26,6 +28,14 @@ const u8 cbw_capacity[31] = {
     0x00, 0x00,              // CBWCB: Reserved (0x00) and PMI (0x00, no partial media info)
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // Padding zeros to reach 31 bytes
 };
+
+u32 swap_endian32(u32 val) {
+    return ((val >> 24) & 0x000000FF) |
+           ((val >> 8)  & 0x0000FF00) |
+           ((val << 8)  & 0x00FF0000) |
+           ((val << 24) & 0xFF000000);
+}
+
 
 /* Print result */
 void USB1_Print_String(u8 *data, u16 len, u8* string) {
@@ -54,14 +64,23 @@ void USB1_Print_CSW(struct usb_device_data *data, u8* name){
 }
 
 void USB1_Print_SCSI_Inquiry(struct usb_device_data *data){
+    u64 tmp[4];
     printk("# ----------------------------------- #\n");
     printk("# additional_length = 0x%x\n", data->scsi_inquiry.additional_length);
     USB1_Print_String(data->scsi_inquiry.vendor_id, 8, "vendor_id");
     USB1_Print_String(data->scsi_inquiry.product_id, 16, "product_id");
     USB1_Print_String(data->scsi_inquiry.product_revision, 4, "product_revision");
 
-    printk("# Logical block address(LBA) = 0%x\n", data->scsi_inquiry.LBA);
-    printk("# Capacity = 0%x\n", data->scsi_inquiry.Capacity);
+    data->scsi_inquiry.LBA = swap_endian32(data->scsi_inquiry.LBA);
+    data->scsi_inquiry.Capacity = swap_endian32(data->scsi_inquiry.Capacity);
+    printk("# Logical block address(LBA) = 0x%x\n", data->scsi_inquiry.LBA);
+    printk("# block size = 0x%llx\n", data->scsi_inquiry.Capacity);
+
+    tmp[0] = data->scsi_inquiry.LBA;
+    tmp[1] = data->scsi_inquiry.Capacity;
+    tmp[2] = tmp[0]*tmp[1];
+    tmp[3] = div_u64(tmp[2], 1000000000ULL);
+    printk("# => Total = %lld bytes | ~ %lld GB\n", tmp[2], tmp[3]);
     printk("# ----------------------------------- #\n");
 }
 
@@ -133,7 +152,7 @@ int USB1_CBW(struct usb_device_data *data){
     ret = USB1_Send_INQUIRY(data, cbw_initial, (u8*)&data->scsi_inquiry, 1, "CBW Initial");
 
     if (ret == 0){
-        ret = USB1_Send_INQUIRY(data, cbw_capacity, (u8*)&data->scsi_inquiry + 0x1F, 1, "CBW Capacity");
+        ret = USB1_Send_INQUIRY(data, cbw_capacity, (u8*)&data->scsi_inquiry + 0x24, 1, "CBW Capacity");
     }
 
     /* Print result */
