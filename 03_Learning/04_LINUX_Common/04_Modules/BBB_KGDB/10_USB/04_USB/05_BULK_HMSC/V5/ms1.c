@@ -43,15 +43,6 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     printk("# %s: '%s'\n", string, tmp);
 }
 
-void USB1_Print_SCSI_Inquiry(struct usb_device_data *data){
-    printk("# ----------------------------------- #\n");
-    printk("# additional_length = 0x%x\n", data->scsi_inquiry.additional_length);
-    USB1_Print_String(data->scsi_inquiry.vendor_id, 8, "vendor_id");
-    USB1_Print_String(data->scsi_inquiry.product_id, 16, "product_id");
-    USB1_Print_String(data->scsi_inquiry.product_revision, 4, "product_revision");
-    printk("# ----------------------------------- #\n");
-}
-
 void USB1_Print_CSW(struct usb_device_data *data, u8* name){
     printk("# ----------------------------------- #\n");
     printk("# %s: \n", name);
@@ -59,6 +50,18 @@ void USB1_Print_CSW(struct usb_device_data *data, u8* name){
     printk("# dCSWTag = 0x%x\n", data->usb1_csw.dCSWTag);
     printk("# dCSWDataResidue = 0x%x\n", data->usb1_csw.dCSWDataResidue);
     printk("# bCSWStatus = 0x%x\n", data->usb1_csw.bCSWStatus);
+    printk("# ----------------------------------- #\n");
+}
+
+void USB1_Print_SCSI_Inquiry(struct usb_device_data *data){
+    printk("# ----------------------------------- #\n");
+    printk("# additional_length = 0x%x\n", data->scsi_inquiry.additional_length);
+    USB1_Print_String(data->scsi_inquiry.vendor_id, 8, "vendor_id");
+    USB1_Print_String(data->scsi_inquiry.product_id, 16, "product_id");
+    USB1_Print_String(data->scsi_inquiry.product_revision, 4, "product_revision");
+
+    printk("# Logical block address(LBA) = 0%x\n", data->scsi_inquiry.LBA);
+    printk("# Capacity = 0%x\n", data->scsi_inquiry.Capacity);
     printk("# ----------------------------------- #\n");
 }
 
@@ -87,7 +90,7 @@ void USB1_Apply_CBW(struct usb_device_data *data, const u8* d){
 }
 
 /* ================== API for HMSC bulk Transfer ===================== */
-int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, bool print_status, u8* name){
+int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, u8* data_inquiry, bool print_status, u8* name){
     int ret;
     u16 InDataLen;
 
@@ -100,7 +103,8 @@ int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, bool print_st
     }
 
     // 2. Data: Bulk IN (36 bytes)
-    ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, (u8*)&data->scsi_inquiry, &InDataLen);
+    //ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, (u8*)&data->scsi_inquiry, &InDataLen);
+    ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, data_inquiry, &InDataLen);
     if (ret < 0) {
         printk("%s: DATA IN failed: %d (len=%d)\n", name, ret, InDataLen);
         return ret;
@@ -126,10 +130,15 @@ int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, bool print_st
 int USB1_CBW(struct usb_device_data *data){
     int ret;
 
-    ret = USB1_Send_INQUIRY(data, cbw_initial, 1, "CBW Initial");
+    ret = USB1_Send_INQUIRY(data, cbw_initial, (u8*)&data->scsi_inquiry, 1, "CBW Initial");
 
     if (ret == 0){
-        ret = USB1_Send_INQUIRY(data, cbw_capacity, 1, "CBW Capacity");
+        ret = USB1_Send_INQUIRY(data, cbw_capacity, (u8*)&data->scsi_inquiry + 0x1F, 1, "CBW Capacity");
+    }
+
+    /* Print result */
+    if (ret == 0){
+        USB1_Print_SCSI_Inquiry(data);
     }
 
     return ret;
