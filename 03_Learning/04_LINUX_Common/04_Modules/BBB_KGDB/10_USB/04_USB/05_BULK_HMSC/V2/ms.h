@@ -25,6 +25,7 @@ typedef struct __attribute__((packed)) usb_msc_csw {  // Command Status Wrapper
 
 /* SCSI data structure */
 typedef struct __attribute__((packed)) scsi_inquiry_response {
+    // 0-30
     u8 peripheral_qualifier : 3;  // Bits 7-5: Qualifier (0=connected)
     u8 peripheral_device_type : 5;  // Bits 4-0: Type (0x00=direct-access block)
     u8 rmb : 1;  // Bit 7: Removable Media Bit (1=removable)
@@ -43,10 +44,39 @@ typedef struct __attribute__((packed)) scsi_inquiry_response {
     char vendor_id[8];  // ASCII, space-padded: "Mass    "
     char product_id[16];  // ASCII, space-padded: "Storage Device  "
     char product_revision[4];  // ASCII: "1.00"
+
+    // 31-38
+    u32 LBA;
+    u32 Capacity;
 } inquiry_response;
 
+/* Element Address Assignment Page */
+typedef struct cbw_EAA {  // Command Status Wrapper
+    u8 Mode_data_len;
+    u16 Reserved1;
+    u8 Block_descriptor_len;
+    
+    u8 Page_code;
+    u8 Page_len;
+
+    u16 First_medium_transport_element_addr;
+    u16 Num_medium_transport_elements;
+
+    u16 First_storage_element_addr;
+    u16 Num_storage_elements;
+
+    u16 First_im_ex_port_element_addr;
+    u16 Num_im_ex_port_elements;
+
+    u16 First_data_transfer_element_addr;
+    u16 Num_data_transfer_elements;
+
+    u16 Reserved2;
+} cbw_EAA;
 
 /* ================== API for HMSC Bulk Transfer ===================== */ 
-int USB1_Send_INQUIRY(struct usb_device_data *data);
+int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, u8* data_inquiry, bool print_status, u8* name);
+
+int USB1_CBW(struct usb_device_data *data);
 
 #endif /* MS_H */

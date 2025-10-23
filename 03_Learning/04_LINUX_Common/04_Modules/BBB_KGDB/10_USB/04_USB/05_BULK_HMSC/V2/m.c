@@ -10,6 +10,7 @@
 #include <linux/workqueue.h>
 #include <linux/atomic.h>
 #include "u1.h"
+#include "ms.h"
 
 #define DRIVER_NAME "usb1_driver"
 #define DEVICE_NAME "usb1"
@@ -143,7 +144,7 @@ static int usb1_probe(struct platform_device *pdev)
         return ret;
     }
 
-    data->class = class_create(THIS_MODULE, "can0_class");
+    data->class = class_create(THIS_MODULE, "usb1_class");
     if (IS_ERR(data->class)) {
         dev_err(&pdev->dev, "Failed to create class: %ld\n", PTR_ERR(data->class));
         cdev_del(&data->cdev);
@@ -169,6 +170,8 @@ static int usb1_probe(struct platform_device *pdev)
     }
 
     dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
+
+    data->InsDeviceDescriptor.ep_bulk_in_bEndpointAddress = 0xff;
 
     // ===== USB1 init
     USB1_reset(data);
@@ -199,8 +202,9 @@ static int usb1_probe(struct platform_device *pdev)
         USB1_Print_DeviceDescriptorIf0(data);
     }
     
-    // msleep(2000); // need 2s
+    //msleep(2000); // need 2s
     // schedule_work(&data->re_request_work);
+    ret = USB1_CBW(data);
 
     return 0;
 }

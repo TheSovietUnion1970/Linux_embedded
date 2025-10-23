@@ -12,9 +12,12 @@
 #include <linux/workqueue.h>
 #include <linux/atomic.h>
 #include <linux/delay.h>
+#include "ms.h"
+
 
 /* CONTROL */
 #define INDEX_USED 1
+#define Global_Address 0x02
 
 /* ============= CONTROL MODULE ===================== */
 #define CONTROL_MODULE 0x44e10000
@@ -218,14 +221,6 @@
 #define MUSB_RXCSR_FIFOFULL		0x0002
 #define MUSB_RXCSR_RXPKTRDY		0x0001
 
-/* RXCSR in Host mode */
-#define MUSB_RXCSR_H_AUTOREQ		0x4000
-#define MUSB_RXCSR_H_WR_DATATOGGLE	0x0400
-#define MUSB_RXCSR_H_DATATOGGLE		0x0200
-#define MUSB_RXCSR_H_RXSTALL		0x0040
-#define MUSB_RXCSR_H_REQPKT		0x0020
-#define MUSB_RXCSR_H_ERROR		0x0004
-
 /* TxType/RxType */
 #define MUSB_TYPE_SPEED		0xc0
 #define MUSB_TYPE_SPEED_SHIFT	6
@@ -259,6 +254,12 @@
 #define USB_REQ_SYNCH_FRAME		0x0C
 #define USB_REQ_SET_SEL			0x30
 #define USB_REQ_SET_ISOCH_DELAY		0x31
+
+enum usb_speed {
+	USB_SPEED_UNKNOWN = 0,			/* enumerating */
+	USB_SPEED_HIGH,		/* usb 2.0 */
+	USB_SPEED_FULL, USB_SPEED_LOW,				/* usb 1.1 */
+};
 
 /* ================ Main structure ============== */
 struct usb_devRequest {
@@ -313,7 +314,7 @@ struct usb_DeviceDescriptor {
     // Bulk IN Endpoint (7 bytes; offsets 36-42; typically EP2 OUT)
     u8 ep_bulk_in_bLength;            // 0x07
     u8 ep_bulk_in_bDescriptorType;    // 0x05
-    u8 ep_bulk_in_bEndpointAddress;   // e.g., 0x82 (EP2 IN)
+    u8 ep_bulk_in_bEndpointAddress;   // e.g., 0x81 (EP1 IN)
     u8 ep_bulk_in_bmAttributes;       // 0x02 (Bulk)
     u16 ep_bulk_in_wMaxPacketSize;    // 0x0200 (512 bytes)
     u8 ep_bulk_in_bInterval;          // 0x00
@@ -321,11 +322,17 @@ struct usb_DeviceDescriptor {
     // Bulk OUT Endpoint (7 bytes; offsets 43-49; typically EP1 IN)
     u8 ep_bulk_out_bLength;           // 0x07
     u8 ep_bulk_out_bDescriptorType;   // 0x05 (Endpoint)
-    u8 ep_bulk_out_bEndpointAddress;  // e.g., 0x01 (EP1 OUT)
+    u8 ep_bulk_out_bEndpointAddress;  // e.g., 0x02 (EP2 OUT)
     u8 ep_bulk_out_bmAttributes;      // 0x02 (Bulk)
     u16 ep_bulk_out_wMaxPacketSize;   // 0x0200 (512 bytes for HS)
     u8 ep_bulk_out_bInterval;         // 0x00
+
+    u8 ConfigVal;
+    u8 LUN;
 } __attribute__((packed));  // Total: 50 bytes
+
+
+
 
 
 struct usb_device_data {
@@ -348,6 +355,11 @@ struct usb_device_data {
     struct usb_DeviceDescriptor InsDeviceDescriptor;
     u8* DeviceDescriptorPtr;
 
+    msc_cbw usb1_cbw;
+    msc_csw usb1_csw;
+    u8 tag;
+    inquiry_response scsi_inquiry;
+
     // check addr
     u8 isAddrChanged;
     u16 oldAddr;
@@ -355,10 +367,6 @@ struct usb_device_data {
     int irq1;
     int irqs;
 
-    u8 TX[256];
-    u16 TX_len;
-    u8 RX[256];
-    u16 RX_len;
     bool isEnd;
     u8 RX_index;
 
@@ -402,5 +410,7 @@ void USB1_Print_DeviceDescriptorIf0(struct usb_device_data *data);
 int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u8* dataX, u32 len);
 int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* dataX, u16* len);
 int USB1_IN_Phase_Bulk_init(struct usb_device_data *data, u8 epnum, u8 addr, u8* dataX, u16* len);
+
+
 #endif
 

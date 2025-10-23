@@ -13,6 +13,8 @@
 #include <linux/delay.h>
 #include "u1.h"
 
+u8 Glob_Speed = USB_SPEED_FULL;
+
 /* ================ Const data packet =======================*/
 const u8 GetDesc_pkt[8] = {
     0x80,       // bmRequestType: Device-to-host, Standard, Device
@@ -41,7 +43,7 @@ const u8 GetDescif0_pkt[8] = {
 const u8 SetAddr_pkt[8] = {
     0x00,       // bmRequestType: Host-to-device, Standard, Device
     0x05,       // bRequest: USB_REQ_SET_ADDRESS
-    0x01, 0x00, // wValue: Device address: 1
+    Global_Address, 0x00, // wValue: Device address: Global_Address
     0x00, 0x00, // wIndex: 0
     0x00, 0x00  // wLength: 0
 };
@@ -62,6 +64,21 @@ const u8 SetConf_pkt[8] = {
     0x00, 0x00  // wLength: 0 (no data phase)
 };
 
+const u8 BulkReset_pkt[8] = {
+    0x21,  // bmRequestType: Class, Interface, host to device
+    0xFF,  // bRequest: Reset (MSC-specific)
+    0x00, 0x00,  // wValue: 0
+    0x00, 0x00,  // wIndex: Interface 0
+    0x00, 0x00   // wLength: 0 byte
+};
+
+const u8 GetMaxLUN_pkt[8] = {
+    0xA1,  // bmRequestType: IN, Class, Interface
+    0xFE,  // bRequest: Get Max LUN (MSC-specific)
+    0x00, 0x00,  // wValue: 0
+    0x00, 0x00,  // wIndex: Interface 0
+    0x01, 0x00   // wLength: 1 byte
+};
 /* ================== Tmp variables ================= */
 u16 Tx1_flag = 0, Rx1_flag = 0;
 u8 ret;
@@ -90,7 +107,7 @@ void setFifo(struct usb_device_data *data){
     iowrite16(0x00, data->base_usb1core + MUSB_RXFIFOADD); 
 
     // fifo type0 (8-bit)
-    iowrite8(0x80, data->base_usb1core + 0x10 + MUSB_TYPE0);
+    iowrite8((Glob_Speed << 6)&0xC0, data->base_usb1core + 0x10 + MUSB_TYPE0);
 
     babblectl = ioread8(data->base_usb1core + MUSB_BABBLE_CTL);
     if (babblectl&MUSB_BABBLE_RCV_DISABLE){
@@ -179,9 +196,19 @@ u32 USB1_ReadFIFO(struct usb_device_data *data, u8 epnum){
     return ioread32(data->base_usb1core + FIFO0_offset);
 }
 
+u8 USB1_ReadU8FIFO(struct usb_device_data *data, u8 epnum){
+    u32 FIFO0_offset = fifo_offset(epnum);
+    return ioread8(data->base_usb1core + FIFO0_offset);
+}
+
 void USB1_WriteDataFIFO(struct usb_device_data *data, u8 epnum, u32 dataX){
     u32 FIFO0_offset = fifo_offset(epnum);
     iowrite32(dataX, data->base_usb1core + FIFO0_offset);
+}
+
+void USB1_WriteU8DataFIFO(struct usb_device_data *data, u8 epnum, u8 dataX){
+    u32 FIFO0_offset = fifo_offset(epnum);
+    iowrite8(dataX, data->base_usb1core + FIFO0_offset);
 }
 
 /* ================== Handler =================*/
@@ -278,9 +305,15 @@ int USB1_init(struct usb_device_data *data){
     usbcore_testmode = 0x00;
     iowrite32(usbcore_testmode, data->base_usb1core + MUSB_TESTMODE);
 
-    // init high speed
+    // init full speed
     usbcore_pwr = MUSB_POWER_ISOUPDATE;
-    usbcore_pwr &=~ (MUSB_POWER_HSENAB); /* full speed */
+    if (Glob_Speed == USB_SPEED_HIGH) {
+        usbcore_pwr |= (MUSB_POWER_HSENAB) | (MUSB_POWER_SOFTCONN) | (MUSB_POWER_HSMODE); /* high speed */
+    }
+    else if (Glob_Speed == USB_SPEED_FULL){
+        usbcore_pwr &=~ (MUSB_POWER_HSENAB); /* full speed */
+    }
+
     iowrite32(usbcore_pwr, data->base_usb1core + MUSB_POWER);
 
     // host mode by sw
@@ -350,6 +383,12 @@ void USB1_Reset_Speed(struct usb_device_data *data){
     reset(data);
     msleep(5);
     stop_reset(data);
+
+    // u32 usbcore_pwr = 0;
+    // usbcore_pwr = ioread32(data->base_usb1core + MUSB_POWER);
+    // usbcore_pwr |= (MUSB_POWER_HSENAB) | (MUSB_POWER_HSMODE); /* full speed */
+    // iowrite32(usbcore_pwr, data->base_usb1core + MUSB_POWER);
+
 
     devctl = ioread8(data->base_usb1core + MUSB_DEVCTL);
     if (devctl&MUSB_DEVCTL_FSDEV) printk("Full speed, s = 0x%x\n", sizeof(struct usb_DeviceDescriptor));
@@ -475,6 +514,7 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
             data->DeviceDescriptorPtr+=4;    
         }
         if (count%4){ // in case count is odd
+            //printk("tmp[%d] = %x\n", i-1, tmp[i-1]);
             CpyMem(data->DeviceDescriptorPtr, (u8*)&tmp[i-1], count%4);
             data->DeviceDescriptorPtr+=count%4;            
         }
@@ -710,27 +750,37 @@ int USB1_GetDesc_Transfer(struct usb_device_data *data){
 
     /* Getting descriptor with new address 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetDesc_pkt, 0x1, "GetDesc_pkt");
+        ret = USB1_READ_Transaction(data, GetDesc_pkt, Global_Address, "GetDesc_pkt");
     }
 
     /* Getting descriptor with new address 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetDesc_pkt2, 0x1, "GetDesc_pkt2");
+        ret = USB1_READ_Transaction(data, GetDesc_pkt2, Global_Address, "GetDesc_pkt2");
     }
 
     /* Getting descriptor (Interface 0: HMSC) with new address 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetDescif0_pkt, 0x1, "GetDescif0_pkt");
+        ret = USB1_READ_Transaction(data, GetDescif0_pkt, Global_Address, "GetDescif0_pkt");
     }
 
     /* Setting configuration with new address 0x1 */
     if (ret == 0){
-        ret = USB1_WRITE_Transaction(data, SetConf_pkt, 0x1, NULL, 0, "SetConf_pkt");
+        ret = USB1_WRITE_Transaction(data, SetConf_pkt, Global_Address, NULL, 0, "SetConf_pkt");
     }
 
     /* Getting configuration with new address 0x1, data recieved should be 0x1 */
     if (ret == 0){
-        ret = USB1_READ_Transaction(data, GetConf_pkt, 0x1, "GetConf_pkt");
+        ret = USB1_READ_Transaction(data, GetConf_pkt, Global_Address, "GetConf_pkt");
+    }
+
+    /* Reset USB devie */
+    if (ret == 0){
+        ret = USB1_WRITE_Transaction(data, BulkReset_pkt, Global_Address, NULL, 0, "BulkReset_pkt");
+    }
+
+    /* Getting LUN with new address 0x1, data recieved should be 0x0 */
+    if (ret == 0){
+        ret = USB1_READ_Transaction(data, GetMaxLUN_pkt, Global_Address, "GetMaxLUN_pkt");
     }
 
     return ret;
@@ -796,6 +846,9 @@ void USB1_Print_DeviceDescriptorIf0(struct usb_device_data *data){
     printk("# ep_bulk_in_bmAttributes = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bmAttributes);
     printk("# ep_bulk_in_wMaxPacketSize = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_wMaxPacketSize);
     printk("# ep_bulk_in_bInterval = 0x%x\n", data->InsDeviceDescriptor.ep_bulk_in_bInterval);
+
+    printk("\n");
+    printk("# LUN = 0x%x\n", data->InsDeviceDescriptor.LUN);
     printk("# ----------------------------------- #\n");
 }
 
@@ -809,7 +862,7 @@ void USB1_Bulk_SetTypeTx(struct usb_device_data *data, u8 epnum, u8 speed){
     u8 TxType = 0;
 
     TxType = (speed << 6)&MUSB_TYPE_SPEED;
-    TxType |= (0x2 << 4)&MUSB_TYPE_PROTO; // bulk type
+    TxType |= (0x2 << 4)&MUSB_TYPE_PROTO; // bmAttributes = 0x2 (bulk type)
     TxType |= (epnum << 0)&MUSB_TYPE_REMOTE_END;
 
     iowrite8(TxType, data->base_usb1core + 0x10 + MUSB_TXTYPE);
@@ -826,7 +879,7 @@ void USB1_Bulk_SetTXCSR(struct usb_device_data *data){
     txcsr = MUSB_TXCSR_MODE; // MODE bit (bit 13) to 1 to ensure the FIFO is enabled
     txcsr &=~ MUSB_TXCSR_FRCDATATOG; // 0 to allow normal data toggle operations
     txcsr &=~ MUSB_TXCSR_AUTOSET; // 
-    iowrite8(txcsr, data->base_usb1core + 0x10 + MUSB_TXCSR);
+    iowrite16(txcsr, data->base_usb1core + 0x10 + MUSB_TXCSR);
 }
 
 /* RX */
@@ -848,33 +901,73 @@ void USB1_Bulk_SetRxMaxp(struct usb_device_data *data, u16 maxp){
 void USB1_Bulk_SetRxInterval(struct usb_device_data *data, u8 rxInterval){
     iowrite8(rxInterval, data->base_usb1core + 0x10 + MUSB_RXINTERVAL);
 }
+void USB1_Bulk_RxReinit(struct usb_device_data *data){
+    u16 csr = 0;
 
+    /* Clear TX */
+    // csr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
+    // if (csr & MUSB_TXCSR_MODE){
+    //     while (csr & MUSB_TXCSR_FIFONOTEMPTY){ // loop until fifo is empty
+    //         csr |= MUSB_TXCSR_FLUSHFIFO | MUSB_TXCSR_TXPKTRDY;
+    //         iowrite16(csr, data->base_usb1core + 0x10 + MUSB_TXCSR);
+    //     }
+
+    //     csr |= MUSB_TXCSR_FRCDATATOG;
+    //     iowrite16(csr, data->base_usb1core + 0x10 + MUSB_TXCSR);
+    // }
+    //iowrite16(0x0, data->base_usb1core + 0x10 + MUSB_TXCSR);
+
+    /* Enable RX */
+    csr = ioread16(data->base_usb1core + 0x10 + MUSB_RXCSR);
+    csr = MUSB_RXCSR_CLRDATATOG | MUSB_RXCSR_FLUSHFIFO | MUSB_RXCSR_RXPKTRDY;
+	csr &= ~(MUSB_RXCSR_H_REQPKT
+		| MUSB_RXCSR_H_AUTOREQ
+		| MUSB_RXCSR_AUTOCLEAR);
+
+    /* write 2x to allow double buffering */
+    iowrite16(csr, data->base_usb1core + 0x10 + MUSB_RXCSR);
+    iowrite16(csr, data->base_usb1core + 0x10 + MUSB_RXCSR);
+
+    /* flush writebuffer */
+    ioread16(data->base_usb1core + 0x10 + MUSB_RXCSR);
+
+    csr = ioread16(data->base_usb1core + 0x10 + MUSB_RXCSR);
+    csr |= MUSB_RXCSR_H_DATATOGGLE;
+    iowrite16(csr, data->base_usb1core + 0x10 + MUSB_RXCSR);
+}
+u16 USB1_Bulk_Rxset_toggle(struct usb_device_data *data)
+{
+	u16 csr;
+	u16 toggle;
+
+    toggle = ioread16(data->base_usb1core + 0x10 + MUSB_RXCSR)&MUSB_RXCSR_H_WR_DATATOGGLE;
+
+	csr = toggle ? (MUSB_RXCSR_H_WR_DATATOGGLE
+				| MUSB_RXCSR_H_DATATOGGLE) : 0;
+
+	return csr;
+}
 
 /* ================== API for Bulk Transfer ===================== */
 int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u8* dataX, u32 len){
     u16 host_csr0 = 0, txcsr = 0;
     int ret = 0, i = 0;
-    u32 tmp[16] = {0}; // holp up to 64 bytes
 
     setIndex(data, epnum);
     // TX
-    iowrite8(3, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
-    iowrite16(0x00, data->base_usb1core + MUSB_TXFIFOADD); 
+    iowrite8(0x6, data->base_usb1core + MUSB_TXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
+    iowrite16(0x88, data->base_usb1core + MUSB_TXFIFOADD); 
 
     USB1_Bulk_SetAddrTx(data, addr, epnum);
-    USB1_Bulk_SetTypeTx(data, epnum, 0x2); // 0x2 = full speed
-    USB1_Bulk_SetTxMaxp(data, 0x40); // max packet is 64 bytes
-    USB1_Bulk_SetTxInterval(data, 0x1); // as ep_bulk_out_bInterval = 0x1
+    USB1_Bulk_SetTypeTx(data, epnum, Glob_Speed); // 0x2 = full speed
+    USB1_Bulk_SetTxMaxp(data, data->InsDeviceDescriptor.ep_bulk_out_wMaxPacketSize); // max packet is 512 bytes
+    USB1_Bulk_SetTxInterval(data, 0x0); // as ep_bulk_out_bInterval = 0x0
     USB1_Bulk_SetTXCSR(data);
 
+    // load FIFO
     for (i = 0; i < len; i++){
-        tmp[i/4] |= (dataX[i] << (i%4)*8);
+        USB1_WriteU8DataFIFO(data, epnum, dataX[i]);
     }
-    for (i = 0; i < len/4; i++){
-        USB1_WriteDataFIFO(data, epnum, tmp[i]);
-    }
-    if (len%4) USB1_WriteDataFIFO(data, epnum, tmp[len/4]);
-
 
     txcsr = ioread16(data->base_usb1core + 0x10 + MUSB_TXCSR);
     txcsr |= MUSB_TXCSR_TXPKTRDY | MUSB_TXCSR_H_WZC_BITS;
@@ -885,7 +978,7 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
     if (ret < 0) return -1;
     Tx1_flag = 0;
     
-    count = ioread16(data->base_usb1core + 0x10 + MUSB_COUNT0)&0xFFFF;
+    //count = ioread16(data->base_usb1core + 0x10 + MUSB_COUNT0)&0xFFFF;
     // printk("ret = 0x%x, count = 0x%x\n", ret, count);
 
     host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_CSR0)&0xFF;
@@ -912,30 +1005,25 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
 int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* dataX, u16* len){
     u16 host_csr0 = 0, rxcsr = 0;
     int ret = 0, i = 0;
-    u32 tmp[16] = {0}; // holp up to 64 bytes
 
     setIndex(data, epnum);
+    // USB1_Bulk_RxReinit(data);
     USB1_Bulk_SetAddrRx(data, addr, epnum);
-    USB1_Bulk_SetTypeRx(data, epnum, 0x2); // 0x2 = full speed
-    USB1_Bulk_SetRxMaxp(data, 0x40); // max packet is 64 bytes
-    USB1_Bulk_SetRxInterval(data, 0x1); // as ep_bulk_in_bInterval = 0x1
+    USB1_Bulk_SetTypeRx(data, epnum, Glob_Speed); // 0x2 = full speed
+    USB1_Bulk_SetRxMaxp(data, data->InsDeviceDescriptor.ep_bulk_in_wMaxPacketSize); // max packet is 64 bytes
+    USB1_Bulk_SetRxInterval(data, 0x0); // as ep_bulk_in_bInterval = 0x0
 
     // RX
-    iowrite8(3, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
-    iowrite16(0x00, data->base_usb1core + MUSB_RXFIFOADD); 
+    iowrite8(0x6, data->base_usb1core + MUSB_RXFIFOSZ); // sz = 3 -> fifo size = 2^(sz+3) = 64 bytes for RX FIFO0
+    iowrite16(0xc8, data->base_usb1core + MUSB_RXFIFOADD); 
 
-    // // write data into ep num
-    // for (i = 0; i < len; i++){
-    //     if (i < 4) tmp[0] |= (dataX[i] << (i*8));
-    //     else tmp[1] |= (dataX[i] << ((i - 4)*8));
-    // }
-    // USB1_WriteDataFIFO(data, epnum, tmp[0]);
-    // USB1_WriteDataFIFO(data, epnum, tmp[1]);
-
-    // printk("0x%x  0x%x\n", tmp[0], tmp[1]);
-
-    rxcsr = MUSB_RXCSR_H_REQPKT;
+    rxcsr = USB1_Bulk_Rxset_toggle(data);
     iowrite16(rxcsr, data->base_usb1core + 0x10 + MUSB_RXCSR);
+    
+                                                                     
+    rxcsr |= MUSB_RXCSR_H_REQPKT;
+    iowrite16(rxcsr, data->base_usb1core + 0x10 + MUSB_RXCSR);
+    ioread16(data->base_usb1core + 0x10 + MUSB_RXCSR);
 
     // wait for Endpoint 0 interrupt (Data packet)
     ret = wait_val_update(data, &Rx1_flag, 1, 2000, "IN Bulk: Data0/1");
@@ -946,13 +1034,11 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
     ret = wait_register_update(data, data->base_usb1core, 0x10 + MUSB_RXCSR, 0, 1, 2000, "MUSB_RXCSR_RXPKTRDY");
     if (ret < 0) return -1;
 
-    //msleep(2000);
-    
     count = ioread16(data->base_usb1core + 0x10 + MUSB_RXCOUNT)&0xFFFF;
-
     host_csr0 = ioread16(data->base_usb1core + 0x10 + MUSB_RXCSR)&0xFF;
     *len = count;
-    printk("host_csr0 = 0x%x, count = 0x%x\n", host_csr0, count);
+
+    //printk("host_csr0 = 0x%x, count = 0x%x\n", host_csr0, count);
     // Check error
     if (host_csr0&MUSB_RXCSR_H_RXSTALL) {
         dev_info(data->dev, "RXSTALL - DATA\n");
@@ -970,28 +1056,17 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
         dev_info(data->dev, "MUSB_RXCSR_FIFOFULL\n"); // .... consider later
         //return -1;
     } 
+    if (host_csr0&MUSB_RXCSR_INCOMPRX) {
+        dev_info(data->dev, "MUSB_RXCSR_INCOMPRX\n"); // .... consider later
+        //return -1;
+    } 
     if (host_csr0&MUSB_RXCSR_RXPKTRDY){
         printk("Reading IN BULK with ACKed!\n");
 
-        for (i = 0; i < (count/4); i++){
-            tmp[i] = USB1_ReadFIFO(data, epnum);
-        }
-        if (count%4){
-            tmp[i] = USB1_ReadFIFO(data, epnum);
-        }
-        printk("i = %d, tmp[0] = 0x%x, count = %d\n", i, tmp[0], count);
-
         for (i = 0; i < count; i++){
-            dataX[data->RX_index++] = (tmp[i/4] >> (i%4)*8)&0xFF;
-            if (dataX[data->RX_index-1] == 0x00){
-                data->RX_index--; // not take this
-            }
-            if (dataX[data->RX_index-1] == '\n') {
-                dataX[data->RX_index-1] = 0x00; // null terminator
-                data->isEnd = 1;
-                break;
-            }
+            dataX[data->RX_index++] = USB1_ReadU8FIFO(data, epnum);
         }
+        data->RX_index = 0;
 
         // clear RXPKTRDY
         host_csr0 = ioread32(data->base_usb1core + 0x10 + MUSB_RXCSR);
@@ -1001,4 +1076,5 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
      
     return 0;
 }
+
 
