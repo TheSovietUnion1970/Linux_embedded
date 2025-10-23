@@ -83,6 +83,18 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     printk("# %s: '%s'\n", string, tmp);
 }
 
+void USB1_Print_hex_data(const uint8_t *data, size_t len, u8* name) {
+    size_t i = 0;
+    printk("%s[%d] =: ", name, len);
+    for (i = 0; i < len; i++) {
+        printk("%02X ", data[i]);  // Print each byte in 2-digit hex
+        if ((i + 1) % 10 == 0)     // After 10 bytes, print newline
+            printk("\n");
+    }
+    if (len % 10 != 0)
+        printk("\n"); // Final newline if not exactly multiple of 10
+}
+
 void USB1_Print_CSW(struct usb_device_data *data, u8* name){
     printk("# ----------------------------------- #\n");
     printk("# %s: \n", name);
@@ -122,8 +134,8 @@ void USB1_Print_EAA_Instance(struct usb_device_data *data, u8* name){
     printk("# Block_descriptor_len = 0x%x\n", cbw_EAA_Instance.Block_descriptor_len);
 
     if (cbw_EAA_Instance.Mode_data_len > 3){
-        printk("# Page_code = 0x%x\n", cbw_EAA_Instance.Page_code);
-        printk("# Page_len = 0x%x\n", cbw_EAA_Instance.Page_len);
+        USB1_Print_hex_data(cbw_EAA_Instance.block_descriptors, 5, "block_descriptors");
+        USB1_Print_hex_data(cbw_EAA_Instance.mode_pages, 61, "mode_pages");
     }
     printk("# ----------------------------------- #\n");
 }

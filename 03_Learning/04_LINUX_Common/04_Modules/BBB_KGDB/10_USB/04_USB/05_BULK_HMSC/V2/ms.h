@@ -55,23 +55,9 @@ typedef struct cbw_EAA {  // Command Status Wrapper
     u8 Mode_data_len;
     u16 Reserved1;
     u8 Block_descriptor_len;
-    
-    u8 Page_code;
-    u8 Page_len;
 
-    u16 First_medium_transport_element_addr;
-    u16 Num_medium_transport_elements;
-
-    u16 First_storage_element_addr;
-    u16 Num_storage_elements;
-
-    u16 First_im_ex_port_element_addr;
-    u16 Num_im_ex_port_elements;
-
-    u16 First_data_transfer_element_addr;
-    u16 Num_data_transfer_elements;
-
-    u16 Reserved2;
+    u8 block_descriptors[5];         // Bytes 4-8: Invalid/short descriptors (ignore or pad to 8)
+    u8 mode_pages[61];               // Bytes 9-69: Mode pages (e.g., 0x3F all pages; total ~60 bytes usable)
 } cbw_EAA;
 
 /* ================== API for HMSC Bulk Transfer ===================== */ 
