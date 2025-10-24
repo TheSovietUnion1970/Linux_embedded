@@ -47,7 +47,7 @@ const u8 cbw_capacity[31] = {
 
 const u8 cbw_mode_sense_EAA[31] = {
     0x55, 0x53, 0x42, 0x43, // dCBWSignature: 0x43425355 ("USBC" in little-endian)
-    0x04, 0x00, 0x00, 0x00, // dCBWTag: 0x00000004 (arbitrary, incremented as needed)
+    0x03, 0x00, 0x00, 0x00, // dCBWTag: 0x00000004 (arbitrary, incremented as needed)
     0x18, 0x00, 0x00, 0x00, // dCBWDataTransferLength: 0x00000018 (24 bytes Data-In)
     0x80,                   // bmCBWFlags: 0x80 (Data-In direction)
     0x00,                   // bCBWLUN: 0x00 (LUN 0)
@@ -57,6 +57,17 @@ const u8 cbw_mode_sense_EAA[31] = {
     0x00, 0x00, 0x00, 0x00, // Padding zeros (ignored since length=6)
     0x00, 0x00, 0x00, 0x00, // Padding zeros
     0x00, 0x00              // Padding zeros (total CBWCB=16 bytes)
+};
+
+const u8 cbw_test_ready[31] = {
+    0x55, 0x53, 0x42, 0x43,  // Signature
+    0x04, 0x00, 0x00, 0x00,  // Tag
+    0x00, 0x00, 0x00, 0x00,  // Length=0 (no data)
+    0x00,                    // Flags=0x00 (no direction)
+    0x00,                    // LUN=0
+    0x06,                    // CB length=6
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // CBWCB: All zeros
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  // Padding
 };
 
 u32 swap_endian32(u32 val) {
@@ -177,15 +188,16 @@ int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, u8* data_inqu
         return ret;
     }
 
-    // 2. Data: Bulk IN (36 bytes)
-    //ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, (u8*)&data->scsi_inquiry, &InDataLen);
-    ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, data_inquiry, &InDataLen);
-    if (ret < 0) {
-        printk("%s: DATA IN failed: %d (len=%d)\n", name, ret, InDataLen);
-        return ret;
-    }
-    else {
-       printk("InDataLen = %d\n", InDataLen);
+    if (data_inquiry){
+        // 2. Data: Bulk IN (36 bytes)
+        ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, data_inquiry, &InDataLen);
+        if (ret < 0) {
+            printk("%s: DATA IN failed: %d (len=%d)\n", name, ret, InDataLen);
+            return ret;
+        }
+        else {
+        printk("InDataLen = %d\n", InDataLen);
+        }
     }
 
     // 3. Data: Bulk IN CSW (16 bytes)
@@ -214,6 +226,11 @@ int USB1_CBW(struct usb_device_data *data){
     // cbw_EAA_Instance
     if (ret == 0){
         ret = USB1_Send_INQUIRY(data, cbw_mode_sense_EAA, (u8*)&cbw_EAA_Instance, 1, "cbw_EAA_Instance");
+    }
+
+    // cbw_EAA_Instance
+    if (ret == 0){
+        ret = USB1_Send_INQUIRY(data, cbw_test_ready, NULL, 1, "cbw_test_ready");
     }
 
     /* Print result */
