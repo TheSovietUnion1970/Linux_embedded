@@ -72,5 +72,6 @@ int USB1_Send_INQUIRY(struct usb_device_data *data, u8* cbw, u8* data_inquiry, b
 int USB1_CBW(struct usb_device_data *data);
 
 int USB1_Read_SECTOR(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status);
+int USB1_Read_SECTOR_DATA(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status, u8 print_data);
 
 #endif /* MS_H */

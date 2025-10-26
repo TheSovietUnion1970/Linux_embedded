@@ -22,14 +22,7 @@ static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
-    ret = USB1_Read_SECTOR(data, 0x0, 1, Sector_data, &Sector_data_len, "Sector 0", 1);
-    if (ret < 0) {
-        printk("Fail USB1_Read_SECTOR\n");
-    }
-    else {
-        USB1_Print_Hex(&Sector_data[0], 512, "Boot code entry");
-        //USB1_Print_Hex(&Sector_data[11], 2, "Bytes Per Sector");
-    }
+    ret = USB1_Read_SECTOR_DATA(data, 0x0, 1, Sector_data, &Sector_data_len, "Sector 0", 1, 1);
 
 }
 
