@@ -15,8 +15,10 @@
 #define DRIVER_NAME "usb1_driver"
 #define DEVICE_NAME "usb1"
 
+/* Global variable/declaration */
 u8 Sector_data[SECTOR_SIZE];
 u16 Sector_data_len;
+BPB bpb_instance;
 
 static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
@@ -33,11 +35,22 @@ static void re_request_irq_work(struct work_struct *work){
         ret = USB1_Read_SECTOR_DATA(data, 0x2000, 1, Sector_data, &Sector_data_len, "Sector 0x2000 (8192)", 0, 1);
     }
     if (ret == 0){
-        USB1_Print_HexVal(Sector_data + 0x0B, 2, "Standard block size", LITTLE_ENDIAN);
-        USB1_Print_HexVal(Sector_data + 28, 4, "Sector offset", LITTLE_ENDIAN);
+        USB1_Print_HexVal(Sector_data + 13, 1, "Sectors per Cluster", LITTLE_ENDIAN);
+        USB1_Print_HexVal(Sector_data + 14, 2, "Reserved Sectors", LITTLE_ENDIAN);
+        bpb_instance.Sectors_per_Cluster = (u8)USB1_Get_Bytes(Sector_data + 13, 8, LITTLE_ENDIAN);
+        bpb_instance.Reserved_Sectors = (u16)USB1_Get_Bytes(Sector_data + 14, 16, LITTLE_ENDIAN);
+
+        USB1_Print_HexVal(Sector_data + 16, 2, "Number of FATs", LITTLE_ENDIAN);
         USB1_Print_HexVal(Sector_data + 36, 4, "Sectors per FAT table", LITTLE_ENDIAN);
+        bpb_instance.Number_of_FATs = (u16)USB1_Get_Bytes(Sector_data + 16, 16, LITTLE_ENDIAN);
+        bpb_instance.Sectors_per_FAT = USB1_Get_Bytes(Sector_data + 36, 32, LITTLE_ENDIAN);
+
         USB1_Print_HexVal(Sector_data + 44, 4, "Root Cluster", LITTLE_ENDIAN);
         USB1_Print_String(Sector_data + 82, 8, "FS type");
+        bpb_instance.Root_Cluster = USB1_Get_Bytes(Sector_data + 44, 32, LITTLE_ENDIAN);
+
+        bpb_instance.Data_Sector = bpb_instance.Reserved_Sectors + bpb_instance.Number_of_FATs * bpb_instance.Sectors_per_FAT;
+        printk("Real data starts at sector: %d = 0x%x\n", bpb_instance.Data_Sector, bpb_instance.Data_Sector);
     }
 
 }

@@ -1,6 +1,7 @@
 #include "u1.h"
 #include "ms.h"
 #include <linux/math64.h>
+#include <linux/byteorder/generic.h> // for get_unaligned_leXX/beXX
 
 cbw_EAA cbw_EAA_Instance;
 
@@ -180,6 +181,31 @@ void USB1_Print_HexVal(u8 *data, u16 len, u8 *name, bool little_endian){
 
     str[pos] = '\0';
     printk(" => 0x%s\n", str);
+}
+
+u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian){
+    if (!data)
+        return 0;
+
+    switch (mode) {
+    case 8:
+        return data[0];
+
+    case 16:
+        if (little_endian)
+            return get_unaligned_le16(data);
+        else
+            return get_unaligned_be16(data);
+
+    case 32:
+        if (little_endian)
+            return get_unaligned_le32(data);
+        else
+            return get_unaligned_be32(data);
+
+    default:
+        return 0;
+    }
 }
 
 void USB1_Print_CSW(struct usb_device_data *data, u8* name){
