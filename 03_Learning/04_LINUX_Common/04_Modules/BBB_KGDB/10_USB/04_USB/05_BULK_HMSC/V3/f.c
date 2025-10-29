@@ -100,5 +100,10 @@ int USB1_Read(struct usb_device_data *data){
         USB1_Scan_Root_Dir(data, (u8*)Cluster_data);
     }
 
+    /* Read next cluster */
+    if (ret == 0){
+        ret = USB1_Read_CLUSTER(data, (rde_instance.High_first_cluster << 16) | (rde_instance.Low_first_cluster), (u8*)Cluster_data, &Cluster_data_len, "Cluster next");
+    }
+
     return ret;
 }
