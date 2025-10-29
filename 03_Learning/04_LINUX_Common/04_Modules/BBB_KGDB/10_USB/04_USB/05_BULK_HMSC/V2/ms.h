@@ -1,6 +1,10 @@
 #ifndef MS_H
 #define MS_H
 
+#define SECTOR_SIZE 512
+#define LITTLE_ENDIAN 1
+#define BIG_ENDIAN 1
+
 
 // Forward declaration for function parameters
 struct usb_device_data;
@@ -60,9 +64,18 @@ typedef struct cbw_EAA {  // Command Status Wrapper
     u8 mode_pages[61];               // Bytes 9-69: Mode pages (e.g., 0x3F all pages; total ~60 bytes usable)
 } cbw_EAA;
 
+/* Print result */
+void USB1_Print_String(u8 *data, u16 len, u8* string);
+void USB1_Print_Hex(u8 *data, u16 len, u8* name);
+void USB1_Print_HexVal(u8 *data, u16 len, u8 *name, bool little_endian);
+u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian);
+
 /* ================== API for HMSC Bulk Transfer ===================== */ 
-int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, u8* data_inquiry, bool print_status, u8* name);
+int USB1_Send_INQUIRY(struct usb_device_data *data, u8* cbw, u8* data_inquiry, bool print_status, u8* name);
 
 int USB1_CBW(struct usb_device_data *data);
+
+int USB1_Read_SECTOR(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status);
+int USB1_Read_SECTOR_DATA(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status, u8 print_data);
 
 #endif /* MS_H */

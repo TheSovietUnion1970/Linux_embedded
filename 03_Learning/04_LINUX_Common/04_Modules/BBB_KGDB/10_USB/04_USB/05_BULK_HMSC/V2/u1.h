@@ -357,7 +357,7 @@ struct usb_device_data {
 
     msc_cbw usb1_cbw;
     msc_csw usb1_csw;
-    u8 tag;
+    u32 tag;
     inquiry_response scsi_inquiry;
 
     // check addr
@@ -368,7 +368,7 @@ struct usb_device_data {
     int irqs;
 
     bool isEnd;
-    u8 RX_index;
+    u32 RX_index;
 
     struct work_struct re_request_work;
     bool is_scheduled;

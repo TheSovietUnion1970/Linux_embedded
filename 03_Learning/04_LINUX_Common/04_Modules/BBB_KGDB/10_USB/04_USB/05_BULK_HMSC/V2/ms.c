@@ -1,12 +1,12 @@
 #include "u1.h"
 #include "ms.h"
 #include <linux/math64.h>
+#include <linux/byteorder/generic.h> // for get_unaligned_leXX/beXX
 
 cbw_EAA cbw_EAA_Instance;
 
-
 /* const CBW */
-const u8 cbw_initial[31] = {
+u8 cbw_initial[31] = {
     0x55, 0x53, 0x42, 0x43,  // dCBWSignature: 0x43425355 (LE "USBC")
     0x01, 0x00, 0x00, 0x00,  // dCBWTag: 0x00000001
     0x24, 0x00, 0x00, 0x00,  // dCBWDataTransferLength: 0x00000024 (36 bytes, Data-In)
@@ -18,7 +18,7 @@ const u8 cbw_initial[31] = {
     0x00, 0x00  // Final padding zeros
 };
 
-const u8 cbw_capacity[31] = {
+u8 cbw_capacity[31] = {
     0x55, 0x53, 0x42, 0x43,  // dCBWSignature: 0x43425355 (LE "USBC")
     0x02, 0x00, 0x00, 0x00,  // dCBWTag: 0x00000002 (increment from previous)
     0x08, 0x00, 0x00, 0x00,  // dCBWDataTransferLength: 0x00000008 (8 bytes Data-In)
@@ -31,21 +31,7 @@ const u8 cbw_capacity[31] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // Padding zeros to reach 31 bytes
 };
 
-// const u8 cbw_mode_sense_EAA[31] = {
-//     0x55, 0x53, 0x42, 0x43, // dCBWSignature: 0x43425355 ("USBC" in little-endian)
-//     0x04, 0x00, 0x00, 0x00, // dCBWTag: 0x00000004 (arbitrary, incremented as needed)
-//     0x18, 0x00, 0x00, 0x00, // dCBWDataTransferLength: 0x00000018 (24 bytes Data-In)
-//     0x80,                   // bmCBWFlags: 0x80 (Data-In direction)
-//     0x00,                   // bCBWLUN: 0x00 (LUN 0)
-//     0x06,                   // bCBWCBLength: 0x06 (6-byte SCSI command)
-//     0x1A, 0x08, 0x1D, 0x00, // CBWCB: Opcode 0x1A, DBD=1 (0x08), Page Code 0x1D, Subpage 0x00
-//     0x18, 0x00,             // CBWCB: Allocation Length 0x18 (24 bytes), Control 0x00
-//     0x00, 0x00, 0x00, 0x00, // Padding zeros (ignored since length=6)
-//     0x00, 0x00, 0x00, 0x00, // Padding zeros
-//     0x00, 0x00              // Padding zeros (total CBWCB=16 bytes)
-// };
-
-const u8 cbw_mode_sense_EAA[31] = {
+u8 cbw_mode_sense_EAA[31] = {
     0x55, 0x53, 0x42, 0x43, // dCBWSignature: 0x43425355 ("USBC" in little-endian)
     0x03, 0x00, 0x00, 0x00, // dCBWTag: 0x00000004 (arbitrary, incremented as needed)
     0x18, 0x00, 0x00, 0x00, // dCBWDataTransferLength: 0x00000018 (24 bytes Data-In)
@@ -59,7 +45,7 @@ const u8 cbw_mode_sense_EAA[31] = {
     0x00, 0x00              // Padding zeros (total CBWCB=16 bytes)
 };
 
-const u8 cbw_test_ready[31] = {
+u8 cbw_test_ready[31] = {
     0x55, 0x53, 0x42, 0x43,  // Signature
     0x04, 0x00, 0x00, 0x00,  // Tag
     0x00, 0x00, 0x00, 0x00,  // Length=0 (no data)
@@ -77,6 +63,63 @@ u32 swap_endian32(u32 val) {
            ((val << 24) & 0xFF000000);
 }
 
+void swap_endian32Ptr(u32 *val) {
+    u32 tmp = 0;
+
+    tmp = ((*val >> 24) & 0x000000FF) |
+    ((*val >> 8)  & 0x0000FF00) |
+    ((*val << 8)  & 0x00FF0000) |
+    ((*val << 24) & 0xFF000000);
+
+    *val = tmp;
+
+    //printk("tmp = 0x%x\n", *val);
+}
+
+void swap_endian16Ptr(u16 *val) {
+    u16 tmp = 0;
+
+    tmp = ((*val >> 8) & 0x00FF) |
+    ((*val << 8) & 0xFF00);
+
+    *val = tmp;
+
+    //printk("tmp = 0x%x\n", *val);
+}
+
+
+/* Sector CBW */
+//   - CBWCB[0] = 0x28 (READ(10) opcode)
+//   - CBWCB[1] = 0x00 (flags: RDPROTECT=0, DPO=0, FUA=0)
+//   - CBWCB[2-5] = LBA (big-endian, changeable, e.g., 0x00 0x00 0x00 0x00)
+//   - CBWCB[6] = 0x00 (reserved)
+//   - CBWCB[7] = 0x00 (group number, changeable)
+//   - CBWCB[8-9] = Transfer Length (big-endian, changeable, e.g., 0x00 0x01 for 1 block)
+//   - CBWCB[10] = 0x00 (control)
+//   - CBWCB[11-15] = 0x00 (padding)
+u8 cbw_read_sector[31] = {
+    0x55, 0x53, 0x42, 0x43,  // Signature "USBC"
+    0x05, 0x00, 0x00, 0x00,  // Tag -> automatically updated
+    0x00, 0x02, 0x00, 0x00,  // Data Length: 512 bytes (0x00000200)
+    0x80,                    // Data-In
+    0x00,                    // LUN 0
+    0x0A,                    // CB Length: 10 bytes
+    0x28, 0x00,              // Opcode 0x28, Flags=0x00 (no DPO/FUA)
+    0x00, 0x00, 0x00, 0x02,  // LBA: 0x00000000 -> changeable
+    0x00,                    // Group Number 0 -> changeable
+    0x00,                    // reserved
+    0x01, 0x0,               // Transfer Length: 1 block -> changeable (little endian)
+    0x00,                    // Control 0x00
+    0x00, 0x00, 0x00, 0x00,  // Padding
+    0x00                     // Padding
+};
+
+void SetMem(u8* data, u8* val, u16 size){
+    u16 i = 0;
+    for (i = 0; i < size; i++){
+        data[i] = val[i];
+    }
+}
 
 /* Print result */
 void USB1_Print_String(u8 *data, u16 len, u8* string) {
@@ -94,21 +137,80 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     printk("# %s: '%s'\n", string, tmp);
 }
 
-void USB1_Print_hex_data(const uint8_t *data, size_t len, u8* name) {
-    size_t i = 0;
-    printk("%s[%d] =: ", name, len);
+void USB1_Print_Hex(u8 *data, u16 len, u8 *name)
+{
+    char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars
+    u16 i;
+
+    if (!data || len == 0)
+        return;
+
+    printk("# %s (len=%u bytes):\n", name, len);
+
     for (i = 0; i < len; i++) {
-        printk("%02X ", data[i]);  // Print each byte in 2-digit hex
-        if ((i + 1) % 10 == 0)     // After 10 bytes, print newline
-            printk("\n");
+        int pos = (i % 8) * 3;
+        snprintf(&line[pos], sizeof(line) - pos, "%02X ", data[i]);
+
+        // Print every 8 bytes, or at the end of data
+        if ((i % 8) == 7 || i == len - 1) {
+            printk("  %s\n", line);
+            memset(line, 0, sizeof(line));
+        }
     }
-    if (len % 10 != 0)
-        printk("\n"); // Final newline if not exactly multiple of 10
+}
+
+void USB1_Print_HexVal(u8 *data, u16 len, u8 *name, bool little_endian){
+    char str[128];
+    int pos = 0;
+    u16 i;
+
+    if (!data || len == 0)
+        return;
+
+    printk("# %s (%s endian, len=%u): ", 
+           name, little_endian ? "little" : "big", len);
+
+    // Build hex string according to endianness
+    if (little_endian) {
+        for (i = 0; i < len; i++) // reverse order for printing
+            pos += snprintf(str + pos, sizeof(str) - pos, "%02X", data[len - i - 1]);
+    } else {
+        for (i = 0; i < len; i++)
+            pos += snprintf(str + pos, sizeof(str) - pos, "%02X", data[i]);
+    }
+
+    str[pos] = '\0';
+    printk(" => 0x%s\n", str);
+}
+
+u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian){
+    if (!data)
+        return 0;
+
+    switch (mode) {
+    case 8:
+        return data[0];
+
+    case 16:
+        if (little_endian)
+            return get_unaligned_le16(data);
+        else
+            return get_unaligned_be16(data);
+
+    case 32:
+        if (little_endian)
+            return get_unaligned_le32(data);
+        else
+            return get_unaligned_be32(data);
+
+    default:
+        return 0;
+    }
 }
 
 void USB1_Print_CSW(struct usb_device_data *data, u8* name){
     printk("# ----------------------------------- #\n");
-    printk("# %s: \n", name);
+    printk("# Status -> %s: \n", name);
     printk("# dCSWSignature = 0x%x\n", data->usb1_csw.dCSWSignature);
     printk("# dCSWTag = 0x%x\n", data->usb1_csw.dCSWTag);
     printk("# dCSWDataResidue = 0x%x\n", data->usb1_csw.dCSWDataResidue);
@@ -145,8 +247,8 @@ void USB1_Print_EAA_Instance(struct usb_device_data *data, u8* name){
     printk("# Block_descriptor_len = 0x%x\n", cbw_EAA_Instance.Block_descriptor_len);
 
     if (cbw_EAA_Instance.Mode_data_len > 3){
-        USB1_Print_hex_data(cbw_EAA_Instance.block_descriptors, 5, "block_descriptors");
-        USB1_Print_hex_data(cbw_EAA_Instance.mode_pages, 61, "mode_pages");
+        USB1_Print_Hex(cbw_EAA_Instance.block_descriptors, 5, "block_descriptors");
+        USB1_Print_Hex(cbw_EAA_Instance.mode_pages, 61, "mode_pages");
     }
     printk("# ----------------------------------- #\n");
 }
@@ -173,10 +275,11 @@ void USB1_Set_CBW(struct usb_device_data *data, const u8* d){
 void USB1_Apply_CBW(struct usb_device_data *data, const u8* d){
     USB1_Clear_CBW(data);
     USB1_Set_CBW(data, d);
+    data->usb1_cbw.dCBWTag++; // tag will be automatically updated
 }
 
 /* ================== API for HMSC bulk Transfer ===================== */
-int USB1_Send_INQUIRY(struct usb_device_data *data, const u8* cbw, u8* data_inquiry, bool print_status, u8* name){
+int USB1_Send_INQUIRY(struct usb_device_data *data, u8* cbw, u8* data_inquiry, bool print_status, u8* name){
     int ret;
     u16 InDataLen;
 
@@ -225,7 +328,7 @@ int USB1_CBW(struct usb_device_data *data){
 
     // cbw_EAA_Instance
     if (ret == 0){
-        ret = USB1_Send_INQUIRY(data, cbw_mode_sense_EAA, (u8*)&cbw_EAA_Instance, 1, "cbw_EAA_Instance");
+        ret = USB1_Send_INQUIRY(data, cbw_mode_sense_EAA, (u8*)&cbw_EAA_Instance, 0, "cbw_EAA_Instance");
     }
 
     // cbw_EAA_Instance
@@ -240,4 +343,70 @@ int USB1_CBW(struct usb_device_data *data){
     }
 
     return ret;
+}
+
+/* ================== API for HMSC bulk Transfer ===================== */
+int USB1_Read_SECTOR(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status){
+    int ret;
+    u16 CSWDataLen;
+
+    USB1_Apply_CBW(data, cbw_read_sector);
+    SetMem((u8*)&data->usb1_cbw.CBWCB[2], (u8*)&LBA, 4); // 4 (2-5) bytes for LBA
+    SetMem((u8*)&data->usb1_cbw.CBWCB[8], (u8*)&block_size, 2); // 2 (8-9) bytes for block size
+
+
+    // // convert big endian for LBA
+    swap_endian32Ptr((u32*)&data->usb1_cbw.CBWCB[2]);
+
+
+    // USB1_Print_Hex((u8*)&data->usb1_cbw.CBWCB[2], 4, "LBA");
+    // USB1_Print_Hex((u8*)&data->usb1_cbw.CBWCB[8], 2, "block size");
+
+    // USB1_Print_Hex((u8*)&data->usb1_cbw.dCBWSignature, 31, "cbw");
+
+    // 1. Command: Bulk OUT CBW (31 bytes)
+    ret = USB1_OUT_Phase_Bulk(data, 0x2, Global_Address, (u8*)&data->usb1_cbw, sizeof(data->usb1_cbw));
+    if (ret < 0) {
+        printk("%s: CBW OUT failed: %d\n", name, ret);
+        return ret;
+    }
+
+    if (sector_data){
+        // 2. Data: Bulk IN (36 bytes)
+        ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, sector_data, sector_data_len);
+        if (ret < 0) {
+            printk("%s: DATA IN failed: %d (len=%d)\n", name, ret, *sector_data_len);
+            return ret;
+        }
+        else {
+        //printk("sector_data_len = %d\n", *sector_data_len);
+        }
+    }
+
+    // 3. Data: Bulk IN CSW (16 bytes)
+    ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, (u8*)&data->usb1_csw, &CSWDataLen);
+    if (ret < 0) {
+        printk("%s: CSW IN failed: %d (len=%d)\n", name, ret, CSWDataLen);
+        return ret;
+    }
+    else {
+        if (print_status) USB1_Print_CSW(data, name);
+    }
+
+    return 0; 
+}
+
+int USB1_Read_SECTOR_DATA(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status, u8 print_data){
+    int ret;
+
+    ret = USB1_Read_SECTOR(data, LBA, block_size, sector_data, sector_data_len, name, print_status);
+    if (ret < 0) {
+        printk("Fail USB1_Read_SECTOR\n");
+        return -1;
+    }
+    else {
+        if (print_data) USB1_Print_Hex(sector_data, 512, name);
+    }
+
+    return 0;
 }

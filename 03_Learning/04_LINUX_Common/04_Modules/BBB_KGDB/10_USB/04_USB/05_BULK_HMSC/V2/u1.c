@@ -13,7 +13,7 @@
 #include <linux/delay.h>
 #include "u1.h"
 
-u8 Glob_Speed = USB_SPEED_FULL;
+u8 Glob_Speed = USB_SPEED_HIGH;
 
 /* ================ Const data packet =======================*/
 const u8 GetDesc_pkt[8] = {
@@ -249,11 +249,11 @@ irqreturn_t USB1_handler(int irq, void *d){
     if (irqst0){
         if (int_tx){
             Tx1_flag = 1;
-            printk("ISR -> TX[0x%x]\n", int_tx);
+            //printk("ISR -> TX[0x%x]\n", int_tx);
         }
         if (int_rx){
             Rx1_flag = 1;
-            printk("ISR -> RX[0x%x]\n", int_rx);
+            //printk("ISR -> RX[0x%x]\n", int_rx);
         }
     }
     if (irqst1){
@@ -483,7 +483,7 @@ int USB1_IN_Phase_GetDesc(struct usb_device_data *data){
         return -1;
     } 
     else if (host_csr0 == MUSB_CSR0_RXPKTRDY) {
-        printk("Reading IN with ACKed!\n");
+        //printk("Reading IN with ACKed!\n");
 
         for (i = 0; i < count/4; i++){
             tmp[i] = USB1_ReadFIFO(data, 0);
@@ -1053,7 +1053,7 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
         return -1;
     } 
     if (host_csr0&MUSB_RXCSR_FIFOFULL) {
-        dev_info(data->dev, "MUSB_RXCSR_FIFOFULL\n"); // .... consider later
+        //dev_info(data->dev, "MUSB_RXCSR_FIFOFULL\n"); // .... consider later
         //return -1;
     } 
     if (host_csr0&MUSB_RXCSR_INCOMPRX) {
@@ -1061,7 +1061,7 @@ int USB1_IN_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, u8* data
         //return -1;
     } 
     if (host_csr0&MUSB_RXCSR_RXPKTRDY){
-        printk("Reading IN BULK with ACKed!\n");
+        //printk("Reading IN BULK with ACKed!\n");
 
         for (i = 0; i < count; i++){
             dataX[data->RX_index++] = USB1_ReadU8FIFO(data, epnum);

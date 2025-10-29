@@ -11,42 +11,20 @@
 #include <linux/atomic.h>
 #include "u1.h"
 #include "ms.h"
+#include "f.h"
 
 #define DRIVER_NAME "usb1_driver"
 #define DEVICE_NAME "usb1"
 
-const u8 OutData[] = "Hello everyone! hahaha now!!. Germany vs Soviet\n";
-u8 InData[100];
-u16 InDataLen = 0;
-void print_arr(u8* d, u16 len, u8* name){
-    u16 i = 0;
-    printk("%s[%d] = \n", name, len);
-
-    for (i = 0; i < len; i++){
-        printk("'%c'", d[i]);
-    }
-
-    //printk("\n");
-}
 
 static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
-    // send data to arduino device
-    ret = USB1_OUT_Phase_Bulk(data, 4, 0x1, OutData, sizeof(OutData));
-
-    // read data from arduino device
-    while(!data->isEnd) {
-        if (ret == 0) ret = USB1_IN_Phase_Bulk(data, 3, 0x1, InData, &InDataLen);
-        if (ret < 0) break;
-        if (data->isEnd) break;
-    };
-
-    print_arr(InData, data->RX_index, "InData");
-    // reset
-    data->isEnd = 0;
-    data->RX_index = 0;
+    ret = USB1_Read(data);
+    if (ret < 0){
+        printk("Failed at USB1_Read\n");
+    }
 
 }
 
@@ -179,6 +157,7 @@ static int usb1_probe(struct platform_device *pdev)
     USB1_init(data);
     data->isEnd = 0;
     data->RX_index = 0;
+    data->usb1_cbw.dCBWTag = 0; // initialize tag 
 
     //musb_init_controller_V(data);
 
@@ -202,9 +181,12 @@ static int usb1_probe(struct platform_device *pdev)
         USB1_Print_DeviceDescriptorIf0(data);
     }
     
-    //msleep(2000); // need 2s
-    // schedule_work(&data->re_request_work);
     ret = USB1_CBW(data);
+    if (ret < 0) {
+        printk("Fail USB1_CBW\n");
+    }
+
+    schedule_work(&data->re_request_work);
 
     return 0;
 }
