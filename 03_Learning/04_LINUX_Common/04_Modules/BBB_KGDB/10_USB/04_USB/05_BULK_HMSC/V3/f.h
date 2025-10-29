@@ -5,6 +5,8 @@
 #include "ms.h"
 #include <linux/math64.h>
 
+#define IS_FILE 0x20
+
 
 // Forward declaration for function parameters
 struct usb_device_data;
@@ -37,7 +39,7 @@ typedef struct Root_Directory_Entry {
     u32 File_size; // 0 for directory
 } Root_Dir_Entry;
 
-int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name);
+int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name, bool print_data);
 
 int USB1_Read(struct usb_device_data *data);
 

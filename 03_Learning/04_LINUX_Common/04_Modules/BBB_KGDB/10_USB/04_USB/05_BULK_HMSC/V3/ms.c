@@ -132,7 +132,7 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     for (i = 0; i < len; i++) {
         tmp[i] = data[i];
     }
-    tmp[len-1] = '\0'; // add null terminator
+    tmp[len] = '\0'; // add null terminator
 
     printk("# %s: '%s'\n", string, tmp);
 }
@@ -321,6 +321,7 @@ int USB1_CBW(struct usb_device_data *data){
     int ret;
 
     ret = USB1_Send_INQUIRY(data, cbw_initial, (u8*)&data->scsi_inquiry, 0, "CBW Initial");
+    msleep(500);
 
     if (ret == 0){
         ret = USB1_Send_INQUIRY(data, cbw_capacity, (u8*)&data->scsi_inquiry + 0x24, 0, "CBW Capacity");

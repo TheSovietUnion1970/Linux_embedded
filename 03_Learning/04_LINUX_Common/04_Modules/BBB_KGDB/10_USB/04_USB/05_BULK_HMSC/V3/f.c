@@ -2,10 +2,14 @@
 
 BPB bpb_instance;
 Root_Dir_Entry rde_instance;
+Root_Dir_Entry* valid_Root_Dir_Entry[100];
+u8 valid_Root_Dir_Entry_index = 0;
+u8 Sector_data_Root_Dir_Entry[8][SECTOR_SIZE];
+
 u8 Cluster_data[8][SECTOR_SIZE];
 u8 Sector_data[SECTOR_SIZE];
 
-int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name){
+int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name, bool print_data){
     int ret;
     u8 i = 0;
     u16 Sector_data_len;
@@ -16,7 +20,8 @@ int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster
     sector_num = bpb_instance.Starting_LBA + bpb_instance.Data_Sector + (cluster_num - 2)*bpb_instance.Sectors_per_Cluster;
 
     for (i = 0; i < 8; i++){
-        ret = USB1_Read_SECTOR_DATA(data, sector_num + i, 1, (u8*)&Cluster_data[i][0], &Sector_data_len, "Sector N", 0, 0);
+        ret = USB1_Read_SECTOR_DATA(data, sector_num + i, 1, (u8*)(cluster_data + i*SECTOR_SIZE), &Sector_data_len, "Sector N", 0, print_data);
+        //printk("Addr: = 0x%x\n", (u8*)&Cluster_data[i][0]);
         if (ret < 0){
             printk("Fail at index: %d\n", i);
             return -1;
@@ -35,22 +40,46 @@ void SetMemf(u8* dst, u8* src, u16 size){
     }
 }
 
-void USB1_Scan_Root_Dir(struct usb_device_data *data, u8* cluster_data){
+void USB1_Scan_Root_Dir(struct usb_device_data *data, u8* cluster_data, bool print_data){
     u32 cluster_len = (SECTOR_SIZE*8)/32;
-    u32 i = 0;
+    u32 i = 0, Cluster_data_len = 0;
+    int ret;
+    u8* tmp_ptr = cluster_data;
 
+    // make 2D into 1D
     for (i = 0; i < cluster_len; i++){
-        if ((cluster_data[i*32] == 0xE5U) || (cluster_data[i*32] == 0x00U)) // deleted or unallocated file
+        if ((tmp_ptr[i*32] == 0xE5U)) // deleted or unallocated file
         {
             // do nothing as notthing should be shown
         }
+        else if (tmp_ptr[i*32] == 0x00U){
+            break; // as no entry anymore
+        }
         else // the name of read data
         {
-            SetMemf((u8*)&rde_instance, cluster_data + i*32, 32);
-            USB1_Print_String(rde_instance.File_name, 11, "Root dir entry");
+            if (tmp_ptr[i*32 + 11] == IS_FILE) valid_Root_Dir_Entry[valid_Root_Dir_Entry_index++] = (Root_Dir_Entry*)(cluster_data + i*32); // save ptr to valid root dir entry
+
+            // SetMemf((u8*)&rde_instance, tmp_ptr + i*32, 32);
+            // USB1_Print_String(rde_instance.File_name, 11, "Root dir entry");
         }
     }
 
+
+    if (print_data){
+        for (i = 0; i < valid_Root_Dir_Entry_index; i++){
+            if (!valid_Root_Dir_Entry[i]) {
+                printk("valid_Root_Dir_Entry is NULL");
+            }
+            else {
+                USB1_Print_String(valid_Root_Dir_Entry[i]->File_name, 11, "File name:");
+                ret = USB1_Read_CLUSTER(data, (valid_Root_Dir_Entry[i]->High_first_cluster << 16) | (valid_Root_Dir_Entry[i]->Low_first_cluster), (u8*)Cluster_data, &Cluster_data_len, "Cluster next", 0);
+                if (ret == 0){
+                    USB1_Print_String((u8*)Cluster_data, valid_Root_Dir_Entry[i]->File_size, "Content String");
+                }
+            }
+            
+        }
+    }
 }
 
 int USB1_Read(struct usb_device_data *data){
@@ -90,19 +119,14 @@ int USB1_Read(struct usb_device_data *data){
         printk("Real data starts at sector: %d = 0x%x\n", bpb_instance.Data_Sector, bpb_instance.Data_Sector);
     }
 
-    /* Read cluster 2 */
+    /* Read cluster 2 for root directory entry */
     if (ret == 0){
-        ret = USB1_Read_CLUSTER(data, 0x02, (u8*)Cluster_data, &Cluster_data_len, "Cluster 0x2");
+        ret = USB1_Read_CLUSTER(data, 0x02, (u8*)Sector_data_Root_Dir_Entry, &Cluster_data_len, "Cluster 0x2", 1);
     }
 
-    /* Scan root dir */
+    // /* Scan root dir */
     if (ret == 0){
-        USB1_Scan_Root_Dir(data, (u8*)Cluster_data);
-    }
-
-    /* Read next cluster */
-    if (ret == 0){
-        ret = USB1_Read_CLUSTER(data, (rde_instance.High_first_cluster << 16) | (rde_instance.Low_first_cluster), (u8*)Cluster_data, &Cluster_data_len, "Cluster next");
+        USB1_Scan_Root_Dir(data, (u8*)Sector_data_Root_Dir_Entry, 1);
     }
 
     return ret;
