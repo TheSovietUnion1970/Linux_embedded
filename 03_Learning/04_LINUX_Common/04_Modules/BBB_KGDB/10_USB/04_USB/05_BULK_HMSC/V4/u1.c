@@ -255,6 +255,8 @@ irqreturn_t USB1_handler(int irq, void *d){
             Rx1_flag = 1;
             //printk("ISR -> RX[0x%x]\n", int_rx);
         }
+
+        data->count_many = 0;
     }
     if (irqst1){
         if ((irqst1)&(1u << 7)){
@@ -996,7 +998,7 @@ int USB1_OUT_Phase_Bulk(struct usb_device_data *data, u8 epnum, u8 addr, const u
         return -1;
     } 
     else {
-        dev_info(data->dev, "ACKed!!\n"); // .... consider later
+        //dev_info(data->dev, "ACKed!!\n"); // .... consider later
     } 
      
     return 0;

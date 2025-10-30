@@ -137,6 +137,26 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     printk("# %s: '%s'\n", string, tmp);
 }
 
+void USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 buf_size) {
+    u16 i = 0;
+    u16 out_idx = 0;
+    char *tmp = output_buf;
+
+    if (data == NULL || len == 0 || tmp == NULL || buf_size == 0) {
+        *tmp = '\0';  // Null-terminate empty buffer
+        return;
+    }
+
+    // Extract non-zero bytes (assuming UCS-2 low bytes are chars, high 0x00)
+    for (i = 0; i < len && out_idx < (buf_size); i++) {
+        if (data[i] != 0x00) {
+            tmp[out_idx] = (char)data[i];  // Cast to char, assuming ASCII range
+            out_idx++;
+        }
+    }
+    tmp[out_idx] = '\0';  // Null-terminate the string
+}
+
 void USB1_Print_Hex(u8 *data, u16 len, u8 *name)
 {
     char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars

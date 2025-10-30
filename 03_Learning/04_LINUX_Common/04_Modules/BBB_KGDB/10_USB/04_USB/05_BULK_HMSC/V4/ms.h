@@ -68,6 +68,7 @@ typedef struct cbw_EAA {  // Command Status Wrapper
 void USB1_Print_String(u8 *data, u16 len, u8* string);
 void USB1_Print_Hex(u8 *data, u16 len, u8* name);
 void USB1_Print_HexVal(u8 *data, u16 len, u8 *name, bool little_endian);
+void USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 buf_size);
 u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian);
 
 /* ================== API for HMSC Bulk Transfer ===================== */ 
