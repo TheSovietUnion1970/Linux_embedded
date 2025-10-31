@@ -148,10 +148,13 @@ int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size) {
         return -1;
     }
 
-    for (i = 0; i < len/2; i++){
+    out_idx = len/2;
+    for (i = 0; i < out_idx; i++){
         tmp[i] = (char)data[i*2];
+        //printk("data[%d] = %c. - %c\n", i*2, data[i*2], tmp[i]);
         if (tmp[i] == 0x00){
             // stop here
+            //printk("i = %d\n", i);
             ret = 1;
             break;
         }

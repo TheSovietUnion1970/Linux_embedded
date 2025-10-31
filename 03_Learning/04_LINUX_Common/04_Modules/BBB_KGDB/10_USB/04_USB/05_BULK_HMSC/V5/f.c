@@ -48,6 +48,7 @@ void USB1_Scan_Root_Dir(struct usb_device_data *data, u8* cluster_data, bool pri
     u8* tmp_Root_Dir_Entry;
     u8 tmp_file_name[50];
     u16 tmp_file_name_len = 0;
+    u16 tmp_len = 0;
 
     // make 2D into 1D
     for (i = 0; i < cluster_len; i++){
@@ -96,17 +97,17 @@ void USB1_Scan_Root_Dir(struct usb_device_data *data, u8* cluster_data, bool pri
                 else if (valid_Root_Dir_Entry[i]->File_attributes == LFN_TYPE) { // LFN
                     tmp_Root_Dir_Entry = (u8*)valid_Root_Dir_Entry[i];
                     while(!((*tmp_Root_Dir_Entry)&END_MARKER)){
-                        LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 1, 10, tmp_file_name + tmp_file_name_len, &tmp_file_name_len);
-                        tmp_file_name_len += tmp_file_name_len;
+                        LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 1, 10, tmp_file_name + tmp_file_name_len, &tmp_len);
+                        tmp_file_name_len += tmp_len;
 
                         if (LFN_ret == 0){
-                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 14, 12, tmp_file_name + tmp_file_name_len, &tmp_file_name_len);
-                            tmp_file_name_len += tmp_file_name_len;
+                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 14, 12, tmp_file_name + tmp_file_name_len, &tmp_len);
+                            tmp_file_name_len += tmp_len;
                         }
 
                         if (LFN_ret == 0){
-                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 28, 4, tmp_file_name + tmp_file_name_len, &tmp_file_name_len);
-                            tmp_file_name_len += tmp_file_name_len;
+                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 28, 4, tmp_file_name + tmp_file_name_len, &tmp_len);
+                            tmp_file_name_len += tmp_len;
                         }
         
                         tmp_Root_Dir_Entry-= 32; // reverse the previous entry
@@ -115,20 +116,21 @@ void USB1_Scan_Root_Dir(struct usb_device_data *data, u8* cluster_data, bool pri
                     //printk("tmp_Root_Dir_Entry = 0x%x, 0x%x | 0x%x\n", *tmp_Root_Dir_Entry, tmp_Root_Dir_Entry[9], tmp_Root_Dir_Entry[10]);
                     if (*tmp_Root_Dir_Entry&END_MARKER){
                             //printk("hehe XXXXXXXXXXXXX\n");
-                        LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 1, 10, tmp_file_name + tmp_file_name_len, &tmp_file_name_len);
-                        tmp_file_name_len += tmp_file_name_len;
+                        LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 1, 10, tmp_file_name + tmp_file_name_len, &tmp_len);
+                        tmp_file_name_len += tmp_len;
                         
                         if (LFN_ret == 0){
-                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 14, 12, tmp_file_name + tmp_file_name_len, &tmp_file_name_len);
-                            tmp_file_name_len += tmp_file_name_len;
+                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 14, 12, tmp_file_name + tmp_file_name_len, &tmp_len);
+                            tmp_file_name_len += tmp_len;
                             //USB1_Print_String(tmp_Root_Dir_Entry + 14, 12, "File name 2s:");
                         }      
                         if (LFN_ret == 0){
-                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 28, 4, tmp_file_name + tmp_file_name_len, &tmp_file_name_len);
-                            tmp_file_name_len += tmp_file_name_len;
+                            LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 28, 4, tmp_file_name + tmp_file_name_len, &tmp_len);
+                            tmp_file_name_len += tmp_len;
                             //USB1_Print_String(tmp_Root_Dir_Entry + 28, 4, "File name 3s:");
                         }   
                         
+                        //printk("tmp_file_name_len = %d\n", tmp_file_name_len);
                         USB1_Print_String(tmp_file_name, tmp_file_name_len, "File name LFN:");
                         tmp_file_name_len = 0;
                     }
