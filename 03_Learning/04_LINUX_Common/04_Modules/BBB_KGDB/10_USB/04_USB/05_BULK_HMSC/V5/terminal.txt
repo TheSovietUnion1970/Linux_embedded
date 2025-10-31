@@ -66,22 +66,22 @@
 
 
 
-[10840.622197] index = 96
-[10840.624569] index = 352
-[10840.627045] # File name SFN:: 'ONE     TXT'
-[10840.634149] # Content String: 'hello one!
-[10840.634149] '
-[10840.639769] tmp_Root_Dir_Entry = 0x42, 0xff | 0xff
-[10840.644601] # File name LFN:: 'Germany1939.t'
-[10840.651930] # Content String: 'Germany vs Soviet Union in 1939
-[10840.651930] '
-[10840.659387] # File name SFN:: 'HELLO   TXT'
-[10840.666555] # Content String: 'Hi everyone!'
-[10840.670872] tmp_Root_Dir_Entry = 0x42, 0x78 | 0x0
-[10840.675617] hehe XXXXXXXXXXXXX
-[10840.678698] # File name LFN:: 'SovietUnion1970.tx'
-[10840.686429] # Content String: 'Germany vs Soviet Union in 1945
-[10840.686429] '
-[10840.694834] cluster 2 is end
+[ 1092.053553] # File name SFN:: 'ONE     TXT'
+[ 1092.060657] # Content String: 'hello one!
+[ 1092.060657] '
+[ 1092.066276] # File name LFN:: 'Germany1939.txt'
+[ 1092.073728] # Content String: 'Germany vs Soviet Union in 1939
+[ 1092.073728] '
+[ 1092.081178] # File name LFN:: 'abcdefgh123456789.txt'
+[ 1092.089158] # Content String: '41 6F 00 6E 00 65 00 2E 
+[ 1092.089158] 00 74 00 0F 00 53 78 00 
+[ 1092.089158] '
+[ 1092.099573] # File name SFN:: 'HELLO   TXT'
+[ 1092.106747] # Content String: 'Hi everyone!'
+[ 1092.111055] # File name LFN:: 'SovietUnion1970.txt'
+[ 1092.118846] # Content String: 'Germany vs Soviet Union in 1945
+[ 1092.118846] '
+[ 1092.127247] cluster 2 is end
+
 
 
