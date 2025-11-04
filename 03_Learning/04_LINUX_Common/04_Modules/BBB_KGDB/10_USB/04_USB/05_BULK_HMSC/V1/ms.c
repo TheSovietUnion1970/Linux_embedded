@@ -132,9 +132,38 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     for (i = 0; i < len; i++) {
         tmp[i] = data[i];
     }
-    tmp[len-1] = '\0'; // add null terminator
+    tmp[len] = '\0'; // add null terminator
 
     printk("# %s: '%s'\n", string, tmp);
+}
+
+int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size) {
+    u16 i = 0;
+    u16 out_idx = 0;
+    char *tmp = output_buf;
+    int ret = 0;
+
+    if (data == NULL || len == 0 || tmp == NULL) {
+        *tmp = '\0';  // Null-terminate empty buffer
+        return -1;
+    }
+
+    out_idx = len/2;
+    for (i = 0; i < out_idx; i++){
+        tmp[i] = (char)data[i*2];
+        //printk("data[%d] = %c. - %c\n", i*2, data[i*2], tmp[i]);
+        if (tmp[i] == 0x00){
+            // stop here
+            //printk("i = %d\n", i);
+            ret = 1;
+            break;
+        }
+    }
+
+    *buf_size = i;
+    tmp[*buf_size] = '\0';  // Null-terminate the string
+
+    return ret;
 }
 
 void USB1_Print_Hex(u8 *data, u16 len, u8 *name)
@@ -321,6 +350,7 @@ int USB1_CBW(struct usb_device_data *data){
     int ret;
 
     ret = USB1_Send_INQUIRY(data, cbw_initial, (u8*)&data->scsi_inquiry, 0, "CBW Initial");
+    msleep(500);
 
     if (ret == 0){
         ret = USB1_Send_INQUIRY(data, cbw_capacity, (u8*)&data->scsi_inquiry + 0x24, 0, "CBW Capacity");

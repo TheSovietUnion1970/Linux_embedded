@@ -64,21 +64,11 @@ typedef struct cbw_EAA {  // Command Status Wrapper
     u8 mode_pages[61];               // Bytes 9-69: Mode pages (e.g., 0x3F all pages; total ~60 bytes usable)
 } cbw_EAA;
 
-/* BIOS Parameter Block (BPB) Details */
-typedef struct BPB {  
-    u16 Bytes_per_Sector;
-    u8 Sectors_per_Cluster;
-    u16 Reserved_Sectors;
-    u16 Number_of_FATs;
-    u32 Sectors_per_FAT;
-    u32 Root_Cluster;
-    u32 Data_Sector;
-} BPB;
-
 /* Print result */
 void USB1_Print_String(u8 *data, u16 len, u8* string);
 void USB1_Print_Hex(u8 *data, u16 len, u8* name);
 void USB1_Print_HexVal(u8 *data, u16 len, u8 *name, bool little_endian);
+int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size);
 u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian);
 
 /* ================== API for HMSC Bulk Transfer ===================== */ 
