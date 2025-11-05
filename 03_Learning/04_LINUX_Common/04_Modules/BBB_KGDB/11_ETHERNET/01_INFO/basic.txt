@@ -1,0 +1,30 @@
+[ Router/Switch ]
+       |
+----------------------------
+|      |      |      |
+PC1   PC2   Laptop   Printer
+
+All IPs: 192.168.1.xxx  -> same subnet
+Subnet Mask: 255.255.255.0 (/24)
+
+=== [PC1 - PC2] ===
+PC1 check MAC of PC2 (Address Resolution Protocol table) or send ARP Request
+=> same subnet -> communiate via MAC address
+
+===
+
+[ Big Switch with VLANs ]
+        |
+    ---------------
+    |             |
+ VLAN 10        VLAN 20
+(Subnet A)    (Subnet B)
+
+=== [DNS] ===
+Google DNS Server (8.8.8.8, 8.8.4.4) => look up IP address of xyz.com
+Google Website (142.250.x.x) => website server
+Ex: Google DNS Server will find out that 142.250.1.1 is IP address of Google Website
+
+=== [Port] ===
+=> application or service of IP
+Ex: 142.250.190.14:443 (for HTTPS to Google)
