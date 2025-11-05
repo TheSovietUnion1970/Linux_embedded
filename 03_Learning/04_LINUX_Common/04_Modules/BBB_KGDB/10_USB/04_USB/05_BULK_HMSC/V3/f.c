@@ -76,12 +76,12 @@ void USB1_Scan_ClusterData(struct usb_device_data *data, u8* cluster_data, bool 
             //printk("i = %d\n", i);
             if (tmp_ptr[i*32 + 11] == FILE_TYPE) {
                 valid_Dir_Entry[valid_Dir_Entry_index++] = (Root_Dir_Entry*)(cluster_data + i*32); // save ptr to valid root dir entry
-                printk("index FILE = %d\n", i*32);
+                //printk("index FILE = %d\n", i*32);
             }
-            else if ((tmp_ptr[i*32 + 11] == LFN_TYPE) && ((tmp_ptr[i*32 + 0])&SEQ_NUM) == 0x1 && !((tmp_ptr[i*32 + 0])&END_MARKER)) { // get the first first entry of LFN
+            else if ((tmp_ptr[i*32 + 11] == LFN_TYPE) && ((tmp_ptr[i*32 + 0])&SEQ_NUM) == 0x1) { // get the first first entry of LFN
                 valid_Dir_Entry[valid_Dir_Entry_index++] = (Root_Dir_Entry*)(cluster_data + i*32); // save ptr to valid root dir entry
 
-                //printk("index = %d\n", i*32);
+                //printk("index = %d\n", i);
             }
             else if (tmp_ptr[i*32 + 11] == DIR_TYPE) {
                 valid_Dir_Entry[valid_Dir_Entry_index++] = (Root_Dir_Entry*)(cluster_data + i*32); // save ptr to valid root dir entry
@@ -96,19 +96,16 @@ void USB1_Scan_ClusterData(struct usb_device_data *data, u8* cluster_data, bool 
                 break;
             }
             else {
-                // File type
-                if (valid_Dir_Entry[i]->File_attributes == FILE_TYPE) { // SFN
-                    //printk("File[6] = %c\n", valid_Dir_Entry[i]->File_name[6]);
-                    if ((valid_Dir_Entry[i]->File_name)[5] != '~') {
-                        USB1_Print_String((u8*)valid_Dir_Entry[i], 11, "File name SFN:");
-                    }
-
+                // content of file
+                if (valid_Dir_Entry[i]->File_attributes == FILE_TYPE) { 
                     ret = USB1_Read_CLUSTER(data, (valid_Dir_Entry[i]->High_first_cluster << 16) | (valid_Dir_Entry[i]->Low_first_cluster), (u8*)Cluster_data, &Cluster_data_len, "Cluster next", 0);
                     if ((ret == 0)){
                         USB1_Print_String((u8*)Cluster_data, valid_Dir_Entry[i]->File_size, "Content String");
                     }       
                 }
-                else if (valid_Dir_Entry[i]->File_attributes == LFN_TYPE) { // LFN
+
+                // Name of file (SFN + LFN) / dir (LFN)
+                else if (valid_Dir_Entry[i]->File_attributes == LFN_TYPE) {
                     tmp_Root_Dir_Entry = (u8*)valid_Dir_Entry[i];
                     while(!((*tmp_Root_Dir_Entry)&END_MARKER)){
                         LFN_ret = USB1_Gather_LFN_String(tmp_Root_Dir_Entry + 1, 10, tmp_file_name + tmp_file_name_len, &tmp_len);
@@ -145,19 +142,32 @@ void USB1_Scan_ClusterData(struct usb_device_data *data, u8* cluster_data, bool 
                         }   
                         
                         //printk("tmp_file_name_len = %d\n", tmp_file_name_len);
-                        USB1_Print_String(tmp_file_name, tmp_file_name_len, "File name LFN:");
+                        if (tmp_file_name[tmp_file_name_len - 4] == '.') {
+                            USB1_Print_String(tmp_file_name, tmp_file_name_len, "File name");
+                            //printk("AAAAAAAAAAAAAA\n");
+                        }
+                        else {
+                            USB1_Print_String(tmp_file_name, tmp_file_name_len, "Dir name LFN");
+                            //printk("***********\n");
+                        } 
                         tmp_file_name_len = 0;
                     }
                     
                 }
             
-                // Dir type
+                // Name of dir (SFN)
                 else if (valid_Dir_Entry[i]->File_attributes == DIR_TYPE && valid_Dir_Entry[i]->id != '.'){
                     if (ret == 0){
                         u8 next_cluster = 0;
                         next_cluster = (valid_Dir_Entry[i]->High_first_cluster << 16) | (valid_Dir_Entry[i]->Low_first_cluster);
 
-                        printk("DIR TYPE, next_cluster = %d\n\n", next_cluster);
+                        //printk("DIR TYPE, next_cluster = %d\n\n", next_cluster);
+
+                        if ((valid_Dir_Entry[i]->File_name)[5] != '~') {
+                            //printk("\n >>> ========= [Dir] ==========\n");
+                            USB1_Print_String((u8*)valid_Dir_Entry[i], 11, "Dir name SFN");
+                        }
+
                         ret = USB1_Scan_Cluster(data, (u8*)&Cluster_data_ins, next_cluster, 0);
                     }
                 }
@@ -179,7 +189,7 @@ int USB1_Scan_Cluster(struct usb_device_data *data, u8* cluster_data, u8 cluster
     /* Read cluster num for root directory entry */
     ret = USB1_Read_CLUSTER(data, cluster_num, (u8*)cluster_data, &Cluster_data_len, "Reading dir entry", print_data);
 
-
+    printk(" === [cluster %d starts] === <<<\n", cluster_num);
     // /* Scan root dir */
     if (ret == 0){
         USB1_Scan_ClusterData(data, (u8*)cluster_data, 1);
@@ -193,7 +203,7 @@ int USB1_Scan_Cluster(struct usb_device_data *data, u8* cluster_data, u8 cluster
 
             /* Check if end of cluster */
             if (ptr32[cluster_num] == 0x0FFFFFFF){
-                printk("cluster %d is end\n", cluster_num);
+                printk(" === [cluster %d is end] === <<<\n", cluster_num);
             }
             else {
                 printk("cluster %d is not end -> next: 0x%x\n", cluster_num, ptr32[cluster_num]);
@@ -248,7 +258,7 @@ int USB1_Read(struct usb_device_data *data){
 
     // /* Scan from Cluster 11 */
     // if (ret == 0){
-    //     ret = USB1_Scan_Cluster(data, (u8*)Sector_data_Root_Dir_Entry, 11, 1);
+    //     ret = USB1_Scan_Cluster(data, (u8*)Sector_data_Root_Dir_Entry, 12, 1);
     // }
 
     return ret;
