@@ -134,7 +134,7 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     }
     tmp[len] = '\0'; // add null terminator
 
-    printk("# %s: '%s'\n", string, tmp);
+    printk("%s '%s'\n", string, tmp);
 }
 
 int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size) {

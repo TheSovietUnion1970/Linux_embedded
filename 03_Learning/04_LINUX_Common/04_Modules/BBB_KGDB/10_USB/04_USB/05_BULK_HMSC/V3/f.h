@@ -5,10 +5,15 @@
 #include "ms.h"
 #include <linux/math64.h>
 
+/* CONTROL */
+#define PRINT_CONTENT 0
+
 /* Macro value */
 #define FILE_TYPE 0x20
 #define DIR_TYPE 0x10
 #define LFN_TYPE 0x0F
+
+#define CONTENT_TYPE 0x21
 
 /* Macro offser */
 #define SEQ_NUM 0x1F /* 5 bits */
@@ -48,7 +53,7 @@ typedef struct Root_Directory_Entry {
 
 int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name, bool print_data);
 
-int USB1_Read(struct usb_device_data *data);
+int USB1_f_Read(struct usb_device_data *data);
 
 
 #endif /* F_H */

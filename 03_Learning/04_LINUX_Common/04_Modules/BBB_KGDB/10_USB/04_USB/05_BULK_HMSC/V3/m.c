@@ -21,9 +21,9 @@ static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
-    ret = USB1_Read(data);
+    ret = USB1_f_Read(data);
     if (ret < 0){
-        printk("Failed at USB1_Read\n");
+        printk("Failed at USB1_f_Read\n");
     }
 
 }
