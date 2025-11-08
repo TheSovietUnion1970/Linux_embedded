@@ -123,8 +123,8 @@ void SetMem(u8* data, u8* val, u16 size){
 
 /* Print result */
 void USB1_Print_String(u8 *data, u16 len, u8* string) {
-    u16 i = 0;
     u8 tmp[len+1];
+    u16 i = 0;
 
     if (data == NULL || len == 0)
         return;
@@ -134,7 +134,7 @@ void USB1_Print_String(u8 *data, u16 len, u8* string) {
     }
     tmp[len] = '\0'; // add null terminator
 
-    printk("# %s: '%s'\n", string, tmp);
+    printk("%s '%s'\n", string, tmp);
 }
 
 int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size) {
@@ -234,6 +234,120 @@ u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian){
 
     default:
         return 0;
+    }
+}
+
+void USB1_Get_String(u8* input, u8* output, u16 len){
+    u16 i = 0;
+    for (i = 0; i < len; i++){
+        output[i] = input[i];
+        if (input[i] == ' ') break;
+    }
+    output[i] = '\0';
+}
+
+int USB1_Compare_String(u8* input, u8* output, u16 len){
+    u16 i = 0;
+    for (i = 0; i < len; i++){
+        if (output[i] != input[i]){
+            return -1;
+        }
+    }
+    return 0;
+
+}
+
+void USB1_Parse_TargetFile(u8* path, u8* output_dir, u32* output_dir_len, u8* output_file, u32* output_file_len) {
+    u8* last_slash = NULL;
+    u32 i;
+    u32 path_len = 0;
+    u32 dir_len = 0;
+    u32 flen = 0;
+    u8* file_start;
+    *output_dir_len = 0;
+    *output_file_len = 0;
+    // Find the length of path
+    while (path[path_len]) {
+        path_len++;
+    }
+    // Find the last '/'
+    for (i = 0; i < path_len; i++) {
+        if (path[i] == '/') {
+            last_slash = &path[i];
+        }
+    }
+    if (last_slash == NULL) {
+        // No slash found, set dir to "."
+        output_dir[0] = '.';
+        output_dir[1] = '\0';
+        // Copy entire path as file
+        memcpy(output_file, path, path_len);
+        output_file[path_len] = '\0';
+    } else {
+        // Directory: up to but not including the last '/'
+        dir_len = (u32)(last_slash - path);
+        memcpy(output_dir, path, dir_len);
+        output_dir[dir_len] = '\0';
+        // File: after the last '/'
+        file_start = last_slash + 1;
+        flen = path_len - (u32)(file_start - path);
+        memcpy(output_file, file_start, flen);
+        output_file[flen] = '\0';
+    }
+    // Compute lengths
+    while (output_dir[*output_dir_len] != '\0') {
+        (*output_dir_len)++;
+    }
+    while (output_file[*output_file_len] != '\0') {
+        (*output_file_len)++;
+    }
+}
+
+void USB1_Parse_TargetDir(u8* path, u8* output_dir1, u32* output_dir1_len, u8* output_dir2, u32* output_dir2_len) {
+    u8* last_slash = NULL;
+    u32 i;
+    u32 path_len = 0;
+    u32 dir1_len = 0;
+    u32 dir2_len = 0;
+    *output_dir1_len = 0;
+    *output_dir2_len = 0;
+
+    // Find the length of path
+    while (path[path_len]) {
+        path_len++;
+    }
+
+    // Find the last '/'
+    for (i = 0; i < path_len; i++) {
+        if (path[i] == '/') {
+            last_slash = &path[i];
+        }
+    }
+
+    if (last_slash == NULL) {
+        // No slash found, set dir1 to "./"
+        output_dir1[0] = '.';
+        output_dir1[1] = '/';
+        output_dir1[2] = '\0';
+        output_dir2[0] = '\0';
+    } else {
+        // dir1: up to but not including the last '/'
+        dir1_len = (u32)(last_slash - path);
+        memcpy(output_dir1, path, dir1_len);
+        output_dir1[dir1_len] = '\0';
+
+        // dir2: from the last '/' to end
+        dir2_len = path_len - dir1_len;
+        memcpy(output_dir2, last_slash, dir2_len);
+        output_dir2[dir2_len] = '\0';
+    }
+
+    // Compute lengths
+    while (output_dir1[*output_dir1_len] != '\0') {
+        (*output_dir1_len)++;
+    }
+    while (output_dir2[*output_dir2_len] != '\0') {
+        (*output_dir2_len)++;
     }
 }
 

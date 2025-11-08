@@ -21,9 +21,45 @@ static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
-    ret = USB1_Read(data);
+    ret = USB1_f_Read_All(data);
     if (ret < 0){
-        printk("Failed at USB1_Read\n");
+        printk("Failed at USB1_f_Read_All\n");
+    }
+
+    printk("======= USB1_f_Read_Dir =======\n");
+
+    ret = USB1_f_Read_Dir(data, "./Countries");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read\n");
+    }
+
+    ret = USB1_f_Read_Dir(data, "./Languages");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read\n");
+    }
+
+    printk("======= USB1_f_Read_File =======\n");
+
+    ret = USB1_f_Read_File(data, "./Countries/Soviet_Union.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read_File\n");
+    }
+
+    ret = USB1_f_Read_File(data, "./Languages/Soviet_Union.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read_File\n");
+    }
+
+    printk("======= USB1_f_Make_Dir =======\n");
+
+    ret = USB1_f_Make_Dir(data, "./Protocols/Wifi");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    ret = USB1_f_Make_Dir(data, "./Countries/New_power/economy");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
     }
 
 }
@@ -176,9 +212,9 @@ static int usb1_probe(struct platform_device *pdev)
         printk("Fail USB1_GetDesc_Transfer\n");
     }
     else {
-        USB1_Print_DeviceDescriptor(data);
-        USB1_Print_DeviceDescriptor2(data);
-        USB1_Print_DeviceDescriptorIf0(data);
+        // USB1_Print_DeviceDescriptor(data);
+        // USB1_Print_DeviceDescriptor2(data);
+        // USB1_Print_DeviceDescriptorIf0(data);
     }
     
     ret = USB1_CBW(data);

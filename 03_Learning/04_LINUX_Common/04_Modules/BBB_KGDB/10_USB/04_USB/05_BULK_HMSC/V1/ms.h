@@ -69,6 +69,10 @@ void USB1_Print_String(u8 *data, u16 len, u8* string);
 void USB1_Print_Hex(u8 *data, u16 len, u8* name);
 void USB1_Print_HexVal(u8 *data, u16 len, u8 *name, bool little_endian);
 int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size);
+void USB1_Get_String(u8* input, u8* output, u16 len);
+int USB1_Compare_String(u8* input, u8* output, u16 len);
+void USB1_Parse_TargetFile(u8* path, u8* output_dir, u32* output_dir_len, u8* output_file, u32* output_file_len);
+void USB1_Parse_TargetDir(u8* path, u8* output_dir1, u32* output_dir1_len, u8* output_dir2, u32* output_dir2_len);
 u32 USB1_Get_Bytes(u8 *data, u8 mode, bool little_endian);
 
 /* ================== API for HMSC Bulk Transfer ===================== */ 
