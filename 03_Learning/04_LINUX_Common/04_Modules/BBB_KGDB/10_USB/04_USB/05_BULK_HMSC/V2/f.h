@@ -7,7 +7,7 @@
 
 /*  ========== [CONTROL] ========= */
 #define PRINT_CONTENT 0
-#define HIDDEN_FOLDERS 1
+#define HIDDEN_FOLDERS 0
 /*  ========== [CONTROL] ========= */
 
 /*

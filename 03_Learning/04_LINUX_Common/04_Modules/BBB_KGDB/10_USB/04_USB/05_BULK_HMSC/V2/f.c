@@ -232,8 +232,8 @@ void USB1_Scan_ClusterData(struct usb_device_data *data, u8* cluster_data, u8 cl
                 if ((valid_Dir_Entry[i]->File_attributes == LFN_TYPE) && (((valid_Dir_Entry[i]->id)&SEQ_NUM) == 0x01)) {
                     USB1_Read_NameFile(valid_Dir_Entry[i] + 1, tmp_file_name, &tmp_file_name_len);
 
-                    // checking whether print file ('t'xt) or folder
-                    if (tmp_file_name[tmp_file_name_len - 3] == 't') { // 't'xt
+                    // checking whether file or folder by heading 1 dir to check file attributes
+                    if (valid_Dir_Entry[i + 1]->File_attributes == FILE_TYPE) {
 
                         get_tree_padding(padding_index, padding_buffer, FILE_TYPE); 
 
@@ -359,7 +359,7 @@ int USB1_f_Read_All(struct usb_device_data *data){
     u16 Sector_data_len;
 
     /* Read sector 0 */
-    ret = USB1_Read_SECTOR_DATA(data, 0x0, 1, Glob_Sector_data, &Sector_data_len, "Sector 0", 0, 1);
+    ret = USB1_Read_SECTOR_DATA(data, 0x0, 1, Glob_Sector_data, &Sector_data_len, "Sector 0", 0, 0);
     if (ret == 0){
         USB1_Print_HexVal(Glob_Sector_data + 0x1BE + 0x04, 1, "Partition type", LITTLE_ENDIAN);
         USB1_Print_HexVal(Glob_Sector_data + 0x1BE + 0x08, 4, "Starting LBA", LITTLE_ENDIAN);

@@ -47,7 +47,7 @@ static void re_request_irq_work(struct work_struct *work){
         printk("Failed at USB1_f_Read_File\n");
     }
 
-    ret = USB1_f_Read_File(data, "./Languages/Soviet_Union.txt");
+    ret = USB1_f_Read_File(data, "./Protocols/USB/Bulk/usb_hmsc.txt");
     if (ret < 0){
         printk("Failed at USB1_f_Read_File\n");
     }
@@ -214,9 +214,9 @@ static int usb1_probe(struct platform_device *pdev)
         printk("Fail USB1_GetDesc_Transfer\n");
     }
     else {
-        USB1_Print_DeviceDescriptor(data);
-        USB1_Print_DeviceDescriptor2(data);
-        USB1_Print_DeviceDescriptorIf0(data);
+        // USB1_Print_DeviceDescriptor(data);
+        // USB1_Print_DeviceDescriptor2(data);
+        // USB1_Print_DeviceDescriptorIf0(data);
     }
     
     ret = USB1_CBW(data);
