@@ -60,17 +60,17 @@ int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster
     return 0;
 }
 
-int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32 cluster_data_len, u8* name, bool print_data){
+int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u8* name, bool print_data){
     int ret;
     u8 i = 0;
     u32 sector_num;
-    //*cluster_data_len = 0;
+    u32 sector_data_len = SECTOR_SIZE;
 
     /* Caculate sector num from setor num */
     sector_num = bpb_instance.Starting_LBA + bpb_instance.Data_Sector + (cluster_num - 2)*bpb_instance.Sectors_per_Cluster;
 
     for (i = 0; i < 8; i++){
-        ret = USB1_Write_SECTOR_DATA(data, sector_num + i, 1, (u8*)(cluster_data + i*SECTOR_SIZE), cluster_data_len, "Sector N", 0, print_data);
+        ret = USB1_Write_SECTOR_DATA(data, sector_num + i, 1, (u8*)(cluster_data + i*SECTOR_SIZE), sector_data_len, "Sector N", 0, print_data);
         //printk("Addr: = 0x%x\n", (u8*)&Cluster_data[i][0]);
         if (ret < 0){
             printk("Fail at index: %d\n", i);
@@ -83,10 +83,17 @@ int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluste
     return 0;
 }
 
-void SetMemf(u8* dst, u8* src, u16 size){
+void CpyMemff(u8* dst, u8* src, u16 size){
     u16 i = 0;
     for (i = 0; i < size; i++){
         dst[i] = src[i];
+    }
+}
+
+void SetMemff(u8* src, u8 val, u16 size){
+    u16 i = 0;
+    for (i = 0; i < size; i++){
+        src[i] = val;
     }
 }
 
@@ -352,7 +359,7 @@ int USB1_f_Read_All(struct usb_device_data *data){
     u16 Sector_data_len;
 
     /* Read sector 0 */
-    ret = USB1_Read_SECTOR_DATA(data, 0x0, 1, Glob_Sector_data, &Sector_data_len, "Sector 0", 0, 0);
+    ret = USB1_Read_SECTOR_DATA(data, 0x0, 1, Glob_Sector_data, &Sector_data_len, "Sector 0", 0, 1);
     if (ret == 0){
         USB1_Print_HexVal(Glob_Sector_data + 0x1BE + 0x04, 1, "Partition type", LITTLE_ENDIAN);
         USB1_Print_HexVal(Glob_Sector_data + 0x1BE + 0x08, 4, "Starting LBA", LITTLE_ENDIAN);
@@ -362,6 +369,7 @@ int USB1_f_Read_All(struct usb_device_data *data){
 
     /* Read sector at the starting LBA */
     if (ret == 0){
+        bpb_instance.Starting_LBA = 0;
         ret = USB1_Read_SECTOR_DATA(data, bpb_instance.Starting_LBA, 1, Glob_Sector_data, &Sector_data_len, "Sector starting LBA", 0, 0);
     }
     if (ret == 0){
@@ -685,6 +693,26 @@ int USB1_f_Read_File(struct usb_device_data *data, u8* path_file){
     return 0;
 }
 
+/* ======= Test func for writting data ========= */
+int Test_Write_ClusterData(struct usb_device_data *data){
+    int ret;
+    u32 sector_data_len;
+
+    SetMemff((u8*)Next_cluster_data, 0x05, 10);
+    USB1_Print_Hex((u8*)Next_cluster_data, 10, "1st");
+
+    ret = USB1_Write_CLUSTER(data, 10, (u8*)Next_cluster_data, "test write", 0);
+    SetMemff((u8*)Next_cluster_data, 0xFF, 10);
+    USB1_Print_Hex((u8*)Next_cluster_data, 10, "2nd");
+
+    if (ret == 0){
+        ret = USB1_Read_CLUSTER(data, 10, (u8*)Next_cluster_data, &sector_data_len, "test Read", 0);
+    }
+    USB1_Print_Hex((u8*)Next_cluster_data, 10, "3rd");
+
+    return ret;
+}
+
 u32 USB1_Find_Free_Entry(u8* cluster_data, Root_Dir_Entry* entry){
     u32 free_dir_index = 0;
     entry = (Root_Dir_Entry*)cluster_data;
@@ -701,7 +729,7 @@ int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir){
     u8 Dir_name1[100];
     u8 Dir_name2[100];
     u32 Dir_name1_len = 0, Dir_name2_len = 0;
-    u16 Cluster_data_len;
+    u32 Cluster_data_len;
 
     Root_Dir_Entry* entry;
     u32 free_entry_index = 0;
@@ -736,7 +764,7 @@ int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir){
         if (ret == 0) ret = USB1_Read_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, &Cluster_data_len, "USB1_f_Make_Dir", 0);
 
         if (ret == 0) {
-            free_entry_index = USB1_Find_Free_Entry(Next_cluster_data, entry);
+            free_entry_index = USB1_Find_Free_Entry((u8*)Next_cluster_data, entry);
             printk("cluster num = %d, free_entry_index = %d\n", Dir_cluster[i], free_entry_index);
              
         }

@@ -21,6 +21,8 @@ static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
+    // ret = Test_Write_ClusterData(data);
+
     ret = USB1_f_Read_All(data);
     if (ret < 0){
         printk("Failed at USB1_f_Read_All\n");
@@ -212,9 +214,9 @@ static int usb1_probe(struct platform_device *pdev)
         printk("Fail USB1_GetDesc_Transfer\n");
     }
     else {
-        // USB1_Print_DeviceDescriptor(data);
-        // USB1_Print_DeviceDescriptor2(data);
-        // USB1_Print_DeviceDescriptorIf0(data);
+        USB1_Print_DeviceDescriptor(data);
+        USB1_Print_DeviceDescriptor2(data);
+        USB1_Print_DeviceDescriptorIf0(data);
     }
     
     ret = USB1_CBW(data);
@@ -222,7 +224,7 @@ static int usb1_probe(struct platform_device *pdev)
         printk("Fail USB1_CBW\n");
     }
 
-    schedule_work(&data->re_request_work);
+    if (ret == 0) schedule_work(&data->re_request_work);
 
     return 0;
 }

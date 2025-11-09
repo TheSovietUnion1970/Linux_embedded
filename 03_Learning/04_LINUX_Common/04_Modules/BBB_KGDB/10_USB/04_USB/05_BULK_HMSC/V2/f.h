@@ -63,12 +63,26 @@ typedef struct Root_Directory_Entry {
     u32 File_size; // 0 for directory
 } Root_Dir_Entry;
 
+/* LFN Directory Entry */
+typedef struct LFN_Root_Directory_Entry {  
+    u8 id;
+    u8 File_name1[10];
+    u8 File_attributes;
+    u8 type; // 0x00 -> lowcase
+    u8 checksum;  // Checksum of corresponding short (8.3) filename
+    u8 File_name2[12];
+    u16 Reserved;
+    u8 File_name3[4];
+} LFN_Root_Dir_Entry;
+
 int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name, bool print_data);
-int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32 cluster_data_len, u8* name, bool print_data);
+int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u8* name, bool print_data);
 
 int USB1_f_Read_All(struct usb_device_data *data);
 int USB1_f_Read_Dir(struct usb_device_data *data, u8* path_dir);
 int USB1_f_Read_File(struct usb_device_data *data, u8* path_file);
 int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir);
+
+int Test_Write_ClusterData(struct usb_device_data *data);
 
 #endif /* F_H */
