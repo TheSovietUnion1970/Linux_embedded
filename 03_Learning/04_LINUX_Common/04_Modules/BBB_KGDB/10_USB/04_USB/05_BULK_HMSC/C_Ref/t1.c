@@ -25,13 +25,14 @@ void USB1_Print_Hex(u8 *data, u16 len, u8 *name)
     }
 }
 
-Root_Dir_Entry* Glob_free_entry;
+// Root_Dir_Entry* Glob_free_entry;
 
 Root_Dir_Entry Ins_entry[10];
 
 u8 dir_name[] = "power";
-u8 dir_name1[] = "global_countries";
+u8 dir_name1[] = "global_countries_hahahahaha";
 u8 dir_name2[] = "power123";
+
 
 u32 USB1_Find_Free_Entry(u8* cluster_data, Root_Dir_Entry** entry){
     u32 free_dir_index = 0;
@@ -105,19 +106,89 @@ void USB1_Create_Cluster_Dir_SFN(u8* dir_name, u32 dir_name_len, u32 next_cluste
     entry->Low_first_cluster = (next_cluster_num&0xFFFF);
 }
 
-//void USB1_Create_Cluster_Dir_SFN(u8* dir_name, u32 dir_name_len, u32 next_cluster_num, Root_Dir_Entry* entry)
+// dir_name_len not including '\0'
+void USB1_Create_Cluster_Dir_LFN(u8* dir_name, u32 dir_name_len, LFN_Root_Dir_Entry* entry, u16* entry_num){
+    u16 i = 0, j = 0;
+    u16 dir_name_index = 0;
+    
+    *entry_num = (dir_name_len + 1)/13;
+    if ((dir_name_len + 1)%13) *entry_num+=1;
+
+    memset((u8*)entry, 0x00, 32**entry_num);
+
+    //printf("dir_name_len = %d, entry_num = %d\n", dir_name_len, *entry_num);
+
+    for (i = *entry_num; i > 1 ; i--){
+        (entry + i - 1)->id = 0x00&END_MARKER;
+        (entry + i - 1)->id |= (*entry_num - i + 1)&SEQ_NUM;
+
+        (entry + i - 1)->File_attributes = LFN_TYPE;
+
+        for (j = 0; j < 10; j+=2){
+            (entry + i - 1)->File_name1[j] = dir_name[dir_name_index++];
+        }
+
+        for (j = 0; j < 12; j+=2){
+            (entry + i - 1)->File_name2[j] = dir_name[dir_name_index++];
+        }
+
+        for (j = 0; j < 4; j+=2){
+            (entry + i - 1)->File_name3[j] = dir_name[dir_name_index++];
+        }
+    }
+
+    (entry)->id = END_MARKER;
+    (entry)->id |= (*entry_num)&SEQ_NUM;
+    (entry)->File_attributes = LFN_TYPE;
+
+    //dir_name_len += 1;
+    //printf("dir_name_index = %d\n", dir_name_index);
+
+    for (j = 0; j < 10; j+=2){
+        if (dir_name_index < dir_name_len + 1) (entry)->File_name1[j] = dir_name[dir_name_index++];
+        else {
+            (entry)->File_name1[j] = 0xFF;
+            (entry)->File_name1[j+1] = 0xFF;
+        }
+    }
+
+    for (j = 0; j < 12; j+=2){
+        if (dir_name_index < dir_name_len + 1) (entry)->File_name2[j] = dir_name[dir_name_index++];
+        else {
+            (entry)->File_name2[j] = 0xFF;
+            (entry)->File_name2[j+1] = 0xFF;
+        }
+    }
+
+    for (j = 0; j < 4; j+=2){
+        if (dir_name_index < dir_name_len + 1) (entry)->File_name3[j] = dir_name[dir_name_index++];
+        else {
+            (entry)->File_name3[j] = 0xFF;
+            (entry)->File_name3[j+1] = 0xFF;
+        }
+    }
+
+}
+
+// dir_name_len not including '\0'
+void USB1_Create_Cluster_Dir(u8* cluster_data, u8* dir_name, u32 dir_name_len, u32 next_cluster_num, u16* bytes_occupied){
+    u32 free_dir_index = 0;
+    u16 Ins_entry_len = 0;
+    Root_Dir_Entry* Glob_free_entry;
+
+    free_dir_index = USB1_Find_Free_Entry(cluster_data, &Glob_free_entry);
+
+    USB1_Create_Cluster_Dir_LFN(dir_name, dir_name_len, (LFN_Root_Dir_Entry*)Ins_entry, &Ins_entry_len);
+    USB1_Create_Cluster_Dir_SFN(dir_name, dir_name_len, next_cluster_num, &Ins_entry[Ins_entry_len]);
+    //USB1_Print_Hex((u8*)&Ins_entry[0], 32*(Ins_entry_len + 1) , "LFN + SFN");  
+    
+    memcpy(Glob_free_entry, (u8*)&Ins_entry[0], 32*(Ins_entry_len + 1));
+    *bytes_occupied = 32*(Ins_entry_len + 1);
+}
 
 void main(){
-    u32 free_dir_index = 0;
+    u16 bytes_occupied = 0;
 
-    free_dir_index = USB1_Find_Free_Entry(dataX, &Glob_free_entry);
-
-    printf("free_dir_index = %d, Glob_free_entry = 0x%x - data = 0x%x\n", free_dir_index, Glob_free_entry, dataX);
-
-    
-
-    USB1_Create_Cluster_Dir_SFN(dir_name1, sizeof(dir_name1) - 1, 12, &Ins_entry[0]);
-    USB1_Print_Hex((u8*)&Ins_entry[0], 32, "SFN");
-
-
+    USB1_Create_Cluster_Dir(dataX, dir_name1, sizeof(dir_name1) - 1, 12, &bytes_occupied);
+    USB1_Print_Hex(dataX, 512, "LFN + SFN");  
 }
