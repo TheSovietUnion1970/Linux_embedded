@@ -25,6 +25,21 @@ void USB1_Print_Hex(u8 *data, u16 len, u8 *name)
     }
 }
 
+void USB1_Print_String(u8 *data, u16 len, u8* string) {
+    u8 tmp[len+1];
+    u16 i = 0;
+
+    if (data == NULL || len == 0)
+        return;
+
+    for (i = 0; i < len; i++) {
+        tmp[i] = data[i];
+    }
+    tmp[len] = '\0'; // add null terminator
+
+    printf("%s '%s'\n", string, tmp);
+}
+
 int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size) {
     u16 i = 0;
     u16 out_idx = 0;
@@ -52,6 +67,18 @@ int USB1_Gather_LFN_String(u8 *data, u16 len, u8 *output_buf, u16 *buf_size) {
     tmp[*buf_size] = '\0';  // Null-terminate the string
 
     return ret;
+}
+
+/* Compute VFAT LFN checksum for an 8.3 short name (11 bytes) */
+u8 vfat_lfn_checksum(u8* sfn, u16 len) {
+    u8 chk = 0;
+    u16 i = 0;
+
+    for (i = 0; i < len; ++i) {
+        /* rotate-right by 1, then add next byte */
+        chk = ((chk & 1) ? 0x80 : 0) + (chk >> 1) + sfn[i];
+    }
+    return chk;
 }
 
 // Root_Dir_Entry* Glob_free_entry;
@@ -151,19 +178,50 @@ void USB1_Create_Cluster_Dir_SFN(u8* dir_name, u32 dir_name_len, u32 next_cluste
 void USB1_Create_Cluster_Dir_LFN(u8* dir_name, u32 dir_name_len, LFN_Root_Dir_Entry* entry, u16* entry_num){
     u16 i = 0, j = 0;
     u16 dir_name_index = 0;
+    bool is;
+    u8 tmp[11];
     
     *entry_num = (dir_name_len + 1)/13;
     if ((dir_name_len + 1)%13) *entry_num+=1;
 
-    memset((u8*)entry, 0x00, 32**entry_num);
+    memset((u8*)entry, 0x00, 32*(*entry_num));
 
     //printf("dir_name_len = %d, entry_num = %d\n", dir_name_len, *entry_num);
+
+    // Get SFN for checksum
+    //printf("dir_name_len = %d\n", dir_name_len);
+
+    // fulfill 0x20
+    for (i = 0; i < 8; i++){
+        if (i < dir_name_len){
+            tmp[i] = dir_name[i];
+        }
+        else {
+            tmp[i] = 0x20;
+        }
+
+        is = IsLowercase(tmp[i]);
+        if (is == true) tmp[i] -= 0x20; // make it become uppercase
+    }
+
+    if (dir_name_len > 8) {
+        tmp[6] = '~';
+        tmp[7] = '1';
+    }
+
+    // instead of txt in file type
+    tmp[8] = 0x20;
+    tmp[9] = 0x20;
+    tmp[10] = 0x20;
+
+    USB1_Print_String(tmp, 11, "SFN");
 
     for (i = *entry_num; i > 1 ; i--){
         (entry + i - 1)->id = 0x00&END_MARKER;
         (entry + i - 1)->id |= (*entry_num - i + 1)&SEQ_NUM;
 
         (entry + i - 1)->File_attributes = LFN_TYPE;
+        (entry + i - 1)->checksum = vfat_lfn_checksum(tmp, 11);
 
         for (j = 0; j < 10; j+=2){
             (entry + i - 1)->File_name1[j] = dir_name[dir_name_index++];
@@ -181,6 +239,7 @@ void USB1_Create_Cluster_Dir_LFN(u8* dir_name, u32 dir_name_len, LFN_Root_Dir_En
     (entry)->id = END_MARKER;
     (entry)->id |= (*entry_num)&SEQ_NUM;
     (entry)->File_attributes = LFN_TYPE;
+    (entry)->checksum = vfat_lfn_checksum(tmp, 11);
 
     //dir_name_len += 1;
     //printf("dir_name_index = %d\n", dir_name_index);
