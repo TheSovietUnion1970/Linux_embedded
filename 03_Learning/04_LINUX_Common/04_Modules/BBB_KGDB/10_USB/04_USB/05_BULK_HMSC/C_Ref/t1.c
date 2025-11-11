@@ -81,6 +81,53 @@ u8 vfat_lfn_checksum(u8* sfn, u16 len) {
     return chk;
 }
 
+/* LFN_entry is a pointer to SFN dir entry */
+void USB1_Read_NameFile(Root_Dir_Entry* LFN_entry, u8* Output_name, u16* Output_len){
+    Root_Dir_Entry* entry_start;
+    u16 tmp_len;
+    int LFN_ret;
+
+    *Output_len = 0;
+
+    entry_start = LFN_entry;
+
+    // =============== checking the LFN name
+    entry_start -= 1;
+
+    while(!((entry_start->id)&END_MARKER)){
+        LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 1, 10, Output_name + *Output_len, &tmp_len);
+        *Output_len += tmp_len;
+
+        if (LFN_ret == 0){
+            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 14, 12, Output_name + *Output_len, &tmp_len);
+            *Output_len += tmp_len;
+        }
+
+        if (LFN_ret == 0){
+            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 28, 4, Output_name + *Output_len, &tmp_len);
+            *Output_len += tmp_len;
+        }
+
+        entry_start-= 1; // back the previous entry
+    }
+
+    if ((entry_start->id)&END_MARKER){
+            //printk("hehe XXXXXXXXXXXXX\n");
+        LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 1, 10, Output_name + *Output_len, &tmp_len);
+        *Output_len += tmp_len;
+        
+        if (LFN_ret == 0){
+            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 14, 12, Output_name + *Output_len, &tmp_len);
+            *Output_len += tmp_len;
+            //USB1_Print_String(tmp_Root_Dir_Entry + 14, 12, "File name 2s:");
+        }      
+        if (LFN_ret == 0){
+            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 28, 4, Output_name + *Output_len, &tmp_len);
+            *Output_len += tmp_len;
+        }   
+    }
+}
+
 // Root_Dir_Entry* Glob_free_entry;
 
 Root_Dir_Entry Ins_entry[10];
@@ -270,81 +317,128 @@ void USB1_Create_Cluster_Dir_LFN(u8* dir_name, u32 dir_name_len, LFN_Root_Dir_En
 
 }
 
+/* dir_name_len not including '\0' */
+bool USB1_Check_ExistingDir(u8* cluster_data, u8* dir_name, u32 dir_name_len){
+    char Output[100];
+    Root_Dir_Entry* entry;
+    u16 OutputLen = 0;
+    bool ret;
+
+    dir_name[dir_name_len++] = '\0'; // adding null terminator
+
+    entry = (Root_Dir_Entry*)cluster_data;
+
+    while(entry->id){
+        USB1_Read_NameFile(entry, Output, &OutputLen);
+
+        ret = USB1_Compare_String(Output, dir_name, dir_name_len);
+        if (ret == 0){
+            return true;
+        }
+        entry++;
+    }
+
+    return false;
+}
+
+/* dir_name_len not including '\0' */
+bool USB1_Check_DeletedDir(u8* cluster_data, u8* dir_name, u32 dir_name_len, Root_Dir_Entry** output_entry){
+    char Output[100];
+    Root_Dir_Entry* entry;
+    u16 OutputLen = 0;
+    bool ret;
+
+    dir_name[dir_name_len++] = '\0'; // adding null terminator
+
+    entry = (Root_Dir_Entry*)cluster_data;
+
+    while(entry->id){
+
+        if ((entry->id == 0xE5) && (entry->File_attributes == DIR_TYPE)){
+            USB1_Read_NameFile((Root_Dir_Entry*)entry, Output, &OutputLen);
+
+            ret = USB1_Compare_String(Output, dir_name, dir_name_len);
+
+            if (ret == 0){
+                *output_entry = entry;
+                return true;
+            }
+        }
+        
+        entry++;
+    }
+
+    return false;
+}
+
 // dir_name_len not including '\0'
 void USB1_Create_Cluster_Dir(u8* cluster_data, u8* dir_name, u32 dir_name_len, u32 next_cluster_num, u16* bytes_occupied){
     u32 free_dir_index = 0;
     u16 Ins_entry_len = 0;
     Root_Dir_Entry* Glob_free_entry;
+    bool dir_existed = false;
+    bool dir_deleted = false;
 
-    free_dir_index = USB1_Find_Free_Entry(cluster_data, &Glob_free_entry);
+    // checking existing dir
+    dir_existed = USB1_Check_ExistingDir(cluster_data, dir_name, dir_name_len);
 
-    USB1_Create_Cluster_Dir_LFN(dir_name, dir_name_len, (LFN_Root_Dir_Entry*)Ins_entry, &Ins_entry_len);
-    USB1_Create_Cluster_Dir_SFN(dir_name, dir_name_len, next_cluster_num, &Ins_entry[Ins_entry_len]);
-    //USB1_Print_Hex((u8*)&Ins_entry[0], 32*(Ins_entry_len + 1) , "LFN + SFN");  
-    
-    memcpy(Glob_free_entry, (u8*)&Ins_entry[0], 32*(Ins_entry_len + 1));
-    *bytes_occupied = 32*(Ins_entry_len + 1);
+    if (dir_existed == true){
+        printf("Dir already existed\n");
+    }
+    else {
+        // checking deleted dir
+        dir_deleted = USB1_Check_DeletedDir(cluster_data, dir_name, dir_name_len, &Glob_free_entry);
+        if (dir_deleted == false) free_dir_index = USB1_Find_Free_Entry(cluster_data, &Glob_free_entry);
+
+        USB1_Create_Cluster_Dir_LFN(dir_name, dir_name_len, (LFN_Root_Dir_Entry*)Ins_entry, &Ins_entry_len);
+        USB1_Create_Cluster_Dir_SFN(dir_name, dir_name_len, next_cluster_num, &Ins_entry[Ins_entry_len]);
+        //USB1_Print_Hex((u8*)&Ins_entry[0], 32*(Ins_entry_len + 1) , "LFN + SFN");  
+        
+        memcpy(Glob_free_entry, (u8*)&Ins_entry[0], 32*(Ins_entry_len + 1));
+        *bytes_occupied = 32*(Ins_entry_len + 1);
+    }
+
+}
+
+void USB1_Create_Cluster_Dir_Next(u8* cluster_data, u16 next_cluster_num){
+    Root_Dir_Entry* entry;
+    u16 i = 0;
+
+    // self dir entry
+    entry = (Root_Dir_Entry*)cluster_data;
+    entry->id = 0x2E;
+    for (i = 0; i < 10; i++){
+        entry->File_name[i] = 0x20;
+    }
+    entry->File_attributes = DIR_TYPE;
+    entry->High_first_cluster = (next_cluster_num&0xFFFF0000)>>16;
+    entry->Low_first_cluster = (next_cluster_num&0xFFFF);
+
+    entry++;
+
+    // parent dir entry
+    entry->id = 0x2E;
+    entry->File_name[0] = 0x2E;
+    for (i = 1; i < 10; i++){
+        entry->File_name[i] = 0x20;
+    }
+    entry->File_attributes = DIR_TYPE;
 }
 
 // ================== rm dir
-/* LFN_entry is a pointer to SFN dir entry */
-void USB1_Read_NameFile(Root_Dir_Entry* LFN_entry, u8* Output_name, u16* Output_len){
-    Root_Dir_Entry* entry_start;
-    u16 tmp_len;
-    int LFN_ret;
-
-    *Output_len = 0;
-
-    entry_start = LFN_entry;
-
-    // =============== checking the LFN name
-    entry_start -= 1;
-
-    while(!((entry_start->id)&END_MARKER)){
-        LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 1, 10, Output_name + *Output_len, &tmp_len);
-        *Output_len += tmp_len;
-
-        if (LFN_ret == 0){
-            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 14, 12, Output_name + *Output_len, &tmp_len);
-            *Output_len += tmp_len;
-        }
-
-        if (LFN_ret == 0){
-            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 28, 4, Output_name + *Output_len, &tmp_len);
-            *Output_len += tmp_len;
-        }
-
-        entry_start-= 1; // back the previous entry
-    }
-
-    if ((entry_start->id)&END_MARKER){
-            //printk("hehe XXXXXXXXXXXXX\n");
-        LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 1, 10, Output_name + *Output_len, &tmp_len);
-        *Output_len += tmp_len;
-        
-        if (LFN_ret == 0){
-            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 14, 12, Output_name + *Output_len, &tmp_len);
-            *Output_len += tmp_len;
-            //USB1_Print_String(tmp_Root_Dir_Entry + 14, 12, "File name 2s:");
-        }      
-        if (LFN_ret == 0){
-            LFN_ret = USB1_Gather_LFN_String(((u8*)entry_start) + 28, 4, Output_name + *Output_len, &tmp_len);
-            *Output_len += tmp_len;
-        }   
-    }
-}
-
 /* entry_start is a pointer to SFN dir entry */
 void USB1_Clear_Cluster_Dir_LFN(Root_Dir_Entry* entry_start){
     entry_start--;
     while(!((entry_start->id)&END_MARKER)){
-        memset((u8*)entry_start, 0x00, 32);
+        //memset((u8*)entry_start, 0x00, 32);
+        entry_start->id = 0xE5;
 
         entry_start-= 1; // back the previous entry
     }
 
     if ((entry_start->id)&END_MARKER){
-        memset((u8*)entry_start, 0x00, 32);
+        //memset((u8*)entry_start, 0x00, 32);
+        entry_start->id = 0xE5;
     }
 }
 
@@ -375,12 +469,29 @@ int USB1_Clear_Cluster_Dir(u8* cluster_data, u8* dir_name, u32 dir_name_len){
     //printf("out\n");
 
     if (folder_existed == true){
-        printf("Yes\n");
-        memset((u8*)Target_SFN_entry, 0x00, 32);
-        USB1_Clear_Cluster_Dir_LFN(Target_SFN_entry);
+        if (Target_SFN_entry->id != 0xE5){
+            printf("Yes\n");
+            Target_SFN_entry->id = 0xE5;
+            USB1_Clear_Cluster_Dir_LFN(Target_SFN_entry);
+        }
+        else {
+            printf("Dir already deleted\n");
+        }
     }
     else {
-        printf("Dir invalid\n");
+        printf("Dir not existed\n");
+    }
+}
+
+void USB1_Clear_Cluster_Dir_Next(u8* cluster_data){
+    Root_Dir_Entry* entry;
+    u16 i = 0;
+
+    // self dir entry
+    entry = (Root_Dir_Entry*)cluster_data;
+    while (entry->id){
+        memset((u8*)entry, 0x00, 32);
+        entry++;
     }
 }
 
@@ -388,9 +499,26 @@ void main(){
     u16 bytes_occupied = 0;
 
     USB1_Create_Cluster_Dir(dataX, dir_name, sizeof(dir_name) - 1, 12, &bytes_occupied);
-    USB1_Print_Hex(dataX, 512, "LFN + SFN");  
+    USB1_Create_Cluster_Dir_Next(dataY, 12);
+
+    USB1_Create_Cluster_Dir(dataX, dir_name1, sizeof(dir_name1) - 1, 12, &bytes_occupied);
+    USB1_Create_Cluster_Dir_Next(dataY, 12);
+    USB1_Print_Hex(dataX, 512, "dataX");  
+    USB1_Print_Hex(dataY, 512, "dataY");  
+
+    printf("========== mk dir 2 =========\n");
+    USB1_Create_Cluster_Dir(dataX, dir_name, sizeof(dir_name) - 1, 12, &bytes_occupied);
+    USB1_Create_Cluster_Dir_Next(dataY, 12);
 
     printf("========== rm dir =========\n");
     USB1_Clear_Cluster_Dir(dataX, dir_name, sizeof(dir_name));
-    USB1_Print_Hex(dataX, 512, "LFN + SFN");  
+    USB1_Clear_Cluster_Dir_Next(dataY);
+    // USB1_Print_Hex(dataX, 512, "dataX");  
+    // USB1_Print_Hex(dataY, 512, "dataY");  
+
+    printf("========== rm dir 2=========\n");
+    USB1_Clear_Cluster_Dir(dataX, dir_name, sizeof(dir_name));
+    USB1_Clear_Cluster_Dir_Next(dataY);
+    USB1_Print_Hex(dataX, 512, "dataX");  
+    USB1_Print_Hex(dataY, 512, "dataY");  
 }
