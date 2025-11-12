@@ -23,19 +23,42 @@ static void re_request_irq_work(struct work_struct *work){
 
     // ret = Test_Write_ClusterData(data);
 
-    // ret = USB1_f_Read_All(data);
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read_All\n");
-    // }
+    ret = USB1_f_Mount(data);
+    if (ret < 0){
+        printk("Failed at USB1_f_Mount\n");
+    }
 
-    printk("======= USB1_f_Read_Dir =======\n");
-
+    printk("======= USB1_f_Read_Dir (BEFORE) =======\n");
     ret = USB1_f_Read_Dir(data, "./Protocols");
     if (ret < 0){
         printk("Failed at USB1_f_Read\n");
     }
 
-    // ret = USB1_f_Read_Dir(data, "./Languages");
+    printk("======= USB1_f_Read_File =======\n");
+    ret = USB1_f_Read_File(data, "./Protocols/uart.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read_File\n");
+    }
+
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    printk("======= USB1_f_Read_Dir (AFTER) =======\n");
+    ret = USB1_f_Read_Dir(data, "./Protocols");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read\n");
+    }
+
+
+    // printk("======= USB1_f_Remove_Dir =======\n");
+    // ret = USB1_f_Remove_Dir(data, "./Protocols/i2c");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Remove_Dir\n");
+    // }
+    // printk("======= USB1_f_Read_Dir =======\n");
+    // ret = USB1_f_Read_Dir(data, "./Protocols");
     // if (ret < 0){
     //     printk("Failed at USB1_f_Read\n");
     // }
@@ -54,33 +77,33 @@ static void re_request_irq_work(struct work_struct *work){
 
 
 
-    printk("======= USB1_f_Make_Dir =======\n");
+    // printk("======= USB1_f_Make_Dir =======\n");
 
-    ret = USB1_f_Make_Dir(data, "./Protocols/wifii");
-    if (ret < 0){
-        printk("Failed at USB1_f_Make_Dir\n");
-    }
+    // ret = USB1_f_Make_Dir(data, "./Protocols/wifii");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_Dir\n");
+    // }
 
     // ret = USB1_f_Read_All(data);
     // if (ret < 0){
     //     printk("Failed at USB1_f_Read_All\n");
     // }
 
-    ret = USB1_f_Read_Dir(data, "./Protocols");
-    if (ret < 0){
-        printk("Failed at USB1_f_Read\n");
-    }
+    // ret = USB1_f_Read_Dir(data, "./Protocols");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read\n");
+    // }
     // ret = USB1_f_Read_All(data);
     // if (ret < 0){
     //     printk("Failed at USB1_f_Read_All\n");
     // }
 
-    printk("======= USB1_f_Remove_Dir =======\n");
+    // printk("======= USB1_f_Remove_Dir =======\n");
 
-    ret = USB1_f_Remove_Dir(data, "./Protocols/wifii");
-    if (ret < 0){
-        printk("Failed at USB1_f_Remove_Dir\n");
-    }
+    // ret = USB1_f_Remove_Dir(data, "./Protocols/wifii");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Remove_Dir\n");
+    // }
     // ret = USB1_f_Read_All(data);
     // if (ret < 0){
     //     printk("Failed at USB1_f_Read_All\n");

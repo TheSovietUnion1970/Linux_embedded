@@ -37,6 +37,9 @@
 #define ALL_DIR 1
 #define CURRENT_DIR 0
 
+#define PRINT_DATA 1
+#define NO_PRINT_DARA 0
+
 // Forward declaration for function parameters
 struct usb_device_data;
 
@@ -84,6 +87,7 @@ typedef struct LFN_Root_Directory_Entry {
 int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name, bool print_data);
 int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u8* name, bool print_data);
 
+int USB1_f_Mount(struct usb_device_data *data);
 int USB1_f_Read_All(struct usb_device_data *data);
 int USB1_f_Read_Dir(struct usb_device_data *data, u8* path_dir);
 int USB1_f_Read_File(struct usb_device_data *data, u8* path_file);
