@@ -1,0 +1,7 @@
+mac_id0_lo Register (offset = 630h)
+...
+
+gmii_sel Register (offset = 650h)
+...
+
+gmii_sel_mode = AM33XX_GMII_SEL_MODE_RMII;
