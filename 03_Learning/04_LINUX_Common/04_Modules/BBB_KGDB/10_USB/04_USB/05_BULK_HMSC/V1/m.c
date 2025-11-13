@@ -21,47 +21,103 @@ static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
     int ret;
 
-    ret = USB1_f_Read_All(data);
+    // ret = Test_Write_ClusterData(data);
+
+    ret = USB1_f_Mount(data);
     if (ret < 0){
-        printk("Failed at USB1_f_Read_All\n");
+        printk("Failed at USB1_f_Mount\n");
     }
 
-    printk("======= USB1_f_Read_Dir =======\n");
-
-    ret = USB1_f_Read_Dir(data, "./Countries");
-    if (ret < 0){
-        printk("Failed at USB1_f_Read\n");
-    }
-
-    ret = USB1_f_Read_Dir(data, "./Languages");
-    if (ret < 0){
-        printk("Failed at USB1_f_Read\n");
-    }
+    // printk("======= USB1_f_Read_Dir (BEFORE) =======\n");
+    // ret = USB1_f_Read_Dir(data, "./Protocols");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read\n");
+    // }
 
     printk("======= USB1_f_Read_File =======\n");
-
-    ret = USB1_f_Read_File(data, "./Countries/Soviet_Union.txt");
-    if (ret < 0){
-        printk("Failed at USB1_f_Read_File\n");
-    }
-
-    ret = USB1_f_Read_File(data, "./Languages/Soviet_Union.txt");
+    ret = USB1_f_Read_File(data, "./Protocols/uart.txt");
     if (ret < 0){
         printk("Failed at USB1_f_Read_File\n");
     }
 
     printk("======= USB1_f_Make_Dir =======\n");
-
-    ret = USB1_f_Make_Dir(data, "./Protocols/Wifi");
+    ret = USB1_f_Make_Dir(data, "./Protocols/abc");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols/abc/123");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
     if (ret < 0){
         printk("Failed at USB1_f_Make_Dir\n");
     }
 
-    ret = USB1_f_Make_Dir(data, "./Countries/New_power/economy");
+    // printk("======= USB1_f_Read_Dir (AFTER) =======\n");
+    // ret = USB1_f_Read_Dir(data, "./Protocols");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read\n");
+    // }
+
+
+    // printk("======= USB1_f_Remove_Dir =======\n");
+    // ret = USB1_f_Remove_Dir(data, "./Protocols/abc");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Remove_Dir\n");
+    // }
+    // printk("======= USB1_f_Read_Dir =======\n");
+    // ret = USB1_f_Read_Dir(data, "./Protocols");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read\n");
+    // }
+
+    // printk("======= USB1_f_Read_File =======\n");
+
+    // ret = USB1_f_Read_File(data, "./Countries/Soviet_Union.txt");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read_File\n");
+    // }
+
+    // ret = USB1_f_Read_File(data, "./Protocols/USB/Bulk/usb_hmsc.txt");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read_File\n");
+    // }
+
+
+
+    // printk("======= USB1_f_Make_Dir =======\n");
+
+    // ret = USB1_f_Make_Dir(data, "./Protocols/wifii");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_Dir\n");
+    // }
+
+    // ret = USB1_f_Read_All(data);
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read_All\n");
+    // }
+
+    // ret = USB1_f_Read_Dir(data, "./Protocols");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read\n");
+    // }
+    ret = USB1_f_Read_All(data);
     if (ret < 0){
-        printk("Failed at USB1_f_Make_Dir\n");
+        printk("Failed at USB1_f_Read_All\n");
     }
 
+    // printk("======= USB1_f_Remove_Dir =======\n");
+
+    // ret = USB1_f_Remove_Dir(data, "./Protocols/wifii");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Remove_Dir\n");
+    // }
+    // ret = USB1_f_Read_All(data);
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Read_All\n");
+    // }
 }
 
 static int usb1_open(struct inode *inode, struct file *file){
@@ -222,7 +278,7 @@ static int usb1_probe(struct platform_device *pdev)
         printk("Fail USB1_CBW\n");
     }
 
-    schedule_work(&data->re_request_work);
+    if (ret == 0) schedule_work(&data->re_request_work);
 
     return 0;
 }

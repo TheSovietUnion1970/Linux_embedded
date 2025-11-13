@@ -104,7 +104,7 @@ u8 cbw_read_sector[31] = {
     0x80,                    // Data-In
     0x00,                    // LUN 0
     0x0A,                    // CB Length: 10 bytes
-    0x28, 0x00,              // Opcode 0x28, Flags=0x00 (no DPO/FUA)
+    0x28, 0x00,              // Opcode 0x28 (READ(10)), Flags=0x00 (no DPO/FUA)
     0x00, 0x00, 0x00, 0x02,  // LBA: 0x00000000 -> changeable
     0x00,                    // Group Number 0 -> changeable
     0x00,                    // reserved
@@ -112,6 +112,24 @@ u8 cbw_read_sector[31] = {
     0x00,                    // Control 0x00
     0x00, 0x00, 0x00, 0x00,  // Padding
     0x00                     // Padding
+};
+
+u8 cbw_write_sector[31] = {
+    0x55, 0x53, 0x42, 0x43, // Signature "USBC"
+    0x05, 0x00, 0x00, 0x00, // Tag -> automatically updated
+    0x00, 0x02, 0x00, 0x00, // Data Length: 512 bytes (0x00000200, little-endian)
+    0x00, // bmCBWFlags: Data-Out (0x00 for host-to-device write)
+    0x00, // bCBWLUN: 0
+    0x0A, // bCBWCBLength: 10 bytes (for SCSI-10 CDB)
+          // SCSI WRITE(10) CDB starts here (big-endian multi-byte fields)
+    0x2A, 0x00, // Opcode 0x2A (WRITE(10)), Flags=0x00 (no WRPROTECT/DPO/FUA)
+    0x00, 0x00, 0x00, 0x02, // LBA: 0x00000000 (big-endian; changeable)
+    0x00, // Group Number: 0
+    0x00, // reserved
+    0x01, 0x00, // Transfer Length: 1 block (big-endian 16-bit; changeable)
+    0x00, // Control: 0x00
+    0x00, 0x00, 0x00, 0x00, 
+    0x00  // Padding (6 bytes to reach 31 total)
 };
 
 void SetMem(u8* data, u8* val, u16 size){
@@ -489,7 +507,7 @@ int USB1_CBW(struct usb_device_data *data){
     return ret;
 }
 
-/* ================== API for HMSC bulk Transfer ===================== */
+/* ================== API for HMSC bulk read Transfer ===================== */
 int USB1_Read_SECTOR(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16* sector_data_len, u8* name, u8 print_status){
     int ret;
     u16 CSWDataLen;
@@ -546,6 +564,72 @@ int USB1_Read_SECTOR_DATA(struct usb_device_data *data, u32 LBA, u16 block_size,
     ret = USB1_Read_SECTOR(data, LBA, block_size, sector_data, sector_data_len, name, print_status);
     if (ret < 0) {
         printk("Fail USB1_Read_SECTOR\n");
+        return -1;
+    }
+    else {
+        if (print_data) USB1_Print_Hex(sector_data, 512, name);
+    }
+
+    return 0;
+}
+
+/* ================== API for HMSC bulk write Transfer ===================== */
+int USB1_Write_SECTOR(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16 sector_data_len, u8* name, u8 print_status){
+    int ret;
+    u16 CSWDataLen;
+
+    USB1_Apply_CBW(data, cbw_write_sector);
+    SetMem((u8*)&data->usb1_cbw.CBWCB[2], (u8*)&LBA, 4); // 4 (2-5) bytes for LBA
+    SetMem((u8*)&data->usb1_cbw.CBWCB[8], (u8*)&block_size, 2); // 2 (8-9) bytes for block size
+
+
+    // // convert big endian for LBA
+    swap_endian32Ptr((u32*)&data->usb1_cbw.CBWCB[2]);
+
+
+    // USB1_Print_Hex((u8*)&data->usb1_cbw.CBWCB[2], 4, "LBA");
+    // USB1_Print_Hex((u8*)&data->usb1_cbw.CBWCB[8], 2, "block size");
+
+    // USB1_Print_Hex((u8*)&data->usb1_cbw.dCBWSignature, 31, "cbw");
+
+    // 1. Command: Bulk OUT CBW (31 bytes)
+    ret = USB1_OUT_Phase_Bulk(data, 0x2, Global_Address, (u8*)&data->usb1_cbw, sizeof(data->usb1_cbw));
+    if (ret < 0) {
+        printk("%s: CBW OUT failed: %d\n", name, ret);
+        return ret;
+    }
+
+    if (sector_data){
+        // 2. Data: Bulk OUT (512 bytes)
+        ret = USB1_OUT_Phase_Bulk(data, 0x2, Global_Address, sector_data, sector_data_len);
+        if (ret < 0) {
+            printk("%s: DATA OUT failed: %d (len=%d)\n", name, ret, sector_data_len);
+            return ret;
+        }
+        else {
+        //printk("sector_data_len = %d\n", *sector_data_len);
+        }
+    }
+
+    // 3. Data: Bulk IN CSW (16 bytes)
+    ret = USB1_IN_Phase_Bulk(data, 0x1, Global_Address, (u8*)&data->usb1_csw, &CSWDataLen);
+    if (ret < 0) {
+        printk("%s: CSW IN failed: %d (len=%d)\n", name, ret, CSWDataLen);
+        return ret;
+    }
+    else {
+        if (print_status) USB1_Print_CSW(data, name);
+    }
+
+    return 0; 
+}
+
+int USB1_Write_SECTOR_DATA(struct usb_device_data *data, u32 LBA, u16 block_size, u8* sector_data, u16 sector_data_len, u8* name, u8 print_status, u8 print_data){
+    int ret;
+
+    ret = USB1_Write_SECTOR(data, LBA, block_size, sector_data, sector_data_len, name, print_status);
+    if (ret < 0) {
+        printk("Fail USB1_Write_SECTOR\n");
         return -1;
     }
     else {

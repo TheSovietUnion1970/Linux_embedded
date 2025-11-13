@@ -1,0 +1,29 @@
+[ 8842.313871] ======= USB1_f_Read_File =======
+[ 8842.355751] ./Protocols/uart.txt
+[ 8842.359015] -> '[ 3005.813576]   00 00 00 00 00 00 00 00 
+[ 8842.359015] '
+[ 8842.366035] ======= USB1_f_Make_Dir =======
+[ 8842.370259] Dir_name1: './Protocols', Dir_name2: '/abc'
+[ 8842.375526] Dir_name1_len: 11, Dir_name2_len: 4
+[ 8842.411668] YES, index in String = 1
+[ 8842.421982] cluster_free_num = 33, Dir_cluster[i] = 3
+[ 8842.430194] Dir already existed
+[ 8842.441960] ======= USB1_f_Make_Dir =======
+[ 8842.446182] Dir_name1: './Protocols/abc', Dir_name2: '/123'
+[ 8842.451796] Dir_name1_len: 15, Dir_name2_len: 4
+[ 8842.489958] YES, index in String = 2
+[ 8842.500217] cluster_free_num = 34, Dir_cluster[i] = 5
+[ 8842.508350] Dir already existed
+[ 8842.520427] Dir_name1: './Protocols', Dir_name2: '/i2c'
+[ 8842.525695] Dir_name1_len: 11, Dir_name2_len: 4
+[ 8842.563708] YES, index in String = 1
+[ 8842.574001] cluster_free_num = 35, Dir_cluster[i] = 3
+[ 8842.582183] Dir already existed
+[ 8842.594858] ================= [Files and Folders] ============
+======
+[ 8842.605468] |-[ ] 'Protocols'
+[ 8842.610878]    |---- 'uart.txt'
+[ 8842.614053]    |-[ ] 'abc'
+[ 8842.619593]       |-[ ] '123'
+[ 8842.633400]    |-[ ] 'i2c'
+
