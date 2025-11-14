@@ -87,13 +87,16 @@ typedef struct LFN_Root_Directory_Entry {
 int USB1_Read_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u32* cluster_data_len, u8* name, bool print_data);
 int USB1_Write_CLUSTER(struct usb_device_data *data, u32 cluster_num, u8* cluster_data, u8* name, bool print_data);
 
+/* FAT32 driver */
 int USB1_f_Mount(struct usb_device_data *data);
 int USB1_f_Read_All(struct usb_device_data *data);
 int USB1_f_Read_Dir(struct usb_device_data *data, u8* path_dir);
 int USB1_f_Read_File(struct usb_device_data *data, u8* path_file);
 int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir);
 int USB1_f_Remove_Dir(struct usb_device_data *data, u8* path_dir);
-
-int Test_Write_ClusterData(struct usb_device_data *data);
+int USB1_f_Make_File(struct usb_device_data *data, u8* path_file);
+int USB1_f_Remove_File(struct usb_device_data *data, u8* path_dir);
+int USB1_f_Add_Content(struct usb_device_data *data, u8* path_file, u8* content);
+int USB1_f_Delete_Content(struct usb_device_data *data, u8* path_file);
 
 #endif /* F_H */

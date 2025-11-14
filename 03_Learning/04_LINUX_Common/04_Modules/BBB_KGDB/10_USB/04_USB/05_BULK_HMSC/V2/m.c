@@ -16,23 +16,8 @@
 #define DRIVER_NAME "usb1_driver"
 #define DEVICE_NAME "usb1"
 
-
-static void re_request_irq_work(struct work_struct *work){
-    struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
+void Test_Make_Dir(struct usb_device_data *data){
     int ret;
-
-    // ret = Test_Write_ClusterData(data);
-
-    ret = USB1_f_Mount(data);
-    if (ret < 0){
-        printk("Failed at USB1_f_Mount\n");
-    }
-
-    // printk("======= USB1_f_Read_Dir (BEFORE) =======\n");
-    // ret = USB1_f_Read_Dir(data, "./Protocols");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read\n");
-    // }
 
     printk("======= USB1_f_Read_File =======\n");
     ret = USB1_f_Read_File(data, "./Protocols/uart.txt");
@@ -53,71 +38,306 @@ static void re_request_irq_work(struct work_struct *work){
     ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
     if (ret < 0){
         printk("Failed at USB1_f_Make_Dir\n");
+    }  
+}
+
+void Test_Make_Remove_Dir(struct usb_device_data *data){
+    int ret;
+
+    printk("======= USB1_f_Read_File =======\n");
+    ret = USB1_f_Read_File(data, "./Protocols/uart.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Read_File\n");
     }
 
-    // printk("======= USB1_f_Read_Dir (AFTER) =======\n");
-    // ret = USB1_f_Read_Dir(data, "./Protocols");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read\n");
-    // }
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols/abc");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols/abc/123");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }  
 
+    printk("======= USB1_f_Remove_Dir =======\n");
+    ret = USB1_f_Remove_Dir(data, "./Protocols/abc");
+    if (ret < 0){
+        printk("Failed at USB1_f_Remove_Dir\n");
+    }
+}
 
-    // printk("======= USB1_f_Remove_Dir =======\n");
-    // ret = USB1_f_Remove_Dir(data, "./Protocols/abc");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Remove_Dir\n");
-    // }
-    // printk("======= USB1_f_Read_Dir =======\n");
-    // ret = USB1_f_Read_Dir(data, "./Protocols");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read\n");
-    // }
+void Test_Make_File(struct usb_device_data *data){
+    int ret;
 
-    // printk("======= USB1_f_Read_File =======\n");
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
 
-    // ret = USB1_f_Read_File(data, "./Countries/Soviet_Union.txt");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read_File\n");
-    // }
+    ret = USB1_f_Make_File(data, "./Protocols/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+}
 
-    // ret = USB1_f_Read_File(data, "./Protocols/USB/Bulk/usb_hmsc.txt");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read_File\n");
-    // }
+void Test_Make_Remove_File(struct usb_device_data *data){
+    int ret;
 
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
 
+    ret = USB1_f_Make_File(data, "./Protocols/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
 
-    // printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols/ethernet");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
 
-    // ret = USB1_f_Make_Dir(data, "./Protocols/wifii");
+    ret = USB1_f_Make_File(data, "./Protocols/ethernet/ethernet_data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    printk("======= USB1_f_Remove_File =======\n");
+    ret = USB1_f_Remove_File(data, "./Protocols/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+}
+
+void Test_Make_Add_File(struct usb_device_data *data){
+    int ret;
+
+    printk("======= USB1_f_Make_Dir =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    ret = USB1_f_Make_File(data, "./Protocols/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Add_Content(data, "./Protocols/i2c/data.txt", "i2c is a handy aa.");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+}
+
+void Test_phase_1(struct usb_device_data *data){
+    int ret;
+
+    /* Protocols folder */
+    printk("======= ./Protocols =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    printk("======= ./Protocols/i2c =======\n");
+    ret = USB1_f_Make_Dir(data, "./Protocols/i2c");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    printk("======= ./Protocols/i2c/data.txt =======\n");
+    ret = USB1_f_Make_File(data, "./Protocols/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    printk("======= i2c is a handy protocol. =======\n");
+    ret = USB1_f_Add_Content(data, "./Protocols/i2c/data.txt", "i2c is a handy protocol.");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    printk("======= Delete ./Protocols/i2c =======\n");
+    ret = USB1_f_Delete_Content(data, "./Protocols/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Delete_Content\n");
+    }
+
+    /* Countries folder */
+    printk("======= ./Countries =======\n");
+    ret = USB1_f_Make_Dir(data, "./Countries");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+    printk("======= ./Countries/Germany =======\n");
+    ret = USB1_f_Make_Dir(data, "./Countries/Germany");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    ret = USB1_f_Make_File(data, "./Countries/Germany/Power.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Add_Content(data, "./Countries/Germany/Power.txt", "Germany was a strong country in WW2");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Make_File(data, "./Countries/Germany/Economy.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Add_Content(data, "./Countries/Germany/Economy.txt", "Germany was in top economy");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Delete_Content(data, "./Countries/i2c/data.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Delete_Content\n");
+    }
+
+    // printk("======= ./Countries/Soviet_Union =======\n");
+    // ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union");
     // if (ret < 0){
     //     printk("Failed at USB1_f_Make_Dir\n");
     // }
 
-    // ret = USB1_f_Read_All(data);
+    // ret = USB1_f_Make_File(data, "./Countries/Soviet_Union/Power.txt");
     // if (ret < 0){
-    //     printk("Failed at USB1_f_Read_All\n");
+    //     printk("Failed at USB1_f_Make_File\n");
     // }
 
-    // ret = USB1_f_Read_Dir(data, "./Protocols");
+    // ret = USB1_f_Add_Content(data, "./Countries/Soviet_Union/Power.txt", "Soviet Union was a strong country in cold war");
     // if (ret < 0){
-    //     printk("Failed at USB1_f_Read\n");
+    //     printk("Failed at USB1_f_Make_File\n");
     // }
+
+    // ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union/Note");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_Dir\n");
+    // }
+
+    // ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union/Note/Note1");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_Dir\n");
+    // }
+
+    // ret = USB1_f_Make_File(data, "./Countries/Soviet_Union/Economy.txt");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_File\n");
+    // }
+
+    // ret = USB1_f_Add_Content(data, "./Countries/Soviet_Union/Economy.txt", "Germany was a superpower");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_File\n");
+    // }
+
+    // printk("======= ./README.txt =======\n");
+    // ret = USB1_f_Make_File(data, "./README.txt");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Make_File\n");
+    // }
+
+    // ret = USB1_f_Add_Content(data, "./README.txt", "This is sommon data");
+    // if (ret < 0){
+    //     printk("Failed at USB1_f_Add_Content\n");
+    // }
+}
+
+void Test_phase_2(struct usb_device_data *data){
+    int ret;
+
+    printk("======= ./Countries/Soviet_Union =======\n");
+    ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    ret = USB1_f_Make_File(data, "./Countries/Soviet_Union/Power.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Add_Content(data, "./Countries/Soviet_Union/Power.txt", "Soviet Union was a strong country in cold war");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union/Note");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union/Note/Note1");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_Dir\n");
+    }
+
+    ret = USB1_f_Make_File(data, "./Countries/Soviet_Union/Economy.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Add_Content(data, "./Countries/Soviet_Union/Economy.txt", "Germany was a superpower");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    printk("======= ./README.txt =======\n");
+    ret = USB1_f_Make_File(data, "./README.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+
+    ret = USB1_f_Add_Content(data, "./README.txt", "This is sommon data");
+    if (ret < 0){
+        printk("Failed at USB1_f_Add_Content\n");
+    }
+}
+
+
+static void re_request_irq_work(struct work_struct *work){
+    struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
+    int ret;
+
+
+    ret = USB1_f_Mount(data);
+    if (ret < 0){
+        printk("Failed at USB1_f_Mount\n");
+    }
+
+    //Test_Make_Dir(data);
+    //Test_phase_1(data);
+    //Test_phase_2(data);
+
     ret = USB1_f_Read_All(data);
     if (ret < 0){
         printk("Failed at USB1_f_Read_All\n");
     }
-
-    // printk("======= USB1_f_Remove_Dir =======\n");
-
-    // ret = USB1_f_Remove_Dir(data, "./Protocols/wifii");
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Remove_Dir\n");
-    // }
-    // ret = USB1_f_Read_All(data);
-    // if (ret < 0){
-    //     printk("Failed at USB1_f_Read_All\n");
-    // }
 }
 
 static int usb1_open(struct inode *inode, struct file *file){

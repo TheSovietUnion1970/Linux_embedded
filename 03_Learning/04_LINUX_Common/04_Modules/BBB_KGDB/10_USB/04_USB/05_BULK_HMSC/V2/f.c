@@ -122,15 +122,15 @@ void get_tree_padding(int padding_index, u8* buf, u8 type_file) {
     else strcpy(buf + i, "|-[ ]\0");
 }
 
-/* LFN_entry is a pointer to SFN dir entry */
-void USB1_Read_NameFile(Root_Dir_Entry* LFN_entry, u8* Output_name, u16* Output_len){
+/* SFN_entry is a pointer to SFN dir entry */
+void USB1_Read_NameFile(Root_Dir_Entry* SFN_entry, u8* Output_name, u16* Output_len){
     Root_Dir_Entry* entry_start;
     u16 tmp_len;
     int LFN_ret;
 
     *Output_len = 0;
 
-    entry_start = LFN_entry;
+    entry_start = SFN_entry;
 
     // =============== checking the LFN name
     entry_start -= 1;
@@ -717,26 +717,6 @@ int USB1_f_Read_File(struct usb_device_data *data, u8* path_file){
     return 0;
 }
 
-/* ======= Test func for writting data ========= */
-int Test_Write_ClusterData(struct usb_device_data *data){
-    int ret;
-    u32 sector_data_len;
-
-    SetMemff((u8*)Next_cluster_data, 0x05, 10);
-    USB1_Print_Hex((u8*)Next_cluster_data, 10, "1st");
-
-    ret = USB1_Write_CLUSTER(data, 10, (u8*)Next_cluster_data, "test write", 0);
-    SetMemff((u8*)Next_cluster_data, 0xFF, 10);
-    USB1_Print_Hex((u8*)Next_cluster_data, 10, "2nd");
-
-    if (ret == 0){
-        ret = USB1_Read_CLUSTER(data, 10, (u8*)Next_cluster_data, &sector_data_len, "test Read", 0);
-    }
-    USB1_Print_Hex((u8*)Next_cluster_data, 10, "3rd");
-
-    return ret;
-}
-
 /* ======= API for makedir ========= */
 u32 USB1_Find_Free_Entry(u8* cluster_data, Root_Dir_Entry** entry){
     u32 free_dir_index = 0;
@@ -778,7 +758,7 @@ void USB1_Create_Cluster_SFN(u8* dir_name, u32 dir_name_len, u8 type, u32 next_c
 
     u8 tmp[8];
 
-    printk("dir_name_len = %d\n", dir_name_len);
+    // printk("dir_name_len = %d\n", dir_name_len);
 
     // fulfill 0x20
     for (i = 0; i < 8; i++){
@@ -882,22 +862,43 @@ void USB1_Create_Cluster_LFN(u8* dir_name, u32 dir_name_len, u8 type, LFN_Root_D
     //printf("dir_name_len = %d\n", dir_name_len);
 
     // fulfill 0x20
-    for (i = 0; i < 8; i++){
-        if (i < dir_name_len){
-            tmp[i] = dir_name[i];
-        }
-        else {
-            tmp[i] = 0x20;
+    if (type == DIR_TYPE){
+        for (i = 0; i < 8; i++){
+            if (i < dir_name_len){
+                tmp[i] = dir_name[i];
+            }
+            else {
+                tmp[i] = 0x20;
+            }
+
+            is = IsLowercase(tmp[i]);
+            if (is == true) tmp[i] -= 0x20; // make it become uppercase
         }
 
-        is = IsLowercase(tmp[i]);
-        if (is == true) tmp[i] -= 0x20; // make it become uppercase
+        if (dir_name_len > 8) {
+            tmp[6] = '~';
+            tmp[7] = '1';
+        }
+    }
+    else {
+        for (i = 0; i < 8; i++){
+            if (i < dir_name_len - 4){
+                tmp[i] = dir_name[i];
+            }
+            else {
+                tmp[i] = 0x20;
+            }
+
+            is = IsLowercase(tmp[i]);
+            if (is == true) tmp[i] -= 0x20; // make it become uppercase
+        } 
+
+        if (dir_name_len - 4 > 8) {
+            tmp[6] = '~';
+            tmp[7] = '1';
+        }
     }
 
-    if (dir_name_len > 8) {
-        tmp[6] = '~';
-        tmp[7] = '1';
-    }
 
     if (type == DIR_TYPE){
         // instead of txt in file type
@@ -1102,7 +1103,6 @@ void USB1_Create_Cluster_Dir_Next(u8* cluster_data, u16 next_cluster_num, u16 pa
     entry->Modified_date = 0x5B6C;
 }
 
-
 u16 USB1_Get_Free_Cluster(struct usb_device_data *data){
     int ret = 0;
     u16 Sector_data_len;
@@ -1141,7 +1141,7 @@ void USB1_Set_Used_Cluster(struct usb_device_data *data, u16 cluster_num){
     if (ret == 0){
         ptr32 = (u32*)Glob_Sector_data;
 
-        /* TODO */
+        /* TODO: assume not chaining cluster here */
         ptr32[cluster_num] = 0x0FFFFFFF;
 
         ret = USB1_Write_SECTOR_DATA(data, bpb_instance.Starting_LBA + bpb_instance.Reserved_Sectors, 1, Glob_Sector_data, SECTOR_SIZE, "Set free cluster", 0, NO_PRINT_DATA);
@@ -1163,8 +1163,8 @@ int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir){
     int ret;
 
     USB1_Parse_TargetDir(path_dir, Dir_name1, &Dir_name1_len, Dir_name2, &Dir_name2_len);
-    printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
-    printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
+    // printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
+    // printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
 
     // do this first
     USB1_Scan_Dir_All(data);
@@ -1174,7 +1174,7 @@ int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir){
     // printk("out_len = %d\n", out_len);
 
     // for (i = 0; i < out_len; i++) {
-    //     printk("%s\n", actual_dirs[i]);
+    //     printk("'%s' - %d - %d\n", actual_dirs[i], Dir_cluster[i], Dir_padding[i]);
     // }
 
     for (i = 0; i < out_len; i++){
@@ -1182,23 +1182,46 @@ int USB1_f_Make_Dir(struct usb_device_data *data, u8* path_dir){
             j++;
         }
         j++; // adding '\0'
-        
-        ret = USB1_Compare_String(Dir_name1, actual_dirs[i], j);
-        j = 0;
 
-        if (ret == 0){
-            printk("YES, index in String = %d\n", i);
+        //printk("j = %d\n",j);
+
+        if (Dir_name1_len == 1){ // root
             dir_existed = true;
 
             // get free cluster num from FAT
             cluster_free_num = USB1_Get_Free_Cluster(data);
-            //cluster_free_num++;
+
             // set free cluster num to FAT
             USB1_Set_Used_Cluster(data, cluster_free_num);
-            printk("cluster_free_num = %d, Dir_cluster[i] = %d\n", cluster_free_num, Dir_cluster[i]);
+
+            i = 0;
+            Dir_cluster[i] = 2;
+            Dir_padding[i] = 0;
+            ret = 0;
+
             break;
         }
+        else {
+            ret = USB1_Compare_String(Dir_name1, actual_dirs[i], j);
+
+            if (ret == 0){
+                printk("YES, index in String = %d\n", i);
+                dir_existed = true;
+
+                // get free cluster num from FAT
+                cluster_free_num = USB1_Get_Free_Cluster(data);
+                //cluster_free_num++;
+                // set free cluster num to FAT
+                USB1_Set_Used_Cluster(data, cluster_free_num);
+                printk("cluster_free_num = %d, Dir_cluster[i] = %d\n", cluster_free_num, Dir_cluster[i]);
+                break;
+            }
+        }
+
+        j = 0;
+        
     }
+
 
     if (dir_existed) {
         if (ret == 0) ret = USB1_Read_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, &Cluster_data_len, "USB1_f_Make_Dir", 0);
@@ -1343,8 +1366,8 @@ int USB1_f_Remove_Dir(struct usb_device_data *data, u8* path_dir){
     int ret;
 
     USB1_Parse_TargetDir(path_dir, Dir_name1, &Dir_name1_len, Dir_name2, &Dir_name2_len);
-    printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
-    printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
+    // printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
+    // printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
 
     // do this first
     USB1_Scan_Dir_All(data);
@@ -1364,14 +1387,25 @@ int USB1_f_Remove_Dir(struct usb_device_data *data, u8* path_dir){
         j++; // adding '\0'
         printk("===> %s, num = %d\n", actual_dirs[i], Dir_cluster[i]);
         
-        ret = USB1_Compare_String(Dir_name1, actual_dirs[i], j);
-        j = 0;
+        if (Dir_name1_len == 1){ // root
+            i = 0;
+            Dir_cluster[i] = 2;
+            Dir_padding[i] = 0;
+            ret = 0;
 
-        if (ret == 0){
-            printk("YES, index in String = %d\n", i);
-            dir_existed = true;
             break;
         }
+        else {
+            ret = USB1_Compare_String(Dir_name1, actual_dirs[i], j);
+            j = 0;
+
+            if (ret == 0){
+                printk("YES, index in String = %d\n", i);
+                dir_existed = true;
+                break;
+            }
+        }
+
     }
 
     // // clear free cluster num to FAT
@@ -1461,7 +1495,7 @@ int USB1_f_Make_File(struct usb_device_data *data, u8* path_file){
     // printk("len = %d\n", out_len);
 
     // for (i = 0; i < out_len; i++) {
-    //     printk("%s\n", actual_dirs[i]);
+    //     printk("'%s' - %d - %d\n", actual_dirs[i], Dir_cluster[i], Dir_padding[i]);
     // }
 
     for (i = 0; i < out_len; i++){
@@ -1470,13 +1504,24 @@ int USB1_f_Make_File(struct usb_device_data *data, u8* path_file){
         }
         j++; // adding '\0'
         
-        ret = USB1_Compare_String(Dir_name, actual_dirs[i], j);
-        j = 0;
-
-        if (ret == 0){
-            //printk("YES, index in String = %d\n", i);
+        if (Dir_name_len == 1){ // file in root dir
             dir_existed = true;
+
+            i = 0;
+            Dir_cluster[i] = 2;
+            Dir_padding[i] = 0;
+            ret = 0;
             break;
+        }
+        else {
+            ret = USB1_Compare_String(Dir_name, actual_dirs[i], j);
+            j = 0;
+
+            if (ret == 0){
+                //printk("YES, index in String = %d\n", i);
+                dir_existed = true;
+                break;
+            }
         }
     }
 
@@ -1487,7 +1532,9 @@ int USB1_f_Make_File(struct usb_device_data *data, u8* path_file){
             cluster_free_num = USB1_Get_Free_Cluster(data);
             USB1_Set_Used_Cluster(data, cluster_free_num);
 
-            USB1_Create_Cluster_File((u8*)Next_cluster_data, File_name + 1, File_name_len - 1, cluster_free_num, &bytes_occupied);
+            // USB1_Print_Hex((u8*)Next_cluster_data, 512, path_file);
+
+            USB1_Create_Cluster_File((u8*)Next_cluster_data, File_name, File_name_len, cluster_free_num, &bytes_occupied);
 
             ret = USB1_Write_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, "File", 0);
         }
@@ -1635,9 +1682,245 @@ void USB1_Add_Cluster_Content(u8* cluster_data, u8* content, u32 content_len){
         printk("data will be added");
     }
 
+    //Glob_free_entry->File_size = content_len;
+
     memcpy(cluster_data, content, content_len);
+}
+
+int USB1_f_Add_Content(struct usb_device_data *data, u8* path_file, u8* content){
+    u8 File_name[50];
+    u8 Dir_name[100];
+    u8 tmp[50];
+    u16 tmp_len;
+    u32 File_name_len = 0, Dir_name_len = 0;
+    Root_Dir_Entry* SFN_entry;
+    Root_Dir_Entry* Target_SFN_entry;
+    u32 content_len = 0;
+
+    u32 out_len = 0, i = 0, j = 0;
+    bool dir_existed = false;
+    bool file_existed = false;
+    int ret;
+
+    u32 Cluster_data_len;
+    u16 Starting_cluster;
+
+
+    USB1_Parse_TargetFile(path_file, Dir_name, &Dir_name_len, File_name, &File_name_len);
+    // printk("Dir: '%s', File: '%s'\n", Dir_name, File_name);
+    // printk("Dir_name_len: %d, File_name_len: %d\n", Dir_name_len, File_name_len);
+
+
+    USB1_Scan_Dir_All(data);
+    build_actual_dirs(Dir_padding, Dir_index, &out_len);
+    // printk("len = %d\n", out_len);
+
+    // for (i = 0; i < out_len; i++) {
+    //     printk("%s\n", actual_dirs[i]);
+    // }
+
+    for (i = 0; i < out_len; i++){
+        while (actual_dirs[i][j] != '\0'){
+            j++;
+        }
+        j++; // adding '\0'
+        
+        if (Dir_name_len == 1){ // file in root dir
+            dir_existed = true;
+
+            i = 0;
+            Dir_cluster[i] = 2;
+            Dir_padding[i] = 0;
+            ret = 0;
+            break;
+        }
+        else {
+            ret = USB1_Compare_String(Dir_name, actual_dirs[i], j);
+            j = 0;
+
+            if (ret == 0){
+                //printk("YES, index in String = %d\n", i);
+                dir_existed = true;
+                break;
+            }
+        }
+    }
+
+    if (dir_existed){
+        if (ret == 0) ret = USB1_Read_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, &Cluster_data_len, "USB1_f_Make_File", 0);
+        if (ret == 0){
+
+            SFN_entry = (Root_Dir_Entry*)Next_cluster_data;
+            while (SFN_entry->id){
+                if ((SFN_entry->id != 0xE5) && (SFN_entry->File_attributes == FILE_TYPE)){
+                    USB1_Read_NameFile(SFN_entry, tmp, &tmp_len);
+
+                    ret = USB1_Compare_String(tmp, File_name, tmp_len);
+                    if (ret == 0){
+                        file_existed = true;
+                        Target_SFN_entry = SFN_entry;
+
+                        // get len
+                        while(content[content_len] != '\0'){
+                            content_len++;
+                        }
+                        Target_SFN_entry->File_size = content_len;
+                        // update content
+                        ret = USB1_Write_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, "File size", 0);
+                        break;
+                    }
+                }
+                SFN_entry++;
+            }
+
+            if (file_existed == true){
+
+                Starting_cluster = ((Target_SFN_entry->High_first_cluster << 16)&0xFFFF0000) | ((Target_SFN_entry->Low_first_cluster)&0xFFFF);
+
+                if (ret == 0) ret = USB1_Read_CLUSTER(data, Starting_cluster, (u8*)Next_cluster_data, &Cluster_data_len, "USB1_f_Make_File 2", 0);
+
+                if (ret == 0){
+                    USB1_Add_Cluster_Content((u8*)Next_cluster_data, content, content_len);
+                    // printk("Added!, Starting_cluster = %d\n", Starting_cluster);
+
+                    // USB1_Print_Hex((u8*)Next_cluster_data, 250, "Added");
+
+                    ret = USB1_Write_CLUSTER(data, Starting_cluster, (u8*)Next_cluster_data, "File", 0);
+
+                    // setting FAT
+                    USB1_Set_Used_Cluster(data, Starting_cluster);
+                }
+            }
+            else {
+                printk("[ERROR] USB1_f_Add_Content -> Invalid filename\n");
+                return -1;
+            }
+        }
+    }
+
+    else {
+        printk("[ERROR] Invalid dir\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 void USB1_Delete_Cluster_Content(u8* cluster_data){
     memset(cluster_data, 0x00, SECTOR_SIZE*8);
+}
+
+int USB1_f_Delete_Content(struct usb_device_data *data, u8* path_file){
+    u8 File_name[50];
+    u8 Dir_name[100];
+    u8 tmp[50];
+    u16 tmp_len;
+    u32 File_name_len = 0, Dir_name_len = 0;
+    Root_Dir_Entry* SFN_entry;
+    Root_Dir_Entry* Target_SFN_entry;
+
+    u32 out_len = 0, i = 0, j = 0;
+    bool dir_existed = false;
+    bool file_existed = false;
+    int ret;
+
+    u32 Cluster_data_len;
+    u16 Starting_cluster;
+
+
+    USB1_Parse_TargetFile(path_file, Dir_name, &Dir_name_len, File_name, &File_name_len);
+    // printk("Dir: '%s', File: '%s'\n", Dir_name, File_name);
+    // printk("Dir_name_len: %d, File_name_len: %d\n", Dir_name_len, File_name_len);
+
+
+    USB1_Scan_Dir_All(data);
+    build_actual_dirs(Dir_padding, Dir_index, &out_len);
+    // printk("len = %d\n", out_len);
+
+    // for (i = 0; i < out_len; i++) {
+    //     printk("%s\n", actual_dirs[i]);
+    // }
+
+    for (i = 0; i < out_len; i++){
+        while (actual_dirs[i][j] != '\0'){
+            j++;
+        }
+        j++; // adding '\0'
+        
+        if (Dir_name_len == 1){ // file in root dir
+            dir_existed = true;
+
+            i = 0;
+            Dir_cluster[i] = 2;
+            Dir_padding[i] = 0;
+            ret = 0;
+            break;
+        }
+        else {
+            ret = USB1_Compare_String(Dir_name, actual_dirs[i], j);
+            j = 0;
+
+            if (ret == 0){
+                //printk("YES, index in String = %d\n", i);
+                dir_existed = true;
+                break;
+            }
+        }
+    }
+
+    if (dir_existed){
+        if (ret == 0) ret = USB1_Read_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, &Cluster_data_len, "USB1_f_Make_File", 0);
+        if (ret == 0){
+
+            SFN_entry = (Root_Dir_Entry*)Next_cluster_data;
+            while (SFN_entry->id){
+                if ((SFN_entry->id != 0xE5) && (SFN_entry->File_attributes == FILE_TYPE)){
+                    USB1_Read_NameFile(SFN_entry, tmp, &tmp_len);
+
+                    ret = USB1_Compare_String(tmp, File_name, tmp_len);
+                    if (ret == 0){
+                        file_existed = true;
+                        Target_SFN_entry = SFN_entry;
+
+                        // set len = 0
+                        Target_SFN_entry->File_size = 0;
+                        // update content
+                        ret = USB1_Write_CLUSTER(data, Dir_cluster[i], (u8*)Next_cluster_data, "File size", 0);
+                        break;
+                    }
+                }
+                SFN_entry++;
+            }
+
+            if (file_existed == true){
+
+                Starting_cluster = ((Target_SFN_entry->High_first_cluster << 16)&0xFFFF0000) | ((Target_SFN_entry->Low_first_cluster)&0xFFFF);
+
+                if (ret == 0) ret = USB1_Read_CLUSTER(data, Starting_cluster, (u8*)Next_cluster_data, &Cluster_data_len, "USB1_f_Make_File 2", 0);
+
+                if (ret == 0){
+                    USB1_Delete_Cluster_Content((u8*)Next_cluster_data);
+                    // printk("Deleted!, Starting_cluster = %d\n", Starting_cluster);
+
+                    // USB1_Print_Hex((u8*)Next_cluster_data, 250, "Added");
+
+                    ret = USB1_Write_CLUSTER(data, Starting_cluster, (u8*)Next_cluster_data, "File", 0);
+
+                    // setting FAT
+                    USB1_Clear_Used_Cluster(data, Starting_cluster);
+                }
+            }
+            else {
+                printk("[ERROR] USB1_f_Delete_Content -> Invalid filename\n");
+                return -1;
+            }
+        }
+    }
+
+    else {
+        printk("[ERROR] USB1_f_Delete_Content -> Invalid dir\n");
+        return -1;
+    }
+
+    return 0;  
 }
