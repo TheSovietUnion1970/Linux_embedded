@@ -202,4 +202,6 @@ typedef struct LFN_Root_Directory_Entry {
 #define MAX_PATH_LEN 256
 #define MAX_FULL_PATH_LEN (MAX_PATH_LEN - 3)
 
+#define SECTOR_SIZE 512
+
 #endif /* T1_H */
