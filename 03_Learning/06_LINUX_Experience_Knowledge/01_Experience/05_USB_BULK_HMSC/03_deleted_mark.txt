@@ -1,0 +1,3 @@
+On Ubuntu FAT => :
+SFN is marked with 0xE5 but LFN is still not marked with 0xE5
+=> other files are in inconsistency state

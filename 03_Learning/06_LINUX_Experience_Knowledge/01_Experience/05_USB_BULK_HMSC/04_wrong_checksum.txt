@@ -1,0 +1,1 @@
+Wrong checksum for format 8.3 in LFN -> VFAT will display the name of file/folder in Uppercase

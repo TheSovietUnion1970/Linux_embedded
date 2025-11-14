@@ -1,0 +1,4 @@
+Ex:
+If using cluster 5 and not using any chaining cluster and FAT[5] = 0x00
+=> Window (FAT): still show directory
+=> Ubuntu (VFAT): not show directory as its VFAT is stricter, solution -> FAT[5] = 0x0FFFFFFF or FAT[5] = 0xXXXXXX
