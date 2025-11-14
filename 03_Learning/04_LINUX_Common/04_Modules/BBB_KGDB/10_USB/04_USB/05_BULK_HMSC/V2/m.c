@@ -271,54 +271,41 @@ void Test_phase_1(struct usb_device_data *data){
 void Test_phase_2(struct usb_device_data *data){
     int ret;
 
-    printk("======= ./Countries/Soviet_Union =======\n");
-    ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union");
+    ret = USB1_f_Make_Dir(data, "./Countries");
     if (ret < 0){
         printk("Failed at USB1_f_Make_Dir\n");
     }
-
-    ret = USB1_f_Make_File(data, "./Countries/Soviet_Union/Power.txt");
-    if (ret < 0){
-        printk("Failed at USB1_f_Make_File\n");
-    }
-
-    ret = USB1_f_Add_Content(data, "./Countries/Soviet_Union/Power.txt", "Soviet Union was a strong country in cold war");
-    if (ret < 0){
-        printk("Failed at USB1_f_Make_File\n");
-    }
-
-    ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union/Note");
+    ret = USB1_f_Make_Dir(data, "./Languages");
     if (ret < 0){
         printk("Failed at USB1_f_Make_Dir\n");
     }
-
-    ret = USB1_f_Make_Dir(data, "./Countries/Soviet_Union/Note/Note1");
+    ret = USB1_f_Remove_Dir(data, "./Countries");
     if (ret < 0){
         printk("Failed at USB1_f_Make_Dir\n");
     }
-
-    ret = USB1_f_Make_File(data, "./Countries/Soviet_Union/Economy.txt");
-    if (ret < 0){
-        printk("Failed at USB1_f_Make_File\n");
-    }
-
-    ret = USB1_f_Add_Content(data, "./Countries/Soviet_Union/Economy.txt", "Germany was a superpower");
-    if (ret < 0){
-        printk("Failed at USB1_f_Make_File\n");
-    }
-
-    printk("======= ./README.txt =======\n");
-    ret = USB1_f_Make_File(data, "./README.txt");
-    if (ret < 0){
-        printk("Failed at USB1_f_Make_File\n");
-    }
-
-    ret = USB1_f_Add_Content(data, "./README.txt", "This is sommon data");
-    if (ret < 0){
-        printk("Failed at USB1_f_Add_Content\n");
-    }
+    
 }
 
+void Test_phase_3(struct usb_device_data *data){
+    int ret;
+
+    ret = USB1_f_Make_File(data, "./Countries.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+    ret = USB1_f_Make_File(data, "./Languages.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+    ret = USB1_f_Remove_File(data, "./Countries.txt");
+    if (ret < 0){
+        printk("Failed at USB1_f_Remove_File\n");
+    }
+    ret = USB1_f_Add_Content(data, "./Languages.txt", "Lanaguages are funny hahaha!!");
+    if (ret < 0){
+        printk("Failed at USB1_f_Make_File\n");
+    }
+}
 
 static void re_request_irq_work(struct work_struct *work){
     struct usb_device_data *data = container_of(work, struct usb_device_data, re_request_work);
@@ -332,7 +319,7 @@ static void re_request_irq_work(struct work_struct *work){
 
     //Test_Make_Dir(data);
     //Test_phase_1(data);
-    //Test_phase_2(data);
+    Test_phase_3(data);
 
     ret = USB1_f_Read_All(data);
     if (ret < 0){

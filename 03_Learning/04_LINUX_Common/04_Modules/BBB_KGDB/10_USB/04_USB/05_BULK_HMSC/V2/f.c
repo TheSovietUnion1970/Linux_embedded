@@ -1366,8 +1366,8 @@ int USB1_f_Remove_Dir(struct usb_device_data *data, u8* path_dir){
     int ret;
 
     USB1_Parse_TargetDir(path_dir, Dir_name1, &Dir_name1_len, Dir_name2, &Dir_name2_len);
-    // printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
-    // printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
+    printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
+    printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
 
     // do this first
     USB1_Scan_Dir_All(data);
@@ -1392,6 +1392,7 @@ int USB1_f_Remove_Dir(struct usb_device_data *data, u8* path_dir){
             Dir_cluster[i] = 2;
             Dir_padding[i] = 0;
             ret = 0;
+            dir_existed = true;
 
             break;
         }
@@ -1612,18 +1613,18 @@ int USB1_f_Remove_File(struct usb_device_data *data, u8* path_dir){
     int ret;
 
     USB1_Parse_TargetDir(path_dir, Dir_name, &Dir_name_len, File_name, &File_name_len);
-    // printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name1, Dir_name2);
-    // printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name1_len, Dir_name2_len);
+    printk("Dir_name1: '%s', Dir_name2: '%s'\n", Dir_name, File_name);
+    printk("Dir_name1_len: %d, Dir_name2_len: %d\n", Dir_name_len, File_name_len);
 
     // do this first
     USB1_Scan_Dir_All(data);
     build_actual_dirs(Dir_padding, Dir_index, &out_len);
 
-    // printk("out_len = %d\n", out_len);
+    printk("out_len = %d\n", out_len);
 
-    // for (i = 0; i < out_len; i++) {
-    //     printk("%s\n", actual_dirs[i]);
-    // }
+    for (i = 0; i < out_len; i++) {
+        printk("%s\n", actual_dirs[i]);
+    }
 
     for (i = 0; i < out_len; i++){
         while (actual_dirs[i][j] != '\0'){
@@ -1632,13 +1633,24 @@ int USB1_f_Remove_File(struct usb_device_data *data, u8* path_dir){
         j++; // adding '\0'
         printk("===> %s, num = %d\n", actual_dirs[i], Dir_cluster[i]);
         
-        ret = USB1_Compare_String(Dir_name, actual_dirs[i], j);
-        j = 0;
-
-        if (ret == 0){
-            printk("YES, index in String = %d\n", i);
+        if (Dir_name_len == 1){
+            i = 0;
+            Dir_cluster[i] = 2;
+            Dir_padding[i] = 0;
+            ret = 0;
             dir_existed = true;
+
             break;
+        }
+        else {
+            ret = USB1_Compare_String(Dir_name, actual_dirs[i], j);
+            j = 0;
+
+            if (ret == 0){
+                printk("YES, index in String = %d\n", i);
+                dir_existed = true;
+                break;
+            }
         }
     }
 
