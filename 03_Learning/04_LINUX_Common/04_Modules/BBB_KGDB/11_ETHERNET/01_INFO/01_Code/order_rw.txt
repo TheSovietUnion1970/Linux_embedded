@@ -1,0 +1,46 @@
+Thread 50 hit Breakpoint 1, davinci_mdio_write (bus=bus@entry=0xc24ac000, phy_id=phy_id@entry=0, phy_reg=phy_reg@entry=17, phy_data=phy_data@entry=0) at drivers/net/ethernet/ti/davinci_mdio.c:427
+427		struct davinci_mdio_data *data = bus->priv;
+(gdb) bt
+#0  davinci_mdio_write (bus=bus@entry=0xc24ac000, phy_id=phy_id@entry=0, phy_reg=phy_reg@entry=17, 
+    phy_data=phy_data@entry=0) at drivers/net/ethernet/ti/davinci_mdio.c:427
+#1  0xc0bd6d68 in __mdiobus_write (bus=bus@entry=0xc24ac000, addr=addr@entry=0, regnum=regnum@entry=17, 
+    val=val@entry=0) at drivers/net/phy/mdio_bus.c:786
+#2  0xc0bd6f38 in mdiobus_write (bus=0xc24ac000, addr=0, regnum=regnum@entry=17, val=<optimized out>)
+    at drivers/net/phy/mdio_bus.c:916
+#3  0xc0bdb328 in phy_write (val=<optimized out>, regnum=17, phydev=0xcf029000)
+    at ./include/linux/phy.h:1011
+#4  lan87xx_read_status (phydev=0xcf029000) at drivers/net/phy/smsc.c:221
+#5  lan87xx_read_status (phydev=0xcf029000) at drivers/net/phy/smsc.c:206
+#6  0xc0bceba4 in phy_read_status (phydev=0xcf029000) at ./include/linux/phy.h:1606
+#7  phy_check_link_status (phydev=0xcf029000) at drivers/net/phy/phy.c:699
+#8  0xc0bd00f4 in phy_state_machine (work=0xcf029314) at drivers/net/phy/phy.c:1173
+#9  0xc015eacc in process_one_work (worker=worker@entry=0xc6977b80, work=0xcf029314)
+    at kernel/workqueue.c:2310
+#10 0xc015ee64 in worker_thread (__worker=0xc6977b80) at kernel/workqueue.c:2457
+#11 0xc016771c in kthread (_create=0xc6978500) at kernel/kthread.c:334
+#12 0xc0100134 in ret_from_fork () at arch/arm/kernel/entry-common.S:147
+
+
+==========
+
+Thread 50 hit Breakpoint 2, davinci_mdio_read (bus=0xc24ac000, phy_id=0, phy_reg=17) at drivers/net/ethernet/ti/davinci_mdio.c:382
+382		struct davinci_mdio_data *data = bus->priv;
+(gdb) bt
+#0  davinci_mdio_read (bus=0xc24ac000, phy_id=0, phy_reg=17)
+    at drivers/net/ethernet/ti/davinci_mdio.c:382
+#1  0xc0bd6b64 in __mdiobus_read (bus=bus@entry=0xc24ac000, addr=addr@entry=0, regnum=regnum@entry=17)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xc0bd6cd0 in mdiobus_read (bus=0xc24ac000, addr=0, regnum=regnum@entry=17)
+    at drivers/net/phy/mdio_bus.c:867
+#3  0xc0bdb368 in phy_read (regnum=17, phydev=0xcf029000) at ./include/linux/phy.h:971
+#4  lan87xx_read_status (phydev=0xcf029000) at drivers/net/phy/smsc.c:229
+#5  lan87xx_read_status (phydev=0xcf029000) at drivers/net/phy/smsc.c:206
+#6  0xc0bceba4 in phy_read_status (phydev=0xcf029000) at ./include/linux/phy.h:1606
+#7  phy_check_link_status (phydev=0xcf029000) at drivers/net/phy/phy.c:699
+#8  0xc0bd00f4 in phy_state_machine (work=0xcf029314) at drivers/net/phy/phy.c:1173
+#9  0xc015eacc in process_one_work (worker=worker@entry=0xc6977b80, work=0xcf029314)
+    at kernel/workqueue.c:2310
+#10 0xc015ee64 in worker_thread (__worker=0xc6977b80) at kernel/workqueue.c:2457
+#11 0xc016771c in kthread (_create=0xc6978500) at kernel/kthread.c:334
+#12 0xc0100134 in ret_from_fork () at arch/arm/kernel/entry-common.S:147
+
