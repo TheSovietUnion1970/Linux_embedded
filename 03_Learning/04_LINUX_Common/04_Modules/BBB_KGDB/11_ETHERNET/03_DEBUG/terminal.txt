@@ -113,3 +113,121 @@ r (mii_bus:phy_addr=4a101000.mdio:00, irq=POLL)
 :1
 [  150.720755] [V] davinci_mdio_read, phy_reg = 4, ret = 0x1e1
 
+
+====
+
+
+[ 1510.219755] [V] cpsw_probe >>>
+[ 1510.224512] [V] davinci_mdio_probe >>>
+[ 1510.228484] [V] data->manual_mode = 0x0
+[ 1510.232421] [V] mdio_in = 125000000
+[ 1510.235954] [V] data->pdata.bus_freq = 1000000
+[ 1510.241080] [V] davinci_mdio_reset
+[ 1510.281879] davinci_mdio 4a101000.mdio: davinci mdio revision 1.6, bu
+s freq 1000000
+[ 1510.291980] [V] davinci_mdio_read, phy_reg = 2, ret = 0x7
+[ 1510.297865] [V] davinci_mdio_read, phy_reg = 3, ret = 0xc0f1
+[ 1510.341942] [V] smsc_phy_config_intr
+[ 1510.345579] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 1510.352615] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 1510.358852] [V] genphy_read_abilities - val = 0x7809
+[ 1510.364181] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.369657] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.375483] davinci_mdio 4a101000.mdio: phy[0]: device 4a101000.mdio:
+00, driver SMSC LAN8710/LAN8720
+[ 1510.384695] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.390136] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.395926] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.401366] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.407155] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.412594] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.418390] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.423831] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.429621] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.435061] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.440849] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.446291] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.452080] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.457519] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.463307] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.468747] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.474535] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.479982] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.485785] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.491229] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.497019] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.502459] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.508247] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.513687] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.519475] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.524919] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.530710] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.536151] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.541939] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.547381] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.553175] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.558617] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.564414] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.569857] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.575645] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.581086] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.586879] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.592320] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.598109] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.603549] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.609337] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.614777] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.620565] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.626006] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.631795] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.637235] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.643023] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.648464] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.654253] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.659693] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.665481] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.670921] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.676708] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.682148] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.687937] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.693380] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.699169] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.704609] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.710397] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.715837] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.721625] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 1510.727065] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 1510.732853] [V] END of davinci_mdio_probe <<<
+[ 1510.737657] [V] base_mac = '��/��K'
+[ 1510.741228] [V] cpsw_init_common >>>
+[ 1510.744862] cpsw-switch 4a100000.switch: initialized cpsw ale version
+ 1.4
+[ 1510.751712] cpsw-switch 4a100000.switch: ALE Table size 1024
+[ 1510.806656] [V] EOF cpsw_init_common <<<
+[ 1510.810854] cpsw-switch 4a100000.switch: Detected MACID = 24:76:25:e7
+:29:f0
+[ 1510.819760] cpsw-switch 4a100000.switch: initialized (regs 0x4a100000
+, pool size 256) hw_ver:0019010C 1.12 (0)
+[ 1510.829961] [V] END of cpsw_probe <<<
+debian@arm:~$ [ 1511.124130] cpsw-switch 4a100000.switch: starting ndev.
+ mode: dual_mac
+[ 1511.164409] [V] *of_phy_connect
+[ 1511.167661] [V] phy_connect_direct
+[ 1511.171140] [V] phy_attach_direct
+[ 1511.174566] [V] phy_init_hw
+[ 1511.222266] [V] davinci_mdio_read, phy_reg = 18, ret = 0xe0
+[ 1511.227974] [V] - phy_modify - MII_BMCR - BMCR_ISOLATE
+[ 1511.310111] [V] smsc_phy_config_init
+[ 1511.318776] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 1511.324529] [V] smsc_phy_config_intr
+[ 1511.328185] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 1511.354242] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 1511.359980] [V] smsc_phy_config_intr
+[ 1511.363642] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 1511.386472] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 1511.398155] SMSC LAN8710/LAN8720 4a101000.mdio:00: attached PHY drive
+r (mii_bus:phy_addr=4a101000.mdio:00, irq=POLL)
+[ 1511.426067] [V] phy_gmii_sel_mode id:1 mode:2 rgmii_id:0 rmii_clk_ext
+:1
+[ 1511.440391] [V] davinci_mdio_read, phy_reg = 4, ret = 0x1e1
+
