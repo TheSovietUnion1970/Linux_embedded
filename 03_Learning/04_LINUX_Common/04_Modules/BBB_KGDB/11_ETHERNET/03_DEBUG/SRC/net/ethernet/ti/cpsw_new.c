@@ -726,6 +726,8 @@ static void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 	cpsw_sl_reg_write(slave->mac_sl, CPSW_SL_RX_PRI_MAP,
 			  RX_PRIORITY_MAPPING);
 
+	printk("[V] cpsw_slave_open, version = %d\n", cpsw->version);
+
 	switch (cpsw->version) {
 	case CPSW_VERSION_1:
 		slave_write(slave, TX_PRIORITY_MAPPING, CPSW1_TX_PRI_MAP);
@@ -1874,7 +1876,7 @@ static int cpsw_probe(struct platform_device *pdev)
 	struct clk *clk;
 	int irq;
 
-	printk("[V] cpsw_probe\n");
+	printk("[V] cpsw_probe >>>\n");
 
 	cpsw = devm_kzalloc(dev, sizeof(struct cpsw_common), GFP_KERNEL);
 	if (!cpsw)
@@ -2042,6 +2044,7 @@ skip_cpts:
 
 	pm_runtime_put(dev);
 
+	printk("[V] END of cpsw_probe <<<\n");
 	return 0;
 
 clean_unregister_notifiers:

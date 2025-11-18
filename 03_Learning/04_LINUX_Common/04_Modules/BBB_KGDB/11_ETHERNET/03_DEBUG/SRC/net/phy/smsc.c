@@ -48,14 +48,15 @@ struct smsc_phy_priv {
 	struct clk *refclk;
 };
 
-static int smsc_phy_ack_interrupt(struct phy_device *phydev)
+int smsc_phy_ack_interrupt(struct phy_device *phydev)
 {
 	int rc = phy_read(phydev, MII_LAN83C185_ISF);
 
 	return rc < 0 ? rc : 0;
 }
+EXPORT_SYMBOL_GPL(smsc_phy_ack_interrupt);
 
-static int smsc_phy_config_intr(struct phy_device *phydev)
+int smsc_phy_config_intr(struct phy_device *phydev)
 {
 	int rc;
 
@@ -78,6 +79,7 @@ static int smsc_phy_config_intr(struct phy_device *phydev)
 
 	return rc < 0 ? rc : 0;
 }
+EXPORT_SYMBOL_GPL(smsc_phy_config_intr);
 
 static irqreturn_t smsc_phy_handle_interrupt(struct phy_device *phydev)
 {
@@ -97,7 +99,7 @@ static irqreturn_t smsc_phy_handle_interrupt(struct phy_device *phydev)
 	return IRQ_HANDLED;
 }
 
-static int smsc_phy_config_init(struct phy_device *phydev)
+int smsc_phy_config_init(struct phy_device *phydev)
 {
 	struct smsc_phy_priv *priv = phydev->priv;
 	int rc;
@@ -120,6 +122,7 @@ static int smsc_phy_config_init(struct phy_device *phydev)
 
 	return smsc_phy_ack_interrupt(phydev);
 }
+EXPORT_SYMBOL_GPL(smsc_phy_config_init);
 
 static int smsc_phy_reset(struct phy_device *phydev)
 {

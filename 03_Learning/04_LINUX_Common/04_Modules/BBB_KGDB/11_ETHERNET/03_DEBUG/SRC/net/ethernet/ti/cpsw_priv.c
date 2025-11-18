@@ -432,6 +432,7 @@ int cpsw_init_common(struct cpsw_common *cpsw, void __iomem *ss_regs,
 		     int ale_ageout, phys_addr_t desc_mem_phys,
 		     int descs_pool_size)
 {
+	printk("[V] cpsw_init_common >>>\n");
 	u32 slave_offset, sliver_offset, slave_size;
 	struct cpsw_ale_params ale_params;
 	struct cpsw_platform_data *data;
@@ -543,6 +544,8 @@ int cpsw_init_common(struct cpsw_common *cpsw, void __iomem *ss_regs,
 		cpdma_ctlr_destroy(cpsw->dma);
 	}
 	of_node_put(cpts_node);
+
+	printk("[V] EOF cpsw_init_common <<<\n");
 
 	return ret;
 }

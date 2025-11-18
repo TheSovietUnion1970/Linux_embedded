@@ -382,7 +382,6 @@ static int davinci_mdio_read(struct mii_bus *bus, int phy_id, int phy_reg)
 	struct davinci_mdio_data *data = bus->priv;
 	u32 reg;
 	int ret;
-	//printk("[V] davinci_mdio_read\n");
 
 	if (phy_reg & ~PHY_REG_MASK || phy_id & ~PHY_ID_MASK)
 		return -EINVAL;
@@ -416,6 +415,10 @@ static int davinci_mdio_read(struct mii_bus *bus, int phy_id, int phy_reg)
 		break;
 	}
 
+	if ((phy_reg != 17) && (phy_reg != 0) && phy_reg != 1) {
+		printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
+	}
+
 	pm_runtime_mark_last_busy(data->dev);
 	pm_runtime_put_autosuspend(data->dev);
 	return ret;
@@ -427,7 +430,9 @@ static int davinci_mdio_write(struct mii_bus *bus, int phy_id,
 	struct davinci_mdio_data *data = bus->priv;
 	u32 reg;
 	int ret;
-	//printk("[V] davinci_mdio_write\n");
+	if ((phy_reg != 17) && (phy_reg != 0) && phy_reg != 1) {
+		printk("[V] davinci_mdio_write, phy_reg = %d, phy_data = 0x%x\n", phy_reg, phy_data);
+	}
 
 	if (phy_reg & ~PHY_REG_MASK || phy_id & ~PHY_ID_MASK)
 		return -EINVAL;
@@ -537,6 +542,8 @@ static int davinci_mdio_probe(struct platform_device *pdev)
 	if (!data)
 		return -ENOMEM;
 
+	printk("[V] davinci_mdio_probe >>>\n");
+
 	data->manual_mode = false;
 	data->bb_ctrl.ops = &davinci_mdiobb_ops;
 
@@ -634,7 +641,9 @@ static int davinci_mdio_probe(struct platform_device *pdev)
 
 	/* scan and dump the bus */
 	for (addr = 0; addr < PHY_MAX_ADDR; addr++) {
+		printk("[V] davinci_mdio_probe -> mdiobus_get_phy >>>\n");
 		phy = mdiobus_get_phy(data->bus, addr);
+		printk("[V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<\n");
 		if (phy) {
 			dev_info(dev, "phy[%d]: device %s, driver %s\n",
 				 phy->mdio.addr, phydev_name(phy),
@@ -642,6 +651,7 @@ static int davinci_mdio_probe(struct platform_device *pdev)
 		}
 	}
 
+	printk("[V] END of davinci_mdio_probe <<<\n");
 	return 0;
 
 bail_out:

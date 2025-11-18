@@ -1,0 +1,145 @@
+  250.114129] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[  250.120116] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[  250.127588] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+
+====
+Thread 104 hit Breakpoint 1, davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, phy_reg=2) at drivers/net/ethernet/ti/davinci_mdio.c:419
+419			printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
+(gdb) bt
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=2) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=2)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e344 in mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=2)
+    at drivers/net/phy/mdio_bus.c:867
+#3  0xbf02d0b0 in get_phy_c22_id (phy_id=<synthetic pointer>, addr=0, 
+    bus=0xc9c5c000) at drivers/net/phy/phy_device.c:845
+#4  get_phy_device (bus=0xc9c5c000, addr=0, is_c45=<optimized out>)
+    at drivers/net/phy/phy_device.c:922
+#5  0xbf017228 in ?? ()
+
+.
+
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=29) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=29)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e344 in mdiobus_read (bus=0xc9c5c000, addr=0, 
+    regnum=regnum@entry=29) at drivers/net/phy/mdio_bus.c:867
+#3  0xbf0c6078 in smsc_phy_config_intr (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:76
+#4  0xbf0c65a4 in ?? ()
+
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=18) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=18)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e344 in mdiobus_read (bus=0xc9c5c000, addr=0, 
+    regnum=regnum@entry=18) at drivers/net/phy/mdio_bus.c:867
+#3  0xbf0c62cc in phy_read (regnum=18, phydev=0xca889000)
+    at ./include/linux/phy.h:971
+#4  smsc_phy_reset (phydev=0xca889000) at drivers/net/phy/smsc.c:126
+#5  0xbf02ad94 in phy_init_hw (phydev=0xca889000)
+    at drivers/net/phy/phy_device.c:1200
+#6  0xbf02f16c in ?? ()
+
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=29) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=29)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e344 in mdiobus_read (bus=0xc9c5c000, addr=0, 
+    regnum=regnum@entry=29) at drivers/net/phy/mdio_bus.c:867
+#3  0xbf0c6078 in smsc_phy_config_intr (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:76
+#4  0xbf0c662c in ?? ()
+
+#0  davinci_mdio_write (bus=bus@entry=0xc9c5c000, 
+    phy_id=phy_id@entry=0, phy_reg=phy_reg@entry=30, 
+    phy_data=phy_data@entry=0)
+    at drivers/net/ethernet/ti/davinci_mdio.c:434
+#1  0xbf02e3dc in __mdiobus_write (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=30, val=val@entry=0)
+    at drivers/net/phy/mdio_bus.c:786
+#2  0xbf02e5ac in mdiobus_write (bus=0xc9c5c000, addr=0, regnum=30, 
+    val=<optimized out>) at drivers/net/phy/mdio_bus.c:916
+#3  0xbf0c6594 in ?? ()
+
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=29) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=29)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e344 in mdiobus_read (bus=0xc9c5c000, addr=0, 
+    regnum=regnum@entry=29) at drivers/net/phy/mdio_bus.c:867
+#3  0xbf0c6078 in smsc_phy_config_intr (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:76
+#4  0xbf0c65a4 in ?? ()
+
+#0  davinci_mdio_write (bus=bus@entry=0xc9c5c000, 
+    phy_id=phy_id@entry=0, phy_reg=phy_reg@entry=30, 
+    phy_data=phy_data@entry=0)
+    at drivers/net/ethernet/ti/davinci_mdio.c:434
+#1  0xbf02e3dc in __mdiobus_write (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=30, val=val@entry=0)
+    at drivers/net/phy/mdio_bus.c:786
+#2  0xbf02e5ac in mdiobus_write (bus=0xc9c5c000, addr=0, regnum=30, 
+    val=<optimized out>) at drivers/net/phy/mdio_bus.c:916
+#3  0xbf0c6594 in ?? ()
+
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=29) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=29)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e344 in mdiobus_read (bus=0xc9c5c000, addr=0, 
+    regnum=regnum@entry=29) at drivers/net/phy/mdio_bus.c:867
+#3  0xbf0c6078 in smsc_phy_config_intr (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:76
+#4  0xbf0c65a4 in ?? ()
+
+#0  davinci_mdio_read (bus=<optimized out>, phy_id=<optimized out>, 
+    phy_reg=4) at drivers/net/ethernet/ti/davinci_mdio.c:419
+#1  0xbf02e1d8 in __mdiobus_read (bus=bus@entry=0xc9c5c000, 
+    addr=addr@entry=0, regnum=regnum@entry=4)
+    at drivers/net/phy/mdio_bus.c:760
+#2  0xbf02e524 in __mdiobus_modify_changed (bus=0xc9c5c000, addr=0, 
+    regnum=regnum@entry=4, mask=mask@entry=4064, set=set@entry=480)
+    at drivers/net/phy/mdio_bus.c:813
+#3  0xbf028f04 in __phy_modify_changed (set=480, mask=4064, regnum=4, 
+    phydev=0xca889000) at ./include/linux/phy.h:1043
+#4  phy_modify_changed (phydev=phydev@entry=0xca889000, 
+    regnum=regnum@entry=4, mask=mask@entry=4064, set=<optimized out>)
+    at drivers/net/phy/phy-core.c:596
+#5  0xbf02c560 in genphy_config_advert (phydev=0xca889000)
+    at drivers/net/phy/phy_device.c:1939
+#6  __genphy_config_aneg (phydev=0xca889000, 
+    changed=changed@entry=false) at drivers/net/phy/phy_device.c:2208
+#7  0xbf0c6100 in genphy_config_aneg (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:121
+#8  lan87xx_config_aneg (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:179
+#9  0xbf0c64b8 in lan95xx_config_aneg_ext (phydev=<optimized out>)
+    at drivers/net/phy/smsc.c:196
+#10 lan95xx_config_aneg_ext (phydev=0xca889000)
+    at drivers/net/phy/smsc.c:182
+#11 0xbf02667c in phy_config_aneg (phydev=<optimized out>)
+    at drivers/net/phy/phy.c:670
+#12 0xbf0267b4 in _phy_start_aneg (phydev=phydev@entry=0xca889000)
+    at drivers/net/phy/phy.c:738
+#13 0xbf027d5c in phy_start_aneg (phydev=0xca889000)
+    at drivers/net/phy/phy.c:762
+#14 phy_state_machine (work=0xca889314) at drivers/net/phy/phy.c:1206
+#15 0xc015eacc in process_one_work (worker=worker@entry=0xc6677700, 
+    work=0xca889314) at kernel/workqueue.c:2310
+#16 0xc015ee64 in worker_thread (__worker=0xc6677700)
+    at kernel/workqueue.c:2457
+#17 0xc016771c in kthread (_create=0xc674f380) at kernel/kthread.c:334
+#18 0xc0100134 in ret_from_fork ()
+
+
+

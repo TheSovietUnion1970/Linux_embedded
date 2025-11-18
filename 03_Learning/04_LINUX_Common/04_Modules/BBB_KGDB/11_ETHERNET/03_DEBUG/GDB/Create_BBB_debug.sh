@@ -16,9 +16,14 @@ a3=$(sudo cat /sys/module/cpsw_common/sections/.text)
 
 b1=$(sudo cat /sys/module/phy_gmii_sel/sections/.text)
 
-a1=$(sudo cat /sys/module/ti_cpsw_new/sections/.text)
-a2=$(sudo cat /sys/module/davinci_mdio/sections/.text)
-a3=$(sudo cat /sys/module/cpsw_common/sections/.text)
+c1=$(sudo cat /sys/module/libphy/sections/.text)
+c2=$(sudo cat /sys/module/mdio_devres/sections/.text)
+c3=$(sudo cat /sys/module/smsc/sections/.text)
+c4=$(sudo cat /sys/module/fixed_phy/sections/.text)
+
+d1=$(sudo cat /sys/module/of_mdio/sections/.text)
+d2=$(sudo cat /sys/module/mdio_bitbang/sections/.text)
+d3=$(sudo cat /sys/module/fwnode_mdio/sections/.text)
 
 cat > BBB_debug.gdb <<EOF
 set serial baud 115200
@@ -30,10 +35,14 @@ add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/ethe
 
 add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/phy/ti/phy-gmii-sel.ko ${b1}
 
-add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/phylink.ko ${c1}
-add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/microchip.ko ${c2}
-add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/dp83867.ko ${c3}
-add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/ax88796b.ko ${c4}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/libphy.ko ${c1}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/mdio_devres.ko ${c2}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/smsc.ko ${c3}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/fixed_phy.ko ${c4}
+
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/mdio/of_mdio.ko ${d1}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/mdio/mdio-bitbang.ko ${d2}
+add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/mdio/fwnode_mdio.ko ${d3}
 
 
 EOF

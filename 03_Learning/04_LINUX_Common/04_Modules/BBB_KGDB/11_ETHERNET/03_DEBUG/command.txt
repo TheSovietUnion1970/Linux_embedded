@@ -4,3 +4,5 @@ sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/*.c /med
 
 sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/phy/ti/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/03_DEBUG/SRC/phy/ti/
 
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/mdio/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/03_DEBUG/SRC/net/mdio/
+

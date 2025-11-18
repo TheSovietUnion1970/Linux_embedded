@@ -504,6 +504,8 @@ int phy_read_mmd(struct phy_device *phydev, int devad, u32 regnum)
 {
 	int ret;
 
+	printk("[V] phy_read_mmd\n");
+
 	phy_lock_mdio_bus(phydev);
 	ret = __phy_read_mmd(phydev, devad, regnum);
 	phy_unlock_mdio_bus(phydev);
@@ -562,6 +564,8 @@ EXPORT_SYMBOL(__phy_write_mmd);
 int phy_write_mmd(struct phy_device *phydev, int devad, u32 regnum, u16 val)
 {
 	int ret;
+
+	printk("[V] phy_write_mmd\n");
 
 	phy_lock_mdio_bus(phydev);
 	ret = __phy_write_mmd(phydev, devad, regnum, val);
