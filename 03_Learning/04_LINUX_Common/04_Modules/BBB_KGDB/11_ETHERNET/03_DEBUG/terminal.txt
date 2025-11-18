@@ -93,6 +93,7 @@ s freq 1000000
 [  150.151781] [V] END of cpsw_probe <<<
 debian@arm:~$ [  150.407995] cpsw-switch 4a100000.switch: starting ndev.
  mode: dual_mac
+[ 1285.223354] [V] *of_phy_connect
 [  150.452350] [V] phy_connect_direct
 [  150.455859] [V] phy_attach_direct
 [  150.459320] [V] phy_init_hw
