@@ -136,8 +136,10 @@ EXPORT_SYMBOL(phy_print_status);
 static int phy_config_interrupt(struct phy_device *phydev, bool interrupts)
 {
 	phydev->interrupts = interrupts ? 1 : 0;
-	if (phydev->drv->config_intr)
+	if (phydev->drv->config_intr){
+		printk("[V] phy_config_interrupt, int = %d\n", phydev->interrupts);
 		return phydev->drv->config_intr(phydev);
+	}
 
 	return 0;
 }
@@ -364,6 +366,7 @@ int phy_mii_ioctl(struct phy_device *phydev, struct ifreq *ifr, int cmd)
 			}
 		}
 
+		printk("[V] phy_mii_ioctl -> W\n");
 		mdiobus_write(phydev->mdio.bus, prtad, devad, val);
 
 		if (prtad == phydev->mdio.addr &&
@@ -970,6 +973,7 @@ EXPORT_SYMBOL(phy_error);
  */
 int phy_disable_interrupts(struct phy_device *phydev)
 {
+	printk("[V] phy_disable_interrupts\n");
 	/* Disable PHY interrupts */
 	return phy_config_interrupt(phydev, PHY_INTERRUPT_DISABLED);
 }
@@ -1022,6 +1026,7 @@ static irqreturn_t phy_interrupt(int irq, void *phy_dat)
  */
 static int phy_enable_interrupts(struct phy_device *phydev)
 {
+	printk("[V] phy_enable_interrupts\n");
 	return phy_config_interrupt(phydev, PHY_INTERRUPT_ENABLED);
 }
 
@@ -1162,6 +1167,7 @@ void phy_state_machine(struct work_struct *work)
 
 	old_state = phydev->state;
 
+	if (phydev->state != PHY_NOLINK) printk("[V] phydev->state = %d\n", phydev->state);
 	switch (phydev->state) {
 	case PHY_DOWN:
 	case PHY_READY:
@@ -1177,6 +1183,7 @@ void phy_state_machine(struct work_struct *work)
 	case PHY_CABLETEST:
 		err = phydev->drv->cable_test_get_status(phydev, &finished);
 		if (err) {
+			printk("[V] phy_abort_cable_test(phydev);\n");
 			phy_abort_cable_test(phydev);
 			netif_testing_off(dev);
 			needs_aneg = true;
@@ -1202,10 +1209,14 @@ void phy_state_machine(struct work_struct *work)
 
 	mutex_unlock(&phydev->lock);
 
-	if (needs_aneg)
+	if (needs_aneg){
+		printk("[V] phy_start_aneg\n");
 		err = phy_start_aneg(phydev);
-	else if (do_suspend)
+	}
+	else if (do_suspend){
+		printk("[V] phy_suspend\n");
 		phy_suspend(phydev);
+	}
 
 	if (err == -ENODEV)
 		return;
@@ -1228,7 +1239,6 @@ void phy_state_machine(struct work_struct *work)
 		phy_queue_state_machine(phydev, PHY_STATE_TIME);
 	mutex_unlock(&phydev->lock);
 }
-
 /**
  * phy_mac_interrupt - MAC says the link has changed
  * @phydev: phy_device struct with changed link

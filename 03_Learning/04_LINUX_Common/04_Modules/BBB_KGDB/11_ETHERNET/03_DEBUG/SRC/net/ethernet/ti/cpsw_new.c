@@ -309,6 +309,7 @@ static void cpsw_rx_handler(void *token, int len, int status)
 
 	priv = netdev_priv(ndev);
 	pool = cpsw->page_pool[ch];
+	printk("[V] cpsw_rx_handler, ch = %d, len = %d\n", ch, len);
 
 	if (unlikely(status < 0) || unlikely(!netif_running(ndev))) {
 		/* In dual emac mode check for all interfaces */
@@ -925,6 +926,8 @@ static netdev_tx_t cpsw_ndo_start_xmit(struct sk_buff *skb,
 	struct netdev_queue *txq;
 	struct cpdma_chan *txch;
 	int ret, q_idx;
+
+	printk("[V] cpsw_ndo_start_xmit\n");
 
 	if (skb_put_padto(skb, READ_ONCE(priv->tx_packet_min))) {
 		cpsw_err(priv, tx_err, "packet pad failed\n");
@@ -1864,7 +1867,7 @@ static const struct soc_device_attribute cpsw_soc_devices[] = {
 	{ /* sentinel */ }
 };
 
-static int cpsw_probe(struct platform_device *pdev)
+int cpsw_probe(struct platform_device *pdev)
 {
 	const struct soc_device_attribute *soc;
 	struct device *dev = &pdev->dev;
@@ -2060,8 +2063,9 @@ clean_dt_ret:
 	pm_runtime_disable(dev);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(cpsw_probe);
 
-static int cpsw_remove(struct platform_device *pdev)
+int cpsw_remove(struct platform_device *pdev)
 {
 	struct cpsw_common *cpsw = platform_get_drvdata(pdev);
 	int ret;

@@ -1194,6 +1194,7 @@ void phylink_disconnect_phy(struct phylink *pl)
 
 	phy = pl->phydev;
 	if (phy) {
+		printk("[V] phylink_disconnect_phy\n");
 		mutex_lock(&phy->lock);
 		mutex_lock(&pl->state_mutex);
 		pl->phydev = NULL;
@@ -1999,6 +2000,7 @@ static int phylink_phy_write(struct phylink *pl, unsigned int phy_id,
 		devad = reg;
 	}
 
+	printk("[V] phylink_phy_read -> W\n");
 	return mdiobus_write(phydev->mdio.bus, prtad, devad, val);
 }
 
@@ -2635,6 +2637,7 @@ int phylink_mii_c22_pcs_set_advertisement(struct mdio_device *pcs,
 		if (val == adv)
 			return 0;
 
+		printk("[V] PHY_INTERFACE_MODE_2500BASEX -> W\n");
 		ret = mdiobus_write(bus, addr, MII_ADVERTISE, adv);
 		if (ret < 0)
 			return ret;
@@ -2649,6 +2652,7 @@ int phylink_mii_c22_pcs_set_advertisement(struct mdio_device *pcs,
 		if (val == 0x0001)
 			return 0;
 
+		printk("[V] PHY_INTERFACE_MODE_SGMII -> W\n");
 		ret = mdiobus_write(bus, addr, MII_ADVERTISE, 0x0001);
 		if (ret < 0)
 			return ret;
@@ -2720,6 +2724,7 @@ void phylink_mii_c22_pcs_an_restart(struct mdio_device *pcs)
 	if (val >= 0) {
 		val |= BMCR_ANRESTART;
 
+		printk("[V] phylink_mii_c22_pcs_an_restart -> W\n");
 		mdiobus_write(bus, addr, MII_BMCR, val);
 	}
 }

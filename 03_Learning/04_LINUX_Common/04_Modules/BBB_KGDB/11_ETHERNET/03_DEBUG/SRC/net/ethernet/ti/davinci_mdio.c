@@ -640,16 +640,16 @@ static int davinci_mdio_probe(struct platform_device *pdev)
 		goto bail_out;
 
 	/* scan and dump the bus */
+	printk("[V] davinci_mdio_probe -> mdiobus_get_phy >>>\n");
 	for (addr = 0; addr < PHY_MAX_ADDR; addr++) {
-		printk("[V] davinci_mdio_probe -> mdiobus_get_phy >>>\n");
 		phy = mdiobus_get_phy(data->bus, addr);
-		printk("[V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<\n");
 		if (phy) {
 			dev_info(dev, "phy[%d]: device %s, driver %s\n",
 				 phy->mdio.addr, phydev_name(phy),
 				 phy->drv ? phy->drv->name : "unknown");
 		}
 	}
+	printk("[V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<\n");
 
 	printk("[V] END of davinci_mdio_probe <<<\n");
 	return 0;

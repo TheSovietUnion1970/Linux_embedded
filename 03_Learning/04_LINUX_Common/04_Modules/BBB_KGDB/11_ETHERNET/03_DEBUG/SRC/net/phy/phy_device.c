@@ -1220,6 +1220,7 @@ int phy_init_hw(struct phy_device *phydev)
 	}
 
 	if (phydev->drv->config_intr) {
+		printk("[V] phy_init_hw -> config_intr\n");
 		ret = phydev->drv->config_intr(phydev);
 		if (ret < 0)
 			return ret;
@@ -2948,6 +2949,7 @@ EXPORT_SYMBOL_GPL(phy_get_internal_delay);
 
 static bool phy_drv_supports_irq(struct phy_driver *phydrv)
 {
+	printk("[V] phy_drv_supports_irq -> config_intr\n");
 	return phydrv->config_intr && phydrv->handle_interrupt;
 }
 
@@ -3051,6 +3053,8 @@ static int phy_probe(struct device *dev)
 	int err = 0;
 
 	phydev->drv = phydrv;
+
+	printk("[V] phy_probe\n");
 
 	/* Disable the interrupt if the PHY doesn't support it
 	 * but the interrupt is still a valid one
