@@ -3,7 +3,7 @@ ret = of_mdiobus_register(data->bus, dev->of_node);
 rc = __mdiobus_register(mdio, owner);
 err = bus->reset(bus); -> data->bus->reset	= davinci_mdio_reset;
 => 
-[V] davinci_mdio_reset
+[ 1510.281879] [V] davinci_mdio_reset
 
 ===
 static int davinci_mdio_probe(struct platform_device *pdev)
@@ -17,6 +17,25 @@ r = get_phy_c22_id(bus, addr, &phy_id);
 s freq 1000000
 [ 1510.291980] [V] davinci_mdio_read, phy_reg = 2, ret = 0x7
 [ 1510.297865] [V] davinci_mdio_read, phy_reg = 3, ret = 0xc0f1
+
+===
+phy_probe
+phy_disable_interrupts(phydev);
+phy_config_interrupt(phydev, PHY_INTERRUPT_DISABLED); -> phydev->drv->config_intr(phydev);
+=>
+[ 1258.706192] [V] phy_probe
+[ 1258.708861] [V] phy_drv_supports_irq -> config_intr
+[ 1258.725843] [V] phy_disable_interrupts
+[ 1258.729645] [V] phy_config_interrupt, int = 0
+[ 1258.734087] [V] smsc_phy_config_intr
+[ 1258.737682] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 1258.744617] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+
+===
+err = phydrv->get_features(phydev); or err = genphy_read_abilities(phydev);
+=>
+[ 1258.750662] [V] genphy_read_abilities - val = 0x7809
+
 
 ================================================================================================
 INIT_DELAYED_WORK(&dev->state_queue, phy_state_machine);
