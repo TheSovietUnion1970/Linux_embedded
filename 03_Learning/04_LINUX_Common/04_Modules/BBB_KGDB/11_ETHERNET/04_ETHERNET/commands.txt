@@ -1,0 +1,2 @@
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/04_ETHERNET/V1
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/*.h /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/04_ETHERNET/V1
