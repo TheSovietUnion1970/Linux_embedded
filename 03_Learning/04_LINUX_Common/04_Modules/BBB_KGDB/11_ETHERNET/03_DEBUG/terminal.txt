@@ -1,113 +1,160 @@
 sudo rmmod ti_cpsw_new
-[  145.054746] [V] phydev->state = 2
-[  145.058157] [V] phy_suspend
-[  145.061200] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  145.066952] [V] davinci_mdio_write, phy_reg = 0, phy_data = 0x3800
-[  145.076585] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 0
-[  145.083190] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 0
-[  145.089493] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 0
-[  145.095925] [V] cpdma_ctlr_stop, ctlr->chan_num = 2
-[  145.100848] [V] cpdma_chan_stop, chan->chan_num = 7
-[  145.105792] [V] cpdma_chan_stop, chan->chan_num = 32
-[  145.111233] [V] cpsw_ale_stop
-[  145.144297] [V] cpdma_ctlr_destroy, ctlr->chan_num = 2
+[ 7896.241656] [V] phydev->state = 2
+[ 7896.245076] [V] phy_suspend
+[ 7896.248118] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7896.253863] [V] davinci_mdio_write, phy_reg = 0, phy_data = 0x3800
+[ 7896.263750] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 0
+[ 7896.270347] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 0
+[ 7896.276648] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 0
+[ 7896.283082] [V] cpdma_ctlr_stop, ctlr->chan_num = 2
+[ 7896.288005] [V] cpdma_chan_stop, chan->chan_num = 7
+[ 7896.292929] [V] cpdma_chan_stop, chan->chan_num = 32
+[ 7896.298378] [V] cpsw_ale_stop
+[ 7896.301418] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
+000000, mask = 0x1
+[ 7896.309668] [V] port-0, ctr-0, val-0 offset = 8, shift = 31, tmp = 0x0,
+ mask = 0x1
+[ 7896.352892] [V] cpdma_ctlr_destroy, ctlr->chan_num = 2
+
 
 
 
 
 debian@arm:~$ sudo modprobe ti_cpsw_new
-libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/modpr
-obe.d/g_ether.conf line 2: ignoring bad line starting with '(02:bb:bb:00:00:
-01'
-libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/modpr
-obe.d/g_ether.conf line 3: ignoring bad line starting with '+'
-libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/modpr
-obe.d/g_ether.conf line 4: ignoring bad line starting with '+'
-[  139.478319] [V] cpsw_probe >>>
-[  139.483081] [V] davinci_mdio_probe >>>
-[  139.487005] [V] data->manual_mode = 0x0
-[  139.490992] [V] mdio_in = 125000000
-[  139.494540] [V] data->pdata.bus_freq = 1000000
-[  139.499659] [V] davinci_mdio_reset
-[  139.541832] davinci_mdio 4a101000.mdio: davinci mdio revision 1.6, bus fr
-eq 1000000
-[  139.551963] [V] davinci_mdio_read, phy_reg = 2, ret = 0x7
-[  139.558340] [V] davinci_mdio_read, phy_reg = 3, ret = 0xc0f1
-[  139.594247] [V] phy_probe
-[  139.596915] [V] phy_drv_supports_irq -> config_intr
-[  139.613885] [V] phy_disable_interrupts
-[  139.617691] [V] phy_config_interrupt, int = 0
-[  139.622133] [V] smsc_phy_config_intr
-[  139.625731] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
-[  139.632818] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[  139.638902] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  139.644667] [V] genphy_read_abilities - val = 0x7809
-[  139.649976] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
-[  139.655454] davinci_mdio 4a101000.mdio: phy[0]: device 4a101000.mdio:00, 
-driver SMSC LAN8710/LAN8720
-[  139.664661] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
-[  139.670454] [V] END of davinci_mdio_probe <<<
-[  139.675251] [V] base_mac = '�U���'
-[  139.678844] [V] cpsw_init_common >>>
-[  139.682470] [V] cpsw_ale_create
-[  139.685634] cpsw-switch 4a100000.switch: initialized cpsw ale version 1.4
-[  139.692483] cpsw-switch 4a100000.switch: ALE Table size 1024
-[  139.698199] [V] cpdma_ctlr_create, ctlr->chan_num is reset to 0
-[  139.733732] [V] EOF cpsw_init_common <<<
-[  139.737904] [V] cpdma_chan_create, chan_num = 7, ctlr->chan_num =0
-[  139.744169] [V] cpdma_chan_create, chan_num = 32, ctlr->chan_num =1
-[  139.750590] cpsw-switch 4a100000.switch: Detected MACID = 24:76:25:e7:29:
-f0
-[  139.759541] cpsw-switch 4a100000.switch: initialized (regs 0x4a100000, po
-ol size 256) hw_ver:0019010C 1.12 (0)
-[  139.769734] [V] END of cpsw_probe <<<
-debian@arm:~$ [  140.064108] cpsw-switch 4a100000.switch: starting ndev. mod
-e: dual_mac
-[  140.071655] [V] cpsw_ale_start
-[  140.113885] [V] cpsw_slave_open, version = 1638668
-[  140.121257] [V] *of_phy_connect
-[  140.124482] [V] phy_connect_direct
-[  140.127924] [V] phy_attach_direct
-[  140.131345] [V] phy_init_hw
-[  140.186008] [V] davinci_mdio_read, phy_reg = 18, ret = 0xe0
-[  140.191736] [V] - phy_modify - MII_BMCR - BMCR_ISOLATE
-[  140.210313] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  140.216147] [V] davinci_mdio_write, phy_reg = 0, phy_data = 0xb200
-[  140.282218] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  140.298014] [V] smsc_phy_config_init
-[  140.306667] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[  140.312419] [V] phy_init_hw -> config_intr
-[  140.316605] [V] smsc_phy_config_intr
-[  140.320235] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
-[  140.350594] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[  140.356335] [V] phy_disable_interrupts
-[  140.360167] [V] phy_config_interrupt, int = 0
-[  140.364568] [V] smsc_phy_config_intr
-[  140.368182] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
-[  140.402319] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[  140.413991] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  140.419829] SMSC LAN8710/LAN8720 4a101000.mdio:00: attached PHY driver (m
-ii_bus:phy_addr=4a101000.mdio:00, irq=POLL)
-[  140.452752] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  140.458672] [V] phy_gmii_sel_mode id:1 mode:2 rgmii_id:0 rmii_clk_ext:1
-[  140.465929] [V] cpdma_ctlr_start, ctlr->chan_num = 2
-[  140.470961] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 1
-[  140.477457] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 1
-[  140.483755] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 1
-[  140.494011] [V] phydev->state = 3
-[  140.497386] [V] phy_start_aneg
-[  140.518025] [V] davinci_mdio_read, phy_reg = 4, ret = 0x1e1
-[  140.537965] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  140.557131] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  140.570015] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  140.583253] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  140.589390] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  141.634069] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  141.640068] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  141.647686] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  142.690086] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[  142.696083] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[  142.703376] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/mod
+probe.d/g_ether.conf line 2: ignoring bad line starting with '(02:bb:bb:00
+:00:01'
+libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/mod
+probe.d/g_ether.conf line 3: ignoring bad line starting with '+'
+libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/mod
+probe.d/g_ether.conf line 4: ignoring bad line starting with '+'
+[ 7888.836890] [V] cpsw_probe >>>
+[ 7888.841675] [V] davinci_mdio_probe >>>
+[ 7888.845586] [V] data->manual_mode = 0x0
+[ 7888.849521] [V] mdio_in = 125000000
+[ 7888.853098] [V] data->pdata.bus_freq = 1000000
+[ 7888.858264] [V] davinci_mdio_reset
+[ 7888.900737] davinci_mdio 4a101000.mdio: davinci mdio revision 1.6, bus 
+freq 1000000
+[ 7888.910815] [V] davinci_mdio_read, phy_reg = 2, ret = 0x7
+[ 7888.916646] [V] davinci_mdio_read, phy_reg = 3, ret = 0xc0f1
+[ 7888.949222] [V] phy_probe
+[ 7888.951890] [V] phy_drv_supports_irq -> config_intr
+[ 7888.968818] [V] phy_disable_interrupts
+[ 7888.972624] [V] phy_config_interrupt, int = 0
+[ 7888.977071] [V] smsc_phy_config_intr
+[ 7888.980666] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 7888.987623] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 7888.993675] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7888.999436] [V] genphy_read_abilities - val = 0x7809
+[ 7889.004755] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[ 7889.010224] davinci_mdio 4a101000.mdio: phy[0]: device 4a101000.mdio:00
+, driver SMSC LAN8710/LAN8720
+[ 7889.019430] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[ 7889.025242] [V] END of davinci_mdio_probe <<<
+[ 7889.030039] [V] base_mac = '��)�G�'
+[ 7889.033611] [V] NEW cpsw_init_common >>>
+[ 7889.037586] [V] cpsw_ale_create
+[ 7889.040780] cpsw-switch 4a100000.switch: initialized cpsw ale version 1
+.4
+[ 7889.047628] cpsw-switch 4a100000.switch: ALE Table size 1024
+[ 7889.053338] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
+000000, mask = 0x1
+[ 7889.061581] [V] cpdma_ctlr_create, ctlr->chan_num is reset to 0
+[ 7889.097249] [V] EOF cpsw_init_common <<<
+[ 7889.101377] [V] cpdma_chan_create, chan_num = 7, ctlr->chan_num =0
+[ 7889.107650] [V] cpdma_chan_create, chan_num = 32, ctlr->chan_num =1
+[ 7889.114066] cpsw-switch 4a100000.switch: Detected MACID = 24:76:25:e7:2
+9:f0
+[ 7889.123015] cpsw-switch 4a100000.switch: initialized (regs 0x4a100000, 
+pool size 256) hw_ver:0019010C 1.12 (0)
+[ 7889.133192] [V] END of cpsw_probe <<<
+debian@arm:~$ [ 7889.426867] cpsw-switch 4a100000.switch: starting ndev. m
+ode: dual_mac
+[ 7889.434378] [V] cpsw_ale_start
+[ 7889.437559] [V] port-0, ctr-0, val-1 offset = 8, shift = 31, tmp = 0x80
+000000, mask = 0x1
+[ 7889.445811] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
+000000, mask = 0x1
+[ 7889.454060] [V] port-0, ctr-9, val-1 offset = 8, shift = 2, tmp = 0x4, 
+mask = 0x1
+[ 7889.461615] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[ 7889.469158] [V] .ale_entries = 0x400
+[ 7889.473571] [V] ale_entry[] = 0x0, 0x0, 0x0
+[ 7889.477798] [V] port-0, ctr-15, val-1 offset = 64, shift = 4, tmp = 0x1
+0, mask = 0x1
+[ 7889.485602] [V] port-0, ctr-12, val-3 offset = 64, shift = 0, tmp = 0x3
+, mask = 0x3
+[ 7889.616938] [V] cpsw_slave_open, version = 1638668
+[ 7889.621912] [V] .ale_entries = 0x400
+[ 7889.626372] [V] ale_entry[] = 0x0, 0x0, 0x0
+[ 7889.632221] [V] port-1, ctr-14, val-1 offset = 68, shift = 3, tmp = 0x8
+, mask = 0x1
+[ 7889.639943] [V] port-1, ctr-15, val-1 offset = 68, shift = 4, tmp = 0x1
+0, mask = 0x1
+[ 7889.647757] [V] *of_phy_connect
+[ 7889.650933] [V] phy_connect_direct
+[ 7889.654370] [V] phy_attach_direct
+[ 7889.657791] [V] phy_init_hw
+[ 7889.709218] [V] davinci_mdio_read, phy_reg = 18, ret = 0xe0
+[ 7889.714928] [V] - phy_modify - MII_BMCR - BMCR_ISOLATE
+[ 7889.733058] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7889.738901] [V] davinci_mdio_write, phy_reg = 0, phy_data = 0xb200
+[ 7889.805134] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7889.820922] [V] smsc_phy_config_init
+[ 7889.829454] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 7889.835185] [V] phy_init_hw -> config_intr
+[ 7889.839371] [V] smsc_phy_config_intr
+[ 7889.842991] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 7889.868950] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 7889.874679] [V] phy_disable_interrupts
+[ 7889.878520] [V] phy_config_interrupt, int = 0
+[ 7889.882926] [V] smsc_phy_config_intr
+[ 7889.886538] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
+[ 7889.895499] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
+[ 7889.901459] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7889.907246] SMSC LAN8710/LAN8720 4a101000.mdio:00: attached PHY driver 
+(mii_bus:phy_addr=4a101000.mdio:00, irq=POLL)
+[ 7889.922576] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7889.928486] [V] phy_gmii_sel_mode id:1 mode:2 rgmii_id:0 rmii_clk_ext:1
+[ 7889.935722] [V] cpdma_ctlr_start, ctlr->chan_num = 2
+[ 7889.940767] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 1
+[ 7889.947264] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 1
+[ 7889.953561] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 1
+[ 7889.959978] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[ 7889.969527] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[ 7889.978882] [V] phydev->state = 3
+[ 7889.982328] [V] phy_start_aneg
+[ 7889.999778] [V] davinci_mdio_read, phy_reg = 4, ret = 0x1e1
+[ 7890.014058] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7890.025145] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7890.031221] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7890.045848] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[ 7890.055345] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7890.062782] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7890.070074] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[ 7890.079563] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[ 7890.097488] [V] port-1, ctr-12, val-0 offset = 68, shift = 0, tmp = 0x0
+, mask = 0x3
+[ 7891.124972] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7891.130968] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7891.138490] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7892.181019] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7892.187023] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7892.194424] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7893.876987] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7893.882983] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7893.891575] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7895.572964] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
+[ 7895.578950] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[ 7895.586384] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+
 
 
 

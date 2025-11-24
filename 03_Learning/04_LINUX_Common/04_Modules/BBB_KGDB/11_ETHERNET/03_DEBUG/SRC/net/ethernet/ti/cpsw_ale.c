@@ -366,13 +366,17 @@ static int cpsw_ale_match_vlan(struct cpsw_ale *ale, u16 vid)
 	u32 ale_entry[ALE_ENTRY_WORDS];
 	int type, idx;
 
+	printk("[V] .ale_entries = 0x%x\n", ale->params.ale_entries);
+
 	for (idx = 0; idx < ale->params.ale_entries; idx++) {
 		cpsw_ale_read(ale, idx, ale_entry);
 		type = cpsw_ale_get_entry_type(ale_entry);
 		if (type != ALE_TYPE_VLAN)
 			continue;
-		if (cpsw_ale_get_vlan_id(ale_entry) == vid)
+		if (cpsw_ale_get_vlan_id(ale_entry) == vid){
+			printk("[V] -> idx = 0x%x, vid = 0x%x, ale_entry = 0x%x\n", idx, vid, ale_entry[idx]);
 			return idx;
+		}
 	}
 	return -ENOENT;
 }
@@ -617,6 +621,7 @@ int cpsw_ale_add_vlan(struct cpsw_ale *ale, u16 vid, int port_mask, int untag,
 	idx = cpsw_ale_match_vlan(ale, vid);
 	if (idx >= 0)
 		cpsw_ale_read(ale, idx, ale_entry);
+	printk("[V] ale_entry[] = 0x%x, 0x%x, 0x%x\n", ale_entry[0], ale_entry[1], ale_entry[2]);
 
 	cpsw_ale_set_entry_type(ale_entry, ALE_TYPE_VLAN);
 	cpsw_ale_set_vlan_id(ale_entry, vid);
