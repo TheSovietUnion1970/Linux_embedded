@@ -1120,12 +1120,16 @@ int cpsw_ale_control_set(struct cpsw_ale *ale, int port, int control,
 	offset = info->offset + (port * info->port_offset);
 	shift  = info->shift  + (port * info->port_shift);
 
+	printk("[V] port-%d, ctr-%d, val-%d offset = %d, shift = %d, tmp = 0x%x, mask = 0x%x\n", port, control,
+											value, offset, shift, (tmp & ~(mask << shift)) | (value << shift), mask);
+
 	tmp = readl_relaxed(ale->params.ale_regs + offset);
 	tmp = (tmp & ~(mask << shift)) | (value << shift);
 	writel_relaxed(tmp, ale->params.ale_regs + offset);
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(cpsw_ale_control_set);
 
 int cpsw_ale_control_get(struct cpsw_ale *ale, int port, int control)
 {
@@ -1213,18 +1217,22 @@ static void cpsw_ale_aging_stop(struct cpsw_ale *ale)
 
 void cpsw_ale_start(struct cpsw_ale *ale)
 {
+	printk("[V] cpsw_ale_start\n");
 	cpsw_ale_control_set(ale, 0, ALE_ENABLE, 1);
 	cpsw_ale_control_set(ale, 0, ALE_CLEAR, 1);
 
 	cpsw_ale_aging_start(ale);
 }
+EXPORT_SYMBOL_GPL(cpsw_ale_start);
 
 void cpsw_ale_stop(struct cpsw_ale *ale)
 {
+	printk("[V] cpsw_ale_stop\n");
 	cpsw_ale_aging_stop(ale);
 	cpsw_ale_control_set(ale, 0, ALE_CLEAR, 1);
 	cpsw_ale_control_set(ale, 0, ALE_ENABLE, 0);
 }
+EXPORT_SYMBOL_GPL(cpsw_ale_stop);
 
 static const struct cpsw_ale_dev_id cpsw_ale_id_match[] = {
 	{
@@ -1304,6 +1312,8 @@ struct cpsw_ale *cpsw_ale_create(struct cpsw_ale_params *params)
 	ale_dev_id = cpsw_ale_match_id(cpsw_ale_id_match, params->dev_id);
 	if (!ale_dev_id)
 		return ERR_PTR(-EINVAL);
+
+	printk("[V] cpsw_ale_create\n");
 
 	params->ale_entries = ale_dev_id->tbl_entries;
 	params->major_ver_mask = ale_dev_id->major_ver_mask;
@@ -1389,6 +1399,7 @@ struct cpsw_ale *cpsw_ale_create(struct cpsw_ale_params *params)
 	cpsw_ale_control_set(ale, 0, ALE_CLEAR, 1);
 	return ale;
 }
+EXPORT_SYMBOL_GPL(cpsw_ale_create);
 
 void cpsw_ale_dump(struct cpsw_ale *ale, u32 *data)
 {

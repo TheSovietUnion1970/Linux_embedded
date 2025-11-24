@@ -309,7 +309,7 @@ static void cpsw_rx_handler(void *token, int len, int status)
 
 	priv = netdev_priv(ndev);
 	pool = cpsw->page_pool[ch];
-	printk("[V] cpsw_rx_handler, ch = %d, len = %d\n", ch, len);
+	//printk("[V] cpsw_rx_handler, ch = %d, len = %d\n", ch, len);
 
 	if (unlikely(status < 0) || unlikely(!netif_running(ndev))) {
 		/* In dual emac mode check for all interfaces */
@@ -545,7 +545,7 @@ static void cpsw_init_host_port_dual_mac(struct cpsw_common *cpsw)
 	cpsw_ale_control_set(cpsw->ale, HOST_PORT_NUM, ALE_PORT_NOLEARN, 1);
 }
 
-static void cpsw_init_host_port(struct cpsw_priv *priv)
+void cpsw_init_host_port(struct cpsw_priv *priv)
 {
 	struct cpsw_common *cpsw = priv->cpsw;
 	u32 control_reg;
@@ -583,6 +583,7 @@ static void cpsw_init_host_port(struct cpsw_priv *priv)
 	cpsw_ale_control_set(cpsw->ale, HOST_PORT_NUM,
 			     ALE_PORT_STATE, ALE_PORT_STATE_FORWARD);
 }
+EXPORT_SYMBOL_GPL(cpsw_init_host_port);
 
 static void cpsw_port_add_dual_emac_def_ale_entries(struct cpsw_priv *priv,
 						    struct cpsw_slave *slave)
@@ -715,7 +716,7 @@ static void cpsw_adjust_link(struct net_device *ndev)
 		cpsw_split_res(cpsw);
 }
 
-static void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
+void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 {
 	struct cpsw_common *cpsw = priv->cpsw;
 	struct phy_device *phy;
@@ -788,6 +789,7 @@ static void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 	phy_set_mode_ext(slave->data->ifphy, PHY_MODE_ETHERNET,
 			 slave->data->phy_if);
 }
+EXPORT_SYMBOL_GPL(cpsw_slave_open);
 
 static int cpsw_ndo_stop(struct net_device *ndev)
 {

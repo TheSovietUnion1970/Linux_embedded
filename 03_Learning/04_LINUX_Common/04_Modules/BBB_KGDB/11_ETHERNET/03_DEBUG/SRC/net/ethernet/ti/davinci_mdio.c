@@ -415,7 +415,11 @@ static int davinci_mdio_read(struct mii_bus *bus, int phy_id, int phy_reg)
 		break;
 	}
 
-	if ((phy_reg != 17) && (phy_reg != 0) && phy_reg != 1) {
+	// if ((phy_reg != 17) && (phy_reg != 0) && phy_reg != 1) {
+	// 	printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
+	// }
+
+	if ((phy_reg != 17)) {
 		printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
 	}
 
@@ -430,7 +434,11 @@ static int davinci_mdio_write(struct mii_bus *bus, int phy_id,
 	struct davinci_mdio_data *data = bus->priv;
 	u32 reg;
 	int ret;
-	if ((phy_reg != 17) && (phy_reg != 0) && phy_reg != 1) {
+	// if ((phy_reg != 17) && (phy_reg != 0) && phy_reg != 1) {
+	// 	printk("[V] davinci_mdio_write, phy_reg = %d, phy_data = 0x%x\n", phy_reg, phy_data);
+	// }
+
+	if ((phy_reg != 17)) {
 		printk("[V] davinci_mdio_write, phy_reg = %d, phy_data = 0x%x\n", phy_reg, phy_data);
 	}
 

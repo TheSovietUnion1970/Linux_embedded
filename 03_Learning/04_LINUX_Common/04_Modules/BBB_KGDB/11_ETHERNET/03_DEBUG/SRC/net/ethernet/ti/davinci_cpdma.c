@@ -521,6 +521,8 @@ struct cpdma_ctlr *cpdma_ctlr_create(struct cpdma_params *params)
 	ctlr->chan_num = 0;
 	spin_lock_init(&ctlr->lock);
 
+	printk("[V] cpdma_ctlr_create, ctlr->chan_num is reset to %d\n", ctlr->chan_num);
+
 	if (cpdma_desc_pool_create(ctlr))
 		return NULL;
 	/* split pool equally between RX/TX by default */
@@ -537,6 +539,8 @@ int cpdma_ctlr_start(struct cpdma_ctlr *ctlr)
 	struct cpdma_chan *chan;
 	unsigned long flags;
 	int i, prio_mode;
+
+	printk("[V] cpdma_ctlr_start, ctlr->chan_num = %d\n", ctlr->chan_num);
 
 	spin_lock_irqsave(&ctlr->lock, flags);
 	if (ctlr->state != CPDMA_STATE_IDLE) {
@@ -597,6 +601,8 @@ int cpdma_ctlr_stop(struct cpdma_ctlr *ctlr)
 	unsigned long flags;
 	int i;
 
+	printk("[V] cpdma_ctlr_stop, ctlr->chan_num = %d\n", ctlr->chan_num);
+
 	spin_lock_irqsave(&ctlr->lock, flags);
 	if (ctlr->state != CPDMA_STATE_ACTIVE) {
 		spin_unlock_irqrestore(&ctlr->lock, flags);
@@ -628,6 +634,8 @@ int cpdma_ctlr_destroy(struct cpdma_ctlr *ctlr)
 {
 	int ret = 0, i;
 
+	printk("[V] cpdma_ctlr_destroy, ctlr->chan_num = %d\n", ctlr->chan_num);
+
 	if (!ctlr)
 		return -EINVAL;
 
@@ -645,6 +653,8 @@ int cpdma_ctlr_int_ctrl(struct cpdma_ctlr *ctlr, bool enable)
 {
 	unsigned long flags;
 	int i;
+
+	printk("[V] cpdma_ctlr_int_ctrl, params->num_chan = %d, enable = %d\n", ctlr->chan_num, enable);
 
 	spin_lock_irqsave(&ctlr->lock, flags);
 	if (ctlr->state != CPDMA_STATE_ACTIVE) {
@@ -903,6 +913,8 @@ struct cpdma_chan *cpdma_chan_create(struct cpdma_ctlr *ctlr, int chan_num,
 	chan->rate	= 0;
 	chan->weight	= 0;
 
+	printk("[V] cpdma_chan_create, chan_num = %d, ctlr->chan_num =%d\n", chan_num, ctlr->chan_num);
+
 	if (is_rx_chan(chan)) {
 		chan->hdp	= ctlr->params.rxhdp + offset;
 		chan->cp	= ctlr->params.rxcp + offset;
@@ -1133,6 +1145,8 @@ int cpdma_chan_submit(struct cpdma_chan *chan, void *token, void *data,
 	unsigned long flags;
 	int ret;
 
+	printk("[V] cpdma_chan_submit, chan->chan_num = %d\n", chan->chan_num);
+
 	si.chan = chan;
 	si.token = token;
 	si.data_virt = data;
@@ -1296,6 +1310,8 @@ int cpdma_chan_start(struct cpdma_chan *chan)
 	unsigned long flags;
 	int ret;
 
+	printk("[V] cpdma_chan_start, chan->chan_num = %d\n", chan->chan_num);
+
 	spin_lock_irqsave(&ctlr->lock, flags);
 	ret = cpdma_chan_set_chan_shaper(chan);
 	spin_unlock_irqrestore(&ctlr->lock, flags);
@@ -1316,6 +1332,8 @@ int cpdma_chan_stop(struct cpdma_chan *chan)
 	unsigned long		flags;
 	int			ret;
 	unsigned		timeout;
+
+	printk("[V] cpdma_chan_stop, chan->chan_num = %d\n", chan->chan_num);
 
 	spin_lock_irqsave(&chan->lock, flags);
 	if (chan->state == CPDMA_STATE_TEARDOWN) {
@@ -1374,6 +1392,8 @@ int cpdma_chan_stop(struct cpdma_chan *chan)
 int cpdma_chan_int_ctrl(struct cpdma_chan *chan, bool enable)
 {
 	unsigned long flags;
+
+	printk("[V] cpdma_chan_int_ctrl, chan->chan_num = %d, enable = %d\n", chan->chan_num, enable);
 
 	spin_lock_irqsave(&chan->lock, flags);
 	if (chan->state != CPDMA_STATE_ACTIVE) {
