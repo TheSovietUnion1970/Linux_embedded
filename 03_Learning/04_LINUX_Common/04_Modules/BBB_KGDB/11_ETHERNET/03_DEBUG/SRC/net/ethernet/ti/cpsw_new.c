@@ -48,6 +48,26 @@ static int ale_ageout = CPSW_ALE_AGEOUT_DEFAULT;
 static int rx_packet_max = CPSW_MAX_PACKET_SIZE;
 static int descs_pool_size = CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT;
 
+/* DEBUG DATA */
+#include <linux/workqueue.h>
+#include <linux/kthread.h>
+
+#define START_DELAY_SECONDS 30
+#define LOOP 3
+
+u8 thread_created = 0;
+u8 loop = 0;
+u8 request_region = 0;
+struct delayed_work start_work;
+
+int cpsw_probe(struct platform_device *pdev);
+int cpsw_remove(struct platform_device *pdev);
+
+struct platform_device *dbg_pdev;
+void __iomem *dbg_ss_regs = NULL;
+void __iomem *dbg_ss_res = NULL;
+/* ========== */
+
 struct cpsw_devlink {
 	struct cpsw_common *cpsw;
 };
@@ -1869,6 +1889,28 @@ static const struct soc_device_attribute cpsw_soc_devices[] = {
 	{ /* sentinel */ }
 };
 
+static void start_thread_work(struct work_struct *work)
+{
+    printk(KERN_INFO "start_thread_work 1\n");
+    while (!kthread_should_stop()) {
+        printk(KERN_INFO "ether0_driver: tick - %lu\n", jiffies);
+
+        // /* Your periodic work here */
+        // cpsw_probe(dbg_pdev);
+        // cpsw_remove(dbg_pdev);
+        device_release_driver(&dbg_pdev->dev);
+        device_attach(&dbg_pdev->dev);  // or driver_probe_device()
+
+        if (loop == LOOP) break;
+
+        set_current_state(TASK_INTERRUPTIBLE);
+        schedule_timeout(HZ);   /* Sleep 1 second */
+
+        loop++;
+    }
+    printk(KERN_INFO "start_thread_work 2\n");
+}
+
 int cpsw_probe(struct platform_device *pdev)
 {
 	const struct soc_device_attribute *soc;
@@ -1913,12 +1955,29 @@ int cpsw_probe(struct platform_device *pdev)
 	}
 	cpsw->bus_freq_mhz = clk_get_rate(clk) / 1000000;
 
+	// if (!dbg_ss_regs){
+	// 	ss_regs = devm_platform_get_and_ioremap_resource(pdev, 0, &ss_res);
+	// 	if (IS_ERR(ss_regs)) {
+	// 		ret = PTR_ERR(ss_regs);
+	// 		return ret;
+	// 	}
+	// 	cpsw->regs = ss_regs;
+	// 	dbg_ss_regs = ss_regs; // set for later usage
+	// 	dbg_ss_res = ss_res; // ...
+	// }
+	// else {
+	// 	cpsw->regs = dbg_ss_regs;
+	// 	ss_res = dbg_ss_res;
+	// 	ss_regs = dbg_ss_regs;
+	// }
+
 	ss_regs = devm_platform_get_and_ioremap_resource(pdev, 0, &ss_res);
 	if (IS_ERR(ss_regs)) {
 		ret = PTR_ERR(ss_regs);
 		return ret;
 	}
 	cpsw->regs = ss_regs;
+	printk("Done -> devm_platform_get_and_ioremap_resource\n");
 
 	irq = platform_get_irq_byname(pdev, "rx");
 	if (irq < 0)
@@ -2050,6 +2109,19 @@ skip_cpts:
 	pm_runtime_put(dev);
 
 	printk("[V] END of cpsw_probe <<<\n");
+
+
+    if ((thread_created == 0) && (LOOP != 0)){
+
+        dbg_pdev = pdev;
+
+        /* Schedule the thread to start after 5 seconds — NO sleeping here! */
+        INIT_DELAYED_WORK(&start_work, start_thread_work);
+        schedule_delayed_work(&start_work, START_DELAY_SECONDS * HZ);
+        thread_created = 1;
+    }
+
+
 	return 0;
 
 clean_unregister_notifiers:
@@ -2087,6 +2159,12 @@ int cpsw_remove(struct platform_device *pdev)
 	cpsw_remove_dt(cpsw);
 	pm_runtime_put_sync(&pdev->dev);
 	pm_runtime_disable(&pdev->dev);
+
+    if ((loop > LOOP) && (LOOP != 0)){
+        /* Cancel pending delayed work if still queued */
+        printk("cancel_delayed_work_sync is called\n");
+        cancel_delayed_work_sync(&start_work);
+    }
 	return 0;
 }
 

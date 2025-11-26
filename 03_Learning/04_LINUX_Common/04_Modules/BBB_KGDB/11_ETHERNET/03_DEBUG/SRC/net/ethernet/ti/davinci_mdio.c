@@ -419,9 +419,9 @@ static int davinci_mdio_read(struct mii_bus *bus, int phy_id, int phy_reg)
 	// 	printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
 	// }
 
-	if ((phy_reg != 17)) {
-		printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
-	}
+	// if ((phy_reg != 17)) {
+	// 	printk("[V] davinci_mdio_read, phy_reg = %d, ret = 0x%x\n", phy_reg, ret);
+	// }
 
 	pm_runtime_mark_last_busy(data->dev);
 	pm_runtime_put_autosuspend(data->dev);
@@ -438,9 +438,9 @@ static int davinci_mdio_write(struct mii_bus *bus, int phy_id,
 	// 	printk("[V] davinci_mdio_write, phy_reg = %d, phy_data = 0x%x\n", phy_reg, phy_data);
 	// }
 
-	if ((phy_reg != 17)) {
-		printk("[V] davinci_mdio_write, phy_reg = %d, phy_data = 0x%x\n", phy_reg, phy_data);
-	}
+	// if ((phy_reg != 17)) {
+	// 	printk("[V] davinci_mdio_write, phy_reg = %d, phy_data = 0x%x\n", phy_reg, phy_data);
+	// }
 
 	if (phy_reg & ~PHY_REG_MASK || phy_id & ~PHY_ID_MASK)
 		return -EINVAL;
@@ -659,7 +659,7 @@ static int davinci_mdio_probe(struct platform_device *pdev)
 	}
 	printk("[V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<\n");
 
-	printk("[V] END of davinci_mdio_probe <<<\n");
+	//printk("[V] END of davinci_mdio_probe <<<\n");
 	return 0;
 
 bail_out:
