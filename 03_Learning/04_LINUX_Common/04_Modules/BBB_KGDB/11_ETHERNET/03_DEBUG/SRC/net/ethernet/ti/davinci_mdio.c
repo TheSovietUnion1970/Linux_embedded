@@ -663,8 +663,10 @@ static int davinci_mdio_probe(struct platform_device *pdev)
 	return 0;
 
 bail_out:
-	pm_runtime_dont_use_autosuspend(&pdev->dev);
-	pm_runtime_disable(&pdev->dev);
+    pm_runtime_get_sync(&pdev->dev);
+    pm_runtime_put_noidle(&pdev->dev);
+    pm_runtime_set_suspended(&pdev->dev);
+    pm_runtime_disable(&pdev->dev);
 	return ret;
 }
 
@@ -679,8 +681,10 @@ static int davinci_mdio_remove(struct platform_device *pdev)
 			free_mdio_bitbang(data->bus);
 	}
 
-	pm_runtime_dont_use_autosuspend(&pdev->dev);
-	pm_runtime_disable(&pdev->dev);
+    pm_runtime_get_sync(&pdev->dev);
+    pm_runtime_put_noidle(&pdev->dev);
+    pm_runtime_set_suspended(&pdev->dev);
+    pm_runtime_disable(&pdev->dev);
 
 	return 0;
 }
