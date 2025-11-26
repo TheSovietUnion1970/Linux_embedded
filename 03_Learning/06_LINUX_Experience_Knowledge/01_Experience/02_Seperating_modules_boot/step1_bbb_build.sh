@@ -23,7 +23,9 @@ export KERNEL_VERSION
 echo "Kernel version set to: $KERNEL_VERSION"
 
 # make ARCH=arm CROSS_COMPILE=${CC_x86_for_arm} -j$(nproc) zImage
+echo " === Build zImage === "
 make ARCH=arm CROSS_COMPILE=${CC_x86_for_arm} -j$(nproc) zImage 
+echo " === Done zImage === "
 # (CHECK) - ls -lh ./arch/arm/boot/zImage
 
 # make ARCH=arm CROSS_COMPILE=${CC_x86_for_arm} -j$(nproc) modules

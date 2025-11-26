@@ -30,10 +30,15 @@ sudo dd if=./u-boot/MLO of=${DISK} count=2 seek=1 bs=128k
 sudo dd if=./u-boot/u-boot-dtb.img of=${DISK} count=4 seek=1 bs=384k
 
 # === PARTITION ===
+echo "Unmounting old partitions..."
+sudo umount ${DISK}* 2>/dev/null || true
+
 echo "Creating rootfs partition..."
-sudo sfdisk ${DISK} <<-__EOF__
+sudo sfdisk ${DISK} --force <<-__EOF__
 4M,,L,*
 __EOF__
+
+sudo partprobe ${DISK}
 
 # === FORMAT PARTITION ===
 echo "Formatting ${DISK}1 to ext4..."
