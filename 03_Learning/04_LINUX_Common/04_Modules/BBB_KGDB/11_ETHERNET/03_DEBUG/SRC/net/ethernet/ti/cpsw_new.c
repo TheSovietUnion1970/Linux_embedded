@@ -53,7 +53,7 @@ static int descs_pool_size = CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT;
 #include <linux/kthread.h>
 
 #define START_DELAY_SECONDS 30
-#define LOOP 3
+#define LOOP 0
 
 u8 thread_created = 0;
 u8 loop = 0;

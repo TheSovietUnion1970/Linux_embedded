@@ -61,6 +61,7 @@ static int ether_probe(struct platform_device *pdev)
 
     data->base_cpsw = ioremap(CPSW_BASE, 0x100);
     data->base_ale = ioremap(ALE_BASE, 0x200);
+    data->base_cpsw_sl = ioremap(CPSW_SL_BASE, 0x200);
     data->base_port0 = ioremap(PORT0_BASE, 0x100);
     data->base_port1 = ioremap(PORT1_BASE, 0x100);
     data->base_port2 = ioremap(PORT2_BASE, 0x100);

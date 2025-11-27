@@ -300,7 +300,7 @@ struct phy_device *of_phy_connect(struct net_device *dev,
 
 	return ret ? NULL : phy;
 }
-EXPORT_SYMBOL(of_phy_connect);
+EXPORT_SYMBOL_GPL(of_phy_connect);
 
 /**
  * of_phy_get_and_connect

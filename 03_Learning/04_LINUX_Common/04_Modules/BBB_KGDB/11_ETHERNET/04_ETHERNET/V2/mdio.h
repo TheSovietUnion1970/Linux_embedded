@@ -27,6 +27,7 @@
 #define STATS_BASE      (CPSW_BASE + 0x900)    // Statistics Registers
 #define CPTS_BASE       (CPSW_BASE + 0xC00)    // Common Platform Time Sync
 #define ALE_BASE        (CPSW_BASE + 0xD00)    // ALE
+#define CPSW_SL_BASE    (CPSW_BASE + 0xD80)    // CPSW_SL
 #define MDIO_BASE       (CPSW_BASE + 0x1000)   // MDIO block = 0x4a101000
 #define CPSW_WR_BASE    (CPSW_BASE + 0x1200)   // WRAPPER (if you need it)
 
@@ -80,6 +81,7 @@ struct ether_device_data {
 
     void __iomem *base_cpsw; 
     void __iomem *base_ale; 
+    void __iomem *base_cpsw_sl; 
     void __iomem *base_port0; 
     void __iomem *base_port1; 
     void __iomem *base_port2; 
@@ -98,13 +100,13 @@ struct ether_device_data {
     int misc_irq;
 };
 
-int wait_register_update(struct ether_device_data *data, void __iomem *mem, u16 reg_offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register);
-int wait_val_update(struct ether_device_data *data, u16* var, u16 val, u16 delay_ms, u8* name_val);
+// int wait_register_update(struct ether_device_data *data, void __iomem *mem, u16 reg_offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register);
+// int wait_val_update(struct ether_device_data *data, u16* var, u16 val, u16 delay_ms, u8* name_val);
 
-int clock_init(struct ether_device_data *data);
-int clock_deinit(struct ether_device_data *data);
+// int clock_init(struct ether_device_data *data);
+// int clock_deinit(struct ether_device_data *data);
 
-void gmii_sel_init(struct ether_device_data *data);
-int ether_mdio_init(struct ether_device_data* data);
+// void gmii_sel_init(struct ether_device_data *data);
+// int ether_mdio_init(struct ether_device_data* data);
 
 #endif /* E_H */
