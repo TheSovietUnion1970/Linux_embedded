@@ -1,6 +1,11 @@
 #include "cpsw.h"
+#include "mdio.h"
+#include "cpdma.h"
+#include <linux/delay.h>
+#include <linux/workqueue.h>
 
 u8 mac_addr[6] = {0x24, 0x76, 0x25, 0xe7, 0x29, 0xf0};
+u8 broadcast[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 int cpsw_ale_version(struct ether_device_data *data){
     u32 ale_id = 0;
@@ -30,21 +35,6 @@ void cpsw_ale_start(struct ether_device_data *data)
     iowrite32(ale_control, data->base_ale + ALE_CONTROL);
 }
 
-void cpsw_ale_add_vlan_id0(struct ether_device_data *data){
-    u8 i = 0;
-    u8 idx = 0;
-    u32 vlan_values[3] = {
-        0x0, // MAC = 00:00:00:00:00:00 (or VLAN field)
-        0x20000000, // Bit 61 = VLAN entry type
-        0x07000007 // Ports 0, 1, 2 are members
-    };
-    for (i = 0; i < 3; i++){
-        iowrite32(vlan_values[i], data->base_ale + ALE_TABLE + 4 * i);
-    }
-
-    iowrite32(ALE_TABLE_WRITE | idx, data->base_ale + ALE_TABLE_CONTROL);
-}
-
 void cpsw_init_host_port_dual_mac(struct ether_device_data *data){
     u32 ale_control = 0;
 
@@ -59,7 +49,8 @@ void cpsw_init_host_port_dual_mac(struct ether_device_data *data){
     /* TODO: default_vlan = 0 */
     iowrite32(0, data->base_port0 + P0_PORT_VLAN); 
 
-    cpsw_ale_add_vlan_id0(data);
+    //cpsw_ale_add_vlan_id0(data);
+    ale_add_vlan_id0(data, 0);
 
     /* learning make no sense in dual_mac mode in port 1 */
     ale_control = ioread32(data->base_ale + ALE_PORTCTL0);
@@ -112,61 +103,20 @@ void cpsw_init_host_port(struct ether_device_data *data){
 }
 
 
-/* cpsw_slave_open */
-void cpsw_ale_add_vlan_id1(struct ether_device_data *data){
-    u8 i = 0;
-    u8 idx = 1; // Table Entry Pointer 
-    u32 vlan_values[3] = {
-        0x0, // (VLAN field)
-        0x20010000, // Bit 61 = VLAN entry type, VLAN ID = 1 (bits 60:49)
-        0x03030003 // Port mask = 0b011 → Port 0 (CPU) + Port 1 (RJ45)
-    };
-    for (i = 0; i < 3; i++){
-        iowrite32(vlan_values[i], data->base_ale + ALE_TABLE + 4 * i);
-    }
-
-    iowrite32(ALE_TABLE_WRITE | idx, data->base_ale + ALE_TABLE_CONTROL);
-}
-
-void cpsw_ale_add_mcast_id2(struct ether_device_data *data){
-    u8 i = 0;
-    u8 idx = 2; // Table Entry Pointer 
-    u32 vlan_values[3] = {
-        0x4, // (VLAN field)
-        0x3001ffff, // Bit 61 = VLAN entry type, VLAN ID = 1 (bits 60:49)
-        0xffffffff // Port mask = 0b011 → Port 0 (CPU) + Port 1 (RJ45)
-    };
-    for (i = 0; i < 3; i++){
-        iowrite32(vlan_values[i], data->base_ale + ALE_TABLE + 4 * i);
-    }
-
-    iowrite32(ALE_TABLE_WRITE | idx, data->base_ale + ALE_TABLE_CONTROL);
-}
-
-void cpsw_ale_add_ucast_id3(struct ether_device_data *data){
-    u8 i = 0;
-    u8 idx = 3; // Table Entry Pointer 
-    u32 vlan_values[3] = {
-        0x1, // (VLAN field)
-        0x30012476, // Bit 61 = VLAN entry type, VLAN ID = 1 (bits 60:49)
-        0x25e729f0 // Port mask = 0b011 → Port 0 (CPU) + Port 1 (RJ45)
-    };
-    for (i = 0; i < 3; i++){
-        iowrite32(vlan_values[i], data->base_ale + ALE_TABLE + 4 * i);
-    }
-
-    iowrite32(ALE_TABLE_WRITE | idx, data->base_ale + ALE_TABLE_CONTROL);
-}
-
+/* cpsw_slave_open funcs */
 void cpsw_port_add_dual_emac_def_ale_entries(struct ether_device_data *data){
     u32 ale_control = 0;
 
     // port VLAN ID = 1
     iowrite32(0x1, data->base_port1 + P1_PORT_VLAN);
 
-    cpsw_ale_add_vlan_id1(data);
-    cpsw_ale_add_mcast_id2(data);
-    cpsw_ale_add_ucast_id3(data);
+    ale_add_vlan_id1(data, 1);
+
+    //cpsw_ale_add_mcast_id2(data);
+    ale_add_mcast(data, 1, broadcast, ALE_VLAN, ALE_PORT_HOST, ALE_MCAST_FWD);
+
+    //cpsw_ale_add_ucast_id3(data);
+    ale_add_ucast(data, 1, mac_addr, ALE_VLAN | ALE_SECURE, HOST_PORT_NUM);
 
     ale_control = ioread32(data->base_ale + ALE_PORTCTL1);
     ale_control |= (ALE_DROP_UNKNOWN_VLAN);
@@ -212,18 +162,211 @@ int cpsw_slave_open(struct ether_device_data *data){
     return ret;
 }
 
+/* phy_init_hw funcs*/
+void smsc_phy_config_intr(struct ether_device_data *data, bool enabled){
+    if (enabled){
+        /* Auto-Negotiation complete */
+        mido_write(data, PHY_ID0, MII_LAN83C185_IM, MII_LAN83C185_ISF_INT6);
+    }
+    else {
+        mido_write(data, PHY_ID0, MII_LAN83C185_IM, 0);
+    }
+}
+
+// it just enables power down -> maybe no need this time
+void smsc_phy_config_init(struct ether_device_data *data){
+    u16 ctlsts = 0;
+
+    mdio_read(data, PHY_ID0, MII_LAN83C185_CTRL_STATUS, &ctlsts);
+}
+
+int phy_init_hw(struct ether_device_data *data){
+    int ret = 0;
+    u16 mmi_bmcr = 0;
+
+    // set "all capable" mode
+    ret = mido_write(data, PHY_ID0, MII_LAN83C185_SPECIAL_MODES, MII_LAN83C185_MODE_ALL);
+    if (ret < 0) return -1;
+
+    /* reset the phy */
+    ret = mido_write(data, PHY_ID0, MII_BMCR, BMCR_ISOLATE);
+    if (ret < 0) return -1;
+    msleep(10); // wait reset bit is clear
+    ret = mdio_read(data, PHY_ID0, MII_BMCR, &mmi_bmcr);
+    if (ret < 0) return -1;
+    if (mmi_bmcr&BMCR_RESET) {
+        printk("Fail to reset phy\n");
+        return -1;
+    }
+
+    /* BMCR may be reset to defaults */
+    ret = mido_write(data, PHY_ID0, MII_BMCR, BMCR_SPEED100 | BMCR_ANRESTART | BMCR_ANENABLE);
+    if (ret < 0) return -1;
+
+    // disbale first
+    smsc_phy_config_intr(data, 0);
+
+    // genphy_resume -> MII_BMCR: BMCR_PDOWN
+
+    return 0;
+}
+
+/* phy_gmii_sel_mode */
+void phy_gmii_sel_mode(struct ether_device_data *data){
+    iowrite32(0xE0, data->base_ctrmod + 0x650);
+}
+
+/* genphy_config_advert */
+int genphy_config_advert(struct ether_device_data *data){
+    int ret = 0;
+    u16 mii_advert = 0;
+    ret = mdio_read(data, PHY_ID0, MII_ADVERTISE, &mii_advert);
+    if (ret < 0) return -1;
+
+    mii_advert |= ADVERTISE_ALL | 0x1;
+    ret = mido_write(data, PHY_ID0, MII_ADVERTISE, mii_advert);
+    if (ret < 0) return -1;
+
+    /* bmsr = phy_read(phydev, MII_BMSR); */
+
+    return ret;
+}
+
+void phy_adjust_link(struct ether_device_data *data){
+    u32 mac_control = 0, ale_control = 0;
+
+    /* cpsw_sl_ctl_set(slave->mac_sl, mac_control); */
+    mac_control = ioread32(data->base_cpsw_sl + P1_MACCONTROL);
+    mac_control |= P1_FULLDUPLEX | P1_GMII_EN | P1_IFCTL_A;
+    iowrite32(mac_control, data->base_cpsw_sl + P1_MACCONTROL);
+
+    /* enable forwarding for slave port 1 */
+    ale_control = ioread32(data->base_ale + ALE_PORTCTL1);
+    ale_control |= ALE_PORT_STATE_FORWARD;
+    iowrite32(ale_control, data->base_ale + ALE_PORTCTL1);
+
+    /* phy_print_status(phy); */
+
+    /* [V] port-1, ctr-12, val-3 <- cpsw_set_promiscious */
+
+}
+
+/* phy_status_work */
+u16 old_state = 0xff;
+static void phy_status_work(struct work_struct *work)
+{
+    struct ether_device_data *data = container_of(work, struct ether_device_data, phy_work);
+    if (!data) {
+        printk("NULL data\n");
+        return;
+    }
+    u16 mmi_bmsr = 0;
+    int ret;
+
+    ret = mdio_read(data, PHY_ID0, MII_BMSR, &mmi_bmsr);
+    if (ret < 0) return;
+
+    if (mmi_bmsr&BMSR_LINK_UP){
+        // print only when state is changed:
+        if ((mmi_bmsr&BMSR_LINK_UP) != old_state){
+            printk("Link is up\n");
+
+            phy_adjust_link(data);
+
+            run_test(data);
+        }
+    }
+    else {
+        // print only when state is changed:
+        if ((mmi_bmsr&BMSR_LINK_UP) != old_state){
+            printk("Link is down\n");
+        }        
+    }
+    old_state = mmi_bmsr&BMSR_LINK_UP;
+
+    // re-schedule
+    mod_delayed_work(system_power_efficient_wq, &data->phy_work,
+                1 * HZ);
+}
+
+static void cpsw_ale_timer(struct timer_list *t)
+{
+	struct ether_device_data *data = from_timer(data, t, timer);
+    u32 ale_control = 0;
+
+    ale_control = ioread32(data->base_ale + ALE_CONTROL);
+    ale_control |= AGE_OUT_NOW;
+    iowrite32(ale_control, data->base_ale + ALE_CONTROL);
+
+    // update expires
+    data->timer.expires = jiffies + 10*HZ;
+    add_timer(&data->timer);
+	
+    //printk("AGE_OUT_NOW\n");
+}
+
 int cpsw_init(struct ether_device_data *data){
     int ret;
 
     ret = cpsw_ale_version(data);
 
+    /* Initialize host and slave ports */
     if (ret == 0){
         printk("Host port\n");
         // ale, ss, 
         cpsw_init_host_port(data);
 
+        printk("cpsw_slave_open\n");
         cpsw_slave_open(data);
+
+        if (ret == 0){
+            /* === phy = of_phy_connect(priv->ndev, slave->data->phy_node, ===*/
+            printk("of_phy_connect\n");
+            phy_init_hw(data);
+
+            /* phy_attached_info(slave->phy); */
+
+            /* phy_start(slave->phy); = set PHY_UP + start PHY machine*/
+
+            /* Configure GMII_SEL register */
+            phy_gmii_sel_mode(data);
+        }
+
+        if (ret == 0){
+            /* err = phy_start_aneg(phydev); -> */
+            /* TODO: lan87xx_config_aneg */
+            printk("genphy_config_advert\n");
+            ret = genphy_config_advert(data);
+        }
+
+        if (ret == 0){
+            // create a workqueue to check link every 1s
+            INIT_DELAYED_WORK(&data->phy_work, phy_status_work);
+            mod_delayed_work(system_power_efficient_wq, &data->phy_work,
+                1 * HZ);
+
+            // add a timer to remove old MAC entries every 10s
+            timer_setup(&data->timer, cpsw_ale_timer, 0);
+            data->timer.expires = jiffies + 10*HZ;
+            add_timer(&data->timer);
+        }
     }
 
+    /* initialize shared resources for every ndev */
+    if (ret == 0){
+        /* cpdma_ctlr_start */
+        printk("CPDMA\n");
+        cpdma_ctlr_start(data);
+        cpdma_intr_enable(data);
+    }
     return ret;
+}
+
+int cpsw_remove(struct ether_device_data *data){
+    cancel_delayed_work_sync(&data->phy_work);
+    del_timer_sync(&data->timer);
+
+    cpdma_ctlr_stop(data);
+    cpdma_intr_disable(data);
+    return 0;
 }

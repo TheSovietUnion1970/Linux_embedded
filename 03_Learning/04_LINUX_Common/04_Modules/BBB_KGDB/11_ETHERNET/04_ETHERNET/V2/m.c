@@ -12,15 +12,16 @@
 #include <linux/pm_runtime.h>
 #include "mdio.h"
 #include "cpsw.h"
+#include "cpdma.h"
 
 #define DRIVER_NAME "ether0_driver"
 #define DEVICE_NAME "ether0"
 #define DEVICE_CLASS "ether0_class"
 
-static void re_request_irq_work(struct work_struct *work){
-    struct ether_device_data *data = container_of(work, struct ether_device_data, re_request_work);
+// static void re_request_irq_work(struct work_struct *work){
+//     struct ether_device_data *data = container_of(work, struct ether_device_data, re_request_work);
 
-}
+// }
 
 static int ether_open(struct inode *inode, struct file *file){
     struct ether_device_data *data = container_of(inode->i_cdev, struct ether_device_data, cdev);
@@ -65,6 +66,15 @@ static int ether_probe(struct platform_device *pdev)
     data->base_port0 = ioremap(PORT0_BASE, 0x100);
     data->base_port1 = ioremap(PORT1_BASE, 0x100);
     data->base_port2 = ioremap(PORT2_BASE, 0x100);
+    data->base_wr = ioremap(CPSW_WR_BASE, 0x100);
+
+    data->base_cpdma = ioremap(CPDMA_BASE, 0x100);
+    data->desc_dma = ioremap(CPPIRAM_BASE, 0x1000);
+
+    data->base_txhdp = ioremap(TXHDP_BASE, 0x100);
+    data->base_rxhdp = data->base_txhdp + 0x20;
+    data->base_txcp = data->base_txhdp + 0x40;
+    data->base_rxcp = data->base_txhdp + 0x60;
 
     data->base_mdio = ioremap(MDIO_BASE, 0x1000);
 
@@ -81,28 +91,44 @@ static int ether_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "Failed Formatted: Unable to get IRQ: %d\n", data->rx_thresh_irq);
         return data->rx_thresh_irq;
     }
-    dev_info(&pdev->dev, "rx_thresh_irq num = %d\n", data->rx_thresh_irq);
+    ret = devm_request_irq(&pdev->dev, data->rx_thresh_irq, rx_thresh_handler, 0, "rx_thresh_handler", data);
+    if (ret < 0) {
+        printk("Fail request rx_thresh_handler\n");
+        return -1;
+    }
 
     data->rx_irq = platform_get_irq(pdev, 1);
     if (data->rx_irq < 0) {
         dev_err(&pdev->dev, "Failed Formatted: Unable to get IRQ: %d\n", data->rx_irq);
         return data->rx_irq;
     }
-    dev_info(&pdev->dev, "rx_irq num = %d\n", data->rx_irq);
+    ret = devm_request_irq(&pdev->dev, data->rx_irq, rx_handler, 0, "rx_handler", data);
+    if (ret < 0) {
+        printk("Fail request rx_handler\n");
+        return -1;
+    }
 
     data->tx_irq = platform_get_irq(pdev, 2);
     if (data->tx_irq < 0) {
         dev_err(&pdev->dev, "Failed Formatted: Unable to get IRQ: %d\n", data->tx_irq);
         return data->tx_irq;
     }
-    dev_info(&pdev->dev, "tx_irq num = %d\n", data->tx_irq);
+    ret = devm_request_irq(&pdev->dev, data->tx_irq, tx_handler, 0, "tx_handler", data);
+    if (ret < 0) {
+        printk("Fail request tx_handler\n");
+        return -1;
+    }
 
     data->misc_irq = platform_get_irq(pdev, 3);
     if (data->misc_irq < 0) {
         dev_err(&pdev->dev, "Failed Formatted: Unable to get IRQ: %d\n", data->misc_irq);
         return data->misc_irq;
     }
-    dev_info(&pdev->dev, "misc_irq num = %d\n", data->misc_irq);
+    ret = devm_request_irq(&pdev->dev, data->misc_irq, misc_handler, 0, "misc_handler", data);
+    if (ret < 0) {
+        printk("Fail request misc_handler\n");
+        return -1;
+    }
 
     // ===== Create character device
     ret = alloc_chrdev_region(&data->dev_num, 0, 1, DRIVER_NAME);
@@ -186,10 +212,17 @@ static int ether_remove(struct platform_device *pdev)
     // pm_runtime_put_sync(&pdev->dev);
     // pm_runtime_disable(&pdev->dev);
 
+    cpsw_remove(data);
 
-    iounmap(data->base_mdio);
     iounmap(data->base_ctrmod);
     iounmap(data->base_clk);
+    iounmap(data->base_cpsw);
+    iounmap(data->base_ale);
+    iounmap(data->base_cpsw_sl);
+    iounmap(data->base_mdio);
+    iounmap(data->base_port0);
+    iounmap(data->base_port1);
+    iounmap(data->base_port2);
 
     return 0;
 }

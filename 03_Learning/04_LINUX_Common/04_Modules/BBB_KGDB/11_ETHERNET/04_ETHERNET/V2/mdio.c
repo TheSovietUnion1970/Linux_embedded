@@ -59,7 +59,7 @@ int clock_init(struct ether_device_data *data){
     //     return ret;
     // }
     data->clk_freq = 125000000;
-    printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
+    //printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
     return 0;
 }
 
@@ -133,7 +133,7 @@ int wait_for_user_access(struct ether_device_data *data)
 	return -ETIMEDOUT;
 }
 
-int mido_read(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16* dataX){
+int mdio_read(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16* dataX){
     u32 reg = 0;
     int ret = 0;
 
@@ -207,40 +207,40 @@ int ether_mdio_init(struct ether_device_data* data){
     msleep(1000);
 
     // iowrite32(0x3, data->base_clk + 0x14);
-    printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
+    //printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
 
     /* Read version */
     mdiover = ioread32(data->base_mdio + MDIO_MDIOVER);
     if (mdiover){
-        printk("Revision: %d.%d\n", (mdiover >> 8)&0xFF, (mdiover)&0xFF);
+        //printk("Revision: %d.%d\n", (mdiover >> 8)&0xFF, (mdiover)&0xFF);
     }
 
     /* get phy mask from the alive register */
     mdioalive = ioread32(data->base_mdio + MDIO_MDIOALIVE);
     if (mdioalive){
-        printk("detected phy mask %x\n", mdioalive);
+        //printk("detected phy mask %x\n", mdioalive);
     }
 
     mdio_enable(data);
 
     /* Read register 2 */
-    ret = mido_read(data, PHY_ID0, MII_PHYSID1, &shareddata);
+    ret = mdio_read(data, PHY_ID0, MII_PHYSID1, &shareddata);
     if (ret < 0){
         return -1;
     }
     else {
-        printk("PHY ID Number: 0x%x\n", shareddata%0xFFFF);
+        //printk("PHY ID Number: 0x%x\n", shareddata%0xFFFF);
     }
 
     /* Read register 3 */
-    ret = mido_read(data, PHY_ID0, MII_PHYSID2, &shareddata);
+    ret = mdio_read(data, PHY_ID0, MII_PHYSID2, &shareddata);
     if (ret < 0){
         return -1;
     }
     else {
-        printk("PHY ID Number: 0x%x\n", shareddata%0xFC00);
-        printk("Model Number: %d\n", shareddata%0x3F0);
-        printk("Revision Number: %d\n", shareddata%0xF);
+        // printk("PHY ID Number: 0x%x\n", shareddata%0xFC00);
+        // printk("Model Number: %d\n", shareddata%0x3F0);
+        // printk("Revision Number: %d\n", shareddata%0xF);
     }
 
     /* Disable interrupts */
@@ -250,21 +250,21 @@ int ether_mdio_init(struct ether_device_data* data){
     }
 
     /* Read ISF */
-    ret = mido_read(data, PHY_ID0, MII_LAN83C185_ISF, &shareddata);
+    ret = mdio_read(data, PHY_ID0, MII_LAN83C185_ISF, &shareddata);
     if (ret < 0){
         return -1;
     }
     else {
-        printk("MII_LAN83C185_ISF: 0x%x\n", shareddata%0xFE);
+        //printk("MII_LAN83C185_ISF: 0x%x\n", shareddata%0xFE);
     }
 
     /* genphy_read_abilities */
-    ret = mido_read(data, PHY_ID0, MII_BMSR, &shareddata);
+    ret = mdio_read(data, PHY_ID0, MII_BMSR, &shareddata);
     if (ret < 0){
         return -1;
     }
     else {
-        printk("genphy_read_abilities: 0x%x\n", shareddata);
+        //printk("genphy_read_abilities: 0x%x\n", shareddata);
     }
     
     return 0;

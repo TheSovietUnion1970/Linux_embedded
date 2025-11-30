@@ -2,6 +2,7 @@
 #define CPSW_H
 
 #include "mdio.h"
+#include "ale.h"
 
 /* CPSW_BASE */
 #define CPSW_CONTROL            0x04
@@ -21,6 +22,7 @@
 #define ALE_CONTROL		0x08
     #define ALE_ENABLE_ALE		1u << 31
     #define ALE_CLEAR_TABLE		1u << 30
+    #define AGE_OUT_NOW		    1u << 29
     #define ALE_P0_UNI_FLOOD    1u << 8
     #define ALE_VLAN_AWARE      1u << 2
 #define ALE_PRESCALE		0x10
@@ -55,6 +57,9 @@
 
 /* CSPW_SL */
 #define P1_MACCONTROL           0x04
+    #define P1_FULLDUPLEX   1u << 0
+    #define P1_GMII_EN      1u << 5
+    #define P1_IFCTL_A      1u << 15 // speed 100Mbps
 #define P1_MACSTATUS            0x08
 #define P1_SOFTRESET            0x0C
 #define P1_RX_MAXLEN            0x10
@@ -84,5 +89,6 @@ enum cpsw_ale_port_state {
 };
 
 int cpsw_init(struct ether_device_data *data);
+int cpsw_remove(struct ether_device_data *data);
 
 #endif /* CPSW_H */
