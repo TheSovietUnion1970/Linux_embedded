@@ -329,7 +329,7 @@ static void cpsw_rx_handler(void *token, int len, int status)
 
 	priv = netdev_priv(ndev);
 	pool = cpsw->page_pool[ch];
-	//printk("[V] cpsw_rx_handler, ch = %d, len = %d\n", ch, len);
+	printk("[V] cpsw_RX_handler, ch = %d, len = %d\n", ch, len);
 
 	if (unlikely(status < 0) || unlikely(!netif_running(ndev))) {
 		/* In dual emac mode check for all interfaces */

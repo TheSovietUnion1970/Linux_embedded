@@ -1,214 +1,580 @@
 sudo rmmod ti_cpsw_new
 [ 7896.241656] [V] phydev->state = 2
-[ 7896.245076] [V] phy_suspend
-[ 7896.248118] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7896.253863] [V] davinci_mdio_write, phy_reg = 0, phy_data = 0x3800
-[ 7896.263750] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 0
-[ 7896.270347] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 0
-[ 7896.276648] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 0
-[ 7896.283082] [V] cpdma_ctlr_stop, ctlr->chan_num = 2
-[ 7896.288005] [V] cpdma_chan_stop, chan->chan_num = 7
-[ 7896.292929] [V] cpdma_chan_stop, chan->chan_num = 32
-[ 7896.298378] [V] cpsw_ale_stop
-[ 7896.301418] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
+[  662.069146] [V] port-1, ctr-12, val-0 offset = 68, shift = 0, tmp = 0x0
+, mask = 0x3
+[  662.079131] cpsw-switch 4a100000.switch eth0: Link is Down
+[  662.084837] [V] phy_suspend
+[  662.089898] [V] E - phy_suspend
+[  662.094275] cpsw_ale_write > idx = 4, ale_entry[0][1][2] = 0x4, 0x13333
+, 0x1
+[  662.101502] cpsw_ale_write > idx = 5, ale_entry[0][1][2] = 0x4, 0x10100
+, 0x5e000001
+[  662.109258] cpsw_ale_write > idx = 6, ale_entry[0][1][2] = 0x4, 0x10180
+, 0xc2000000
+[  662.116986] cpsw_ale_write > idx = 7, ale_entry[0][1][2] = 0x4, 0x10180
+, 0xc2000003
+[  662.124712] cpsw_ale_write > idx = 8, ale_entry[0][1][2] = 0x4, 0x10180
+, 0xc200000e
+[  662.132438] cpsw_ale_write > idx = 9, ale_entry[0][1][2] = 0x4, 0x10100
+, 0x5e0000fb
+[  662.140165] cpsw_ale_write > idx = 10, ale_entry[0][1][2] = 0x4, 0x1333
+3, 0xffe729f0
+[  662.147979] cpsw_ale_write > idx = 11, ale_entry[0][1][2] = 0x4, 0x1333
+3, 0xfb
+[  662.155262] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 0
+[  662.161754] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 0
+[  662.168052] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 0
+[  662.174455] [V] cpdma_ctlr_stop, ctlr->chan_num = 2
+[  662.179374] [V] cpdma_chan_stop, chan->chan_num = 7
+[  662.184297] [V] cpdma_chan_stop, chan->chan_num = 32
+[  662.189328] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.193999] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.198663] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.203328] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.207992] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.212655] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.217342] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.222011] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.226681] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.231348] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.236013] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.240676] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.245340] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.250005] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.254669] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.259333] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.263996] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.268660] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.273323] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.277987] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.282650] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.287313] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.291976] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.296639] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.301301] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.305963] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.310627] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.315290] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.319953] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.324616] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.329279] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.333943] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.338607] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.343269] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.347931] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.352598] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.357261] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.361925] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.366587] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.371251] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.375914] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.380577] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.385239] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.389902] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.394565] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.399227] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.403891] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.408553] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.413217] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.417880] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.422542] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.427205] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.431868] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.436532] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.441196] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.445858] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.450522] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.455185] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.459849] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.464511] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.469175] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.473838] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.478501] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.483163] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.487825] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.492488] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.497151] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.501815] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.506477] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.511141] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.515805] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.520468] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.525130] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.529793] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.534457] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.539119] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.543782] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.548445] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.553108] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.557772] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.562437] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.567102] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.571764] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.576427] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.581090] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.585753] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.590417] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.595079] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.599742] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.604404] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.609067] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.613730] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.618393] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.623056] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.627718] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.632381] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.637044] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.641720] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.646384] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.651048] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.655710] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.660373] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.665035] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.669698] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.674375] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.679038] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.683701] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.688365] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.693038] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.697720] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.702384] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.707051] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.711715] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.716381] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.721045] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.725719] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.730384] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.735048] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.739715] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.744379] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.749044] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.753734] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.758401] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.763066] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.767731] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.772396] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.777061] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.781726] [V] cpsw_RX_handler, ch = 0, len = 0
+[  662.786390] [V] cpsw_ale_stop
+[  662.789372] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
 000000, mask = 0x1
-[ 7896.309668] [V] port-0, ctr-0, val-0 offset = 8, shift = 31, tmp = 0x0,
+[  662.797611] [V] port-0, ctr-0, val-0 offset = 8, shift = 31, tmp = 0x0,
  mask = 0x1
-[ 7896.352892] [V] cpdma_ctlr_destroy, ctlr->chan_num = 2
+[  662.843576] [V] cpdma_ctlr_destroy, ctlr->chan_num = 2
 
 
 
 
 
+
+================================= 
 debian@arm:~$ sudo modprobe ti_cpsw_new
-libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/mod
-probe.d/g_ether.conf line 2: ignoring bad line starting with '(02:bb:bb:00
-:00:01'
-libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/mod
-probe.d/g_ether.conf line 3: ignoring bad line starting with '+'
-libkmod: ERROR ../libkmod/libkmod-config.c:657 kmod_config_parse: /etc/mod
-probe.d/g_ether.conf line 4: ignoring bad line starting with '+'
-[ 7888.836890] [V] cpsw_probe >>>
-[ 7888.841675] [V] davinci_mdio_probe >>>
-[ 7888.845586] [V] data->manual_mode = 0x0
-[ 7888.849521] [V] mdio_in = 125000000
-[ 7888.853098] [V] data->pdata.bus_freq = 1000000
-[ 7888.858264] [V] davinci_mdio_reset
-[ 7888.900737] davinci_mdio 4a101000.mdio: davinci mdio revision 1.6, bus 
+
+[  591.637550] [V] cpsw_probe >>>
+[  719.215632] Done -> devm_platform_get_and_ioremap_resource
+[  719.222743] [V] davinci_mdio_probe >>>
+[  719.226655] [V] data->manual_mode = 0x0
+[  719.230595] [V] mdio_in = 125000000
+[  719.234133] [V] data->pdata.bus_freq = 1000000
+[  719.239258] [V] davinci_mdio_reset
+[  719.281763] davinci_mdio 4a101000.mdio: davinci mdio revision 1.6, bus 
 freq 1000000
-[ 7888.910815] [V] davinci_mdio_read, phy_reg = 2, ret = 0x7
-[ 7888.916646] [V] davinci_mdio_read, phy_reg = 3, ret = 0xc0f1
-[ 7888.949222] [V] phy_probe
-[ 7888.951890] [V] phy_drv_supports_irq -> config_intr
-[ 7888.968818] [V] phy_disable_interrupts
-[ 7888.972624] [V] phy_config_interrupt, int = 0
-[ 7888.977071] [V] smsc_phy_config_intr
-[ 7888.980666] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
-[ 7888.987623] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[ 7888.993675] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7888.999436] [V] genphy_read_abilities - val = 0x7809
-[ 7889.004755] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
-[ 7889.010224] davinci_mdio 4a101000.mdio: phy[0]: device 4a101000.mdio:00
+[  719.318230] [V] phy_probe
+[  719.320898] [V] phy_drv_supports_irq -> config_intr
+[  719.337818] [V] phy_disable_interrupts
+[  719.341621] [V] phy_config_interrupt, int = 0
+[  719.346063] [V] smsc_phy_config_intr
+[  719.350905] [V] genphy_read_abilities - val = 0x7809
+[  719.356225] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[  719.361737] davinci_mdio 4a101000.mdio: phy[0]: device 4a101000.mdio:00
 , driver SMSC LAN8710/LAN8720
-[ 7889.019430] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
-[ 7889.025242] [V] END of davinci_mdio_probe <<<
-[ 7889.030039] [V] base_mac = '��)�G�'
-[ 7889.033611] [V] NEW cpsw_init_common >>>
-[ 7889.037586] [V] cpsw_ale_create
-[ 7889.040780] cpsw-switch 4a100000.switch: initialized cpsw ale version 1
+[  719.370946] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <<<
+[  719.377130] [V] base_mac = '�e'�'
+[  719.380699] [V] NEW cpsw_init_common >>>
+[  719.384673] [V] cpsw_ale_create
+[  719.387860] cpsw-switch 4a100000.switch: initialized cpsw ale version 1
 .4
-[ 7889.047628] cpsw-switch 4a100000.switch: ALE Table size 1024
-[ 7889.053338] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
+[  719.394706] cpsw-switch 4a100000.switch: ALE Table size 1024
+[  719.400415] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
 000000, mask = 0x1
-[ 7889.061581] [V] cpdma_ctlr_create, ctlr->chan_num is reset to 0
-[ 7889.097249] [V] EOF cpsw_init_common <<<
-[ 7889.101377] [V] cpdma_chan_create, chan_num = 7, ctlr->chan_num =0
-[ 7889.107650] [V] cpdma_chan_create, chan_num = 32, ctlr->chan_num =1
-[ 7889.114066] cpsw-switch 4a100000.switch: Detected MACID = 24:76:25:e7:2
+[  719.408659] [V] cpdma_ctlr_create, ctlr->chan_num is reset to 0
+[  719.442604] [V] EOF cpsw_init_common <<<
+[  719.446741] [V] cpdma_chan_create, chan_num = 7, ctlr->chan_num =0
+[  719.453017] [V] cpdma_chan_create, chan_num = 32, ctlr->chan_num =1
+[  719.459436] cpsw-switch 4a100000.switch: Detected MACID = 24:76:25:e7:2
 9:f0
-[ 7889.123015] cpsw-switch 4a100000.switch: initialized (regs 0x4a100000, 
+[  719.468292] cpsw-switch 4a100000.switch: initialized (regs 0x4a100000, 
 pool size 256) hw_ver:0019010C 1.12 (0)
-[ 7889.133192] [V] END of cpsw_probe <<<
-debian@arm:~$ [ 7889.426867] cpsw-switch 4a100000.switch: starting ndev. m
+[  719.478492] [V] END of cpsw_probe <<<
+debian@arm:~$ [  719.738087] cpsw-switch 4a100000.switch: starting ndev. m
 ode: dual_mac
-[ 7889.434378] [V] cpsw_ale_start
-[ 7889.437559] [V] port-0, ctr-0, val-1 offset = 8, shift = 31, tmp = 0x80
+[  719.745572] [V] cpsw_ale_start
+[  719.748773] [V] port-0, ctr-0, val-1 offset = 8, shift = 31, tmp = 0x80
 000000, mask = 0x1
-[ 7889.445811] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
+[  719.757029] [V] port-0, ctr-1, val-1 offset = 8, shift = 30, tmp = 0x40
 000000, mask = 0x1
-[ 7889.454060] [V] port-0, ctr-9, val-1 offset = 8, shift = 2, tmp = 0x4, 
+[  719.765275] [V] port-0, ctr-9, val-1 offset = 8, shift = 2, tmp = 0x4, 
 mask = 0x1
-[ 7889.461615] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+[  719.772818] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
 mask = 0x1
-[ 7889.469158] [V] .ale_entries = 0x400
-[ 7889.473571] [V] ale_entry[] = 0x0, 0x0, 0x0
-[ 7889.477798] [V] port-0, ctr-15, val-1 offset = 64, shift = 4, tmp = 0x1
+[  719.780359] [V] .ale_entries = 0x400
+[  719.784770] [V] ale_entry[] = 0x0, 0x0, 0x0
+[  719.788998] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x20000
+000, 0x7000007
+[  719.796887] [V] port-0, ctr-15, val-1 offset = 64, shift = 4, tmp = 0x1
 0, mask = 0x1
-[ 7889.485602] [V] port-0, ctr-12, val-3 offset = 64, shift = 0, tmp = 0x3
+[  719.804690] [V] port-0, ctr-12, val-3 offset = 64, shift = 0, tmp = 0x3
 , mask = 0x3
-[ 7889.616938] [V] cpsw_slave_open, version = 1638668
-[ 7889.621912] [V] .ale_entries = 0x400
-[ 7889.626372] [V] ale_entry[] = 0x0, 0x0, 0x0
-[ 7889.632221] [V] port-1, ctr-14, val-1 offset = 68, shift = 3, tmp = 0x8
+[  719.946045] [V] cpsw_slave_open, version = 1638668
+[  719.951010] [V] .ale_entries = 0x400
+[  719.955474] [V] ale_entry[] = 0x0, 0x0, 0x0
+[  719.959709] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x20010
+000, 0x3030003
+[  719.968407] cpsw_ale_write > idx = 2, ale_entry[0][1][2] = 0x4, 0x3001f
+fff, 0xffffffff
+[  719.977189] cpsw_ale_write > idx = 3, ale_entry[0][1][2] = 0x1, 0x30012
+476, 0x25e729f0
+[  719.985168] [V] port-1, ctr-14, val-1 offset = 68, shift = 3, tmp = 0x8
 , mask = 0x1
-[ 7889.639943] [V] port-1, ctr-15, val-1 offset = 68, shift = 4, tmp = 0x1
+[  719.992885] [V] port-1, ctr-15, val-1 offset = 68, shift = 4, tmp = 0x1
 0, mask = 0x1
-[ 7889.647757] [V] *of_phy_connect
-[ 7889.650933] [V] phy_connect_direct
-[ 7889.654370] [V] phy_attach_direct
-[ 7889.657791] [V] phy_init_hw
-[ 7889.709218] [V] davinci_mdio_read, phy_reg = 18, ret = 0xe0
-[ 7889.714928] [V] - phy_modify - MII_BMCR - BMCR_ISOLATE
-[ 7889.733058] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7889.738901] [V] davinci_mdio_write, phy_reg = 0, phy_data = 0xb200
-[ 7889.805134] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7889.820922] [V] smsc_phy_config_init
-[ 7889.829454] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[ 7889.835185] [V] phy_init_hw -> config_intr
-[ 7889.839371] [V] smsc_phy_config_intr
-[ 7889.842991] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
-[ 7889.868950] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[ 7889.874679] [V] phy_disable_interrupts
-[ 7889.878520] [V] phy_config_interrupt, int = 0
-[ 7889.882926] [V] smsc_phy_config_intr
-[ 7889.886538] [V] davinci_mdio_write, phy_reg = 30, phy_data = 0x0
-[ 7889.895499] [V] davinci_mdio_read, phy_reg = 29, ret = 0x90
-[ 7889.901459] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7889.907246] SMSC LAN8710/LAN8720 4a101000.mdio:00: attached PHY driver 
+[  720.000697] [V] *of_phy_connect
+[  720.003875] [V] phy_connect_direct
+[  720.007311] [V] phy_attach_direct
+[  720.010732] [V] phy_init_hw
+[  720.086256] [V] - phy_modify - MII_BMCR - BMCR_ISOLATE
+[  720.157881] [V] smsc_phy_config_init
+[  720.165887] [V] phy_init_hw -> config_intr
+[  720.170100] [V] smsc_phy_config_intr
+[  720.183714] [V] phy_disable_interrupts
+[  720.187646] [V] phy_config_interrupt, int = 0
+[  720.192090] [V] smsc_phy_config_intr
+[  720.203043] SMSC LAN8710/LAN8720 4a101000.mdio:00: attached PHY driver 
 (mii_bus:phy_addr=4a101000.mdio:00, irq=POLL)
-[ 7889.922576] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7889.928486] [V] phy_gmii_sel_mode id:1 mode:2 rgmii_id:0 rmii_clk_ext:1
-[ 7889.935722] [V] cpdma_ctlr_start, ctlr->chan_num = 2
-[ 7889.940767] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 1
-[ 7889.947264] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 1
-[ 7889.953561] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 1
-[ 7889.959978] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+[  720.214024] [V] phy_gmii_sel_mode id:1 mode:2 rgmii_id:0 rmii_clk_ext:1
+[  720.220869] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.225750] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.230592] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.235431] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.240269] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.245106] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.249944] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.254781] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.259617] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.264454] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.269291] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.274128] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.278965] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.283801] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.288638] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.293474] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.298311] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.303147] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.307984] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.312820] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.317658] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.322495] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.327342] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.332180] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.337017] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.341855] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.346691] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.351532] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.356371] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.361208] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.366045] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.370882] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.375719] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.380555] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.385391] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.390229] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.395066] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.399902] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.404739] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.409576] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.414413] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.419251] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.424087] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.428924] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.433761] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.438598] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.443435] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.448273] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.453109] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.457947] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.462784] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.467620] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.472458] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.477294] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.482131] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.486967] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.491803] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.496640] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.501476] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.506314] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.511151] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.515988] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.520825] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.525662] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.530522] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.535362] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.540199] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.545036] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.549872] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.554709] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.559544] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.564380] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.569217] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.574054] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.578891] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.583728] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.588565] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.593401] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.598239] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.603076] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.607912] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.612749] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.617587] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.622425] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.627262] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.632099] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.636935] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.641774] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.646612] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.651448] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.656285] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.661122] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.665958] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.670795] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.675632] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.680469] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.685306] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.690148] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.694986] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.699823] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.704659] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.709496] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.714333] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.719171] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.724009] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.728846] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.733682] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.738518] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.743355] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.748192] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.753028] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.757865] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.762702] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.767538] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.772375] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.777212] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.782049] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.786886] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.791724] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.796560] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.801398] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.806235] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.811072] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.815908] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.820745] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.825580] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.830418] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.835254] [V] cpdma_chan_idle_submit_mapped - 32
+[  720.840097] [V] cpdma_ctlr_start, ctlr->chan_num = 2
+[  720.845120] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, enable = 1
+[  720.851613] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, enable = 1
+[  720.857909] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, enable = 1
+[  720.864319] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
 mask = 0x1
-[ 7889.969527] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+[  720.871867] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x20000
+000, 0x7000007
+[  720.879760] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x20010
+000, 0x3030003
+[  720.889259] cpsw_ale_write > idx = 4, ale_entry[0][1][2] = 0x4, 0x30013
+333, 0x1
+[  720.896975] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
 mask = 0x1
-[ 7889.978882] [V] phydev->state = 3
-[ 7889.982328] [V] phy_start_aneg
-[ 7889.999778] [V] davinci_mdio_read, phy_reg = 4, ret = 0x1e1
-[ 7890.014058] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7890.025145] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7890.031221] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7890.045848] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
-mask = 0x1
-[ 7890.055345] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7890.062782] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7890.070074] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
-mask = 0x1
-[ 7890.079563] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
-mask = 0x1
-[ 7890.097488] [V] port-1, ctr-12, val-0 offset = 68, shift = 0, tmp = 0x0
+[  720.904558] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x20000
+000, 0x7000007
+[  720.912453] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x20010
+000, 0x3030003
+[  720.921964] cpsw_ale_write > idx = 5, ale_entry[0][1][2] = 0x4, 0x30010
+100, 0x5e000001
+[  720.930064] [V] phydev->state = 3
+[  720.933400] [V] phy_start_aneg
+[  720.974709] Changed tp 'PHY_NOLINK'
+[  720.978362] [V] port-1, ctr-12, val-0 offset = 68, shift = 0, tmp = 0x0
 , mask = 0x3
-[ 7891.124972] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7891.130968] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7891.138490] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7892.181019] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7892.187023] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7892.194424] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7893.876987] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7893.882983] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7893.891575] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7895.572964] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3000
-[ 7895.578950] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
-[ 7895.586384] [V] davinci_mdio_read, phy_reg = 1, ret = 0x7809
+[  721.001926] [V] E - phy_start_aneg
+[  721.034504] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[  721.042159] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x20000
+000, 0x7000007
+[  721.050102] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x20010
+000, 0x3030003
+[  721.059609] cpsw_ale_write > idx = 6, ale_entry[0][1][2] = 0x4, 0x30010
+180, 0xc2000000
+[  721.070319] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[  721.077942] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x20000
+000, 0x7000007
+[  721.085891] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x20010
+000, 0x3030003
+[  721.095400] cpsw_ale_write > idx = 7, ale_entry[0][1][2] = 0x4, 0x30010
+180, 0xc2000003
+[  721.106131] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, 
+mask = 0x1
+[  721.113758] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x20000
+000, 0x7000007
+[  721.121681] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x20010
+000, 0x3030003
+[  721.131203] cpsw_ale_write > idx = 8, ale_entry[0][1][2] = 0x4, 0x30010
+180, 0xc200000e
+[  729.825730] [V] port-0, ctr-2, val-1 offset = 8, shift = 29, tmp = 0x20
+000000, mask = 0x1
 
 
 
 
 
 
-plugged in:
-[ 3030.497946] [V] phydev->state = 4
-[ 3030.501572] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3100
-[ 3030.508986] [V] davinci_mdio_read, phy_reg = 1, ret = 0x782d
-[ 3031.202148] [V] cpsw_ndo_start_xmit
-[ 3031.205704] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.233460] [V] cpsw_ndo_start_xmit
-[ 3031.237113] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.302028] [V] cpsw_ndo_start_xmit
-[ 3031.305572] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.469710] [V] cpsw_ndo_start_xmit
-[ 3031.473328] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.480956] [V] cpsw_ndo_start_xmit
-[ 3031.484640] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.492528] [V] cpsw_ndo_start_xmit
-[ 3031.496179] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.521937] [V] phydev->state = 4
-[ 3031.525566] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3100
-[ 3031.532983] [V] davinci_mdio_read, phy_reg = 1, ret = 0x782d
-[ 3031.641942] [V] cpsw_ndo_start_xmit
-[ 3031.645488] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.721011] [V] cpsw_ndo_start_xmit
-[ 3031.724620] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.732102] [V] cpsw_ndo_start_xmit
-[ 3031.735746] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.746116] [V] cpsw_ndo_start_xmit
-[ 3031.749727] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.758449] [V] cpsw_ndo_start_xmit
-[ 3031.762081] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.971208] [V] cpsw_ndo_start_xmit
-[ 3031.974829] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3031.982670] [V] cpsw_ndo_start_xmit
-[ 3031.986291] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3032.171465] [V] cpsw_ndo_start_xmit
-[ 3032.175077] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3032.183028] [V] cpsw_ndo_start_xmit
-[ 3032.186658] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3032.545939] [V] phydev->state = 4
-[ 3032.549572] [V] davinci_mdio_read, phy_reg = 0, ret = 0x3100
-[ 3032.557224] [V] davinci_mdio_read, phy_reg = 1, ret = 0x782d
-[ 3033.370697] [V] cpsw_ndo_start_xmit
-[ 3033.374315] [V] cpdma_chan_submit, chan->chan_num = 7
-[ 3033.382081] [V] cpsw_ndo_start_xmit
-[ 3033.385625] [V] cpdma_chan_submit, chan->chan_num = 7
 
 
+================================= plugged in:
+debian@arm:~$ [ 1509.634608] Changed tp 'PHY_RUNNING'
+[ 1509.638314] [V] port-1, ctr-12, val-3 offset = 68, shift = 0, tmp = 0x3,
+ mask = 0x3
+[ 1509.646098] cpsw-switch 4a100000.switch eth0: Link is Up - 100Mbps/Full 
+- flow control off
+[ 1509.654495] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+[ 1509.671883] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, m
+ask = 0x1
+[ 1509.679566] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x200000
+00, 0x7000007
+[ 1509.687496] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x200100
+00, 0x3030003
+[ 1509.697003] cpsw_ale_write > idx = 9, ale_entry[0][1][2] = 0x4, 0x300101
+00, 0x5e0000fb
+[ 1509.714056] [V] cpsw_ndo_start_xmit
+[ 1509.717607] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1509.749448] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, m
+ask = 0x1
+[ 1509.757122] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x200000
+00, 0x7000007
+[ 1509.765058] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x200100
+00, 0x3030003
+[ 1509.774586] cpsw_ale_write > idx = 10, ale_entry[0][1][2] = 0x4, 0x30013
+333, 0xffe729f0
+[ 1509.794135] [V] cpsw_ndo_start_xmit
+[ 1509.797691] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1509.921932] [V] cpsw_ndo_start_xmit
+[ 1509.925479] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1510.087990] [V] cpsw_ndo_start_xmit
+[ 1510.091602] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1510.241977] [V] cpsw_ndo_start_xmit
+[ 1510.245526] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1510.338833] [V] cpsw_ndo_start_xmit
+[ 1510.342437] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1510.588586] [V] cpsw_ndo_start_xmit
+[ 1510.592194] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1510.657907] [V] phydev->state = 4
+[ 1510.753982] [V] cpsw_ndo_start_xmit
+[ 1510.757525] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1510.788923] [V] cpsw_ndo_start_xmit
+[ 1510.792549] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1511.681902] [V] phydev->state = 4
+[ 1511.778136] [V] cpsw_ndo_start_xmit
+[ 1511.781678] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1511.794461] [V] port-0, ctr-3, val-0 offset = 8, shift = 8, tmp = 0x0, m
+ask = 0x1
+[ 1511.802106] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 0x0, 0x200000
+00, 0x7000007
+[ 1511.810046] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 0x0, 0x200100
+00, 0x3030003
+[ 1511.819557] cpsw_ale_write > idx = 11, ale_entry[0][1][2] = 0x4, 0x30013
+333, 0xfb
+[ 1511.839813] [V] cpsw_ndo_start_xmit
+[ 1511.843453] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1511.905881] [V] port-0, ctr-2, val-1 offset = 8, shift = 29, tmp = 0x200
+00000, mask = 0x1
+[ 1512.033309] [V] cpsw_ndo_start_xmit
+[ 1512.036932] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.149366] [V] cpsw_ndo_start_xmit
+[ 1512.152976] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.160406] [V] cpsw_ndo_start_xmit
+[ 1512.164090] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.329802] [V] cpsw_ndo_start_xmit
+[ 1512.333416] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.400491] [V] cpsw_ndo_start_xmit
+[ 1512.404113] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.411769] [V] cpsw_ndo_start_xmit
+[ 1512.415410] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.650963] [V] cpsw_ndo_start_xmit
+[ 1512.654566] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.662034] [V] cpsw_ndo_start_xmit
+[ 1512.665575] [V] cpdma_chan_submit, chan->chan_num = 7
+[ 1512.673531] [V] cpsw_ndo_start_xmit
+[ 1512.677224] [V] cpdma_chan_submit, chan->chan_num = 7
 ...
 
+================================= ping:
+[  154.662469] [V] cpsw_rx_interrupt
+[  154.665856] [V] cpsw_RX_handler, ch = 0, len = 64
+[  154.670767] [V] cpsw_ndo_start_xmit
+[  154.674280] [V] cpdma_chan_submit - 7
+[  154.677974] [V] cpsw_tx_interrupt
+[  154.681327] [V] cpdma_chan_submit_mapped - 32
+[  154.685716] [V] cpsw_RX_handler, ch = 0, len = 102
+[  154.690651] [V] cpsw_ndo_start_xmit
+[  154.694160] [V] cpdma_chan_submit - 7
+[  154.697855] [V] cpdma_chan_submit_mapped - 32
+[  154.702596] [V] cpsw_TX_handler, ch = 0, len = 60
+[  154.707437] [V] cpsw_TX_handler, ch = 0, len = 98
+[  154.977744] [V] phydev->state = 4
+[  155.663852] [V] cpsw_rx_interrupt
+[  155.667247] [V] cpsw_RX_handler, ch = 0, len = 102
+[  155.672223] [V] cpsw_ndo_start_xmit
+[  155.675737] [V] cpdma_chan_submit - 7
+[  155.679434] [V] cpsw_tx_interrupt
+[  155.682785] [V] cpdma_chan_submit_mapped - 32
+[  155.687183] [V] cpsw_TX_handler, ch = 0, len = 98
+[  156.001751] [V] phydev->state = 4
+[  156.332129] [V] cpsw_ndo_start_xmit
+[  156.335742] [V] cpdma_chan_submit - 7
+[  156.339509] [V] cpsw_tx_interrupt
+[  156.342902] [V] cpsw_TX_handler, ch = 0, len = 70
+[  156.665475] [V] cpsw_rx_interrupt
+[  156.668872] [V] cpsw_RX_handler, ch = 0, len = 102
+[  156.673848] [V] cpsw_ndo_start_xmit
+[  156.677362] [V] cpdma_chan_submit - 7
+[  156.681057] [V] cpsw_tx_interrupt
+[  156.684409] [V] cpdma_chan_submit_mapped - 32
+[  156.688809] [V] cpsw_TX_handler, ch = 0, len = 98
+[  157.025740] [V] phydev->state = 4
+[  157.306427] [V] cpsw_rx_interrupt
+[  157.309821] [V] cpsw_RX_handler, ch = 0, len = 91
+[  157.314656] [V] cpdma_chan_submit_mapped - 32
+[  157.667255] [V] cpsw_rx_interrupt
+[  157.670654] [V] cpsw_RX_handler, ch = 0, len = 102
+[  157.675626] [V] cpsw_ndo_start_xmit
+[  157.679140] [V] cpdma_chan_submit - 7
+[  157.682837] [V] cpsw_tx_interrupt
+[  157.686186] [V] cpdma_chan_submit_mapped - 32
+[  157.690584] [V] cpsw_TX_handler, ch = 0, len = 98
+[  158.049742] [V] phydev->state = 4
+[  159.073756] [V] phydev->state = 4
+[  159.713764] [V] cpsw_ndo_start_xmit
+[  159.717310] [V] cpdma_chan_submit - 7
+[  159.721009] [V] cpsw_tx_interrupt
+[  159.724346] [V] cpsw_rx_interrupt
+[  159.728063] [V] cpsw_TX_handler, ch = 0, len = 60
+[  159.732918] [V] cpsw_RX_handler, ch = 0, len = 64
+[  159.737773] [V] cpdma_chan_submit_mapped - 32
+[  160.097753] [V] phydev->state = 4
 
-Not plugged in:
+
+
+
+================================= Not plugged in:
 [ 1293.113940] cpsw-switch 4a100000.switch eth0: Link is Down
 

@@ -142,4 +142,13 @@ Thread 104 hit Breakpoint 1, davinci_mdio_read (bus=<optimized out>, phy_id=<opt
 #18 0xc0100134 in ret_from_fork ()
 
 
+(gdb) print/x pool->p
+$13 = {flags = 0x1, order = 0x0, pool_size = 0x80, nid = 0xffffffff, dev = 0xc649cc10, 
+  dma_dir = 0x0, max_len = 0x0, offset = 0x0}
+(gdb) print/x xmeta
+$14 = 0xcbb31018
+(gdb) print/x dma
+$15 = 0x8bb31102
+(gdb) print/x page
+$16 = 0xdfb062e4
 

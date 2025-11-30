@@ -1095,6 +1095,8 @@ int cpdma_chan_idle_submit(struct cpdma_chan *chan, void *token, void *data,
 	unsigned long flags;
 	int ret;
 
+	printk("[V] cpdma_chan_idle_submit - %d\n", chan->chan_num);
+
 	si.chan = chan;
 	si.token = token;
 	si.data_virt = data;
@@ -1119,6 +1121,8 @@ int cpdma_chan_idle_submit_mapped(struct cpdma_chan *chan, void *token,
 	struct submit_info si;
 	unsigned long flags;
 	int ret;
+
+	printk("[V] cpdma_chan_idle_submit_mapped - %d\n", chan->chan_num);
 
 	si.chan = chan;
 	si.token = token;
@@ -1145,7 +1149,7 @@ int cpdma_chan_submit(struct cpdma_chan *chan, void *token, void *data,
 	unsigned long flags;
 	int ret;
 
-	printk("[V] cpdma_chan_submit, chan->chan_num = %d\n", chan->chan_num);
+	printk("[V] cpdma_chan_submit - %d\n", chan->chan_num);
 
 	si.chan = chan;
 	si.token = token;
@@ -1171,6 +1175,8 @@ int cpdma_chan_submit_mapped(struct cpdma_chan *chan, void *token,
 	struct submit_info si;
 	unsigned long flags;
 	int ret;
+
+	printk("[V] cpdma_chan_submit_mapped - %d\n", chan->chan_num);
 
 	si.chan = chan;
 	si.token = token;

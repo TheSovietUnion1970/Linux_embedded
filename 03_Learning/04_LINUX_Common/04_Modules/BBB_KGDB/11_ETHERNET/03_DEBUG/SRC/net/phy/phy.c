@@ -69,17 +69,19 @@ static void phy_process_state_change(struct phy_device *phydev,
 	}
 }
 
-static void phy_link_up(struct phy_device *phydev)
+void phy_link_up(struct phy_device *phydev)
 {
 	phydev->phy_link_change(phydev, true);
 	phy_led_trigger_change_speed(phydev);
 }
+EXPORT_SYMBOL_GPL(phy_link_up);
 
-static void phy_link_down(struct phy_device *phydev)
+void phy_link_down(struct phy_device *phydev)
 {
 	phydev->phy_link_change(phydev, false);
 	phy_led_trigger_change_speed(phydev);
 }
+EXPORT_SYMBOL_GPL(phy_link_down);
 
 static const char *phy_pause_str(struct phy_device *phydev)
 {
@@ -706,10 +708,12 @@ static int phy_check_link_status(struct phy_device *phydev)
 		return err;
 
 	if (phydev->link && phydev->state != PHY_RUNNING) {
+		printk("Changed tp 'PHY_RUNNING'\n");
 		phy_check_downshift(phydev);
 		phydev->state = PHY_RUNNING;
 		phy_link_up(phydev);
 	} else if (!phydev->link && phydev->state != PHY_NOLINK) {
+		printk("Changed tp 'PHY_NOLINK'\n");
 		phydev->state = PHY_NOLINK;
 		phy_link_down(phydev);
 	}
@@ -1212,10 +1216,12 @@ void phy_state_machine(struct work_struct *work)
 	if (needs_aneg){
 		printk("[V] phy_start_aneg\n");
 		err = phy_start_aneg(phydev);
+		printk("[V] E - phy_start_aneg\n");
 	}
 	else if (do_suspend){
 		printk("[V] phy_suspend\n");
 		phy_suspend(phydev);
+		printk("[V] E - phy_suspend\n");
 	}
 
 	if (err == -ENODEV)

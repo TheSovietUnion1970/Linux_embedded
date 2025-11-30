@@ -328,6 +328,9 @@ static int cpsw_ale_write(struct cpsw_ale *ale, int idx, u32 *ale_entry)
 {
 	int i;
 
+	printk("cpsw_ale_write > idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
+										ale_entry[0], ale_entry[1], ale_entry[2]);
+
 	WARN_ON(idx > ale->params.ale_entries);
 
 	for (i = 0; i < ALE_ENTRY_WORDS; i++)
@@ -502,6 +505,8 @@ int cpsw_ale_add_ucast(struct cpsw_ale *ale, const u8 *addr, int port,
 	if (idx < 0)
 		return -ENOMEM;
 
+	// printk("ucast - idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
+	// 									ale_entry[0], ale_entry[1], ale_entry[2]);
 	cpsw_ale_write(ale, idx, ale_entry);
 	return 0;
 }
@@ -550,6 +555,8 @@ int cpsw_ale_add_mcast(struct cpsw_ale *ale, const u8 *addr, int port_mask,
 	if (idx < 0)
 		return -ENOMEM;
 
+	// printk("mcast - idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
+	// 									ale_entry[0], ale_entry[1], ale_entry[2]);
 	cpsw_ale_write(ale, idx, ale_entry);
 	return 0;
 }
@@ -649,6 +656,8 @@ int cpsw_ale_add_vlan(struct cpsw_ale *ale, u16 vid, int port_mask, int untag,
 	if (idx < 0)
 		return -ENOMEM;
 
+	// printk("vlan - idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
+	// 									ale_entry[0], ale_entry[1], ale_entry[2]);
 	cpsw_ale_write(ale, idx, ale_entry);
 	return 0;
 }

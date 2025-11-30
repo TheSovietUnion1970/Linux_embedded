@@ -71,6 +71,8 @@ void cpsw_tx_handler(void *token, int len, int status)
 		dev_kfree_skb_any(skb);
 	}
 
+	printk("[V] cpsw_TX_handler, ch = %d, len = %d\n", ch, len);
+
 	/* Check whether the queue is stopped due to stalled tx dma, if the
 	 * queue is stopped then start the queue as we have free desc for tx
 	 */
@@ -86,6 +88,7 @@ irqreturn_t cpsw_tx_interrupt(int irq, void *dev_id)
 {
 	struct cpsw_common *cpsw = dev_id;
 
+	printk("[V] cpsw_tx_interrupt\n");
 	writel(0, &cpsw->wr_regs->tx_en);
 	cpdma_ctlr_eoi(cpsw->dma, CPDMA_EOI_TX);
 
@@ -102,6 +105,7 @@ irqreturn_t cpsw_rx_interrupt(int irq, void *dev_id)
 {
 	struct cpsw_common *cpsw = dev_id;
 
+	printk("[V] cpsw_rx_interrupt\n");
 	writel(0, &cpsw->wr_regs->rx_en);
 	cpdma_ctlr_eoi(cpsw->dma, CPDMA_EOI_RX);
 

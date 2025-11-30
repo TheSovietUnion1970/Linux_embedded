@@ -1032,7 +1032,7 @@ struct phy_device *phy_find_first(struct mii_bus *bus)
 }
 EXPORT_SYMBOL_GPL(phy_find_first);
 
-static void phy_link_change(struct phy_device *phydev, bool up)
+void phy_link_change(struct phy_device *phydev, bool up)
 {
 	struct net_device *netdev = phydev->attached_dev;
 
@@ -1044,6 +1044,7 @@ static void phy_link_change(struct phy_device *phydev, bool up)
 	if (phydev->mii_ts && phydev->mii_ts->link_state)
 		phydev->mii_ts->link_state(phydev->mii_ts, phydev);
 }
+EXPORT_SYMBOL_GPL(phy_link_change);
 
 /**
  * phy_prepare_link - prepares the PHY layer to monitor link status
