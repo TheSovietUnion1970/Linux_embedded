@@ -207,6 +207,8 @@ int p_ndev_create_xdp_rxq(struct ether_device_data *data){
     int ret;
     u32 queue_index = 1;
 
+    data->rxq = &data->xdp_rxq[0];
+
     if (!data->ndev) return -1;
     ret = xdp_rxq_info_reg((data->rxq), data->ndev, queue_index, 0);
 	if (ret)

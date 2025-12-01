@@ -361,10 +361,10 @@ int cpsw_init(struct ether_device_data *data){
 
     /* initialize shared resources for every ndev */
     if (ret == 0){
-        // ret = p_create_xdp_rxqs(data);
-        // if (ret < 0) return -1;
+        ret = p_create_xdp_rxqs(data);
+        if (ret < 0) return -1;
 
-        // napi_enable(&data->napi_rx);
+        napi_enable(&data->napi_tx);
     }
 
     if (ret == 0){
@@ -388,7 +388,7 @@ int cpsw_remove(struct ether_device_data *data){
         unregister_netdev(data->ndev);
         data->ndev = NULL;
     }
-    // napi_disable(&data->napi_rx);
-    // if (data->rxq) p_destroy_xdp_rxqs(data);
+    napi_disable(&data->napi_tx);
+    if (data->rxq) p_destroy_xdp_rxqs(data);
     return 0;
 }

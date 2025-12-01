@@ -33,6 +33,8 @@ struct ether_device_data {
     struct page_pool *pool;
 	struct napi_struct		napi_rx;
 	struct napi_struct		napi_tx;
+
+    struct xdp_rxq_info		xdp_rxq[8];
 };
 
 struct net_device ndev_ins;
@@ -136,6 +138,73 @@ int p_register_ports(struct ether_device_data *data){
     return 0;
 }
 
+// ===================
+/* Page pool funcs for dma physical addr */
+void p_create_rx_pool(struct ether_device_data *data){
+    int pool_size = 1; /* TODO */
+
+    /* cpsw_create_page_pool for rx channel 32 (1) */
+    struct page_pool_params pp_params = {};
+
+	pp_params.order = 0;
+	pp_params.flags = PP_FLAG_DMA_MAP;
+	pp_params.pool_size = pool_size;
+	pp_params.nid = NUMA_NO_NODE;
+	pp_params.dma_dir = DMA_BIDIRECTIONAL;
+	pp_params.dev = data->dev;
+
+    data->pool = page_pool_create(&pp_params);
+
+    if (IS_ERR(data->pool)){
+        printk("cannot create rx page pool\n");
+    } 
+
+}
+
+void p_ndev_destroy_xdp_rxq(struct ether_device_data *data){
+	if (!xdp_rxq_info_is_reg(data->rxq))
+		return;
+
+	xdp_rxq_info_unreg(data->rxq);
+}
+int p_ndev_create_xdp_rxq(struct ether_device_data *data){
+    int ret;
+    u32 queue_index = 1;
+
+    data->rxq = &data->xdp_rxq[0];
+
+    if (!data->ndev) return -1;
+    ret = xdp_rxq_info_reg((data->rxq), data->ndev, queue_index, 0);
+	if (ret)
+		return ret;
+    
+	ret = xdp_rxq_info_reg_mem_model((data->rxq), MEM_TYPE_PAGE_POOL, data->pool);
+	if (ret)
+		xdp_rxq_info_unreg((data->rxq));
+
+	return ret; 
+}
+
+void p_destroy_xdp_rxqs(struct ether_device_data *data){
+    p_ndev_destroy_xdp_rxq(data);
+    page_pool_destroy(data->pool);
+}
+int p_create_xdp_rxqs(struct ether_device_data *data){
+    int ret;
+
+    // channel 32
+    p_create_rx_pool(data);
+
+    ret = p_ndev_create_xdp_rxq(data);
+    if (ret){
+        p_destroy_xdp_rxqs(data);
+        return ret;
+    }
+
+    return 0;
+}
+
+// ============================================= [PROBE] =======================
 static int ether_probe(struct platform_device *pdev)
 {
     struct ether_device_data *data;
@@ -155,7 +224,10 @@ static int ether_probe(struct platform_device *pdev)
     p_create_ports(data);
     ret = p_register_ports(data);
 
+    ret = p_create_xdp_rxqs(data);
+    if (ret < 0) return -1;
 
+    napi_enable(&data->napi_tx);
 
     return ret;
 }
@@ -163,6 +235,10 @@ static int ether_probe(struct platform_device *pdev)
 static int ether_remove(struct platform_device *pdev)
 {
     struct ether_device_data *data = platform_get_drvdata(pdev);
+
+    napi_disable(&data->napi_tx);
+    if (data->rxq) p_destroy_xdp_rxqs(data);
+
     if (data->ndev) {
         unregister_netdev(data->ndev);
         //free_netdev(data->ndev);
