@@ -1,0 +1,17 @@
+~/.gdbinit
+
+set breakpoint pending on
+set height 0
+set history save on
+
+define reload_m1
+  shell ssh root@192.168.137.2 "rmmod m1; insmod /root/m1.ko"
+  shell sleep 0.3
+  set $addr = $(shell ssh root@192.168.137.2 cat /sys/module/m1/sections/.text)
+  add-symbol-file /home/vinh/build_BBB_custom/linux-stable-rcn-ee/test/m1.ko $addr
+  break ether_probe
+  break ether_remove
+  echo \nModule reloaded and breakpoints set!\n
+end
+
+# Usage inside gdb:  reload_m1
