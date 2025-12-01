@@ -83,6 +83,7 @@ irqreturn_t tx_handler(int irq, void *dev_id);
 irqreturn_t misc_handler(int irq, void *dev_id);
 
 int p_create_ports(struct ether_device_data *data);
+int p_register_ports(struct ether_device_data *data);
 int p_create_xdp_rxqs(struct ether_device_data *data);
 void p_destroy_xdp_rxqs(struct ether_device_data *data);
 

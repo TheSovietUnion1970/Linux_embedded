@@ -78,10 +78,6 @@ static int ether_probe(struct platform_device *pdev)
 
     data->base_mdio = ioremap(MDIO_BASE, 0x1000);
 
-    if (!data->base_mdio) {
-        dev_err(&pdev->dev, "Failed to ioremap MDIO\n");
-        return -ENOMEM;
-    }
 
     /* ===== Clock setup (assuming this part is unchanged) */
 
@@ -130,49 +126,49 @@ static int ether_probe(struct platform_device *pdev)
         return -1;
     }
 
-    // ===== Create character device
-    ret = alloc_chrdev_region(&data->dev_num, 0, 1, DRIVER_NAME);
-    if (ret < 0) {
-        dev_err(&pdev->dev, "Failed to allocate chrdev region: %d\n", ret);
-        return ret;
-    }
+    // // ===== Create character device
+    // ret = alloc_chrdev_region(&data->dev_num, 0, 1, DRIVER_NAME);
+    // if (ret < 0) {
+    //     dev_err(&pdev->dev, "Failed to allocate chrdev region: %d\n", ret);
+    //     return ret;
+    // }
 
-    cdev_init(&data->cdev, &ether_device_fops);
-    data->cdev.owner = THIS_MODULE;
-    ret = cdev_add(&data->cdev, data->dev_num, 1);
-    if (ret < 0) {
-        dev_err(&pdev->dev, "Failed to add cdev: %d\n", ret);
-        // iounmap(data->base_etherss);
-        // iounmap(data->base_etherctl);
-        // iounmap(data->base_etherphy);
-        // iounmap(data->base_ethercore);
-        return ret;
-    }
+    // cdev_init(&data->cdev, &ether_device_fops);
+    // data->cdev.owner = THIS_MODULE;
+    // ret = cdev_add(&data->cdev, data->dev_num, 1);
+    // if (ret < 0) {
+    //     dev_err(&pdev->dev, "Failed to add cdev: %d\n", ret);
+    //     // iounmap(data->base_etherss);
+    //     // iounmap(data->base_etherctl);
+    //     // iounmap(data->base_etherphy);
+    //     // iounmap(data->base_ethercore);
+    //     return ret;
+    // }
 
-    data->class = class_create(THIS_MODULE, DEVICE_CLASS);
-    if (IS_ERR(data->class)) {
-        dev_err(&pdev->dev, "Failed to create class: %ld\n", PTR_ERR(data->class));
-        cdev_del(&data->cdev);
-        // iounmap(data->base_etherss);
-        // iounmap(data->base_etherctl);
-        // iounmap(data->base_etherphy);
-        // iounmap(data->base_ethercore);
-        return PTR_ERR(data->class);
-    }
+    // data->class = class_create(THIS_MODULE, DEVICE_CLASS);
+    // if (IS_ERR(data->class)) {
+    //     dev_err(&pdev->dev, "Failed to create class: %ld\n", PTR_ERR(data->class));
+    //     cdev_del(&data->cdev);
+    //     // iounmap(data->base_etherss);
+    //     // iounmap(data->base_etherctl);
+    //     // iounmap(data->base_etherphy);
+    //     // iounmap(data->base_ethercore);
+    //     return PTR_ERR(data->class);
+    // }
 
-    data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, DEVICE_NAME);
-    if (IS_ERR(data->dev)) {
-        dev_err(&pdev->dev, "Failed to create device: %ld\n", PTR_ERR(data->dev));
-        class_destroy(data->class);
-        cdev_del(&data->cdev);
-        // iounmap(data->base_etherss);
-        // iounmap(data->base_etherctl);
-        // iounmap(data->base_etherphy);
-        // iounmap(data->base_ethercore);
-        return PTR_ERR(data->dev);
-    }
+    // data->dev = device_create(data->class, &pdev->dev, data->dev_num, NULL, DEVICE_NAME);
+    // if (IS_ERR(data->dev)) {
+    //     dev_err(&pdev->dev, "Failed to create device: %ld\n", PTR_ERR(data->dev));
+    //     class_destroy(data->class);
+    //     cdev_del(&data->cdev);
+    //     // iounmap(data->base_etherss);
+    //     // iounmap(data->base_etherctl);
+    //     // iounmap(data->base_etherphy);
+    //     // iounmap(data->base_ethercore);
+    //     return PTR_ERR(data->dev);
+    // }
 
-    dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
+    // dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
 
     gmii_sel_init(data);
     ret = clock_init(data);
@@ -185,6 +181,16 @@ static int ether_probe(struct platform_device *pdev)
         if (ret < 0) printk("Fail cpsw_init\n");
     }
 
+    // p_create_ports(data);
+    // ret = p_register_ports(data);
+
+    // ret = p_create_xdp_rxqs(data);
+    // if (ret < 0) return -1;
+
+    // napi_enable(&data->napi_tx);
+
+    // run_test(data);
+
     return 0;
 }
 
@@ -194,25 +200,26 @@ static int ether_remove(struct platform_device *pdev)
 
     printk(KERN_INFO "ether_remove called\n");
 
-    if (data->dev) {
-        device_destroy(data->class, data->dev_num);
-        data->dev = NULL;
-    }
+    cpsw_remove(data);
 
-    if (data->class) {
-        class_destroy(data->class);
-        data->class = NULL;
-    }
+    // if (data->dev) {
+    //     device_destroy(data->class, data->dev_num);
+    //     data->dev = NULL;
+    // }
 
-    cdev_del(&data->cdev);
-    unregister_chrdev_region(data->dev_num, 1);
+    // if (data->class) {
+    //     class_destroy(data->class);
+    //     data->class = NULL;
+    // }
 
-    //clock_deinit(data);
+    // cdev_del(&data->cdev);
+    // unregister_chrdev_region(data->dev_num, 1);
 
+
+    // clock_deinit(data);
     // pm_runtime_put_sync(&pdev->dev);
     // pm_runtime_disable(&pdev->dev);
 
-    cpsw_remove(data);
 
     iounmap(data->base_ctrmod);
     iounmap(data->base_clk);

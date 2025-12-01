@@ -3,6 +3,7 @@
 #include "cpdma.h"
 #include <linux/delay.h>
 #include <linux/workqueue.h>
+// #include <net/core/net-sysfs.h>
 
 u8 mac_addr[6] = {0x24, 0x76, 0x25, 0xe7, 0x29, 0xf0};
 u8 broadcast[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -313,6 +314,7 @@ int cpsw_init(struct ether_device_data *data){
     /* setup netdevs */
     if (ret == 0){
         p_create_ports(data);
+        ret = p_register_ports(data);
     }
 
     /* Initialize host and slave ports */
@@ -362,7 +364,7 @@ int cpsw_init(struct ether_device_data *data){
         ret = p_create_xdp_rxqs(data);
         if (ret < 0) return -1;
 
-        napi_enable(&data->napi_rx);
+        napi_enable(&data->napi_tx);
     }
 
     if (ret == 0){
@@ -381,7 +383,13 @@ int cpsw_remove(struct ether_device_data *data){
     cpdma_ctlr_stop(data);
     cpdma_intr_disable(data);
 
-    napi_disable(&data->napi_rx);
+    napi_disable(&data->napi_tx);
     if (data->rxq) p_destroy_xdp_rxqs(data);
+
+    if (data->ndev){
+        printk("unregister_netdev is called");
+        unregister_netdev(data->ndev);
+        data->ndev = NULL;
+    }
     return 0;
 }

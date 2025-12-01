@@ -159,6 +159,7 @@ struct ether_device_data {
 
     struct net_device *ndev;
     struct xdp_rxq_info *rxq;
+    struct xdp_rxq_info xdp_rxq[8]; // CPSW_MAX_QUEUES
     struct page_pool *pool;
 	struct napi_struct		napi_rx;
 	struct napi_struct		napi_tx;

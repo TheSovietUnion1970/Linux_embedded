@@ -6,6 +6,7 @@
 #include <net/xdp.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/ethtool.h>
 
 /*
 DMA 64 channels:
@@ -104,6 +105,8 @@ void cpdma_intr_disable(struct ether_device_data* data){
 irqreturn_t rx_thresh_handler(int irq, void *dev_id){
     struct ether_device_data *data = dev_id;
 
+    printk("rx_thresh_handler\n");
+
     iowrite32(0, data->base_wr + WR_C0_RX_THRESH_EN);
     return IRQ_HANDLED; 
 }
@@ -129,6 +132,8 @@ irqreturn_t tx_handler(int irq, void *dev_id){
 irqreturn_t misc_handler(int irq, void *dev_id){
     struct ether_device_data *data = dev_id;
 
+     printk("misc_handler\n");
+
     iowrite32(0, data->base_wr + WR_C0_MISC_EN);
     return IRQ_HANDLED; 
 }
@@ -141,11 +146,14 @@ void cpdma_submit(struct ether_device_data* data, u8* buf, u16 len, u8 dir){
     struct page *page;
     u8* tmp;
 
+    //printk("data->pool = 0x%x\n", data->pool);
     page = page_pool_dev_alloc_pages(data->pool);
     if (!page){
         printk("allocate rx page err");
         return;
     }
+    printk("DONE - page_pool_dev_alloc_pages\n");
+
     // buffer = page_pool_get_dma_addr(page) + CPSW_HEADROOM_NA;
     buffer = page_pool_get_dma_addr(page);
 
@@ -176,7 +184,7 @@ void cpdma_submit(struct ether_device_data* data, u8* buf, u16 len, u8 dir){
 
 /* Page pool funcs for dma physical addr */
 void p_create_rx_pool(struct ether_device_data *data){
-    int pool_size = 1; /* TODO */
+    int pool_size = 128; /* TODO */
 
     /* cpsw_create_page_pool for rx channel 32 (1) */
     struct page_pool_params pp_params = {};
@@ -205,6 +213,8 @@ void p_ndev_destroy_xdp_rxq(struct ether_device_data *data){
 int p_ndev_create_xdp_rxq(struct ether_device_data *data){
     int ret;
     u32 queue_index = 1;
+
+    data->rxq = &data->xdp_rxq[0];
 
     if (!data->ndev) return -1;
     ret = xdp_rxq_info_reg((data->rxq), data->ndev, queue_index, 0);
@@ -242,27 +252,94 @@ int tx_mq_poll(struct napi_struct *napi_rx, int budget){
     return 0;
 }
 
+static int cpsw_ndo_open(struct net_device *ndev){
+    return 0;
+}
+
+static int cpsw_ndo_stop(struct net_device *ndev){
+    return 0;
+}
+
+static void cpsw_get_drvinfo(struct net_device *ndev,
+			     struct ethtool_drvinfo *info){
+    return;
+}
+
+static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
+{
+    printk("dummy_xmit\n");
+    dev_kfree_skb(skb);
+    return NETDEV_TX_OK;
+}
+
+static int cpsw_ndo_vlan_rx_add_vid(struct net_device *ndev,
+				    __be16 proto, u16 vid){
+    return 0;
+}
+
+static int cpsw_ndo_vlan_rx_kill_vid(struct net_device *ndev,
+				    __be16 proto, u16 vid){
+    return 0;
+}
+
+u32 cpsw_get_msglevel(struct net_device *ndev)
+{
+	return 0;
+}
+
+static const struct net_device_ops cpsw_netdev_ops = {
+	.ndo_open		= cpsw_ndo_open,
+	.ndo_stop		= cpsw_ndo_stop,
+    .ndo_start_xmit = dummy_xmit,
+
+	.ndo_vlan_rx_add_vid	= cpsw_ndo_vlan_rx_add_vid,
+	.ndo_vlan_rx_kill_vid	= cpsw_ndo_vlan_rx_kill_vid,
+};
+
+static const struct ethtool_ops cpsw_ethtool_ops = {
+	.supported_coalesce_params = ETHTOOL_COALESCE_RX_USECS,
+	.get_drvinfo		= cpsw_get_drvinfo,
+	.get_msglevel		= cpsw_get_msglevel,
+};
+
 u8 macaddr[6] = {0x24, 0x76, 0x25, 0xe7, 0x29, 0xf0};
 
 int p_create_ports(struct ether_device_data *data){
-    struct net_device *ndev;
-
-    ndev = devm_alloc_etherdev_mqs(data->dev, sizeof(struct net_device),
+    data->ndev = devm_alloc_etherdev_mqs(data->dev, sizeof(struct ether_device_data),
                         CPSW_MAX_QUEUES,
                         CPSW_MAX_QUEUES);
-    data->ndev = ndev;
 
-    eth_hw_addr_set(ndev, macaddr);
+    eth_hw_addr_set(data->ndev, macaddr);
 
-    ndev->features |= NETIF_F_HW_VLAN_CTAG_FILTER |
+    data->ndev->features |= NETIF_F_HW_VLAN_CTAG_FILTER |
                 NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_NETNS_LOCAL;
 
-    SET_NETDEV_DEV(ndev, data->dev);
+    //data->ndev->features = 0;
+
+    data->ndev->netdev_ops = &cpsw_netdev_ops;
+    data->ndev->ethtool_ops = &cpsw_ethtool_ops;
+
+    SET_NETDEV_DEV(data->ndev, data->dev);
 
     /* #define CPSW_POLL_WEIGHT	64 */
-    netif_napi_add(ndev, &data->napi_tx,
+    netif_napi_add(data->ndev, &data->napi_tx,
                 tx_mq_poll,
                 64);
+
+    return 0;
+}
+
+int p_register_ports(struct ether_device_data *data){
+    int ret;
+
+    if (!data->ndev) {
+        return -1;
+    }
+    ret = register_netdev(data->ndev);
+    if (ret) {
+        printk("err registering net device\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -303,7 +380,7 @@ void test_send_packet(struct ether_device_data *data)
 void run_test(struct ether_device_data *data)
 {
     int i;
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 1; i++) {
         test_send_packet(data);
         msleep(500);   // 0.5 sec between packets
     }
