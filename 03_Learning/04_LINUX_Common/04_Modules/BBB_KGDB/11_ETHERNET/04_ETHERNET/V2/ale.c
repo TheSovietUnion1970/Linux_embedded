@@ -3,10 +3,10 @@
 
 u8 get_bit_position(u8 value)
 {
+    u8 pos = 0;
     if (value == 0)
         return -1;
-
-    u8 pos = 0;
+        
     while ((value & 1) == 0) {
         value >>= 1;
         pos++;

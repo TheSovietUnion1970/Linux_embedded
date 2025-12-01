@@ -7,7 +7,9 @@
 #include "mdio.h"
 
 
-//struct ether_device_data *data;
+#define chan_linear(chan_num)	((chan_num) & (32 - 1))
+#define CPSW_MAX_QUEUES 8
+#define CPSW_HEADROOM_NA (max(XDP_PACKET_HEADROOM, NET_SKB_PAD) + NET_IP_ALIGN)
 
 /* CPSW_CPDMA */
 #define CPDMA_RXTHRESH		0x0c0
@@ -79,6 +81,11 @@ irqreturn_t rx_thresh_handler(int irq, void *dev_id);
 irqreturn_t rx_handler(int irq, void *dev_id);
 irqreturn_t tx_handler(int irq, void *dev_id);
 irqreturn_t misc_handler(int irq, void *dev_id);
+
+int p_create_ports(struct ether_device_data *data);
+int p_register_ports(struct ether_device_data *data);
+int p_create_xdp_rxqs(struct ether_device_data *data);
+void p_destroy_xdp_rxqs(struct ether_device_data *data);
 
 void run_test(struct ether_device_data *data);
 

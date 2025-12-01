@@ -10,6 +10,8 @@
 #include <linux/cdev.h>
 #include <linux/clk.h>
 #include <linux/workqueue.h>
+
+#include <linux/netdevice.h>
 // #include "cpdma.h"
 
 #define PHY_ID0 0
@@ -154,6 +156,12 @@ struct ether_device_data {
     void __iomem *base_mdio; 
 
     struct cpdma_desc *desc_dma; 
+
+    struct net_device *ndev;
+    struct xdp_rxq_info *rxq;
+    struct page_pool *pool;
+	struct napi_struct		napi_rx;
+	struct napi_struct		napi_tx;
     
     /* scheduled work */
     struct work_struct re_request_work;

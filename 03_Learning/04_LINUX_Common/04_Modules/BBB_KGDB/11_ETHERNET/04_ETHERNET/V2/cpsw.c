@@ -3,6 +3,7 @@
 #include "cpdma.h"
 #include <linux/delay.h>
 #include <linux/workqueue.h>
+// #include <net/core/net-sysfs.h>
 
 u8 mac_addr[6] = {0x24, 0x76, 0x25, 0xe7, 0x29, 0xf0};
 u8 broadcast[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -255,13 +256,13 @@ void phy_adjust_link(struct ether_device_data *data){
 u16 old_state = 0xff;
 static void phy_status_work(struct work_struct *work)
 {
+    u16 mmi_bmsr = 0;
+    int ret;
     struct ether_device_data *data = container_of(work, struct ether_device_data, phy_work);
     if (!data) {
         printk("NULL data\n");
         return;
     }
-    u16 mmi_bmsr = 0;
-    int ret;
 
     ret = mdio_read(data, PHY_ID0, MII_BMSR, &mmi_bmsr);
     if (ret < 0) return;
@@ -273,7 +274,7 @@ static void phy_status_work(struct work_struct *work)
 
             phy_adjust_link(data);
 
-            run_test(data);
+            //run_test(data);
         }
     }
     else {
@@ -309,6 +310,12 @@ int cpsw_init(struct ether_device_data *data){
     int ret;
 
     ret = cpsw_ale_version(data);
+
+    /* setup netdevs */
+    if (ret == 0){
+        p_create_ports(data);
+        ret = p_register_ports(data);
+    }
 
     /* Initialize host and slave ports */
     if (ret == 0){
@@ -354,6 +361,13 @@ int cpsw_init(struct ether_device_data *data){
 
     /* initialize shared resources for every ndev */
     if (ret == 0){
+        // ret = p_create_xdp_rxqs(data);
+        // if (ret < 0) return -1;
+
+        // napi_enable(&data->napi_rx);
+    }
+
+    if (ret == 0){
         /* cpdma_ctlr_start */
         printk("CPDMA\n");
         cpdma_ctlr_start(data);
@@ -368,5 +382,13 @@ int cpsw_remove(struct ether_device_data *data){
 
     cpdma_ctlr_stop(data);
     cpdma_intr_disable(data);
+
+    if (data->ndev){
+        printk("unregister_netdev is called");
+        unregister_netdev(data->ndev);
+        data->ndev = NULL;
+    }
+    // napi_disable(&data->napi_rx);
+    // if (data->rxq) p_destroy_xdp_rxqs(data);
     return 0;
 }

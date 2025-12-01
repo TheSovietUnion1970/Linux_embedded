@@ -78,10 +78,6 @@ static int ether_probe(struct platform_device *pdev)
 
     data->base_mdio = ioremap(MDIO_BASE, 0x1000);
 
-    if (!data->base_mdio) {
-        dev_err(&pdev->dev, "Failed to ioremap MDIO\n");
-        return -ENOMEM;
-    }
 
     /* ===== Clock setup (assuming this part is unchanged) */
 
@@ -194,6 +190,8 @@ static int ether_remove(struct platform_device *pdev)
 
     printk(KERN_INFO "ether_remove called\n");
 
+    cpsw_remove(data);
+
     if (data->dev) {
         device_destroy(data->class, data->dev_num);
         data->dev = NULL;
@@ -212,7 +210,6 @@ static int ether_remove(struct platform_device *pdev)
     // pm_runtime_put_sync(&pdev->dev);
     // pm_runtime_disable(&pdev->dev);
 
-    cpsw_remove(data);
 
     iounmap(data->base_ctrmod);
     iounmap(data->base_clk);
