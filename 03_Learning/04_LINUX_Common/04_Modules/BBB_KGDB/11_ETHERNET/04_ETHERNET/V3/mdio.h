@@ -14,6 +14,8 @@
 #include <linux/netdevice.h>
 // #include "cpdma.h"
 
+#define CPSW_MAX_QUEUES 8
+
 #define PHY_ID0 0
 #define MDIO_TIMEOUT		100 /* msecs */
 
@@ -130,6 +132,7 @@ struct ether_device_data {
     struct cdev cdev;
     struct class *class;
     struct device *dev;
+    struct device *chardev;
     struct clk *clk;
     struct clk *clk2;
     struct clk *clk3;
@@ -158,11 +161,14 @@ struct ether_device_data {
     struct cpdma_desc *desc_dma; 
 
     struct net_device *ndev;
-    struct xdp_rxq_info *rxq;
-    struct xdp_rxq_info xdp_rxq[8]; // CPSW_MAX_QUEUES
-    struct page_pool *pool;
 	struct napi_struct		napi_rx;
 	struct napi_struct		napi_tx;
+
+    int tx_dma_channel;
+    int rx_dma_channel;
+    struct xdp_rxq_info xdp_rxq[CPSW_MAX_QUEUES]; // CPSW_MAX_QUEUES
+    struct page_pool *pool[CPSW_MAX_QUEUES]; // CPSW_MAX_QUEUES
+    struct page *page[CPSW_MAX_QUEUES]; // CPSW_MAX_QUEUES
     
     /* scheduled work */
     struct work_struct re_request_work;

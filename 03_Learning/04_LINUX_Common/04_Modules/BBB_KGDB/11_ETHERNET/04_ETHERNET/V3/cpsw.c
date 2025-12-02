@@ -361,7 +361,7 @@ int cpsw_init(struct ether_device_data *data){
 
     /* initialize shared resources for every ndev */
     if (ret == 0){
-        ret = p_create_xdp_rxqs(data);
+        ret = p_create_xdp_rxqs(data, data->tx_dma_channel);
         if (ret < 0) return -1;
 
         napi_enable(&data->napi_tx);
@@ -384,7 +384,7 @@ int cpsw_remove(struct ether_device_data *data){
     cpdma_intr_disable(data);
 
     napi_disable(&data->napi_tx);
-    if (data->rxq) p_destroy_xdp_rxqs(data);
+    p_destroy_xdp_rxqs(data, data->tx_dma_channel);
 
     if (data->ndev){
         printk("unregister_netdev is called");
