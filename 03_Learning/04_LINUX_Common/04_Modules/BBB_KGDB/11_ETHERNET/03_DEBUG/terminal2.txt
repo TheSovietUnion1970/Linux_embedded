@@ -1,0 +1,1514 @@
+debian@arm:~$ sudo rmmod ti_cpsw_new
+[  453.830635] [V] phydev->state = 2
+[  453.834057] [V] phy_suspend
+[  453.837324] [V] E - phy_suspend
+[  453.843131] cpsw_ale_write > idx = 4, ale_entry[0][1][2] = 
+0x4, 0x13333, 0x1
+[  453.850375] cpsw_ale_write > idx = 5, ale_entry[0][1][2] = 
+0x4, 0x10100, 0x5e000001
+[  453.858142] cpsw_ale_write > idx = 6, ale_entry[0][1][2] = 
+0x4, 0x13333, 0xffe729f0
+[  453.865876] cpsw_ale_write > idx = 11, ale_entry[0][1][2] =
+ 0x4, 0x13333, 0xfb
+[  453.873161] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, 
+enable = 0
+[  453.879655] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, en
+able = 0
+[  453.885953] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, e
+nable = 0
+[  453.892357] [V] cpdma_ctlr_stop, ctlr->chan_num = 2
+[  453.897277] [V] cpdma_chan_stop, chan->chan_num = 7
+[  453.902212] [V] cpdma_chan_stop, chan->chan_num = 32
+[  453.907248] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.911920] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.916593] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.921259] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.925923] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.930587] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.935250] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.939913] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.944578] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.949241] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.953905] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.958569] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.963253] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.967922] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.972587] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.977251] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.981915] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.986578] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.991241] [V] cpsw_RX_handler, ch = 0, len = 0
+[  453.995904] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.000568] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.005231] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.009895] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.014558] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.019235] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.023901] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.028567] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.033230] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.037895] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.042558] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.047221] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.051885] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.056547] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.061209] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.065873] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.070536] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.075201] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.079865] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.084530] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.089192] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.093856] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.098519] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.103184] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.107847] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.112510] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.117173] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.121841] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.126505] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.131169] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.135831] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.140495] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.145158] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.149822] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.154486] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.159149] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.163812] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.168475] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.173139] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.177802] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.182464] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.187127] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.191790] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.196454] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.201117] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.205781] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.210444] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.215107] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.219770] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.224433] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.229101] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.233767] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.238435] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.243098] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.247762] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.252426] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.257090] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.261753] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.266417] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.271082] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.275748] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.280417] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.285081] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.289746] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.294410] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.299073] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.303736] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.308410] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.313076] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.317741] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.322404] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.327066] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.331733] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.336397] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.341059] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.345723] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.350387] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.355050] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.359712] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.364374] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.369037] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.373700] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.378363] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.383025] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.387688] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.392351] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.397014] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.401697] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.406362] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.411029] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.415693] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.420359] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.425023] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.429689] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.434358] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.439023] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.443689] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.448354] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.453018] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.457684] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.462348] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.467013] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.471678] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.476343] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.481008] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.485681] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.490347] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.495010] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.499678] [V] cpsw_RX_handler, ch = 0, len = 0
+[  454.504343] [V] cpsw_ale_stop
+[  454.507345] [V] port-0, ctr-1, val-1 offset = 8, shift = 30
+, tmp = 0x40000000, mask = 0x1
+[  454.515589] [V] port-0, ctr-0, val-0 offset = 8, shift = 31
+, tmp = 0x0, mask = 0x1
+[  454.605966] [V] cpdma_ctlr_destroy, ctlr->chan_num = 2
+
+
+
+
+
+
+
+================================= 
+debian@arm:~$ sudo modprobe ti_cpsw_new
+[  493.260931] [V] cpsw_probe >>>
+[  493.264157] [V] CPSW_XMETA_OFFSET = 0x18, CPSW_HEADROOM_NA 
+= 0x102
+[  493.270555] Done -> devm_platform_get_and_ioremap_resource
+[  493.277565] [V] davinci_mdio_probe >>>
+[  493.281499] [V] data->manual_mode = 0x0
+[  493.285435] [V] mdio_in = 125000000
+[  493.288971] [V] data->pdata.bus_freq = 1000000
+[  493.294131] [V] davinci_mdio_reset
+[  493.333722] davinci_mdio 4a101000.mdio: davinci mdio revisi
+on 1.6, bus freq 1000000
+[  493.370201] [V] phy_probe
+[  493.372871] [V] phy_drv_supports_irq -> config_intr
+[  493.389781] [V] phy_disable_interrupts
+[  493.393586] [V] phy_config_interrupt, int = 0
+[  493.398027] [V] smsc_phy_config_intr
+[  493.402691] [V] genphy_read_abilities - val = 0x7809
+[  493.408013] [V] davinci_mdio_probe -> mdiobus_get_phy >>>
+[  493.413504] davinci_mdio 4a101000.mdio: phy[0]: device 4a10
+1000.mdio:00, driver SMSC LAN8710/LAN8720
+[  493.422714] [V] EOF davinci_mdio_probe -> mdiobus_get_phy <
+<<
+[  493.428913] [V] base_mac = '�2��ְ'
+[  493.432497] [V] NEW cpsw_init_common >>>
+[  493.436478] [V] cpsw_ale_create
+[  493.439664] cpsw-switch 4a100000.switch: initialized cpsw a
+le version 1.4
+[  493.446527] cpsw-switch 4a100000.switch: ALE Table size 102
+4
+[  493.452240] [V] port-0, ctr-1, val-1 offset = 8, shift = 30
+, tmp = 0x40000000, mask = 0x1
+[  493.460486] [V] cpdma_ctlr_create, ctlr->chan_num is reset 
+to 0
+[  493.496871] [V] EOF cpsw_init_common <<<
+[  493.501057] [V] cpdma_chan_create, chan_num = 7, ctlr->chan
+_num =0
+[  493.507339] [V] cpdma_chan_create, chan_num = 32, ctlr->cha
+n_num =1
+[  493.513769] cpsw-switch 4a100000.switch: Detected MACID = 2
+4:76:25:e7:29:f0
+[  493.522724] cpsw-switch 4a100000.switch: initialized (regs 
+0x4a100000, pool size 256) hw_ver:0019010C 1.12 (0)
+[  493.532909] [V] END of cpsw_probe <<<
+debian@arm:~$ [  493.827828] cpsw-switch 4a100000.switch: star
+ting ndev. mode: dual_mac
+[  493.835354] [V] cpsw_ale_start
+[  493.838536] [V] port-0, ctr-0, val-1 offset = 8, shift = 31
+, tmp = 0x80000000, mask = 0x1
+[  493.846790] [V] port-0, ctr-1, val-1 offset = 8, shift = 30
+, tmp = 0x40000000, mask = 0x1
+[  493.855038] [V] port-0, ctr-9, val-1 offset = 8, shift = 2,
+ tmp = 0x4, mask = 0x1
+[  493.862583] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  493.870128] [V] .ale_entries = 0x400
+[  493.874540] [V] ale_entry[] = 0x0, 0x0, 0x0
+[  493.878768] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  493.886668] [V] port-0, ctr-15, val-1 offset = 64, shift = 
+4, tmp = 0x10, mask = 0x1
+[  493.894475] [V] port-0, ctr-12, val-3 offset = 64, shift = 
+0, tmp = 0x3, mask = 0x3
+[  494.034098] [V] cpsw_slave_open, version = 1638668
+[  494.039050] [V] .ale_entries = 0x400
+[  494.043512] [V] ale_entry[] = 0x0, 0x0, 0x0
+[  494.047748] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  494.056449] cpsw_ale_write > idx = 2, ale_entry[0][1][2] = 
+0x4, 0x3001ffff, 0xffffffff
+[  494.065232] cpsw_ale_write > idx = 3, ale_entry[0][1][2] = 
+0x1, 0x30012476, 0x25e729f0
+[  494.073210] [V] port-1, ctr-14, val-1 offset = 68, shift = 
+3, tmp = 0x8, mask = 0x1
+[  494.080930] [V] port-1, ctr-15, val-1 offset = 68, shift = 
+4, tmp = 0x10, mask = 0x1
+[  494.088745] [V] *of_phy_connect
+[  494.091923] [V] phy_connect_direct
+[  494.095359] [V] phy_attach_direct
+[  494.098780] [V] phy_init_hw
+[  494.174358] [V] - phy_modify - MII_BMCR - BMCR_ISOLATE
+[  494.249839] [V] smsc_phy_config_init
+[  494.255676] [V] phy_init_hw -> config_intr
+[  494.259908] [V] smsc_phy_config_intr
+[  494.265366] [V] phy_disable_interrupts
+[  494.269261] [V] phy_config_interrupt, int = 0
+[  494.273687] [V] smsc_phy_config_intr
+[  494.280195] SMSC LAN8710/LAN8720 4a101000.mdio:00: attached
+ PHY driver (mii_bus:phy_addr=4a101000.mdio:00, irq=POLL)
+[  494.291166] [V] phy_gmii_sel_mode id:1 mode:2 rgmii_id:0 rm
+ii_clk_ext:1
+[  494.297920] [V] - pool_size = 128
+[  494.301320] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.306192] [V] desc = 0xe02b4000, desc_dma = 0x4a102000, d
+esc_phys_data = 0xa02b4000
+[  494.314088] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.318925] [V] desc = 0xe02b4020, desc_dma = 0x4a102020, d
+esc_phys_data = 0xa02b4020
+[  494.326823] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.331659] [V] desc = 0xe02b4040, desc_dma = 0x4a102040, d
+esc_phys_data = 0xa02b4040
+[  494.339549] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.344384] [V] desc = 0xe02b4060, desc_dma = 0x4a102060, d
+esc_phys_data = 0xa02b4060
+[  494.352272] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.357107] [V] desc = 0xe02b4080, desc_dma = 0x4a102080, d
+esc_phys_data = 0xa02b4080
+[  494.364996] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.369831] [V] desc = 0xe02b40a0, desc_dma = 0x4a1020a0, d
+esc_phys_data = 0xa02b40a0
+[  494.377720] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.382555] [V] desc = 0xe02b40c0, desc_dma = 0x4a1020c0, d
+esc_phys_data = 0xa02b40c0
+[  494.390444] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.395278] [V] desc = 0xe02b40e0, desc_dma = 0x4a1020e0, d
+esc_phys_data = 0xa02b40e0
+[  494.403171] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.408009] [V] desc = 0xe02b4100, desc_dma = 0x4a102100, d
+esc_phys_data = 0xa02b4100
+[  494.415914] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.420751] [V] desc = 0xe02b4120, desc_dma = 0x4a102120, d
+esc_phys_data = 0xa02b4120
+[  494.428641] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.433476] [V] desc = 0xe02b4140, desc_dma = 0x4a102140, d
+esc_phys_data = 0xa02b4140
+[  494.441367] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.446207] [V] desc = 0xe02b4160, desc_dma = 0x4a102160, d
+esc_phys_data = 0xa02b4160
+[  494.454097] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.458932] [V] desc = 0xe02b4180, desc_dma = 0x4a102180, d
+esc_phys_data = 0xa02b4180
+[  494.466821] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.471656] [V] desc = 0xe02b41a0, desc_dma = 0x4a1021a0, d
+esc_phys_data = 0xa02b41a0
+[  494.479545] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.484379] [V] desc = 0xe02b41c0, desc_dma = 0x4a1021c0, d
+esc_phys_data = 0xa02b41c0
+[  494.492272] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.497109] [V] desc = 0xe02b41e0, desc_dma = 0x4a1021e0, d
+esc_phys_data = 0xa02b41e0
+[  494.505013] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.509852] [V] desc = 0xe02b4200, desc_dma = 0x4a102200, d
+esc_phys_data = 0xa02b4200
+[  494.517744] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.522580] [V] desc = 0xe02b4220, desc_dma = 0x4a102220, d
+esc_phys_data = 0xa02b4220
+[  494.530468] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.535304] [V] desc = 0xe02b4240, desc_dma = 0x4a102240, d
+esc_phys_data = 0xa02b4240
+[  494.543193] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.548027] [V] desc = 0xe02b4260, desc_dma = 0x4a102260, d
+esc_phys_data = 0xa02b4260
+[  494.555916] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.560750] [V] desc = 0xe02b4280, desc_dma = 0x4a102280, d
+esc_phys_data = 0xa02b4280
+[  494.568650] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.573486] [V] desc = 0xe02b42a0, desc_dma = 0x4a1022a0, d
+esc_phys_data = 0xa02b42a0
+[  494.581376] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.586212] [V] desc = 0xe02b42c0, desc_dma = 0x4a1022c0, d
+esc_phys_data = 0xa02b42c0
+[  494.594102] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.598936] [V] desc = 0xe02b42e0, desc_dma = 0x4a1022e0, d
+esc_phys_data = 0xa02b42e0
+[  494.606825] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.611660] [V] desc = 0xe02b4300, desc_dma = 0x4a102300, d
+esc_phys_data = 0xa02b4300
+[  494.619548] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.624387] [V] desc = 0xe02b4320, desc_dma = 0x4a102320, d
+esc_phys_data = 0xa02b4320
+[  494.632276] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.637111] [V] desc = 0xe02b4340, desc_dma = 0x4a102340, d
+esc_phys_data = 0xa02b4340
+[  494.645000] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.649834] [V] desc = 0xe02b4360, desc_dma = 0x4a102360, d
+esc_phys_data = 0xa02b4360
+[  494.657736] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.662575] [V] desc = 0xe02b4380, desc_dma = 0x4a102380, d
+esc_phys_data = 0xa02b4380
+[  494.670466] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.675301] [V] desc = 0xe02b43a0, desc_dma = 0x4a1023a0, d
+esc_phys_data = 0xa02b43a0
+[  494.683190] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.688024] [V] desc = 0xe02b43c0, desc_dma = 0x4a1023c0, d
+esc_phys_data = 0xa02b43c0
+[  494.695912] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.700747] [V] desc = 0xe02b43e0, desc_dma = 0x4a1023e0, d
+esc_phys_data = 0xa02b43e0
+[  494.708636] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.713471] [V] desc = 0xe02b4400, desc_dma = 0x4a102400, d
+esc_phys_data = 0xa02b4400
+[  494.721360] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.726213] [V] desc = 0xe02b4420, desc_dma = 0x4a102420, d
+esc_phys_data = 0xa02b4420
+[  494.734104] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.738941] [V] desc = 0xe02b4440, desc_dma = 0x4a102440, d
+esc_phys_data = 0xa02b4440
+[  494.746830] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.751665] [V] desc = 0xe02b4460, desc_dma = 0x4a102460, d
+esc_phys_data = 0xa02b4460
+[  494.759553] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.764388] [V] desc = 0xe02b4480, desc_dma = 0x4a102480, d
+esc_phys_data = 0xa02b4480
+[  494.772277] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.777112] [V] desc = 0xe02b44a0, desc_dma = 0x4a1024a0, d
+esc_phys_data = 0xa02b44a0
+[  494.785000] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.789835] [V] desc = 0xe02b44c0, desc_dma = 0x4a1024c0, d
+esc_phys_data = 0xa02b44c0
+[  494.797723] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.802558] [V] desc = 0xe02b44e0, desc_dma = 0x4a1024e0, d
+esc_phys_data = 0xa02b44e0
+[  494.810448] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.815282] [V] desc = 0xe02b4500, desc_dma = 0x4a102500, d
+esc_phys_data = 0xa02b4500
+[  494.823170] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.828005] [V] desc = 0xe02b4520, desc_dma = 0x4a102520, d
+esc_phys_data = 0xa02b4520
+[  494.835896] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.840732] [V] desc = 0xe02b4540, desc_dma = 0x4a102540, d
+esc_phys_data = 0xa02b4540
+[  494.848622] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.853456] [V] desc = 0xe02b4560, desc_dma = 0x4a102560, d
+esc_phys_data = 0xa02b4560
+[  494.861344] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.866179] [V] desc = 0xe02b4580, desc_dma = 0x4a102580, d
+esc_phys_data = 0xa02b4580
+[  494.874066] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.878902] [V] desc = 0xe02b45a0, desc_dma = 0x4a1025a0, d
+esc_phys_data = 0xa02b45a0
+[  494.886791] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.891626] [V] desc = 0xe02b45c0, desc_dma = 0x4a1025c0, d
+esc_phys_data = 0xa02b45c0
+[  494.899514] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.904349] [V] desc = 0xe02b45e0, desc_dma = 0x4a1025e0, d
+esc_phys_data = 0xa02b45e0
+[  494.912238] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.917073] [V] desc = 0xe02b4600, desc_dma = 0x4a102600, d
+esc_phys_data = 0xa02b4600
+[  494.924961] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.929796] [V] desc = 0xe02b4620, desc_dma = 0x4a102620, d
+esc_phys_data = 0xa02b4620
+[  494.937687] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.942524] [V] desc = 0xe02b4640, desc_dma = 0x4a102640, d
+esc_phys_data = 0xa02b4640
+[  494.950412] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.955247] [V] desc = 0xe02b4660, desc_dma = 0x4a102660, d
+esc_phys_data = 0xa02b4660
+[  494.963135] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.967970] [V] desc = 0xe02b4680, desc_dma = 0x4a102680, d
+esc_phys_data = 0xa02b4680
+[  494.975859] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.980725] [V] desc = 0xe02b46a0, desc_dma = 0x4a1026a0, d
+esc_phys_data = 0xa02b46a0
+[  494.988621] [V] cpdma_chan_idle_submit_mapped - 32
+[  494.993458] [V] desc = 0xe02b46c0, desc_dma = 0x4a1026c0, d
+esc_phys_data = 0xa02b46c0
+[  495.001346] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.006180] [V] desc = 0xe02b46e0, desc_dma = 0x4a1026e0, d
+esc_phys_data = 0xa02b46e0
+[  495.014082] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.018919] [V] desc = 0xe02b4700, desc_dma = 0x4a102700, d
+esc_phys_data = 0xa02b4700
+[  495.026809] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.031644] [V] desc = 0xe02b4720, desc_dma = 0x4a102720, d
+esc_phys_data = 0xa02b4720
+[  495.039532] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.044371] [V] desc = 0xe02b4740, desc_dma = 0x4a102740, d
+esc_phys_data = 0xa02b4740
+[  495.052261] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.057095] [V] desc = 0xe02b4760, desc_dma = 0x4a102760, d
+esc_phys_data = 0xa02b4760
+[  495.064984] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.069819] [V] desc = 0xe02b4780, desc_dma = 0x4a102780, d
+esc_phys_data = 0xa02b4780
+[  495.077707] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.082543] [V] desc = 0xe02b47a0, desc_dma = 0x4a1027a0, d
+esc_phys_data = 0xa02b47a0
+[  495.090431] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.095265] [V] desc = 0xe02b47c0, desc_dma = 0x4a1027c0, d
+esc_phys_data = 0xa02b47c0
+[  495.103155] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.107989] [V] desc = 0xe02b47e0, desc_dma = 0x4a1027e0, d
+esc_phys_data = 0xa02b47e0
+[  495.115903] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.120740] [V] desc = 0xe02b4800, desc_dma = 0x4a102800, d
+esc_phys_data = 0xa02b4800
+[  495.128629] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.133464] [V] desc = 0xe02b4820, desc_dma = 0x4a102820, d
+esc_phys_data = 0xa02b4820
+[  495.141353] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.146191] [V] desc = 0xe02b4840, desc_dma = 0x4a102840, d
+esc_phys_data = 0xa02b4840
+[  495.154081] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.158916] [V] desc = 0xe02b4860, desc_dma = 0x4a102860, d
+esc_phys_data = 0xa02b4860
+[  495.166805] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.171639] [V] desc = 0xe02b4880, desc_dma = 0x4a102880, d
+esc_phys_data = 0xa02b4880
+[  495.179527] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.184362] [V] desc = 0xe02b48a0, desc_dma = 0x4a1028a0, d
+esc_phys_data = 0xa02b48a0
+[  495.192250] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.197084] [V] desc = 0xe02b48c0, desc_dma = 0x4a1028c0, d
+esc_phys_data = 0xa02b48c0
+[  495.204972] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.209806] [V] desc = 0xe02b48e0, desc_dma = 0x4a1028e0, d
+esc_phys_data = 0xa02b48e0
+[  495.217694] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.222528] [V] desc = 0xe02b4900, desc_dma = 0x4a102900, d
+esc_phys_data = 0xa02b4900
+[  495.230417] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.235259] [V] desc = 0xe02b4920, desc_dma = 0x4a102920, d
+esc_phys_data = 0xa02b4920
+[  495.243150] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.247984] [V] desc = 0xe02b4940, desc_dma = 0x4a102940, d
+esc_phys_data = 0xa02b4940
+[  495.255877] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.260712] [V] desc = 0xe02b4960, desc_dma = 0x4a102960, d
+esc_phys_data = 0xa02b4960
+[  495.268601] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.273435] [V] desc = 0xe02b4980, desc_dma = 0x4a102980, d
+esc_phys_data = 0xa02b4980
+[  495.281324] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.286159] [V] desc = 0xe02b49a0, desc_dma = 0x4a1029a0, d
+esc_phys_data = 0xa02b49a0
+[  495.294047] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.298881] [V] desc = 0xe02b49c0, desc_dma = 0x4a1029c0, d
+esc_phys_data = 0xa02b49c0
+[  495.306781] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.311625] [V] desc = 0xe02b49e0, desc_dma = 0x4a1029e0, d
+esc_phys_data = 0xa02b49e0
+[  495.319516] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.324352] [V] desc = 0xe02b4a00, desc_dma = 0x4a102a00, d
+esc_phys_data = 0xa02b4a00
+[  495.332241] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.337076] [V] desc = 0xe02b4a20, desc_dma = 0x4a102a20, d
+esc_phys_data = 0xa02b4a20
+[  495.344965] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.349800] [V] desc = 0xe02b4a40, desc_dma = 0x4a102a40, d
+esc_phys_data = 0xa02b4a40
+[  495.357692] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.362528] [V] desc = 0xe02b4a60, desc_dma = 0x4a102a60, d
+esc_phys_data = 0xa02b4a60
+[  495.370416] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.375251] [V] desc = 0xe02b4a80, desc_dma = 0x4a102a80, d
+esc_phys_data = 0xa02b4a80
+[  495.383140] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.387975] [V] desc = 0xe02b4aa0, desc_dma = 0x4a102aa0, d
+esc_phys_data = 0xa02b4aa0
+[  495.395865] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.400700] [V] desc = 0xe02b4ac0, desc_dma = 0x4a102ac0, d
+esc_phys_data = 0xa02b4ac0
+[  495.408589] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.413424] [V] desc = 0xe02b4ae0, desc_dma = 0x4a102ae0, d
+esc_phys_data = 0xa02b4ae0
+[  495.421313] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.426149] [V] desc = 0xe02b4b00, desc_dma = 0x4a102b00, d
+esc_phys_data = 0xa02b4b00
+[  495.434037] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.438873] [V] desc = 0xe02b4b20, desc_dma = 0x4a102b20, d
+esc_phys_data = 0xa02b4b20
+[  495.446761] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.451597] [V] desc = 0xe02b4b40, desc_dma = 0x4a102b40, d
+esc_phys_data = 0xa02b4b40
+[  495.459489] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.464327] [V] desc = 0xe02b4b60, desc_dma = 0x4a102b60, d
+esc_phys_data = 0xa02b4b60
+[  495.472217] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.477052] [V] desc = 0xe02b4b80, desc_dma = 0x4a102b80, d
+esc_phys_data = 0xa02b4b80
+[  495.484941] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.489775] [V] desc = 0xe02b4ba0, desc_dma = 0x4a102ba0, d
+esc_phys_data = 0xa02b4ba0
+[  495.497673] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.502508] [V] desc = 0xe02b4bc0, desc_dma = 0x4a102bc0, d
+esc_phys_data = 0xa02b4bc0
+[  495.510396] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.515230] [V] desc = 0xe02b4be0, desc_dma = 0x4a102be0, d
+esc_phys_data = 0xa02b4be0
+[  495.523118] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.527953] [V] desc = 0xe02b4c00, desc_dma = 0x4a102c00, d
+esc_phys_data = 0xa02b4c00
+[  495.535845] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.540681] [V] desc = 0xe02b4c20, desc_dma = 0x4a102c20, d
+esc_phys_data = 0xa02b4c20
+[  495.548570] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.553404] [V] desc = 0xe02b4c40, desc_dma = 0x4a102c40, d
+esc_phys_data = 0xa02b4c40
+[  495.561292] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.566130] [V] desc = 0xe02b4c60, desc_dma = 0x4a102c60, d
+esc_phys_data = 0xa02b4c60
+[  495.574019] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.578866] [V] desc = 0xe02b4c80, desc_dma = 0x4a102c80, d
+esc_phys_data = 0xa02b4c80
+[  495.586757] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.591592] [V] desc = 0xe02b4ca0, desc_dma = 0x4a102ca0, d
+esc_phys_data = 0xa02b4ca0
+[  495.599480] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.604315] [V] desc = 0xe02b4cc0, desc_dma = 0x4a102cc0, d
+esc_phys_data = 0xa02b4cc0
+[  495.612208] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.617044] [V] desc = 0xe02b4ce0, desc_dma = 0x4a102ce0, d
+esc_phys_data = 0xa02b4ce0
+[  495.624933] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.629769] [V] desc = 0xe02b4d00, desc_dma = 0x4a102d00, d
+esc_phys_data = 0xa02b4d00
+[  495.637656] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.642504] [V] desc = 0xe02b4d20, desc_dma = 0x4a102d20, d
+esc_phys_data = 0xa02b4d20
+[  495.650392] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.655227] [V] desc = 0xe02b4d40, desc_dma = 0x4a102d40, d
+esc_phys_data = 0xa02b4d40
+[  495.663115] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.667950] [V] desc = 0xe02b4d60, desc_dma = 0x4a102d60, d
+esc_phys_data = 0xa02b4d60
+[  495.675842] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.680678] [V] desc = 0xe02b4d80, desc_dma = 0x4a102d80, d
+esc_phys_data = 0xa02b4d80
+[  495.688567] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.693400] [V] desc = 0xe02b4da0, desc_dma = 0x4a102da0, d
+esc_phys_data = 0xa02b4da0
+[  495.701289] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.706123] [V] desc = 0xe02b4dc0, desc_dma = 0x4a102dc0, d
+esc_phys_data = 0xa02b4dc0
+[  495.714011] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.718845] [V] desc = 0xe02b4de0, desc_dma = 0x4a102de0, d
+esc_phys_data = 0xa02b4de0
+[  495.726733] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.731567] [V] desc = 0xe02b4e00, desc_dma = 0x4a102e00, d
+esc_phys_data = 0xa02b4e00
+[  495.739456] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.744291] [V] desc = 0xe02b4e20, desc_dma = 0x4a102e20, d
+esc_phys_data = 0xa02b4e20
+[  495.752179] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.757014] [V] desc = 0xe02b4e40, desc_dma = 0x4a102e40, d
+esc_phys_data = 0xa02b4e40
+[  495.764903] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.769737] [V] desc = 0xe02b4e60, desc_dma = 0x4a102e60, d
+esc_phys_data = 0xa02b4e60
+[  495.777624] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.782463] [V] desc = 0xe02b4e80, desc_dma = 0x4a102e80, d
+esc_phys_data = 0xa02b4e80
+[  495.790353] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.795189] [V] desc = 0xe02b4ea0, desc_dma = 0x4a102ea0, d
+esc_phys_data = 0xa02b4ea0
+[  495.803078] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.807912] [V] desc = 0xe02b4ec0, desc_dma = 0x4a102ec0, d
+esc_phys_data = 0xa02b4ec0
+[  495.815800] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.820635] [V] desc = 0xe02b4ee0, desc_dma = 0x4a102ee0, d
+esc_phys_data = 0xa02b4ee0
+[  495.828524] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.833359] [V] desc = 0xe02b4f00, desc_dma = 0x4a102f00, d
+esc_phys_data = 0xa02b4f00
+[  495.841248] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.846083] [V] desc = 0xe02b4f20, desc_dma = 0x4a102f20, d
+esc_phys_data = 0xa02b4f20
+[  495.853973] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.858807] [V] desc = 0xe02b4f40, desc_dma = 0x4a102f40, d
+esc_phys_data = 0xa02b4f40
+[  495.866695] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.871529] [V] desc = 0xe02b4f60, desc_dma = 0x4a102f60, d
+esc_phys_data = 0xa02b4f60
+[  495.879418] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.884251] [V] desc = 0xe02b4f80, desc_dma = 0x4a102f80, d
+esc_phys_data = 0xa02b4f80
+[  495.892144] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.896979] [V] desc = 0xe02b4fa0, desc_dma = 0x4a102fa0, d
+esc_phys_data = 0xa02b4fa0
+[  495.904868] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.909701] [V] desc = 0xe02b4fc0, desc_dma = 0x4a102fc0, d
+esc_phys_data = 0xa02b4fc0
+[  495.917589] [V] cpdma_chan_idle_submit_mapped - 32
+[  495.922423] [V] desc = 0xe02b4fe0, desc_dma = 0x4a102fe0, d
+esc_phys_data = 0xa02b4fe0
+[  495.930319] [V] cpdma_ctlr_start, ctlr->chan_num = 2
+[  495.935338] [V] cpdma_ctlr_int_ctrl, params->num_chan = 2, 
+enable = 1
+[  495.941833] [V] cpdma_chan_int_ctrl, chan->chan_num = 7, en
+able = 1
+[  495.948131] [V] cpdma_chan_int_ctrl, chan->chan_num = 32, e
+nable = 1
+[  495.954541] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  495.962091] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  495.969984] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  495.979482] cpsw_ale_write > idx = 4, ale_entry[0][1][2] = 
+0x4, 0x30013333, 0x1
+[  495.987223] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  495.994808] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  496.002705] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  496.012216] cpsw_ale_write > idx = 5, ale_entry[0][1][2] = 
+0x4, 0x30010100, 0x5e000001
+[  496.020345] [V] phydev->state = 3
+[  496.023722] [V] phy_start_aneg
+[  496.163261] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  496.170956] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  496.178902] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  496.188413] cpsw_ale_write > idx = 6, ale_entry[0][1][2] = 
+0x4, 0x30010180, 0xc2000000
+[  496.199120] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  496.206767] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  496.214685] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  496.224189] cpsw_ale_write > idx = 7, ale_entry[0][1][2] = 
+0x4, 0x30010180, 0xc2000003
+[  496.234628] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  496.242267] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  496.250188] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  496.259695] cpsw_ale_write > idx = 8, ale_entry[0][1][2] = 
+0x4, 0x30010180, 0xc200000e
+[  496.698597] Changed tp 'PHY_NOLINK'
+[  496.702185] [V] port-1, ctr-12, val-0 offset = 68, shift = 
+0, tmp = 0x0, mask = 0x3
+[  496.711704] [V] E - phy_start_aneg
+[  504.033701] [V] port-0, ctr-2, val-1 offset = 8, shift = 29
+, tmp = 0x20000000, mask = 0x1
+[  514.273688] [V] port-0, ctr-2, val-1 offset = 8, shift = 29
+, tmp = 0x20000000, mask = 0x1
+sudo rmmod ti_cpsw_new^C
+
+
+
+
+
+
+
+
+
+================================= plugged in:
+[  586.274423] Changed tp 'PHY_RUNNING'
+[  586.278126] [V] port-1, ctr-12, val-3 offset = 68, shift = 
+0, tmp = 0x3, mask = 0x3
+[  586.285912] cpsw-switch 4a100000.switch eth0: Link is Up - 
+100Mbps/Full - flow control off
+[  586.294306] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becom
+es ready
+[  586.310244] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  586.317904] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  586.325836] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  586.335345] cpsw_ale_write > idx = 9, ale_entry[0][1][2] = 
+0x4, 0x30010100, 0x5e0000fb
+[  586.353889] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  586.358963] # txch (len=60 bytes):
+[  586.362445]   01 00 5E 00 00 16 24 76 
+[  586.366240]   25 E7 29 F0 08 00 46 C0 
+[  586.370030]   00 28 00 00 40 00 01 02 
+[  586.373821]   B9 4E C0 A8 8A 02 E0 00 
+[  586.377590]   00 16 94 04 00 00 22 00 
+[  586.381378]   F9 02 00 00 00 01 04 00 
+[  586.385168]   00 00 E0 00 00 FB 00 00 
+[  586.388954]   00 00 00 00 
+[  586.391693] [V] cpdma_chan_submit - 7, si.len = 60
+[  586.396543] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  586.404458] [V] cpsw_tx_interrupt
+[  586.408025] [V] cpsw_TX_handler, ch = 0, len = 60
+[  586.430825] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  586.438485] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  586.446407] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  586.455917] cpsw_ale_write > idx = 10, ale_entry[0][1][2] =
+ 0x4, 0x30013333, 0xffe729f0
+[  586.473945] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  586.479022] # txch (len=90 bytes):
+[  586.482494]   33 33 00 00 00 16 24 76 
+[  586.486285]   25 E7 29 F0 86 DD 60 00 
+[  586.490073]   00 00 00 24 00 01 00 00 
+[  586.493858]   00 00 00 00 00 00 00 00 
+[  586.497626]   00 00 00 00 00 00 FF 02 
+[  586.501414]   00 00 00 00 00 00 00 00 
+[  586.505201]   00 00 00 00 00 16 3A 00 
+[  586.508987]   05 02 00 00 01 00 8F 00 
+[  586.512773]   44 B3 00 00 00 01 04 00 
+[  586.516558]   00 00 FF 02 00 00 00 00 
+[  586.520343]   00 00 00 00 00 01 FF E7 
+[  586.524127]   29 F0 
+[  586.526336] [V] cpdma_chan_submit - 7, si.len = 90
+[  586.531183] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  586.539077] [V] cpsw_tx_interrupt
+[  586.542464] [V] cpsw_TX_handler, ch = 0, len = 90
+[  586.599410] [V] cpsw_rx_interrupt
+[  586.602819] [V] cpsw_RX_handler, ch = 0, len = 187
+[  586.607822] [V] cpdma_chan_submit_mapped - 32
+[  586.612264] [V] desc = 0xe02b4000, desc_dma = 0x4a102000, d
+esc_phys_data = 0xa02b4000
+[  586.671405] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  586.676516] # txch (len=131 bytes):
+[  586.680098]   01 00 5E 00 00 FB 24 76 
+[  586.683894]   25 E7 29 F0 08 00 45 00 
+[  586.687683]   00 75 59 1A 40 00 FF 11 
+[  586.691471]   F6 B6 C0 A8 8A 02 E0 00 
+[  586.695260]   00 FB 14 E9 14 E9 00 61 
+[  586.699049]   85 71 00 00 00 00 00 02 
+[  586.702838]   00 00 00 02 00 00 01 32 
+[  586.706627]   03 31 33 38 03 31 36 38 
+[  586.710415]   03 31 39 32 07 69 6E 2D 
+[  586.714203]   61 64 64 72 04 61 72 70 
+[  586.717992]   61 00 00 FF 00 01 03 61 
+[  586.721781]   72 6D 05 6C 6F 63 61 6C 
+[  586.725549]   00 00 FF 00 01 C0 2C 00 
+[  586.729336]   01 00 01 00 00 00 78 00 
+[  586.733126]   04 C0 A8 8A 02 C0 0C 00 
+[  586.736915]   0C 00 01 00 00 00 78 00 
+[  586.740700]   02 C0 2C 
+[  586.743176] [V] cpdma_chan_submit - 7, si.len = 131
+[  586.748113] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  586.756009] [V] cpsw_tx_interrupt
+[  586.759408] [V] cpsw_TX_handler, ch = 0, len = 131
+[  586.769907] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  586.774971] # txch (len=90 bytes):
+[  586.778422]   33 33 00 00 00 16 24 76 
+[  586.782210]   25 E7 29 F0 86 DD 60 00 
+[  586.785995]   00 00 00 24 00 01 00 00 
+[  586.789781]   00 00 00 00 00 00 00 00 
+[  586.793549]   00 00 00 00 00 00 FF 02 
+[  586.797333]   00 00 00 00 00 00 00 00 
+[  586.801118]   00 00 00 00 00 16 3A 00 
+[  586.804902]   05 02 00 00 01 00 8F 00 
+[  586.808689]   44 B3 00 00 00 01 04 00 
+[  586.812474]   00 00 FF 02 00 00 00 00 
+[  586.816283]   00 00 00 00 00 01 FF E7 
+[  586.820069]   29 F0 
+[  586.822281] [V] cpdma_chan_submit - 7, si.len = 90
+[  586.827128] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  586.835020] [V] cpsw_tx_interrupt
+[  586.838483] [V] cpsw_TX_handler, ch = 0, len = 90
+[  586.921273] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  586.926374] # txch (len=131 bytes):
+[  586.929957]   01 00 5E 00 00 FB 24 76 
+[  586.933754]   25 E7 29 F0 08 00 45 00 
+[  586.937522]   00 75 59 56 40 00 FF 11 
+[  586.941310]   F6 7A C0 A8 8A 02 E0 00 
+[  586.945099]   00 FB 14 E9 14 E9 00 61 
+[  586.948888]   85 71 00 00 00 00 00 02 
+[  586.952678]   00 00 00 02 00 00 01 32 
+[  586.956467]   03 31 33 38 03 31 36 38 
+[  586.960255]   03 31 39 32 07 69 6E 2D 
+[  586.964044]   61 64 64 72 04 61 72 70 
+[  586.967903]   61 00 00 FF 00 01 03 61 
+[  586.971700]   72 6D 05 6C 6F 63 61 6C 
+[  586.975490]   00 00 FF 00 01 C0 2C 00 
+[  586.979280]   01 00 01 00 00 00 78 00 
+[  586.983069]   04 C0 A8 8A 02 C0 0C 00 
+[  586.986858]   0C 00 01 00 00 00 78 00 
+[  586.990644]   02 C0 2C 
+[  586.993103] [V] cpdma_chan_submit - 7, si.len = 131
+[  586.998040] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  587.005934] [V] cpsw_tx_interrupt
+[  587.009391] [V] cpsw_TX_handler, ch = 0, len = 131
+[  587.017963] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  587.023031] # txch (len=86 bytes):
+[  587.026481]   33 33 FF E7 29 F0 24 76 
+[  587.030269]   25 E7 29 F0 86 DD 60 00 
+[  587.034055]   00 00 00 20 3A FF 00 00 
+[  587.037840]   00 00 00 00 00 00 00 00 
+[  587.041609]   00 00 00 00 00 00 FF 02 
+[  587.045393]   00 00 00 00 00 00 00 00 
+[  587.049180]   00 01 FF E7 29 F0 87 00 
+[  587.052964]   75 9D 00 00 00 00 FE 80 
+[  587.056750]   00 00 00 00 00 00 26 76 
+[  587.060534]   25 FF FE E7 29 F0 0E 01 
+[  587.064319]   AF D3 7E F7 29 91 
+[  587.067576] [V] cpdma_chan_submit - 7, si.len = 86
+[  587.072420] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  587.080314] [V] cpsw_tx_interrupt
+[  587.083811] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  587.088844] # txch (len=60 bytes):
+[  587.092290]   01 00 5E 00 00 16 24 76 
+[  587.096078]   25 E7 29 F0 08 00 46 C0 
+[  587.099864]   00 28 00 00 40 00 01 02 
+[  587.103651]   B9 4E C0 A8 8A 02 E0 00 
+[  587.107436]   00 16 94 04 00 00 22 00 
+[  587.111221]   F9 02 00 00 00 01 04 00 
+[  587.115006]   00 00 E0 00 00 FB 00 00 
+[  587.118789]   00 00 00 00 
+[  587.121506] [V] cpdma_chan_submit - 7, si.len = 60
+[  587.126343] [V] desc = 0xe02b5020, desc_dma = 0x4a103020, d
+esc_phys_data = 0xa02b5020
+[  587.134294] [V] cpsw_TX_handler, ch = 0, len = 86
+[  587.139054] [V] cpsw_TX_handler, ch = 0, len = 60
+[  587.209730] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  587.214798] # txch (len=131 bytes):
+[  587.218378]   01 00 5E 00 00 FB 24 76 
+[  587.222173]   25 E7 29 F0 08 00 45 00 
+[  587.225962]   00 75 59 69 40 00 FF 11 
+[  587.229751]   F6 67 C0 A8 8A 02 E0 00 
+[  587.233520]   00 FB 14 E9 14 E9 00 61 
+[  587.237308]   85 71 00 00 00 00 00 02 
+[  587.241098]   00 00 00 02 00 00 01 32 
+[  587.244888]   03 31 33 38 03 31 36 38 
+[  587.248675]   03 31 39 32 07 69 6E 2D 
+[  587.252463]   61 64 64 72 04 61 72 70 
+[  587.256231] [V] cpsw_rx_interrupt
+[  587.259607]   61 00 00 FF 00 01 03 61 
+[  587.263395]   72 6D 05 6C 6F 63 61 6C 
+[  587.267182]   00 00 FF 00 01 C0 2C 00 
+[  587.270971]   01 00 01 00 00 00 78 00 
+[  587.274760]   04 C0 A8 8A 02 C0 0C 00 
+[  587.278549]   0C 00 01 00 00 00 78 00 
+[  587.282335]   02 C0 2C 
+[  587.284792] [V] cpdma_chan_submit - 7, si.len = 131
+[  587.289728] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  587.297620] [V] cpsw_tx_interrupt
+[  587.301020] [V] cpsw_RX_handler, ch = 0, len = 251
+[  587.305915] [V] cpdma_chan_submit_mapped - 32
+[  587.310330] [V] desc = 0xe02b4020, desc_dma = 0x4a102020, d
+esc_phys_data = 0xa02b4020
+[  587.321802] [V] phydev->state = 4
+[  587.325305] [V] cpsw_TX_handler, ch = 0, len = 131
+[  587.409494] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  587.414597] # txch (len=119 bytes):
+[  587.418181]   01 00 5E 00 00 FB 24 76 
+[  587.421979]   25 E7 29 F0 08 00 45 00 
+[  587.425769]   00 69 59 6C 40 00 FF 11 
+[  587.429539]   F6 70 C0 A8 8A 02 E0 00 
+[  587.433326]   00 FB 14 E9 14 E9 00 55 
+[  587.437116]   3B FC 00 00 84 00 00 00 
+[  587.440903]   00 02 00 00 00 00 01 32 
+[  587.444693]   03 31 33 38 03 31 36 38 
+[  587.448482]   03 31 39 32 07 69 6E 2D 
+[  587.452271]   61 64 64 72 04 61 72 70 
+[  587.456061]   61 00 00 0C 80 01 00 00 
+[  587.459874]   00 78 00 0B 03 61 72 6D 
+[  587.463667]   05 6C 6F 63 61 6C 00 C0 
+[  587.467456]   32 00 01 80 01 00 00 00 
+[  587.471247]   78 00 04 C0 A8 8A 02 
+[  587.474770] [V] cpdma_chan_submit - 7, si.len = 119
+[  587.479709] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  587.487605] [V] cpsw_tx_interrupt
+[  587.491007] [V] cpsw_TX_handler, ch = 0, len = 119
+[  588.034013] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.039103] # txch (len=90 bytes):
+[  588.042585]   33 33 00 00 00 16 24 76 
+[  588.046376]   25 E7 29 F0 86 DD 60 00 
+[  588.050164]   00 00 00 24 00 01 FE 80 
+[  588.053949]   00 00 00 00 00 00 26 76 
+[  588.057735]   25 FF FE E7 29 F0 FF 02 
+[  588.061502]   00 00 00 00 00 00 00 00 
+[  588.065286]   00 00 00 00 00 16 3A 00 
+[  588.069071]   05 02 00 00 01 00 8F 00 
+[  588.072855]   D0 E4 00 00 00 01 04 00 
+[  588.076640]   00 00 FF 02 00 00 00 00 
+[  588.080425]   00 00 00 00 00 01 FF E7 
+[  588.084208]   29 F0 
+[  588.086419] [V] cpdma_chan_submit - 7, si.len = 90
+[  588.091265] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.099157] [V] cpsw_tx_interrupt
+[  588.102563] [V] cpsw_TX_handler, ch = 0, len = 90
+[  588.118402] [V] port-0, ctr-3, val-0 offset = 8, shift = 8,
+ tmp = 0x0, mask = 0x1
+[  588.126068] cpsw_ale_write > idx = 0, ale_entry[0][1][2] = 
+0x0, 0x20000000, 0x7000007
+[  588.133992] cpsw_ale_write > idx = 1, ale_entry[0][1][2] = 
+0x0, 0x20010000, 0x3030003
+[  588.143504] cpsw_ale_write > idx = 11, ale_entry[0][1][2] =
+ 0x4, 0x30013333, 0xfb
+[  588.168419] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.173555] # txch (len=90 bytes):
+[  588.177055]   33 33 00 00 00 16 24 76 
+[  588.180846]   25 E7 29 F0 86 DD 60 00 
+[  588.184635]   00 00 00 24 00 01 FE 80 
+[  588.188422]   00 00 00 00 00 00 26 76 
+[  588.192207]   25 FF FE E7 29 F0 FF 02 
+[  588.195993]   00 00 00 00 00 00 00 00 
+[  588.199778]   00 00 00 00 00 16 3A 00 
+[  588.203561]   05 02 00 00 01 00 8F 00 
+[  588.207346]   F9 C2 00 00 00 01 04 00 
+[  588.211132]   00 00 FF 02 00 00 00 00 
+[  588.214918]   00 00 00 00 00 00 00 00 
+[  588.218701]   00 FB 
+[  588.220896] [V] cpdma_chan_submit - 7, si.len = 90
+[  588.225742] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.233634] [V] cpsw_tx_interrupt
+[  588.237040] [V] cpsw_TX_handler, ch = 0, len = 90
+[  588.353712] [V] phydev->state = 4
+[  588.368459] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.373562] # txch (len=209 bytes):
+[  588.377145]   33 33 00 00 00 FB 24 76 
+[  588.380939]   25 E7 29 F0 86 DD 60 06 
+[  588.384729]   3F 75 00 9B 11 FF FE 80 
+[  588.388520]   00 00 00 00 00 00 26 76 
+[  588.392308]   25 FF FE E7 29 F0 FF 02 
+[  588.396097]   00 00 00 00 00 00 00 00 
+[  588.399885]   00 00 00 00 00 FB 14 E9 
+[  588.403676]   14 E9 00 9B E4 00 00 00 
+[  588.407462]   00 00 00 02 00 00 00 02 
+[  588.411252]   00 00 01 30 01 66 01 39 
+[  588.415040]   01 32 01 37 01 65 01 65 
+[  588.418829]   01 66 01 66 01 66 01 35 
+[  588.422618]   01 32 01 36 01 37 01 36 
+[  588.426407]   01 32 01 30 01 30 01 30 
+[  588.430196]   01 30 01 30 01 30 01 30 
+[  588.433984]   01 30 01 30 01 30 01 30 
+[  588.437773]   01 30 01 30 01 38 01 65 
+[  588.441542]   01 66 03 69 70 36 04 61 
+[  588.445329]   72 70 61 00 00 FF 00 01 
+[  588.449117]   03 61 72 6D 05 6C 6F 63 
+[  588.452907]   61 6C 00 00 FF 00 01 C0 
+[  588.456694]   5A 00 1C 00 01 00 00 00 
+[  588.460484]   78 00 10 FE 80 00 00 00 
+[  588.464273]   00 00 00 26 76 25 FF FE 
+[  588.468063]   E7 29 F0 C0 0C 00 0C 00 
+[  588.471851]   01 00 00 00 78 00 02 C0 
+[  588.475636]   5A 
+[  588.477571] [V] cpdma_chan_submit - 7, si.len = 209
+[  588.482534] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.490441] [V] cpsw_tx_interrupt
+[  588.493841] [V] cpsw_TX_handler, ch = 0, len = 209
+[  588.501997] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.507068] # txch (len=90 bytes):
+[  588.510516]   33 33 00 00 00 16 24 76 
+[  588.514305]   25 E7 29 F0 86 DD 60 00 
+[  588.518090]   00 00 00 24 00 01 FE 80 
+[  588.521876]   00 00 00 00 00 00 26 76 
+[  588.525644]   25 FF FE E7 29 F0 FF 02 
+[  588.529428]   00 00 00 00 00 00 00 00 
+[  588.533213]   00 00 00 00 00 16 3A 00 
+[  588.536999]   05 02 00 00 01 00 8F 00 
+[  588.540784]   F9 C2 00 00 00 01 04 00 
+[  588.544569]   00 00 FF 02 00 00 00 00 
+[  588.548355]   00 00 00 00 00 00 00 00 
+[  588.552138]   00 FB 
+[  588.554348] [V] cpdma_chan_submit - 7, si.len = 90
+[  588.559194] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.567087] [V] cpsw_tx_interrupt
+[  588.570514] [V] cpsw_TX_handler, ch = 0, len = 90
+[  588.591457] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.596584] # txch (len=189 bytes):
+[  588.600172] [V] cpsw_rx_interrupt
+[  588.603541]   01 00 5E 00 00 FB 24 76 
+[  588.607335]   25 E7 29 F0 08 00 45 00 
+[  588.611125]   00 AF 5A 38 40 00 FF 11 
+[  588.614915]   F5 5E C0 A8 8A 02 E0 00 
+[  588.618704]   00 FB 14 E9 14 E9 00 9B 
+[  588.622492]   2C 26 00 00 00 00 00 02 
+[  588.626308]   00 00 00 02 00 00 01 30 
+[  588.630104]   01 66 01 39 01 32 01 37 
+[  588.633894]   01 65 01 65 01 66 01 66 
+[  588.637685]   01 66 01 35 01 32 01 36 
+[  588.641452]   01 37 01 36 01 32 01 30 
+[  588.645240]   01 30 01 30 01 30 01 30 
+[  588.649030]   01 30 01 30 01 30 01 30 
+[  588.652818]   01 30 01 30 01 30 01 30 
+[  588.656606]   01 38 01 65 01 66 03 69 
+[  588.660395]   70 36 04 61 72 70 61 00 
+[  588.664182]   00 FF 00 01 03 61 72 6D 
+[  588.667972]   05 6C 6F 63 61 6C 00 00 
+[  588.671760]   FF 00 01 C0 5A 00 1C 00 
+[  588.675547]   01 00 00 00 78 00 10 FE 
+[  588.679336]   80 00 00 00 00 00 00 26 
+[  588.683125]   76 25 FF FE E7 29 F0 C0 
+[  588.686914]   0C 00 0C 00 01 00 00 00 
+[  588.690702]   78 00 02 C0 5A 
+[  588.693703] [V] cpdma_chan_submit - 7, si.len = 189
+[  588.698641] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.706536] [V] cpsw_tx_interrupt
+[  588.709923] [V] cpsw_RX_handler, ch = 0, len = 187
+[  588.714812] [V] cpdma_chan_submit_mapped - 32
+[  588.719228] [V] desc = 0xe02b4040, desc_dma = 0x4a102040, d
+esc_phys_data = 0xa02b4040
+[  588.734009] [V] cpsw_TX_handler, ch = 0, len = 189
+[  588.746396] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.751497] # txch (len=119 bytes):
+[  588.755078]   01 00 5E 00 00 FB 24 76 
+[  588.758874]   25 E7 29 F0 08 00 45 00 
+[  588.762665]   00 69 5A 3C 40 00 FF 11 
+[  588.766456]   F5 A0 C0 A8 8A 02 E0 00 
+[  588.770246]   00 FB 14 E9 14 E9 00 55 
+[  588.774035]   3B FC 00 00 84 00 00 00 
+[  588.777824]   00 02 00 00 00 00 01 32 
+[  588.781592]   03 31 33 38 03 31 36 38 
+[  588.785381]   03 31 39 32 07 69 6E 2D 
+[  588.789170]   61 64 64 72 04 61 72 70 
+[  588.792959]   61 00 00 0C 80 01 00 00 
+[  588.796749]   00 78 00 0B 03 61 72 6D 
+[  588.800538]   05 6C 6F 63 61 6C 00 C0 
+[  588.804326]   32 00 01 80 01 00 00 00 
+[  588.808114]   78 00 04 C0 A8 8A 02 
+[  588.811638] [V] cpdma_chan_submit - 7, si.len = 119
+[  588.816577] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.824472] [V] cpsw_tx_interrupt
+[  588.827889] [V] cpsw_TX_handler, ch = 0, len = 119
+[  588.841380] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.846515] # txch (len=209 bytes):
+[  588.850105]   33 33 00 00 00 FB 24 76 
+[  588.853902]   25 E7 29 F0 86 DD 60 06 
+[  588.857694]   3F 75 00 9B 11 FF FE 80 
+[  588.861461]   00 00 00 00 00 00 26 76 
+[  588.865250]   25 FF FE E7 29 F0 FF 02 
+[  588.869038]   00 00 00 00 00 00 00 00 
+[  588.872828]   00 00 00 00 00 FB 14 E9 
+[  588.876617]   14 E9 00 9B E4 00 00 00 
+[  588.880406]   00 00 00 02 00 00 00 02 
+[  588.884195]   00 00 01 30 01 66 01 39 
+[  588.887984]   01 32 01 37 01 65 01 65 
+[  588.891774]   01 66 01 66 01 66 01 35 
+[  588.895562]   01 32 01 36 01 37 01 36 
+[  588.899351]   01 32 01 30 01 30 01 30 
+[  588.903141]   01 30 01 30 01 30 01 30 
+[  588.906929]   01 30 01 30 01 30 01 30 
+[  588.910718]   01 30 01 30 01 38 01 65 
+[  588.914506]   01 66 03 69 70 36 04 61 
+[  588.918295]   72 70 61 00 00 FF 00 01 
+[  588.922083]   03 61 72 6D 05 6C 6F 63 
+[  588.925872]   61 6C 00 00 FF 00 01 C0 
+[  588.929640]   5A 00 1C 00 01 00 00 00 
+[  588.933430]   78 00 10 FE 80 00 00 00 
+[  588.937218]   00 00 00 26 76 25 FF FE 
+[  588.941008]   E7 29 F0 C0 0C 00 0C 00 
+[  588.944795]   01 00 00 00 78 00 02 C0 
+[  588.948582]   5A 
+[  588.950533] [V] cpdma_chan_submit - 7, si.len = 209
+[  588.955471] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  588.963368] [V] cpsw_tx_interrupt
+[  588.966775] [V] cpsw_TX_handler, ch = 0, len = 209
+[  588.984088] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  588.989217] # txch (len=189 bytes):
+[  588.992808]   01 00 5E 00 00 FB 24 76 
+[  588.996606]   25 E7 29 F0 08 00 45 00 
+[  589.000396]   00 AF 5A 53 40 00 FF 11 
+[  589.004186]   F5 43 C0 A8 8A 02 E0 00 
+[  589.007975]   00 FB 14 E9 14 E9 00 9B 
+[  589.011764]   2C 26 00 00 00 00 00 02 
+[  589.015551]   00 00 00 02 00 00 01 30 
+[  589.019342]   01 66 01 39 01 32 01 37 
+[  589.023130]   01 65 01 65 01 66 01 66 
+[  589.026919]   01 66 01 35 01 32 01 36 
+[  589.030707]   01 37 01 36 01 32 01 30 
+[  589.034497]   01 30 01 30 01 30 01 30 
+[  589.038284]   01 30 01 30 01 30 01 30 
+[  589.042073]   01 30 01 30 01 30 01 30 
+[  589.045861]   01 38 01 65 01 66 03 69 
+[  589.049630]   70 36 04 61 72 70 61 00 
+[  589.053417]   00 FF 00 01 03 61 72 6D 
+[  589.057206]   05 6C 6F 63 61 6C 00 00 
+[  589.060994]   FF 00 01 C0 5A 00 1C 00 
+[  589.064782]   01 00 00 00 78 00 10 FE 
+[  589.068570]   80 00 00 00 00 00 00 26 
+[  589.072359]   76 25 FF FE E7 29 F0 C0 
+[  589.076147]   0C 00 0C 00 01 00 00 00 
+[  589.079936]   78 00 02 C0 5A 
+[  589.082935] [V] cpdma_chan_submit - 7, si.len = 189
+[  589.087874] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.095770] [V] cpsw_tx_interrupt
+[  589.099211] [V] cpsw_TX_handler, ch = 0, len = 189
+[  589.109917] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.114981] # txch (len=110 bytes):
+[  589.118519]   33 33 00 00 00 16 24 76 
+[  589.122308]   25 E7 29 F0 86 DD 60 00 
+[  589.126094]   00 00 00 38 00 01 FE 80 
+[  589.129880]   00 00 00 00 00 00 26 76 
+[  589.133649]   25 FF FE E7 29 F0 FF 02 
+[  589.137433]   00 00 00 00 00 00 00 00 
+[  589.141219]   00 00 00 00 00 16 3A 00 
+[  589.145005]   05 02 00 00 01 00 8F 00 
+[  589.148790]   CC D1 00 00 00 02 04 00 
+[  589.152575]   00 00 FF 02 00 00 00 00 
+[  589.156359]   00 00 00 00 00 00 00 00 
+[  589.160144]   00 FB 04 00 00 00 FF 02 
+[  589.163929]   00 00 00 00 00 00 00 00 
+[  589.167713]   00 01 FF E7 29 F0 
+[  589.170971] [V] cpdma_chan_submit - 7, si.len = 110
+[  589.175903] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.183794] [V] cpsw_tx_interrupt
+[  589.187267] [V] cpsw_TX_handler, ch = 0, len = 110
+[  589.235487] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.240588] # txch (len=70 bytes):
+[  589.244080]   33 33 00 00 00 02 24 76 
+[  589.247875]   25 E7 29 F0 86 DD 60 0B 
+[  589.251666]   46 0B 00 10 3A FF FE 80 
+[  589.255462] [V] cpsw_rx_interrupt
+[  589.258825]   00 00 00 00 00 00 26 76 
+[  589.262614]   25 FF FE E7 29 F0 FF 02 
+[  589.266402]   00 00 00 00 00 00 00 00 
+[  589.270190]   00 00 00 00 00 02 85 00 
+[  589.273978]   92 93 00 00 00 00 01 01 
+[  589.277765]   24 76 25 E7 29 F0 
+[  589.281008] [V] cpdma_chan_submit - 7, si.len = 70
+[  589.285857] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.293749] [V] cpsw_tx_interrupt
+[  589.297120] [V] cpsw_RX_handler, ch = 0, len = 251
+[  589.302043] [V] cpdma_chan_submit_mapped - 32
+[  589.306464] [V] desc = 0xe02b4060, desc_dma = 0x4a102060, d
+esc_phys_data = 0xa02b4060
+[  589.318278] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.323385] # txch (len=209 bytes):
+[  589.326957]   33 33 00 00 00 FB 24 76 
+[  589.330752]   25 E7 29 F0 86 DD 60 06 
+[  589.334542]   3F 75 00 9B 11 FF FE 80 
+[  589.338331]   00 00 00 00 00 00 26 76 
+[  589.342119]   25 FF FE E7 29 F0 FF 02 
+[  589.345908]   00 00 00 00 00 00 00 00 
+[  589.349695]   00 00 00 00 00 FB 14 E9 
+[  589.353463]   14 E9 00 9B E4 00 00 00 
+[  589.357250]   00 00 00 02 00 00 00 02 
+[  589.361039]   00 00 01 30 01 66 01 39 
+[  589.364827]   01 32 01 37 01 65 01 65 
+[  589.368616]   01 66 01 66 01 66 01 35 
+[  589.372404]   01 32 01 36 01 37 01 36 
+[  589.376193]   01 32 01 30 01 30 01 30 
+[  589.379981]   01 30 01 30 01 30 01 30 
+[  589.383769]   01 30 01 30 01 30 01 30 
+[  589.387555]   01 30 01 30 01 38 01 65 
+[  589.391343]   01 66 03 69 70 36 04 61 
+[  589.395131]   72 70 61 00 00 FF 00 01 
+[  589.398919]   03 61 72 6D 05 6C 6F 63 
+[  589.402707]   61 6C 00 00 FF 00 01 C0 
+[  589.406495]   5A 00 1C 00 01 00 00 00 
+[  589.410283]   78 00 10 FE 80 00 00 00 
+[  589.414072]   00 00 00 26 76 25 FF FE 
+[  589.417859]   E7 29 F0 C0 0C 00 0C 00 
+[  589.421627]   01 00 00 00 78 00 02 C0 
+[  589.425411]   5A 
+[  589.427361] [V] cpdma_chan_submit - 7, si.len = 209
+[  589.432296] [V] desc = 0xe02b5020, desc_dma = 0x4a103020, d
+esc_phys_data = 0xa02b5020
+[  589.440303] [V] cpsw_TX_handler, ch = 0, len = 70
+[  589.445073] [V] cpsw_TX_handler, ch = 0, len = 209
+[  589.449954] [V] phydev->state = 4
+[  589.468938] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.474071] # txch (len=189 bytes):
+[  589.477589]   01 00 5E 00 00 FB 24 76 
+[  589.481429]   25 E7 29 F0 08 00 45 00 
+[  589.485224]   00 AF 5A B9 40 00 FF 11 
+[  589.489015]   F4 DD C0 A8 8A 02 E0 00 
+[  589.492804]   00 FB 14 E9 14 E9 00 9B 
+[  589.496596]   2C 26 00 00 00 00 00 02 
+[  589.500384]   00 00 00 02 00 00 01 30 
+[  589.504173]   01 66 01 39 01 32 01 37 
+[  589.507962]   01 65 01 65 01 66 01 66 
+[  589.511752]   01 66 01 35 01 32 01 36 
+[  589.515539]   01 37 01 36 01 32 01 30 
+[  589.519328]   01 30 01 30 01 30 01 30 
+[  589.523117]   01 30 01 30 01 30 01 30 
+[  589.526906]   01 30 01 30 01 30 01 30 
+[  589.530694]   01 38 01 65 01 66 03 69 
+[  589.534482]   70 36 04 61 72 70 61 00 
+[  589.538271]   00 FF 00 01 03 61 72 6D 
+[  589.542061]   05 6C 6F 63 61 6C 00 00 
+[  589.545850]   FF 00 01 C0 5A 00 1C 00 
+[  589.549619]   01 00 00 00 78 00 10 FE 
+[  589.553405]   80 00 00 00 00 00 00 26 
+[  589.557194]   76 25 FF FE E7 29 F0 C0 
+[  589.560983]   0C 00 0C 00 01 00 00 00 
+[  589.564770]   78 00 02 C0 5A 
+[  589.567771] [V] cpdma_chan_submit - 7, si.len = 189
+[  589.572708] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.580603] [V] cpsw_tx_interrupt
+[  589.584042] [V] cpsw_TX_handler, ch = 0, len = 189
+[  589.601511] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.606639] # txch (len=177 bytes):
+[  589.610231]   01 00 5E 00 00 FB 24 76 
+[  589.614029]   25 E7 29 F0 08 00 45 00 
+[  589.617819]   00 A3 5A C3 40 00 FF 11 
+[  589.621589]   F4 DF C0 A8 8A 02 E0 00 
+[  589.625378]   00 FB 14 E9 14 E9 00 8F 
+[  589.629168]   10 B1 00 00 84 00 00 00 
+[  589.632957]   00 02 00 00 00 00 01 30 
+[  589.636746]   01 66 01 39 01 32 01 37 
+[  589.640536]   01 65 01 65 01 66 01 66 
+[  589.644324]   01 66 01 35 01 32 01 36 
+[  589.648111]   01 37 01 36 01 32 01 30 
+[  589.651899]   01 30 01 30 01 30 01 30 
+[  589.655689]   01 30 01 30 01 30 01 30 
+[  589.659476]   01 30 01 30 01 30 01 30 
+[  589.663265]   01 38 01 65 01 66 03 69 
+[  589.667054]   70 36 04 61 72 70 61 00 
+[  589.670844]   00 0C 80 01 00 00 00 78 
+[  589.674633]   00 0B 03 61 72 6D 05 6C 
+[  589.678422]   6F 63 61 6C 00 C0 60 00 
+[  589.682212]   1C 80 01 00 00 00 78 00 
+[  589.686001]   10 FE 80 00 00 00 00 00 
+[  589.689790]   00 26 76 25 FF FE E7 29 
+[  589.693555]   F0 
+[  589.695509] [V] cpdma_chan_submit - 7, si.len = 177
+[  589.700447] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.708341] [V] cpsw_tx_interrupt
+[  589.711747] [V] cpsw_TX_handler, ch = 0, len = 177
+[  589.728027] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.733156] # txch (len=197 bytes):
+[  589.736743]   33 33 00 00 00 FB 24 76 
+[  589.740539]   25 E7 29 F0 86 DD 60 06 
+[  589.744330]   3F 75 00 8F 11 FF FE 80 
+[  589.748120]   00 00 00 00 00 00 26 76 
+[  589.751909]   25 FF FE E7 29 F0 FF 02 
+[  589.755699]   00 00 00 00 00 00 00 00 
+[  589.759486]   00 00 00 00 00 FB 14 E9 
+[  589.763276]   14 E9 00 8F C8 8B 00 00 
+[  589.767064]   84 00 00 00 00 02 00 00 
+[  589.770854]   00 00 01 30 01 66 01 39 
+[  589.774643]   01 32 01 37 01 65 01 65 
+[  589.778432]   01 66 01 66 01 66 01 35 
+[  589.782221]   01 32 01 36 01 37 01 36 
+[  589.786009]   01 32 01 30 01 30 01 30 
+[  589.789799]   01 30 01 30 01 30 01 30 
+[  589.793568]   01 30 01 30 01 30 01 30 
+[  589.797356]   01 30 01 30 01 38 01 65 
+[  589.801145]   01 66 03 69 70 36 04 61 
+[  589.804934]   72 70 61 00 00 0C 80 01 
+[  589.808724]   00 00 00 78 00 0B 03 61 
+[  589.812513]   72 6D 05 6C 6F 63 61 6C 
+[  589.816301]   00 C0 60 00 1C 80 01 00 
+[  589.820089]   00 00 78 00 10 FE 80 00 
+[  589.823879]   00 00 00 00 00 26 76 25 
+[  589.827667]   FF FE E7 29 F0 
+[  589.830666] [V] cpdma_chan_submit - 7, si.len = 197
+[  589.835604] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.843501] [V] cpsw_tx_interrupt
+[  589.846920] [V] cpsw_TX_handler, ch = 0, len = 197
+[  589.867838] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  589.872973] # txch (len=79 bytes):
+[  589.876474]   01 00 5E 00 00 FB 24 76 
+[  589.880268]   25 E7 29 F0 08 00 45 00 
+[  589.884058]   00 41 5A F4 40 00 FF 11 
+[  589.887846]   F5 10 C0 A8 8A 02 E0 00 
+[  589.891635]   00 FB 14 E9 14 E9 00 2D 
+[  589.895422]   B0 44 00 00 84 00 00 00 
+[  589.899224]   00 01 00 00 00 00 03 61 
+[  589.903060]   72 6D 05 6C 6F 63 61 6C 
+[  589.906851]   00 00 01 80 01 00 00 00 
+[  589.910639]   78 00 04 C0 A8 8A 02 
+[  589.914165] [V] cpdma_chan_submit - 7, si.len = 79
+[  589.919016] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  589.926913] [V] cpsw_tx_interrupt
+[  589.930297] [V] cpsw_TX_handler, ch = 0, len = 79
+[  590.305694] [V] port-0, ctr-2, val-1 offset = 8, shift = 29
+, tmp = 0x20000000, mask = 0x1
+[  590.465707] [V] phydev->state = 4
+[  590.750980] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  590.756099] # txch (len=177 bytes):
+[  590.759684]   01 00 5E 00 00 FB 24 76 
+[  590.763477]   25 E7 29 F0 08 00 45 00 
+[  590.767270]   00 A3 5B 74 40 00 FF 11 
+[  590.771059]   F4 2E C0 A8 8A 02 E0 00 
+[  590.774849]   00 FB 14 E9 14 E9 00 8F 
+[  590.778676]   10 B1 00 00 84 00 00 00 
+[  590.782467]   00 02 00 00 00 00 01 30 
+[  590.786257]   01 66 01 39 01 32 01 37 
+[  590.790045]   01 65 01 65 01 66 01 66 
+[  590.793833]   01 66 01 35 01 32 01 36 
+[  590.797602]   01 37 01 36 01 32 01 30 
+[  590.801389]   01 30 01 30 01 30 01 30 
+[  590.805178]   01 30 01 30 01 30 01 30 
+[  590.808966]   01 30 01 30 01 30 01 30 
+[  590.812755]   01 38 01 65 01 66 03 69 
+[  590.816543]   70 36 04 61 72 70 61 00 
+[  590.820332]   00 0C 80 01 00 00 00 78 
+[  590.824120]   00 0B 03 61 72 6D 05 6C 
+[  590.827909]   6F 63 61 6C 00 C0 60 00 
+[  590.831697]   1C 80 01 00 00 00 78 00 
+[  590.835485]   10 FE 80 00 00 00 00 00 
+[  590.839273]   00 26 76 25 FF FE E7 29 
+[  590.843059]   F0 
+[  590.844993] [V] cpdma_chan_submit - 7, si.len = 177
+[  590.849932] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  590.857826] [V] cpsw_tx_interrupt
+[  590.861221] [V] cpsw_TX_handler, ch = 0, len = 177
+[  590.880867] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  590.886057] # txch (len=197 bytes):
+[  590.889576]   33 33 00 00 00 FB 24 76 
+[  590.893405]   25 E7 29 F0 86 DD 60 06 
+[  590.897199]   3F 75 00 8F 11 FF FE 80 
+[  590.900988]   00 00 00 00 00 00 26 76 
+[  590.904778]   25 FF FE E7 29 F0 FF 02 
+[  590.908567]   00 00 00 00 00 00 00 00 
+[  590.912356]   00 00 00 00 00 FB 14 E9 
+[  590.916144]   14 E9 00 8F C8 8B 00 00 
+[  590.919933]   84 00 00 00 00 02 00 00 
+[  590.923722]   00 00 01 30 01 66 01 39 
+[  590.927508]   01 32 01 37 01 65 01 65 
+[  590.931298]   01 66 01 66 01 66 01 35 
+[  590.935087]   01 32 01 36 01 37 01 36 
+[  590.938876]   01 32 01 30 01 30 01 30 
+[  590.942665]   01 30 01 30 01 30 01 30 
+[  590.946454]   01 30 01 30 01 30 01 30 
+[  590.950243]   01 30 01 30 01 38 01 65 
+[  590.954033]   01 66 03 69 70 36 04 61 
+[  590.957822]   72 70 61 00 00 0C 80 01 
+[  590.961590]   00 00 00 78 00 0B 03 61 
+[  590.965377]   72 6D 05 6C 6F 63 61 6C 
+[  590.969167]   00 C0 60 00 1C 80 01 00 
+[  590.972955]   00 00 78 00 10 FE 80 00 
+[  590.976745]   00 00 00 00 00 26 76 25 
+[  590.980531]   FF FE E7 29 F0 
+[  590.983530] [V] cpdma_chan_submit - 7, si.len = 197
+[  590.988468] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  590.996363] [V] cpsw_tx_interrupt
+[  590.999787] [V] cpsw_TX_handler, ch = 0, len = 197
+[  591.018351] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  591.023494] # txch (len=119 bytes):
+[  591.027070]   01 00 5E 00 00 FB 24 76 
+[  591.030866]   25 E7 29 F0 08 00 45 00 
+[  591.034657]   00 69 5B 85 40 00 FF 11 
+[  591.038447]   F4 57 C0 A8 8A 02 E0 00 
+[  591.042236]   00 FB 14 E9 14 E9 00 55 
+[  591.046025]   3B FC 00 00 84 00 00 00 
+[  591.049815]   00 02 00 00 00 00 01 32 
+[  591.053584]   03 31 33 38 03 31 36 38 
+[  591.057372]   03 31 39 32 07 69 6E 2D 
+[  591.061162]   61 64 64 72 04 61 72 70 
+[  591.064951]   61 00 00 0C 80 01 00 00 
+[  591.068740]   00 78 00 0B 03 61 72 6D 
+[  591.072529]   05 6C 6F 63 61 6C 00 C0 
+[  591.076318]   32 00 01 80 01 00 00 00 
+[  591.080107]   78 00 04 C0 A8 8A 02 
+[  591.083631] [V] cpdma_chan_submit - 7, si.len = 119
+[  591.088566] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  591.096464] [V] cpsw_tx_interrupt
+[  591.099870] [V] cpsw_TX_handler, ch = 0, len = 119
+[  591.489712] [V] phydev->state = 4
+[  592.513708] [V] phydev->state = 4
+[  592.601969] [V] cpsw_rx_interrupt
+[  592.605363] [V] cpsw_RX_handler, ch = 0, len = 187
+[  592.610290] [V] cpdma_chan_submit_mapped - 32
+[  592.614682] [V] desc = 0xe02b4080, desc_dma = 0x4a102080, d
+esc_phys_data = 0xa02b4080
+[  592.900553] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  592.905718] # txch (len=177 bytes):
+[  592.909237]   01 00 5E 00 00 FB 24 76 
+[  592.913032]   25 E7 29 F0 08 00 45 00 
+[  592.916822]   00 A3 5C 17 40 00 FF 11 
+[  592.920611]   F3 8B C0 A8 8A 02 E0 00 
+[  592.924400]   00 FB 14 E9 14 E9 00 8F 
+[  592.928189]   10 B1 00 00 84 00 00 00 
+[  592.931977]   00 02 00 00 00 00 01 30 
+[  592.935765]   01 66 01 39 01 32 01 37 
+[  592.939551]   01 65 01 65 01 66 01 66 
+[  592.943339]   01 66 01 35 01 32 01 36 
+[  592.947127]   01 37 01 36 01 32 01 30 
+[  592.950915]   01 30 01 30 01 30 01 30 
+[  592.954704]   01 30 01 30 01 30 01 30 
+[  592.958492]   01 30 01 30 01 30 01 30 
+[  592.962280]   01 38 01 65 01 66 03 69 
+[  592.966070]   70 36 04 61 72 70 61 00 
+[  592.969858]   00 0C 80 01 00 00 00 78 
+[  592.973626]   00 0B 03 61 72 6D 05 6C 
+[  592.977415]   6F 63 61 6C 00 C0 60 00 
+[  592.981203]   1C 80 01 00 00 00 78 00 
+[  592.984991]   10 FE 80 00 00 00 00 00 
+[  592.988784]   00 26 76 25 FF FE E7 29 
+[  592.992571]   F0 
+[  592.994523] [V] cpdma_chan_submit - 7, si.len = 177
+[  592.999461] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  593.007355] [V] cpsw_tx_interrupt
+[  593.010769] [V] cpsw_TX_handler, ch = 0, len = 177
+[  593.028059] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  593.033191] # txch (len=197 bytes):
+[  593.036782]   33 33 00 00 00 FB 24 76 
+[  593.040581]   25 E7 29 F0 86 DD 60 06 
+[  593.044371]   3F 75 00 8F 11 FF FE 80 
+[  593.048161]   00 00 00 00 00 00 26 76 
+[  593.051950]   25 FF FE E7 29 F0 FF 02 
+[  593.055739]   00 00 00 00 00 00 00 00 
+[  593.059528]   00 00 00 00 00 FB 14 E9 
+[  593.063317]   14 E9 00 8F C8 8B 00 00 
+[  593.067105]   84 00 00 00 00 02 00 00 
+[  593.070895]   00 00 01 30 01 66 01 39 
+[  593.074683]   01 32 01 37 01 65 01 65 
+[  593.078472]   01 66 01 66 01 66 01 35 
+[  593.082261]   01 32 01 36 01 37 01 36 
+[  593.086049]   01 32 01 30 01 30 01 30 
+[  593.089838]   01 30 01 30 01 30 01 30 
+[  593.093607]   01 30 01 30 01 30 01 30 
+[  593.097395]   01 30 01 30 01 38 01 65 
+[  593.101184]   01 66 03 69 70 36 04 61 
+[  593.104974]   72 70 61 00 00 0C 80 01 
+[  593.108764]   00 00 00 78 00 0B 03 61 
+[  593.112552]   72 6D 05 6C 6F 63 61 6C 
+[  593.116341]   00 C0 60 00 1C 80 01 00 
+[  593.120129]   00 00 78 00 10 FE 80 00 
+[  593.123918]   00 00 00 00 00 26 76 25 
+[  593.127706]   FF FE E7 29 F0 
+[  593.130709] [V] cpdma_chan_submit - 7, si.len = 197
+[  593.135647] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  593.143544] [V] cpsw_tx_interrupt
+[  593.146996] [V] cpsw_TX_handler, ch = 0, len = 197
+[  593.290391] [V] cpsw_ndo_start_xmit, emac_port = 0x1
+[  593.295496] # txch (len=70 bytes):
+[  593.298986]   33 33 00 00 00 02 24 76 
+[  593.302782]   25 E7 29 F0 86 DD 60 0B 
+[  593.306572]   46 0B 00 10 3A FF FE 80 
+[  593.310360]   00 00 00 00 00 00 26 76 
+[  593.314150]   25 FF FE E7 29 F0 FF 02 
+[  593.317938]   00 00 00 00 00 00 00 00 
+[  593.321726]   00 00 00 00 00 02 85 00 
+[  593.325494]   92 93 00 00 00 00 01 01 
+[  593.329281]   24 76 25 E7 29 F0 
+[  593.332542] [V] cpdma_chan_submit - 7, si.len = 70
+[  593.337392] [V] desc = 0xe02b5000, desc_dma = 0x4a103000, d
+esc_phys_data = 0xa02b5000
+[  593.345286] [V] cpsw_tx_interrupt
+[  593.348674] [V] cpsw_TX_handler, ch = 0, len = 70
+[  593.537764] [V] phydev->state = 4
+[  594.561835] [V] phydev->state = 4
+[  595.585735] [V] phydev->state = 4
+[  596.609827] [V] phydev->state = 4
+
+
+
+
+
+
+================================= Not plugged in:
+[ 1293.113940] cpsw-switch 4a100000.switch eth0: Link is Down
+
