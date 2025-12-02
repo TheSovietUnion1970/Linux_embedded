@@ -88,6 +88,9 @@ int p_register_ports(struct ether_device_data *data);
 int p_create_xdp_rxqs(struct ether_device_data *data, int ch);
 void p_destroy_xdp_rxqs(struct ether_device_data *data, int ch);
 
+void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch);
+void cpdma_submit_rx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch);
+
 void run_test(struct ether_device_data *data);
 
 #endif /* CPDMA_H */

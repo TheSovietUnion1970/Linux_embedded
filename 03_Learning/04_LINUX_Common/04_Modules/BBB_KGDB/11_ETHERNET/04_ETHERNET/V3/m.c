@@ -48,6 +48,8 @@ static int ether_probe(struct platform_device *pdev)
     struct ether_device_data *data;
     int ret;
 
+    phys_addr_t cpsw_phys;
+
     //dev_info(&pdev->dev, "Probed\n");
     printk("probed\n");
 
@@ -57,10 +59,13 @@ static int ether_probe(struct platform_device *pdev)
 
     platform_set_drvdata(pdev, data);
     data->dev = &pdev->dev;
+    dev_set_drvdata(data->dev, data);
     data->base_ctrmod = ioremap(CTRMOD_BASE, 0x1000);
     data->base_clk = ioremap(CLK_BASE, 0x1000);
 
     data->base_cpsw = ioremap(CPSW_BASE, 0x100);
+    cpsw_phys = virt_to_phys(data->base_cpsw);
+
     data->base_ale = ioremap(ALE_BASE, 0x200);
     data->base_cpsw_sl = ioremap(CPSW_SL_BASE, 0x200);
     data->base_port0 = ioremap(PORT0_BASE, 0x100);
@@ -168,10 +173,11 @@ static int ether_probe(struct platform_device *pdev)
         return PTR_ERR(data->chardev);
     }
 
-    dev_info(&pdev->dev, "Created /dev/%s\n", DEVICE_NAME);
+    dev_info(&pdev->dev, "Created /dev/%s, cpsw_phys = 0x%x\n", DEVICE_NAME, cpsw_phys);
 
     data->tx_dma_channel = TX_DMA_CHANNEL;
     data->rx_dma_channel = RX_DMA_CHANNEL;
+
     gmii_sel_init(data);
     ret = clock_init(data);
     if (ret == 0){
@@ -186,12 +192,10 @@ static int ether_probe(struct platform_device *pdev)
     // p_create_ports(data);
     // ret = p_register_ports(data);
 
-    // ret = p_create_xdp_rxqs(data);
+    // ret = p_create_xdp_rxqs(data, data->tx_dma_channel);
     // if (ret < 0) return -1;
 
     // napi_enable(&data->napi_tx);
-
-    // run_test(data);
 
     return 0;
 }
@@ -204,18 +208,18 @@ static int ether_remove(struct platform_device *pdev)
 
     cpsw_remove(data);
 
-    // if (data->dev) {
-    //     device_destroy(data->class, data->dev_num);
-    //     data->dev = NULL;
-    // }
+    if (data->dev) {
+        device_destroy(data->class, data->dev_num);
+        data->dev = NULL;
+    }
 
-    // if (data->class) {
-    //     class_destroy(data->class);
-    //     data->class = NULL;
-    // }
+    if (data->class) {
+        class_destroy(data->class);
+        data->class = NULL;
+    }
 
-    // cdev_del(&data->cdev);
-    // unregister_chrdev_region(data->dev_num, 1);
+    cdev_del(&data->cdev);
+    unregister_chrdev_region(data->dev_num, 1);
 
 
     // clock_deinit(data);

@@ -274,7 +274,7 @@ static void phy_status_work(struct work_struct *work)
 
             phy_adjust_link(data);
 
-            run_test(data);
+            //run_test(data);
         }
     }
     else {

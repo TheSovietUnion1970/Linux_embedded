@@ -200,4 +200,6 @@ int ether_mdio_init(struct ether_device_data* data);
 int mdio_read(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16* dataX);
 int mido_write(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16 dataX);
 
+void ETHER1_Print_Hex(u8 *data, u16 len, u8 *name);
+
 #endif /* E_H */

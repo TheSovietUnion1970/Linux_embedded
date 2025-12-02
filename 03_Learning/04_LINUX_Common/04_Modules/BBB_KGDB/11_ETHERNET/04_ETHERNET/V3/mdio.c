@@ -11,6 +11,28 @@
 #include <linux/atomic.h>
 #include "mdio.h"
 
+/* Print data */
+void ETHER1_Print_Hex(u8 *data, u16 len, u8 *name){
+    char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars
+    u16 i;
+
+    if (!data || len == 0)
+        return;
+
+    printk("# %s (len=%u bytes):\n", name, len);
+
+    for (i = 0; i < len; i++) {
+        int pos = (i % 8) * 3;
+        snprintf(&line[pos], sizeof(line) - pos, "%02X ", data[i]);
+
+        // Print every 8 bytes, or at the end of data
+        if ((i % 8) == 7 || i == len - 1) {
+            printk("  %s\n", line);
+            memset(line, 0, sizeof(line));
+        }
+    }
+}
+
 int wait_register_update(struct ether_device_data *data, void __iomem *mem, u16 reg_offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
     timeout = jiffies + msecs_to_jiffies(delay_ms);

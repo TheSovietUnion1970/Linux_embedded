@@ -7,6 +7,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
+#include <linux/dma-mapping.h>
 
 /*
 DMA 64 channels:
@@ -137,7 +138,7 @@ irqreturn_t misc_handler(int irq, void *dev_id){
 
 /* DMA submit */
 #define CPDMA_DMA_EXT_MAP BIT(16)
-void cpdma_submit(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch){
+void cpdma_submit_rx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch){
     dma_addr_t buffer;
     u32 mode;
     struct page *page;
@@ -171,14 +172,58 @@ void cpdma_submit(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int 
     iowrite32(len, &data->desc_dma->hw_len);
     iowrite32(mode, &data->desc_dma->hw_mode);
 
-    iowrite32(buf, &data->desc_dma->sw_token);
+    iowrite32((u32)buf, &data->desc_dma->sw_token);
     iowrite32(buffer, &data->desc_dma->sw_buffer);
     iowrite32(len | CPDMA_DMA_EXT_MAP, &data->desc_dma->sw_len);
 
     // store desc into hdp
-    iowrite32((u32)data->desc_dma, data->base_txhdp + 4*ch); // at channel 7
+    iowrite32((u32)data->desc_dma, data->base_rxhdp + 4*ch); // at channel 7
 
 }
+
+void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch){
+    dma_addr_t buffer;
+    u32 mode;
+    int ret;
+
+    printk("data->dev = 0x%x\n", data->dev);
+    if (!data->dev){
+        printk("ERROR\n");
+        return;
+    }
+    buffer = dma_map_single(data->dev, buf, len, dir);
+    ret = dma_mapping_error(data->dev, buffer);
+    if (ret) {
+        printk("Fail to dma_map_single\n");
+        return ;
+    }
+
+    mode = CPDMA_DESC_OWNER | CPDMA_DESC_SOP | CPDMA_DESC_EOP;
+
+    // must be tx
+    if ((dir == 1) ||(dir == 2)) mode |= CPDMA_DESC_TO_PORT_EN | (dir << 16);
+
+    // fulfill desc
+    iowrite32(0, &data->desc_dma->hw_next);
+    iowrite32(buffer, &data->desc_dma->hw_buffer);
+    iowrite32(len, &data->desc_dma->hw_len);
+    iowrite32(mode, &data->desc_dma->hw_mode);
+
+    iowrite32((u32)buf, &data->desc_dma->sw_token);
+    iowrite32((u32)buf, &data->desc_dma->sw_buffer);
+    iowrite32(len, &data->desc_dma->sw_len);
+
+    phys_addr_t phys = virt_to_phys(data->desc_dma);
+    printk("data->desc_dma = 0x%x, phys = 0x%x\n", (u32)data->desc_dma, (u32)phys);
+
+    //iowrite32(0, data->base_txhdp + 4*ch);
+    printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
+    // store desc into hdp
+    iowrite32((u32)data->desc_dma, data->base_txhdp + 4*ch); // at channel 7
+
+    dma_unmap_single(data->dev, buffer, len, dir);
+}
+
 
 /* Page pool funcs for dma physical addr */
 void p_create_rx_pool(struct ether_device_data *data, int ch){
@@ -203,8 +248,8 @@ void p_create_rx_pool(struct ether_device_data *data, int ch){
 }
 
 void p_ndev_destroy_xdp_rxq(struct ether_device_data *data, int ch){
-	if (!xdp_rxq_info_is_reg(&data->xdp_rxq[ch]))
-		return;
+	// if (!xdp_rxq_info_is_reg(&data->xdp_rxq[ch]))
+	// 	return;
 
 	xdp_rxq_info_unreg(&data->xdp_rxq[ch]);
 }
@@ -228,8 +273,9 @@ int p_ndev_create_xdp_rxq(struct ether_device_data *data, int ch){
 }
 
 void p_destroy_xdp_rxqs(struct ether_device_data *data, int ch){
-    page_pool_recycle_direct(data->pool[ch], data->page[ch]); // without this -> page_pool_release_retry() stalled pool shutdown 1 inflight
+    //page_pool_recycle_direct(data->pool[ch], data->page[ch]); // without this -> page_pool_release_retry() stalled pool shutdown 1 inflight
     p_ndev_destroy_xdp_rxq(data, ch);
+    //page_pool_recycle_direct(data->pool[ch], data->page[ch]); 
     page_pool_destroy(data->pool[ch]);
 }
 int p_create_xdp_rxqs(struct ether_device_data *data, int ch){
@@ -268,6 +314,17 @@ static void cpsw_get_drvinfo(struct net_device *ndev,
 static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
     printk("dummy_xmit\n");
+    struct device *dev = ndev->dev.parent;
+    struct ether_device_data* data = dev_get_drvdata(dev);
+    if (!data) {
+        printk("error getting data\n");
+        return -1;
+    }
+
+    skb_tx_timestamp(skb);
+    cpdma_submit_tx(data, skb->data, skb->len, 1, data->tx_dma_channel);
+
+    ETHER1_Print_Hex(skb->data, skb->len, "txch");
     dev_kfree_skb(skb);
     return NETDEV_TX_OK;
 }
@@ -308,9 +365,14 @@ return alloc_netdev_mqs(sizeof_priv, "eth%d", NET_NAME_UNKNOWN,
 				ether_setup, txqs, rxqs);
 */
 int p_create_ports(struct ether_device_data *data){
+    struct ether_device_data *test;
     data->ndev = devm_alloc_etherdev_mqs(data->dev, sizeof(struct ether_device_data),
                         CPSW_MAX_QUEUES,
                         CPSW_MAX_QUEUES);
+
+    test = netdev_priv(data->ndev);
+
+    printk("0x%x - 0x%x\n", data, test);
 
     eth_hw_addr_set(data->ndev, macaddr);
 
@@ -373,7 +435,7 @@ void test_send_packet(struct ether_device_data *data)
     printk(KERN_INFO "Sending test packet (60 bytes)\n");
 
     /* Your function — transmit on channel 7, directed to Port 1 (RJ45) */
-    cpdma_submit(data, test_packet, 60, 1, data->tx_dma_channel);  // dir=1 = to Port 1
+    cpdma_submit_rx(data, test_packet, 60, 1, data->tx_dma_channel);  // dir=1 = to Port 1
 
     /* Wait a bit so packet goes out */
     mdelay(10);

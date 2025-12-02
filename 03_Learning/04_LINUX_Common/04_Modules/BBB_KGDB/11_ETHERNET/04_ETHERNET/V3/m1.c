@@ -36,7 +36,7 @@ struct ether_device_data {
 
     struct xdp_rxq_info		xdp_rxq[8];
 };
-
+struct page *page;
 struct net_device ndev_ins;
 
 u8 macaddr[6] = {0x24, 0x76, 0x25, 0xe7, 0x29, 0xf0};
@@ -91,6 +91,13 @@ static void cpsw_get_drvinfo(struct net_device *ndev,
 static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
     printk("dummy_xmit\n");
+    // struct ether_device_data* data = netdev_priv(ndev);
+    // struct ether_device_data *data = container_of(work, struct ether_device_data, re_request_work);
+    struct device *dev = ndev->dev.parent;
+    struct ether_device_data* data = dev_get_drvdata(dev);
+
+    printk("data = 0x%x, dev = 0x%x\n", data, dev);
+
     dev_kfree_skb(skb);
     return NETDEV_TX_OK;
 }
@@ -118,6 +125,7 @@ static const struct ethtool_ops cpsw_ethtool_ops = {
 
 
 int p_create_ports(struct ether_device_data *data){
+    printk("data = 0x%x, data->dev = 0x%x\n", data, data->dev);
     data->ndev = devm_alloc_etherdev_mqs(data->dev, sizeof(struct ether_device_data),
                         8,
                         8);
@@ -206,6 +214,7 @@ int p_ndev_create_xdp_rxq(struct ether_device_data *data){
 
 void p_destroy_xdp_rxqs(struct ether_device_data *data){
     p_ndev_destroy_xdp_rxq(data);
+    page_pool_recycle_direct(data->pool, page);
     page_pool_destroy(data->pool);
 }
 int p_create_xdp_rxqs(struct ether_device_data *data){
@@ -227,7 +236,6 @@ int p_create_xdp_rxqs(struct ether_device_data *data){
 void create_dma(struct ether_device_data* data, u8* buf, u16 len, u8 dir){
     dma_addr_t buffer;
     u32 mode;
-    struct page *page;
     u8* tmp;
     
     //printk("data->pool = 0x%x\n", data->pool);
@@ -244,6 +252,7 @@ void create_dma(struct ether_device_data* data, u8* buf, u16 len, u8 dir){
     memcpy(tmp, buf, len);
 
     dma_sync_single_for_device(data->dev, buffer, len, dir);
+
 }
 // ============================================= [PROBE] =======================
 static int ether_probe(struct platform_device *pdev)
@@ -261,6 +270,7 @@ static int ether_probe(struct platform_device *pdev)
     platform_set_drvdata(pdev, data);
     data->dev = &pdev->dev;
     data->pdev = pdev;
+    dev_set_drvdata(data->dev, data);
 
     p_create_ports(data);
     ret = p_register_ports(data);
