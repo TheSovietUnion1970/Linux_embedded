@@ -30,6 +30,28 @@
 
 #define CPTS_N_ETX_TS 4
 
+void ETHER1_Print_Hex(u8 *data, u16 len, u8 *name)
+{
+    char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars
+    u16 i;
+
+    if (!data || len == 0)
+        return;
+
+    printk("# %s (len=%u bytes):\n", name, len);
+
+    for (i = 0; i < len; i++) {
+        int pos = (i % 8) * 3;
+        snprintf(&line[pos], sizeof(line) - pos, "%02X ", data[i]);
+
+        // Print every 8 bytes, or at the end of data
+        if ((i % 8) == 7 || i == len - 1) {
+            printk("  %s\n", line);
+            memset(line, 0, sizeof(line));
+        }
+    }
+}
+
 int (*cpsw_slave_index)(struct cpsw_common *cpsw, struct cpsw_priv *priv);
 
 void cpsw_intr_enable(struct cpsw_common *cpsw)
@@ -1153,6 +1175,8 @@ static struct page_pool *cpsw_create_page_pool(struct cpsw_common *cpsw,
 {
 	struct page_pool_params pp_params = {};
 	struct page_pool *pool;
+
+	printk("[V] - pool_size = %d\n", size);
 
 	pp_params.order = 0;
 	pp_params.flags = PP_FLAG_DMA_MAP;

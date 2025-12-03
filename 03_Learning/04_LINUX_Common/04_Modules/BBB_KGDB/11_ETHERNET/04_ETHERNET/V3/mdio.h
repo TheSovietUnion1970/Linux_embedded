@@ -10,7 +10,7 @@
 #include <linux/cdev.h>
 #include <linux/clk.h>
 #include <linux/workqueue.h>
-
+#include <linux/genalloc.h>
 #include <linux/netdevice.h>
 // #include "cpdma.h"
 
@@ -114,6 +114,17 @@
 #define MII_LAN83C185_ISF_INT6 (1<<6) /* Auto-Negotiation complete */
 #define MII_LAN83C185_ISF_INT7 (1<<7) /* ENERGYON */
 
+struct cpdma_desc_pool {
+	phys_addr_t		phys;
+	dma_addr_t		hw_addr;
+	void __iomem		*iomap;		/* ioremap map */
+	void			*cpumap;	/* dma_alloc map */
+	int			desc_size, mem_size;
+	int			num_desc;
+	struct device		*dev;
+	struct gen_pool		*gen_pool;
+};
+
 struct cpdma_desc {
 	/* hardware fields */
 	u32			hw_next;
@@ -158,6 +169,7 @@ struct ether_device_data {
 
     void __iomem *base_mdio; 
 
+    struct cpdma_desc_pool *desc_pool;
     struct cpdma_desc *desc_dma; 
 
     struct net_device *ndev;

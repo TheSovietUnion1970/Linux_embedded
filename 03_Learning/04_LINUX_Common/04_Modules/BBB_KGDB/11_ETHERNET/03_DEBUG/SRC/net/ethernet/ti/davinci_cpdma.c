@@ -267,6 +267,12 @@ static int cpdma_desc_pool_create(struct cpdma_ctlr *ctlr)
 		goto gen_pool_add_virt_fail;
 	}
 
+	printk("[V] - pool->mem_size = 0x%x, pool->phys = 0x%x, pool->hw_addr = 0x%x, pool->desc_size = 0x%x, cpdma_params->desc_align = 0x%x\n", pool->mem_size,
+							pool->phys,
+							pool->hw_addr,
+						pool->desc_size,
+					cpdma_params->desc_align);
+
 	return 0;
 
 gen_pool_add_virt_fail:
@@ -997,8 +1003,10 @@ static void __cpdma_chan_submit(struct cpdma_chan *chan,
 	struct cpdma_desc_pool		*pool = ctlr->pool;
 	dma_addr_t			desc_dma;
 	u32				mode;
+	//phys_addr_t desc_phys_data;
 
 	desc_dma = desc_phys(pool, desc);
+	printk("[V] desc = 0x%x, desc_dma = 0x%x, desc_phys_data = 0x%x\n", desc, desc_dma, virt_to_phys(desc));
 
 	/* simple case - idle channel */
 	if (!chan->head) {
@@ -1149,7 +1157,7 @@ int cpdma_chan_submit(struct cpdma_chan *chan, void *token, void *data,
 	unsigned long flags;
 	int ret;
 
-	printk("[V] cpdma_chan_submit - %d\n", chan->chan_num);
+	printk("[V] cpdma_chan_submit - %d, directed = %d\n", chan->chan_num, directed);
 
 	si.chan = chan;
 	si.token = token;
@@ -1176,7 +1184,7 @@ int cpdma_chan_submit_mapped(struct cpdma_chan *chan, void *token,
 	unsigned long flags;
 	int ret;
 
-	printk("[V] cpdma_chan_submit_mapped - %d\n", chan->chan_num);
+	printk("[V] cpdma_chan_submit_mapped - %d, directed = %d\n", chan->chan_num, directed);
 
 	si.chan = chan;
 	si.token = token;

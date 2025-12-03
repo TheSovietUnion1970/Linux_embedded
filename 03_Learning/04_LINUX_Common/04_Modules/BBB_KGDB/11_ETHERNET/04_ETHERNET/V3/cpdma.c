@@ -136,6 +136,80 @@ irqreturn_t misc_handler(int irq, void *dev_id){
     return IRQ_HANDLED; 
 }
 
+// =================== [cpdma_desc]
+dma_addr_t desc_phys(struct cpdma_desc_pool *pool,
+		  struct cpdma_desc __iomem *desc)
+{
+	if (!desc){
+        //printk("Fail: desc_phys\n");
+        return 0;
+    }
+    printk("pool->hw_addr = 0x%x\n", pool->hw_addr);
+	return pool->hw_addr + (__force long)desc - (__force long)pool->iomap;
+}
+
+struct cpdma_desc __iomem *
+desc_from_phys(struct cpdma_desc_pool *pool, dma_addr_t dma)
+{
+	return dma ? pool->iomap + dma - pool->hw_addr : NULL;
+}
+
+int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_phys, u32 bd_ram_size, u32 descs_pool_size){
+    struct cpdma_desc_pool *desc_pool;
+    int ret;
+
+    desc_pool = devm_kzalloc(data->dev, sizeof(*desc_pool), GFP_KERNEL);
+    if (!desc_pool) {
+        printk("Fail: desc_pool\n");
+        data->desc_pool = NULL;
+        return -1;
+    }
+    data->desc_pool = desc_pool;
+
+    desc_pool->hw_addr = desc_mem_phys;
+
+    desc_pool->desc_size = ALIGN(sizeof(struct cpdma_desc), 16); // 16 bytes
+    desc_pool->gen_pool = devm_gen_pool_create(data->dev, ilog2(desc_pool->desc_size),
+					      -1, "cpdma");
+
+    desc_pool->mem_size = desc_pool->desc_size * descs_pool_size;  
+    // desc_pool->iomap = ioremap(desc_mem_phys,
+    //                 desc_pool->mem_size);              
+    desc_pool->iomap = devm_ioremap(data->dev, desc_mem_phys,
+                    desc_pool->mem_size);
+    if (!desc_pool->iomap){
+        printk("Fail: desc_pool->iomap\n");
+        data->desc_pool = NULL;
+        return -1;
+    }
+
+	ret = gen_pool_add_virt(desc_pool->gen_pool, (unsigned long)desc_pool->iomap,
+				desc_mem_phys, desc_pool->mem_size, -1);
+
+    if (ret < 0){
+        printk("Fail: gen_pool_add_virt\n");
+        return -1;
+    }
+
+    printk("desc_pool->iomap = 0x%x\n", desc_pool->iomap);
+
+    return 0;
+}
+
+struct cpdma_desc __iomem *
+cpdma_desc_alloc(struct cpdma_desc_pool *pool)
+{
+	return (struct cpdma_desc __iomem *)
+		gen_pool_alloc(pool->gen_pool, pool->desc_size);
+}
+
+void cpdma_desc_free(struct cpdma_desc_pool *pool,
+			    struct cpdma_desc __iomem *desc)
+{
+	gen_pool_free(pool->gen_pool, (unsigned long)desc, pool->desc_size);
+}
+
+
 /* DMA submit */
 #define CPDMA_DMA_EXT_MAP BIT(16)
 void cpdma_submit_rx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch){
@@ -182,7 +256,7 @@ void cpdma_submit_rx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
 }
 
 void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch){
-    dma_addr_t buffer;
+    dma_addr_t buffer, desc_dma_phys;
     u32 mode;
     int ret;
 
@@ -203,6 +277,17 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
     // must be tx
     if ((dir == 1) ||(dir == 2)) mode |= CPDMA_DESC_TO_PORT_EN | (dir << 16);
 
+
+    /* dma desc */
+    // ret = cpdma_desc_pool_create(data, CPPIRAM_BASE,
+    //          CPSW_BD_RAM_SIZE, CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT);
+    /* Allocate desc_dma at phys addr */
+    data->desc_dma = cpdma_desc_alloc(data->desc_pool);
+    desc_dma_phys = desc_phys(data->desc_pool, data->desc_dma);
+
+    // desc_dma_phys = CPPIRAM_BASE;
+
+
     // fulfill desc
     iowrite32(0, &data->desc_dma->hw_next);
     iowrite32(buffer, &data->desc_dma->hw_buffer);
@@ -213,15 +298,17 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
     iowrite32((u32)buf, &data->desc_dma->sw_buffer);
     iowrite32(len, &data->desc_dma->sw_len);
 
-    phys_addr_t phys = virt_to_phys(data->desc_dma);
-    printk("data->desc_dma = 0x%x, phys = 0x%x\n", (u32)data->desc_dma, (u32)phys);
+    // phys_addr_t phys = virt_to_phys(data->desc_dma);
+    printk("desc_dma = 0x%x, phys = 0x%x\n", data->desc_dma, desc_dma_phys);
 
-    //iowrite32(0, data->base_txhdp + 4*ch);
-    printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
-    // store desc into hdp
-    iowrite32((u32)data->desc_dma, data->base_txhdp + 4*ch); // at channel 7
+    // //iowrite32(0, data->base_txhdp + 4*ch);
+    // printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
+    // // store desc into hdp
+    iowrite32(desc_dma_phys, data->base_txhdp + 4*ch); // at channel 7
 
-    dma_unmap_single(data->dev, buffer, len, dir);
+    
+    /* Free desc_dma */
+    cpdma_desc_free(data->desc_pool, data->desc_dma);
 }
 
 
@@ -299,7 +386,23 @@ int tx_mq_poll(struct napi_struct *napi_rx, int budget){
 }
 
 static int cpsw_ndo_open(struct net_device *ndev){
-    return 0;
+
+    struct device *dev = ndev->dev.parent;
+    struct ether_device_data* data = dev_get_drvdata(dev);
+    int ret;
+
+    printk("cpsw_ndo_open\n");
+    ret = netif_set_real_num_tx_queues(ndev, data->tx_dma_channel);
+    if (ret < 0) {
+        printk("Fail netif_set_real_num_tx_queues\n");
+        return -1;
+    }
+
+    if (ret == 0){
+        ret = cpsw_open(data);
+    }
+
+    return ret;
 }
 
 static int cpsw_ndo_stop(struct net_device *ndev){
@@ -314,6 +417,8 @@ static void cpsw_get_drvinfo(struct net_device *ndev,
 static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
     printk("dummy_xmit\n");
+    int q_idx;
+    struct netdev_queue *txq;
     struct device *dev = ndev->dev.parent;
     struct ether_device_data* data = dev_get_drvdata(dev);
     if (!data) {
@@ -321,8 +426,21 @@ static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
         return -1;
     }
 
+    /* ndev for queues */
+    q_idx = skb_get_queue_mapping(skb);
+    if (q_idx >= data->tx_dma_channel){
+        q_idx = q_idx % data->tx_dma_channel;
+    }
+    txq = netdev_get_tx_queue(ndev, q_idx);
     skb_tx_timestamp(skb);
+
     cpdma_submit_tx(data, skb->data, skb->len, 1, data->tx_dma_channel);
+
+    // /* dma desc */
+    // cpdma_desc_pool_create(data, CPPIRAM_BASE,
+    //          CPSW_BD_RAM_SIZE, CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT);
+
+    // data->desc_dma = ioremap(CPPIRAM_BASE, CPSW_BD_RAM_SIZE);
 
     ETHER1_Print_Hex(skb->data, skb->len, "txch");
     dev_kfree_skb(skb);

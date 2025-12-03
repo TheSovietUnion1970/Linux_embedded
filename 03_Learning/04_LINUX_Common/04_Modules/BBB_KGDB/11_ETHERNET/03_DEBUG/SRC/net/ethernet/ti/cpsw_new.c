@@ -462,6 +462,8 @@ static int cpsw_ndo_vlan_rx_add_vid(struct net_device *ndev,
 	struct cpsw_common *cpsw = priv->cpsw;
 	int ret, i;
 
+	printk("cpsw_ndo_vlan_rx_add_vid\n");
+
 	if (cpsw_is_switch_en(cpsw)) {
 		dev_dbg(cpsw->dev, ".ndo_vlan_rx_add_vid called in switch mode\n");
 		return 0;
@@ -949,7 +951,7 @@ static netdev_tx_t cpsw_ndo_start_xmit(struct sk_buff *skb,
 	struct cpdma_chan *txch;
 	int ret, q_idx;
 
-	printk("[V] cpsw_ndo_start_xmit\n");
+	printk("[V] cpsw_ndo_start_xmit, emac_port = 0x%x\n", priv->emac_port);
 
 	if (skb_put_padto(skb, READ_ONCE(priv->tx_packet_min))) {
 		cpsw_err(priv, tx_err, "packet pad failed\n");
@@ -968,6 +970,7 @@ static netdev_tx_t cpsw_ndo_start_xmit(struct sk_buff *skb,
 	txch = cpsw->txv[q_idx].ch;
 	txq = netdev_get_tx_queue(ndev, q_idx);
 	skb_tx_timestamp(skb);
+	ETHER1_Print_Hex(skb->data, skb->len, "txch");
 	ret = cpdma_chan_submit(txch, skb, skb->data, skb->len,
 				priv->emac_port);
 	if (unlikely(ret != 0)) {
@@ -1045,6 +1048,8 @@ static int cpsw_ndo_vlan_rx_kill_vid(struct net_device *ndev,
 	struct cpsw_common *cpsw = priv->cpsw;
 	int ret;
 	int i;
+
+	printk("cpsw_ndo_vlan_rx_kill_vid\n");
 
 	if (cpsw_is_switch_en(cpsw)) {
 		dev_dbg(cpsw->dev, "ndo del vlan is called in switch mode\n");
@@ -1924,6 +1929,7 @@ int cpsw_probe(struct platform_device *pdev)
 	int irq;
 
 	printk("[V] cpsw_probe >>>\n");
+	printk("[V] CPSW_XMETA_OFFSET = 0x%x, CPSW_HEADROOM_NA = 0x%x\n", CPSW_XMETA_OFFSET, CPSW_HEADROOM_NA);
 
 	cpsw = devm_kzalloc(dev, sizeof(struct cpsw_common), GFP_KERNEL);
 	if (!cpsw)

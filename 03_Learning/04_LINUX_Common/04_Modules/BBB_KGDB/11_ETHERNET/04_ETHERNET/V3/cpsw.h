@@ -88,7 +88,10 @@ enum cpsw_ale_port_state {
 	ALE_PORT_STATE_FORWARD	= 0x03,
 };
 
+
 int cpsw_init(struct ether_device_data *data);
 int cpsw_remove(struct ether_device_data *data);
+
+int cpsw_open(struct ether_device_data *data);
 
 #endif /* CPSW_H */

@@ -311,20 +311,8 @@ static void cpsw_ale_timer(struct timer_list *t)
     //printk("AGE_OUT_NOW\n");
 }
 
-int cpsw_init(struct ether_device_data *data){
-    int ret;
-
-    ret = cpsw_ale_version(data);
-
-    /* setup netdevs */
-    if (ret == 0){
-        p_create_ports(data);
-        ret = p_register_ports(data);
-
-        netif_carrier_off(data->ndev);                // ← link down
-        netif_tx_stop_all_queues(data->ndev);         // ← BLOCK ndo_start_xmit!
-    }
-
+int cpsw_open(struct ether_device_data *data){
+    int ret = 0;
     /* Initialize host and slave ports */
     if (ret == 0){
         printk("Host port\n");
@@ -375,6 +363,7 @@ int cpsw_init(struct ether_device_data *data){
         napi_enable(&data->napi_tx);
     }
 
+    /* Intr */
     if (ret == 0){
         /* cpdma_ctlr_start */
         printk("CPDMA\n");
@@ -384,12 +373,94 @@ int cpsw_init(struct ether_device_data *data){
     return ret;
 }
 
+int cpsw_init(struct ether_device_data *data){
+    int ret;
+
+    ret = cpsw_ale_version(data);
+
+    /* setup netdevs */
+    if (ret == 0){
+        ret = cpdma_desc_pool_create(data, CPPIRAM_BASE,
+                CPSW_BD_RAM_SIZE, CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT);
+
+        if (ret == 0){
+            p_create_ports(data);
+            ret = p_register_ports(data);
+
+            netif_carrier_off(data->ndev);                // ← link down
+            netif_tx_stop_all_queues(data->ndev);         // ← BLOCK ndo_start_xmit!
+        }
+    }
+
+    // /* Initialize host and slave ports */
+    // if (ret == 0){
+    //     printk("Host port\n");
+    //     // ale, ss, 
+    //     cpsw_init_host_port(data);
+
+    //     printk("cpsw_slave_open\n");
+    //     cpsw_slave_open(data);
+
+    //     if (ret == 0){
+    //         /* === phy = of_phy_connect(priv->ndev, slave->data->phy_node, ===*/
+    //         printk("of_phy_connect\n");
+    //         phy_init_hw(data);
+
+    //         /* phy_attached_info(slave->phy); */
+
+    //         /* phy_start(slave->phy); = set PHY_UP + start PHY machine*/
+
+    //         /* Configure GMII_SEL register */
+    //         phy_gmii_sel_mode(data);
+    //     }
+
+    //     if (ret == 0){
+    //         /* err = phy_start_aneg(phydev); -> */
+    //         /* TODO: lan87xx_config_aneg */
+    //         printk("genphy_config_advert\n");
+    //         ret = genphy_config_advert(data);
+    //     }
+
+    //     if (ret == 0){
+    //         // create a workqueue to check link every 1s
+    //         INIT_DELAYED_WORK(&data->phy_work, phy_status_work);
+    //         mod_delayed_work(system_power_efficient_wq, &data->phy_work,
+    //             1 * HZ);
+
+    //         // add a timer to remove old MAC entries every 10s
+    //         timer_setup(&data->timer, cpsw_ale_timer, 0);
+    //         data->timer.expires = jiffies + 10*HZ;
+    //         add_timer(&data->timer);
+    //     }
+    // }
+
+    // /* initialize shared resources for every ndev */
+    // if (ret == 0){
+    //     ret = p_create_xdp_rxqs(data, data->tx_dma_channel);
+    //     if (ret < 0) return -1;
+
+    //     napi_enable(&data->napi_tx);
+    // }
+
+    // /* Intr */
+    // if (ret == 0){
+    //     /* cpdma_ctlr_start */
+    //     printk("CPDMA\n");
+    //     cpdma_ctlr_start(data);
+    //     cpdma_intr_enable(data);
+    // }
+    
+    return ret;
+}
+
 int cpsw_remove(struct ether_device_data *data){
     cancel_delayed_work_sync(&data->phy_work);
     del_timer_sync(&data->timer);
 
     cpdma_ctlr_stop(data);
     cpdma_intr_disable(data);
+
+    //gen_pool_destroy(data->desc_pool->gen_pool);
 
     napi_disable(&data->napi_tx);
     p_destroy_xdp_rxqs(data, data->tx_dma_channel);

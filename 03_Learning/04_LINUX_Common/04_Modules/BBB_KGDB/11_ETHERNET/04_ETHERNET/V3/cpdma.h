@@ -12,6 +12,9 @@
 #define chan_linear(chan_num)	((chan_num) & (32 - 1))
 #define CPSW_HEADROOM_NA (max(XDP_PACKET_HEADROOM, NET_SKB_PAD) + NET_IP_ALIGN)
 
+#define CPSW_BD_RAM_SIZE		0x2000
+#define CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT 256
+
 /* CPSW_CPDMA */
 #define CPDMA_RXTHRESH		0x0c0
 #define CPDMA_RXFREE		0x0e0
@@ -92,5 +95,7 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
 void cpdma_submit_rx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch);
 
 void run_test(struct ether_device_data *data);
+
+int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_phys, u32 bd_ram_size, u32 descs_pool_size);
 
 #endif /* CPDMA_H */

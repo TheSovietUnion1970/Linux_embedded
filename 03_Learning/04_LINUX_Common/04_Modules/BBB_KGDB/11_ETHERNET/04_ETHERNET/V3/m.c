@@ -60,6 +60,8 @@ static int ether_probe(struct platform_device *pdev)
     platform_set_drvdata(pdev, data);
     data->dev = &pdev->dev;
     dev_set_drvdata(data->dev, data);
+
+
     data->base_ctrmod = ioremap(CTRMOD_BASE, 0x1000);
     data->base_clk = ioremap(CLK_BASE, 0x1000);
 
@@ -74,7 +76,6 @@ static int ether_probe(struct platform_device *pdev)
     data->base_wr = ioremap(CPSW_WR_BASE, 0x100);
 
     data->base_cpdma = ioremap(CPDMA_BASE, 0x100);
-    data->desc_dma = ioremap(CPPIRAM_BASE, 0x1000);
 
     data->base_txhdp = ioremap(TXHDP_BASE, 0x100);
     data->base_rxhdp = data->base_txhdp + 0x20;
@@ -82,6 +83,8 @@ static int ether_probe(struct platform_device *pdev)
     data->base_rxcp = data->base_txhdp + 0x60;
 
     data->base_mdio = ioremap(MDIO_BASE, 0x1000);
+
+    // data->desc_dma = ioremap(CPPIRAM_BASE, CPSW_BD_RAM_SIZE);
 
 
     /* ===== Clock setup (assuming this part is unchanged) */
@@ -189,13 +192,6 @@ static int ether_probe(struct platform_device *pdev)
         if (ret < 0) printk("Fail cpsw_init\n");
     }
 
-    // p_create_ports(data);
-    // ret = p_register_ports(data);
-
-    // ret = p_create_xdp_rxqs(data, data->tx_dma_channel);
-    // if (ret < 0) return -1;
-
-    // napi_enable(&data->napi_tx);
 
     return 0;
 }
@@ -222,10 +218,6 @@ static int ether_remove(struct platform_device *pdev)
     unregister_chrdev_region(data->dev_num, 1);
 
 
-    // clock_deinit(data);
-    // pm_runtime_put_sync(&pdev->dev);
-    // pm_runtime_disable(&pdev->dev);
-
 
     iounmap(data->base_ctrmod);
     iounmap(data->base_clk);
@@ -236,6 +228,10 @@ static int ether_remove(struct platform_device *pdev)
     iounmap(data->base_port0);
     iounmap(data->base_port1);
     iounmap(data->base_port2);
+
+    iounmap(data->base_cpdma);
+    iounmap(data->base_txhdp);
+
 
     return 0;
 }

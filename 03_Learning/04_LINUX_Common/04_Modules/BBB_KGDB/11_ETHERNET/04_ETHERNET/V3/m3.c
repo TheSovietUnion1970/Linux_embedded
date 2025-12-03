@@ -20,7 +20,7 @@
 #define DEVICE_NAME "eth0"
 
 #define TX_DMA_CH 7
-#define RAM_ADDR 0x4a100000
+#define RAM_ADDR 0x4a102000
 #define CPSW_BD_RAM_SIZE		0x2000
 #define CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT 256
 
@@ -315,8 +315,11 @@ void create_dma(struct ether_device_data* data, u8* buf, u16 len, u8 dir){
 dma_addr_t desc_phys(struct cpdma_desc_pool *pool,
 		  struct cpdma_desc __iomem *desc)
 {
-	if (!desc)
-		return 0;
+	if (!desc){
+        printk("Fail: desc_phys\n");
+        return 0;
+    }
+    printk("pool->hw_addr = 0x%x\n", pool->hw_addr);
 	return pool->hw_addr + (__force long)desc - (__force long)pool->iomap;
 }
 
@@ -332,9 +335,13 @@ int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_
 
     desc_pool = devm_kzalloc(data->dev, sizeof(*desc_pool), GFP_KERNEL);
     if (!desc_pool) {
+        printk("Fail: desc_pool\n");
         data->desc_pool = NULL;
+        return -1;
     }
     data->desc_pool = desc_pool;
+
+    desc_pool->hw_addr = desc_mem_phys;
 
     desc_pool->desc_size = ALIGN(sizeof(struct cpdma_desc), 16); // 16 bytes
     desc_pool->gen_pool = devm_gen_pool_create(data->dev, ilog2(desc_pool->desc_size),
@@ -344,7 +351,9 @@ int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_
     desc_pool->iomap = devm_ioremap(data->dev, desc_mem_phys,
                     desc_pool->mem_size);
     if (!desc_pool->iomap){
+        printk("Fail: desc_pool->iomap\n");
         data->desc_pool = NULL;
+        return -1;
     }
 
 	ret = gen_pool_add_virt(desc_pool->gen_pool, (unsigned long)desc_pool->iomap,
@@ -354,6 +363,8 @@ int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_
         printk("Fail: gen_pool_add_virt\n");
         return -1;
     }
+
+    printk("desc_pool->iomap = 0x%x\n", desc_pool->iomap);
 
     return 0;
 }
@@ -410,6 +421,24 @@ static int ether_probe(struct platform_device *pdev)
 
     /* Allocate desc_dma at phys addr */
     data->desc_dma = cpdma_desc_alloc(data->desc_pool);
+    printk("data->desc_dma = 0x%x\n", data->desc_dma);
+    if (ret == 0){
+        printk("phy addr = 0x%x, iomem = 0x%x\n", 
+            desc_phys(data->desc_pool, data->desc_dma),
+            desc_from_phys(data->desc_pool, desc_phys(data->desc_pool, data->desc_dma)));
+    }
+
+    /* Free desc_dma */
+    cpdma_desc_free(data->desc_pool, data->desc_dma);
+
+
+    // /* dma desc */
+    // ret = cpdma_desc_pool_create(data, RAM_ADDR,
+    //          CPSW_BD_RAM_SIZE, CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT);
+
+    /* Allocate desc_dma at phys addr */
+    data->desc_dma = cpdma_desc_alloc(data->desc_pool);
+    printk("data->desc_dma = 0x%x\n", data->desc_dma);
     if (ret == 0){
         printk("phy addr = 0x%x, iomem = 0x%x\n", 
             desc_phys(data->desc_pool, data->desc_dma),

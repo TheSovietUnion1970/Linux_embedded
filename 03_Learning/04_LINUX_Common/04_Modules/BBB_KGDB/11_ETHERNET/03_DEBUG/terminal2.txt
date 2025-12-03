@@ -1512,3 +1512,6 @@ esc_phys_data = 0xa02b5000
 ================================= Not plugged in:
 [ 1293.113940] cpsw-switch 4a100000.switch eth0: Link is Down
 
+CPSW_XMETA_OFFSET = 0x18, CPSW_HEADROOM_NA = 0x10
+2
+
