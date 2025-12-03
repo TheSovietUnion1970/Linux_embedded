@@ -274,6 +274,8 @@ static void phy_status_work(struct work_struct *work)
 
             phy_adjust_link(data);
 
+            netif_carrier_on(data->ndev);                // ← link up
+            netif_tx_wake_all_queues(data->ndev);         // ← ALLOW ndo_start_xmit!
             //run_test(data);
         }
     }
@@ -281,6 +283,9 @@ static void phy_status_work(struct work_struct *work)
         // print only when state is changed:
         if ((mmi_bmsr&BMSR_LINK_UP) != old_state){
             printk("Link is down\n");
+
+            netif_carrier_off(data->ndev);                // ← link down
+            netif_tx_stop_all_queues(data->ndev);         // ← BLOCK ndo_start_xmit!
         }        
     }
     old_state = mmi_bmsr&BMSR_LINK_UP;
@@ -315,6 +320,9 @@ int cpsw_init(struct ether_device_data *data){
     if (ret == 0){
         p_create_ports(data);
         ret = p_register_ports(data);
+
+        netif_carrier_off(data->ndev);                // ← link down
+        netif_tx_stop_all_queues(data->ndev);         // ← BLOCK ndo_start_xmit!
     }
 
     /* Initialize host and slave ports */
