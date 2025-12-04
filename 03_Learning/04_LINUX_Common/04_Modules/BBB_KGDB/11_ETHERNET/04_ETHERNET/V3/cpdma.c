@@ -78,14 +78,16 @@ int cpdma_ctlr_stop(struct ether_device_data* data){
 }
 
 void cpdma_intr_enable(struct ether_device_data* data){
+    iowrite32(0x05, data->base_wr + WR_CONTROL); /* [TODO] */
+
     iowrite32(0xff, data->base_wr + WR_C0_RX_EN);
     iowrite32(0xff, data->base_wr + WR_C0_TX_EN);
 
     // Int channel 7 TX <-> DMA channel 7 TX
-    iowrite32(chan_linear(data->tx_dma_channel), data->base_cpdma + TX_INT_SET);
+    iowrite32(BIT(chan_linear(data->tx_dma_channel)), data->base_cpdma + CPDMA_TXINTMASKSET);
 
     // Int channel 0 RX <-> DMA channel 32 RX
-    iowrite32(chan_linear(data->rx_dma_channel), data->base_cpdma + RX_INT_SET);
+    iowrite32(BIT(chan_linear(data->rx_dma_channel)), data->base_cpdma + CPDMA_RXINTMASKSET);
 }
 
 void cpdma_intr_disable(struct ether_device_data* data){
@@ -93,10 +95,10 @@ void cpdma_intr_disable(struct ether_device_data* data){
     iowrite32(0, data->base_wr + WR_C0_TX_EN);
 
     // Int channel 7 TX <-> DMA channel 7 TX
-    iowrite32(chan_linear(data->tx_dma_channel), data->base_cpdma + TX_INT_CLEAR);
+    iowrite32(BIT(chan_linear(data->tx_dma_channel)), data->base_cpdma + CPDMA_TXINTMASKCLEAR);
 
     // Int channel 0 RX <-> DMA channel 32 RX
-    iowrite32(chan_linear(data->rx_dma_channel), data->base_cpdma + RX_INT_CLEAR);
+    iowrite32(BIT(chan_linear(data->rx_dma_channel)), data->base_cpdma + CPDMA_RXINTMASKCLEAR);
 }
 
 /* IRQ handlers */
@@ -123,7 +125,13 @@ irqreturn_t tx_handler(int irq, void *dev_id){
 
     printk("tx_handler\n");
 
+    //cpdma_intr_disable(data);
+
     iowrite32(0, data->base_wr + WR_C0_TX_EN);
+    iowrite32(CPDMA_EOI_TX, data->base_cpdma + CPDMA_MACEOIVECTOR); 
+
+    napi_schedule(&data->napi_tx);
+
     return IRQ_HANDLED; 
 }
 
@@ -144,7 +152,7 @@ dma_addr_t desc_phys(struct cpdma_desc_pool *pool,
         //printk("Fail: desc_phys\n");
         return 0;
     }
-    printk("pool->hw_addr = 0x%x\n", pool->hw_addr);
+    //printk("pool->hw_addr = 0x%x\n", pool->hw_addr);
 	return pool->hw_addr + (__force long)desc - (__force long)pool->iomap;
 }
 
@@ -191,7 +199,7 @@ int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_
         return -1;
     }
 
-    printk("desc_pool->iomap = 0x%x\n", desc_pool->iomap);
+    //printk("desc_pool->iomap = 0x%x\n", desc_pool->iomap);
 
     return 0;
 }
@@ -260,7 +268,7 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
     u32 mode;
     int ret;
 
-    printk("data->dev = 0x%x\n", data->dev);
+    //printk("data->dev = 0x%x\n", data->dev);
     if (!data->dev){
         printk("ERROR\n");
         return;
@@ -292,19 +300,23 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
     iowrite32(0, &data->desc_dma->hw_next);
     iowrite32(buffer, &data->desc_dma->hw_buffer);
     iowrite32(len, &data->desc_dma->hw_len);
-    iowrite32(mode, &data->desc_dma->hw_mode);
+    iowrite32(mode | len, &data->desc_dma->hw_mode);
 
     iowrite32((u32)buf, &data->desc_dma->sw_token);
     iowrite32((u32)buf, &data->desc_dma->sw_buffer);
     iowrite32(len, &data->desc_dma->sw_len);
 
+    //printk("hw_mode = 0x%x\n", ioread32(&data->desc_dma->hw_mode));
+
     // phys_addr_t phys = virt_to_phys(data->desc_dma);
-    printk("desc_dma = 0x%x, phys = 0x%x\n", data->desc_dma, desc_dma_phys);
+    //printk("desc_dma = 0x%x, phys = 0x%x, ch = %d\n", data->desc_dma, desc_dma_phys, ch);
 
     // //iowrite32(0, data->base_txhdp + 4*ch);
-    // printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
+    //printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
     // // store desc into hdp
     iowrite32(desc_dma_phys, data->base_txhdp + 4*ch); // at channel 7
+
+    //printk("After: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
 
     
     /* Free desc_dma */
@@ -380,8 +392,10 @@ int p_create_xdp_rxqs(struct ether_device_data *data, int ch){
     return 0;
 }
 
-int tx_mq_poll(struct napi_struct *napi_rx, int budget){
-    printk("cpsw_rx_mq_poll\n");
+int tx_mq_poll(struct napi_struct *napi_tx, int budget){
+    printk("cpsw_tx_mq_poll\n");
+
+    napi_complete(napi_tx);
     return 0;
 }
 
@@ -416,9 +430,9 @@ static void cpsw_get_drvinfo(struct net_device *ndev,
 
 static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
-    printk("dummy_xmit\n");
-    int q_idx;
+    //printk("dummy_xmit\n");
     struct netdev_queue *txq;
+    int q_idx;
     struct device *dev = ndev->dev.parent;
     struct ether_device_data* data = dev_get_drvdata(dev);
     if (!data) {
@@ -490,7 +504,7 @@ int p_create_ports(struct ether_device_data *data){
 
     test = netdev_priv(data->ndev);
 
-    printk("0x%x - 0x%x\n", data, test);
+    //printk("0x%x - 0x%x\n", data, test);
 
     eth_hw_addr_set(data->ndev, macaddr);
 

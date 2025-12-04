@@ -1,6 +1,7 @@
 #include "cpsw.h"
 #include "mdio.h"
 #include "cpdma.h"
+#include "debug.h"
 #include <linux/delay.h>
 #include <linux/workqueue.h>
 // #include <net/core/net-sysfs.h>
@@ -370,6 +371,12 @@ int cpsw_open(struct ether_device_data *data){
         cpdma_ctlr_start(data);
         cpdma_intr_enable(data);
     }
+
+    // Print_register_val_cpsw(data,
+    //     SS_EN, HOST_EN, WR_EN, SL_EN, ALE_EN, CPDMA_EN);
+
+    Print_register_val_cpsw(data,
+        0, 0, 0, 0, 0, CPDMA_EN);
     return ret;
 }
 

@@ -26,7 +26,7 @@
 #define CLK_BASE        0x44e00000
 
 #define CPSW_BASE       0x4a100000   // CPSW subsystem base
-#define PORT0_BASE      (CPSW_BASE + 0x108)    // Host port registers
+#define PORT0_BASE      (CPSW_BASE + 0x100)    // Host port registers
 #define PORT1_BASE      (CPSW_BASE + 0x200)    // Slave port 0 (eth0)
 #define PORT2_BASE      (CPSW_BASE + 0x300)    // Slave port 1 (eth1)
 #define CPDMA_BASE      (CPSW_BASE + 0x800)    // CPDMA

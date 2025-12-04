@@ -60,14 +60,11 @@
 #define CPDMA_EOI_MISC		0x3
 
 /* WRAPPER */
+#define WR_CONTROL          0x08
 #define WR_C0_RX_THRESH_EN  0x10
 #define WR_C0_RX_EN         0x14
 #define WR_C0_TX_EN         0x18
 #define WR_C0_MISC_EN       0x1c
-#define TX_INT_SET          0x88
-#define TX_INT_CLEAR        0x8c
-#define RX_INT_SET          0xa8
-#define RX_INT_CLEAR        0xac
 
 /* Descriptor mode bits */
 #define CPDMA_DESC_SOP		BIT(31)
