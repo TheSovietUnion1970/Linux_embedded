@@ -59,6 +59,7 @@ int cpdma_ctlr_start(struct ether_device_data* data){
     cpdma_control |= TX_PTYPE; // uses the highest priority 7
     iowrite32(cpdma_control, data->base_cpdma + CPDMA_CONTROL);
 
+    /* Data received at the start */
     iowrite32(0, data->base_cpdma + CPDMA_RX_BUFF_OFFSET);
 
     return 0;
@@ -117,13 +118,15 @@ irqreturn_t rx_handler(int irq, void *dev_id){
     printk("rx_handler\n");
 
     iowrite32(0, data->base_wr + WR_C0_RX_EN);
+    iowrite32(CPDMA_EOI_RX, data->base_cpdma + CPDMA_MACEOIVECTOR); 
+
     return IRQ_HANDLED; 
 }
 
 irqreturn_t tx_handler(int irq, void *dev_id){
     struct ether_device_data *data = dev_id;
 
-    printk("tx_handler\n");
+    //printk("tx_handler\n");
 
     //cpdma_intr_disable(data);
 
@@ -145,8 +148,7 @@ irqreturn_t misc_handler(int irq, void *dev_id){
 }
 
 // =================== [cpdma_desc]
-dma_addr_t desc_phys(struct cpdma_desc_pool *pool,
-		  struct cpdma_desc __iomem *desc)
+dma_addr_t desc_phys(struct cpdma_desc_pool *pool, struct cpdma_desc __iomem *desc)
 {
 	if (!desc){
         //printk("Fail: desc_phys\n");
@@ -211,15 +213,28 @@ cpdma_desc_alloc(struct cpdma_desc_pool *pool)
 		gen_pool_alloc(pool->gen_pool, pool->desc_size);
 }
 
-void cpdma_desc_free(struct cpdma_desc_pool *pool,
-			    struct cpdma_desc __iomem *desc)
+void cpdma_desc_free(struct cpdma_desc_pool *pool, struct cpdma_desc __iomem *desc)
 {
 	gen_pool_free(pool->gen_pool, (unsigned long)desc, pool->desc_size);
 }
 
-
 /* DMA submit */
 #define CPDMA_DMA_EXT_MAP BIT(16)
+int cpdma_rx_fill(struct ether_device_data* data){
+    u8 desc_num = 128;
+    u8 i = 0;
+    struct page *page;
+
+    for (i = 0; i < desc_num; i++){
+        page = page_pool_dev_alloc_pages(data->pool[data->rx_dma_channel]);
+        if (!page) {
+            printk("Error: allocate rx page\n");
+            return -1;
+        }
+    }
+    return 0;
+}
+
 void cpdma_submit_rx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch){
     dma_addr_t buffer;
     u32 mode;
@@ -267,12 +282,16 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
     dma_addr_t buffer, desc_dma_phys;
     u32 mode;
     int ret;
+    unsigned long flags;
 
     //printk("data->dev = 0x%x\n", data->dev);
     if (!data->dev){
         printk("ERROR\n");
         return;
     }
+
+    spin_lock_irqsave(&data->lock, flags);
+
     buffer = dma_map_single(data->dev, buf, len, dir);
     ret = dma_mapping_error(data->dev, buffer);
     if (ret) {
@@ -285,42 +304,50 @@ void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, i
     // must be tx
     if ((dir == 1) ||(dir == 2)) mode |= CPDMA_DESC_TO_PORT_EN | (dir << 16);
 
+    //printk("hw_mode begin = 0x%x\n", mode);
+
 
     /* dma desc */
     // ret = cpdma_desc_pool_create(data, CPPIRAM_BASE,
     //          CPSW_BD_RAM_SIZE, CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT);
     /* Allocate desc_dma at phys addr */
-    data->desc_dma = cpdma_desc_alloc(data->desc_pool);
-    desc_dma_phys = desc_phys(data->desc_pool, data->desc_dma);
+    if (!data->desc_dma){
+        data->desc_dma = cpdma_desc_alloc(data->desc_pool);
+        desc_dma_phys = desc_phys(data->desc_pool, data->desc_dma);
 
-    // desc_dma_phys = CPPIRAM_BASE;
+        // desc_dma_phys = CPPIRAM_BASE;
 
 
-    // fulfill desc
-    iowrite32(0, &data->desc_dma->hw_next);
-    iowrite32(buffer, &data->desc_dma->hw_buffer);
-    iowrite32(len, &data->desc_dma->hw_len);
-    iowrite32(mode | len, &data->desc_dma->hw_mode);
+        // fulfill desc
+        iowrite32(0, &data->desc_dma->hw_next);
+        iowrite32(buffer, &data->desc_dma->hw_buffer);
+        iowrite32(len, &data->desc_dma->hw_len);
+        iowrite32(mode | len, &data->desc_dma->hw_mode);
 
-    iowrite32((u32)buf, &data->desc_dma->sw_token);
-    iowrite32((u32)buf, &data->desc_dma->sw_buffer);
-    iowrite32(len, &data->desc_dma->sw_len);
+        iowrite32((u32)buf, &data->desc_dma->sw_token);
+        iowrite32((u32)buf, &data->desc_dma->sw_buffer);
+        iowrite32(len, &data->desc_dma->sw_len);
 
-    //printk("hw_mode = 0x%x\n", ioread32(&data->desc_dma->hw_mode));
+        //printk("hw_mode = 0x%x\n", ioread32(&data->desc_dma->hw_mode));
 
-    // phys_addr_t phys = virt_to_phys(data->desc_dma);
-    //printk("desc_dma = 0x%x, phys = 0x%x, ch = %d\n", data->desc_dma, desc_dma_phys, ch);
+        // phys_addr_t phys = virt_to_phys(data->desc_dma);
+        //printk("desc_dma = 0x%x, phys = 0x%x, ch = %d\n", data->desc_dma, desc_dma_phys, ch);
 
-    // //iowrite32(0, data->base_txhdp + 4*ch);
-    //printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
-    // // store desc into hdp
-    iowrite32(desc_dma_phys, data->base_txhdp + 4*ch); // at channel 7
+        // //iowrite32(0, data->base_txhdp + 4*ch);
+        //printk("Before: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
+        // // store desc into hdp
+        printk(">>> [TX] Begin transmit the packet\n");
 
-    //printk("After: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
+        ETHER1_Print_Hex(buf, len, "txch");
 
-    
-    /* Free desc_dma */
-    cpdma_desc_free(data->desc_pool, data->desc_dma);
+        iowrite32(desc_dma_phys, data->base_txhdp + 4*ch); // at channel 7
+
+        //printk("After: 0x%x, current desc = 0x%x\n", ioread32(data->base_txhdp + 4*ch), data->desc_dma);
+
+    }
+    spin_unlock_irqrestore(&data->lock, flags);
+    // /* Free desc_dma */
+    // cpdma_desc_free(data->desc_pool, data->desc_dma);
 }
 
 
@@ -380,7 +407,7 @@ void p_destroy_xdp_rxqs(struct ether_device_data *data, int ch){
 int p_create_xdp_rxqs(struct ether_device_data *data, int ch){
     int ret;
 
-    // channel 32
+    // channel 0
     p_create_rx_pool(data, ch);
 
     ret = p_ndev_create_xdp_rxq(data, ch);
@@ -393,9 +420,48 @@ int p_create_xdp_rxqs(struct ether_device_data *data, int ch){
 }
 
 int tx_mq_poll(struct napi_struct *napi_tx, int budget){
-    printk("cpsw_tx_mq_poll\n");
+    struct ether_device_data *data = container_of(napi_tx, struct ether_device_data, napi_tx);
+    u8 ch = 0;
+    dma_addr_t desc_dma;
+    unsigned long flags;
+    u32 token, len, hw_mode;
 
-    napi_complete(napi_tx);
+	spin_lock_irqsave(&data->lock, flags);
+
+    ch = ioread32(data->base_cpdma + CPDMA_TXINTSTATMASKED);
+
+    /*cpdma_desc_free(pool, desc, 1);*/
+    if (data->desc_dma){
+        /* = __cpdma_chan_process =*/
+        /* Get dma addr of desc */
+        desc_dma = desc_phys(data->desc_pool, data->desc_dma);
+        /* Store desc to complete pointer */
+        iowrite32(desc_dma, data->base_txcp + 4*data->tx_dma_channel);
+        
+        /* __cpdma_chan_free */
+        token = ioread32(&data->desc_dma->sw_token);
+        len = ioread32(&data->desc_dma->sw_len);
+        hw_mode = ioread32(&data->desc_dma->hw_mode);
+
+        dma_unmap_single(data->dev, desc_dma, len, 1);
+        cpdma_desc_free(data->desc_pool, data->desc_dma);
+        data->desc_dma = NULL;
+
+        //printk("hw_mode end = 0x%x\n", hw_mode);
+        /* cpsw_tx_handler */
+    }
+
+    /* End of queue and owner bit is clear */
+    if ((hw_mode&CPDMA_DESC_EOQ) && (!(hw_mode&CPDMA_DESC_OWNER))){
+        printk("<<< [TX] Done transmitted the last packet\n");
+
+        /* End of tx_mq_poll */
+        napi_complete(napi_tx);
+        iowrite32(0xff, data->base_wr + WR_C0_TX_EN);
+    }
+
+
+    spin_unlock_irqrestore(&data->lock, flags);
     return 0;
 }
 
@@ -456,7 +522,7 @@ static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
 
     // data->desc_dma = ioremap(CPPIRAM_BASE, CPSW_BD_RAM_SIZE);
 
-    ETHER1_Print_Hex(skb->data, skb->len, "txch");
+    // ETHER1_Print_Hex(skb->data, skb->len, "txch");
     dev_kfree_skb(skb);
     return NETDEV_TX_OK;
 }

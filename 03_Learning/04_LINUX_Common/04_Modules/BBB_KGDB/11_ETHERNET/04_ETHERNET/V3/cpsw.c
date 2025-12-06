@@ -358,7 +358,7 @@ int cpsw_open(struct ether_device_data *data){
 
     /* initialize shared resources for every ndev */
     if (ret == 0){
-        ret = p_create_xdp_rxqs(data, data->tx_dma_channel);
+        ret = p_create_xdp_rxqs(data, data->tx_dma_channel); // for rx only
         if (ret < 0) return -1;
 
         napi_enable(&data->napi_tx);

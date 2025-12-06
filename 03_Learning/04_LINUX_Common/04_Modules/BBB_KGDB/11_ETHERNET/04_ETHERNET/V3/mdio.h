@@ -149,6 +149,9 @@ struct ether_device_data {
     struct clk *clk3;
     u32 clk_freq;
 
+    /* Lock */
+    spinlock_t lock;
+
     /* Base address */
     void __iomem *base_ctrmod; 
     void __iomem *base_clk; 
