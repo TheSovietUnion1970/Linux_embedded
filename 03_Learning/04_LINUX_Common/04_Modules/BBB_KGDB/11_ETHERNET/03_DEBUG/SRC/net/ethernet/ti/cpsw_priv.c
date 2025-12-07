@@ -80,12 +80,14 @@ void cpsw_tx_handler(void *token, int len, int status)
 	int			ch;
 
 	if (cpsw_is_xdpf_handle(token)) {
+		printk("cpsw_is_xdpf_handle\n");
 		xdpf = cpsw_handle_to_xdpf(token);
 		xmeta = (void *)xdpf + CPSW_XMETA_OFFSET;
 		ndev = xmeta->ndev;
 		ch = xmeta->ch;
 		xdp_return_frame(xdpf);
 	} else {
+		printk("!!!!cpsw_is_xdpf_handle\n");
 		skb = token;
 		ndev = skb->dev;
 		ch = skb_get_queue_mapping(skb);
@@ -174,9 +176,12 @@ int cpsw_tx_mq_poll(struct napi_struct *napi_tx, int budget)
 		num_tx += cpdma_chan_process(txv->ch, cur_budget);
 		if (num_tx >= budget)
 			break;
+
+		printk("[V] budget = 0x%x, cur_budget = 0x%x, num_tx = 0x%x, ch_map = 0x%x\n", budget, cur_budget, num_tx, ch_map);
 	}
 
 	if (num_tx < budget) {
+		printk("[V] napi_complete(napi_tx);\n");
 		napi_complete(napi_tx);
 		writel(0xff, &cpsw->wr_regs->tx_en);
 	}
@@ -1138,6 +1143,8 @@ int cpsw_fill_rx_channels(struct cpsw_priv *priv)
 	for (ch = 0; ch < cpsw->rx_ch_num; ch++) {
 		pool = cpsw->page_pool[ch];
 		ch_buf_num = cpdma_chan_get_rx_buf_num(cpsw->rxv[ch].ch);
+		printk("rx_ch_num = %d, ch_buf_num = %d, rx_max_pkt = 0x%x\n", cpsw->rx_ch_num, 
+					ch_buf_num, cpsw->rx_packet_max);
 		for (i = 0; i < ch_buf_num; i++) {
 			page = page_pool_dev_alloc_pages(pool);
 			if (!page) {
@@ -1149,7 +1156,12 @@ int cpsw_fill_rx_channels(struct cpsw_priv *priv)
 			xmeta->ndev = priv->ndev;
 			xmeta->ch = ch;
 
+
 			dma = page_pool_get_dma_addr(page) + CPSW_HEADROOM_NA;
+
+			printk("[V] xmeta(v) = 0x%x, page(p) = 0x%x, dma(v) = 0x%x", 
+							xmeta, page, dma);
+
 			ret = cpdma_chan_idle_submit_mapped(cpsw->rxv[ch].ch,
 							    page, dma,
 							    cpsw->rx_packet_max,

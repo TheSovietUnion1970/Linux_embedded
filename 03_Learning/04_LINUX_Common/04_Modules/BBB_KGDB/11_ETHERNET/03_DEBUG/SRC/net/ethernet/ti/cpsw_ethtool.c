@@ -174,6 +174,8 @@ int cpsw_set_coalesce(struct net_device *ndev, struct ethtool_coalesce *coal,
 	u32 coal_intvl = 0;
 	struct cpsw_common *cpsw = priv->cpsw;
 
+	printk("[V] cpsw_set_coalesce\n");
+
 	coal_intvl = coal->rx_coalesce_usecs;
 
 	int_ctrl =  readl(&cpsw->wr_regs->int_control);

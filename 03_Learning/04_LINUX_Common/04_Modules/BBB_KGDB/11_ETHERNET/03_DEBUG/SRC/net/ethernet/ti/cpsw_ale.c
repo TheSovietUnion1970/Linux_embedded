@@ -1134,8 +1134,8 @@ int cpsw_ale_control_set(struct cpsw_ale *ale, int port, int control,
 	offset = info->offset + (port * info->port_offset);
 	shift  = info->shift  + (port * info->port_shift);
 
-	printk("[V] port-%d, ctr-%d, val-%d offset = %d, shift = %d, tmp = 0x%x, mask = 0x%x\n", port, control,
-											value, offset, shift, (tmp & ~(mask << shift)) | (value << shift), mask);
+	// printk("[V] port-%d, ctr-%d, val-%d offset = %d, shift = %d, tmp = 0x%x, mask = 0x%x\n", port, control,
+	// 										value, offset, shift, (tmp & ~(mask << shift)) | (value << shift), mask);
 
 	tmp = readl_relaxed(ale->params.ale_regs + offset);
 	tmp = (tmp & ~(mask << shift)) | (value << shift);

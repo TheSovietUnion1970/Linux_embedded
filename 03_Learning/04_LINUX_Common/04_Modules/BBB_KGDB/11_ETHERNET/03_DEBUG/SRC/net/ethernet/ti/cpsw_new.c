@@ -330,6 +330,7 @@ static void cpsw_rx_handler(void *token, int len, int status)
 	priv = netdev_priv(ndev);
 	pool = cpsw->page_pool[ch];
 	printk("[V] cpsw_RX_handler, ch = %d, len = %d\n", ch, len);
+	ETHER1_Print_Hex(pa + CPSW_HEADROOM_NA + 4, len, "RX data");
 
 	if (unlikely(status < 0) || unlikely(!netif_running(ndev))) {
 		/* In dual emac mode check for all interfaces */
@@ -424,6 +425,8 @@ static int cpsw_add_vlan_ale_entry(struct cpsw_priv *priv,
 	int mcast_mask;
 	u32 port_mask;
 	int ret;
+
+	printk("[V1] cpsw_add_vlan_ale_entry\n");
 
 	port_mask = (1 << priv->emac_port) | ALE_PORT_HOST;
 
@@ -614,6 +617,8 @@ static void cpsw_port_add_dual_emac_def_ale_entries(struct cpsw_priv *priv,
 	struct cpsw_common *cpsw = priv->cpsw;
 	u32 reg;
 
+	printk("[V1] cpsw_port_add_dual_emac_def_ale_entries\n");
+
 	reg = (cpsw->version == CPSW_VERSION_1) ? CPSW1_PORT_VLAN :
 	       CPSW2_PORT_VLAN;
 	slave_write(slave, slave->port_vlan, reg);
@@ -639,6 +644,8 @@ static void cpsw_port_add_switch_def_ale_entries(struct cpsw_priv *priv,
 	u32 port_mask = 1 << priv->emac_port | ALE_PORT_HOST;
 	struct cpsw_common *cpsw = priv->cpsw;
 	u32 reg;
+
+	printk("[V1] cpsw_port_add_switch_def_ale_entries\n");
 
 	cpsw_ale_control_set(cpsw->ale, priv->emac_port,
 			     ALE_PORT_DROP_UNKNOWN_VLAN, 0);
@@ -813,6 +820,48 @@ void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 }
 EXPORT_SYMBOL_GPL(cpsw_slave_open);
 
+void Print_register_val_cpsw(struct cpsw_common *cpsw){
+	u16 i = 0;
+	u32 val = 0;
+
+    printk("--- [ss regs] ---\n");
+	for (i = 0; i < 13; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->regs + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+    printk("--- [host_port_regs] ---\n");
+	for (i = 0; i < 34; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->host_port_regs + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+    printk("--- [wr_regs] ---\n");
+	for (i = 0; i < 8; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->wr_regs + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+    printk("--- [slaves] ---\n");
+	for (i = 0; i < 11; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed(cpsw->slaves[0].mac_sl->sl_base + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+    printk("--- [ale_regs] ---\n");
+	for (i = 0; i < 19; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->ale->params.ale_regs + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+    printk("--- [cpdma_regs] ---\n");
+	for (i = 0; i < 49; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->dma->params.dmaregs + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+}
+
 static int cpsw_ndo_stop(struct net_device *ndev)
 {
 	struct cpsw_priv *priv = netdev_priv(ndev);
@@ -931,6 +980,8 @@ static int cpsw_ndo_open(struct net_device *ndev)
 	cpsw_intr_enable(cpsw);
 	cpsw->usage_count++;
 
+	/* [Print DEBUG] */
+	//Print_register_val_cpsw(cpsw);
 	return 0;
 
 err_cleanup:
@@ -952,6 +1003,7 @@ static netdev_tx_t cpsw_ndo_start_xmit(struct sk_buff *skb,
 	int ret, q_idx;
 
 	printk("[V] cpsw_ndo_start_xmit, emac_port = 0x%x\n", priv->emac_port);
+	//Print_register_val_cpsw(cpsw);
 
 	if (skb_put_padto(skb, READ_ONCE(priv->tx_packet_min))) {
 		cpsw_err(priv, tx_err, "packet pad failed\n");
@@ -996,6 +1048,8 @@ fail:
 	ndev->stats.tx_dropped++;
 	netif_tx_stop_queue(txq);
 
+	printk("FAIL***\n");
+
 	/* Barrier, so that stop_queue visible to other cpus */
 	smp_mb__after_atomic();
 
@@ -1013,6 +1067,8 @@ static int cpsw_ndo_set_mac_address(struct net_device *ndev, void *p)
 	int ret, slave_no;
 	int flags = 0;
 	u16 vid = 0;
+
+	printk("[V1] cpsw_ndo_set_mac_address\n");
 
 	slave_no = cpsw_slave_index(cpsw, priv);
 	if (!is_valid_ether_addr(addr->sa_data))
@@ -1929,7 +1985,7 @@ int cpsw_probe(struct platform_device *pdev)
 	int irq;
 
 	printk("[V] cpsw_probe >>>\n");
-	printk("[V] CPSW_XMETA_OFFSET = 0x%x, CPSW_HEADROOM_NA = 0x%x\n", CPSW_XMETA_OFFSET, CPSW_HEADROOM_NA);
+	printk("[V] CPSW_XMETA_OFFSET = 0x%x, CPSW_HEADROOM_NA = 0x%x, CPSW_HEADROOM = 0x%x\n", CPSW_XMETA_OFFSET, CPSW_HEADROOM_NA, CPSW_HEADROOM);
 
 	cpsw = devm_kzalloc(dev, sizeof(struct cpsw_common), GFP_KERNEL);
 	if (!cpsw)

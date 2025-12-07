@@ -87,61 +87,61 @@ struct cpdma_desc_pool {
 	struct gen_pool		*gen_pool;
 };
 
-enum cpdma_state {
-	CPDMA_STATE_IDLE,
-	CPDMA_STATE_ACTIVE,
-	CPDMA_STATE_TEARDOWN,
-};
+// enum cpdma_state {
+// 	CPDMA_STATE_IDLE,
+// 	CPDMA_STATE_ACTIVE,
+// 	CPDMA_STATE_TEARDOWN,
+// };
 
-struct cpdma_ctlr {
-	enum cpdma_state	state;
-	struct cpdma_params	params;
-	struct device		*dev;
-	struct cpdma_desc_pool	*pool;
-	spinlock_t		lock;
-	struct cpdma_chan	*channels[2 * CPDMA_MAX_CHANNELS];
-	int chan_num;
-	int			num_rx_desc; /* RX descriptors number */
-	int			num_tx_desc; /* TX descriptors number */
-};
+// struct cpdma_ctlr {
+// 	enum cpdma_state	state;
+// 	struct cpdma_params	params;
+// 	struct device		*dev;
+// 	struct cpdma_desc_pool	*pool;
+// 	spinlock_t		lock;
+// 	struct cpdma_chan	*channels[2 * CPDMA_MAX_CHANNELS];
+// 	int chan_num;
+// 	int			num_rx_desc; /* RX descriptors number */
+// 	int			num_tx_desc; /* TX descriptors number */
+// };
 
-struct cpdma_chan {
-	struct cpdma_desc __iomem	*head, *tail;
-	void __iomem			*hdp, *cp, *rxfree;
-	enum cpdma_state		state;
-	struct cpdma_ctlr		*ctlr;
-	int				chan_num;
-	spinlock_t			lock;
-	int				count;
-	u32				desc_num;
-	u32				mask;
-	cpdma_handler_fn		handler;
-	enum dma_data_direction		dir;
-	struct cpdma_chan_stats		stats;
-	/* offsets into dmaregs */
-	int	int_set, int_clear, td;
-	int				weight;
-	u32				rate_factor;
-	u32				rate;
-};
+// struct cpdma_chan {
+// 	struct cpdma_desc __iomem	*head, *tail;
+// 	void __iomem			*hdp, *cp, *rxfree;
+// 	enum cpdma_state		state;
+// 	struct cpdma_ctlr		*ctlr;
+// 	int				chan_num;
+// 	spinlock_t			lock;
+// 	int				count;
+// 	u32				desc_num;
+// 	u32				mask;
+// 	cpdma_handler_fn		handler;
+// 	enum dma_data_direction		dir;
+// 	struct cpdma_chan_stats		stats;
+// 	/* offsets into dmaregs */
+// 	int	int_set, int_clear, td;
+// 	int				weight;
+// 	u32				rate_factor;
+// 	u32				rate;
+// };
 
-struct cpdma_control_info {
-	u32		reg;
-	u32		shift, mask;
-	int		access;
-#define ACCESS_RO	BIT(0)
-#define ACCESS_WO	BIT(1)
-#define ACCESS_RW	(ACCESS_RO | ACCESS_WO)
-};
+// struct cpdma_control_info {
+// 	u32		reg;
+// 	u32		shift, mask;
+// 	int		access;
+// #define ACCESS_RO	BIT(0)
+// #define ACCESS_WO	BIT(1)
+// #define ACCESS_RW	(ACCESS_RO | ACCESS_WO)
+// };
 
-struct submit_info {
-	struct cpdma_chan *chan;
-	int directed;
-	void *token;
-	void *data_virt;
-	dma_addr_t data_dma;
-	int len;
-};
+// struct submit_info {
+// 	struct cpdma_chan *chan;
+// 	int directed;
+// 	void *token;
+// 	void *data_virt;
+// 	dma_addr_t data_dma;
+// 	int len;
+// };
 
 static struct cpdma_control_info controls[] = {
 	[CPDMA_TX_RLIM]		  = {CPDMA_DMACONTROL,	8,  0xffff, ACCESS_RW},
@@ -919,7 +919,7 @@ struct cpdma_chan *cpdma_chan_create(struct cpdma_ctlr *ctlr, int chan_num,
 	chan->rate	= 0;
 	chan->weight	= 0;
 
-	printk("[V] cpdma_chan_create, chan_num = %d, ctlr->chan_num =%d\n", chan_num, ctlr->chan_num);
+	//printk("[V] cpdma_chan_create, chan_num = %d, ctlr->chan_num =%d\n", chan_num, ctlr->chan_num);
 
 	if (is_rx_chan(chan)) {
 		chan->hdp	= ctlr->params.rxhdp + offset;
@@ -1006,15 +1006,21 @@ static void __cpdma_chan_submit(struct cpdma_chan *chan,
 	//phys_addr_t desc_phys_data;
 
 	desc_dma = desc_phys(pool, desc);
-	printk("[V] desc = 0x%x, desc_dma = 0x%x, desc_phys_data = 0x%x\n", desc, desc_dma, virt_to_phys(desc));
 
 	/* simple case - idle channel */
 	if (!chan->head) {
 		chan->stats.head_enqueue++;
 		chan->head = desc;
 		chan->tail = desc;
-		if (chan->state == CPDMA_STATE_ACTIVE)
+		if (chan->state == CPDMA_STATE_ACTIVE){
+			printk("[V] hw_mode1 = 0x%x\n", ioread32(&desc->hw_mode));
+			printk("[V] BEFORE:ioread = 0x%x, chan->hdp = 0x%x, &chan->hdp = 0x%x\n", ioread32(chan->hdp), chan->hdp, &chan->hdp);
+
 			chan_write(chan, hdp, desc_dma);
+
+			printk("[V] AFTER:ioread = 0x%x, chan->hdp = 0x%x, &chan->hdp = 0x%x\n", ioread32(chan->hdp), chan->hdp, &chan->hdp);
+		}
+
 		return;
 	}
 
@@ -1027,9 +1033,14 @@ static void __cpdma_chan_submit(struct cpdma_chan *chan,
 	mode = desc_read(prev, hw_mode);
 	if (((mode & (CPDMA_DESC_EOQ | CPDMA_DESC_OWNER)) == CPDMA_DESC_EOQ) &&
 	    (chan->state == CPDMA_STATE_ACTIVE)) {
+		printk("[V] hw_mode2 = 0x%x\n", ioread32(&desc->hw_mode));
+		printk("[V] BEFORE:ioread = 0x%x, chan->hdp = 0x%x, &chan->hdp = 0x%x\n", ioread32(chan->hdp), chan->hdp, &chan->hdp);
+
 		desc_write(prev, hw_mode, mode & ~CPDMA_DESC_EOQ);
 		chan_write(chan, hdp, desc_dma);
 		chan->stats.misqueued++;
+
+		printk("[V] AFTER:ioread = 0x%x, chan->hdp = 0x%x, &chan->hdp = 0x%x\n", ioread32(chan->hdp), chan->hdp, &chan->hdp);
 	}
 }
 
@@ -1053,6 +1064,8 @@ static int cpdma_chan_submit_si(struct submit_info *si)
 		chan->stats.desc_alloc_fail++;
 		return -ENOMEM;
 	}
+
+	//printk("[V] desc = 0x%x\n", desc);
 
 	if (len < ctlr->params.min_packet_size) {
 		len = ctlr->params.min_packet_size;
@@ -1103,7 +1116,6 @@ int cpdma_chan_idle_submit(struct cpdma_chan *chan, void *token, void *data,
 	unsigned long flags;
 	int ret;
 
-	printk("[V] cpdma_chan_idle_submit - %d\n", chan->chan_num);
 
 	si.chan = chan;
 	si.token = token;
@@ -1130,7 +1142,7 @@ int cpdma_chan_idle_submit_mapped(struct cpdma_chan *chan, void *token,
 	unsigned long flags;
 	int ret;
 
-	printk("[V] cpdma_chan_idle_submit_mapped - %d\n", chan->chan_num);
+	printk("[V] idle_submit - val of chan->hdp = 0x%x\n", ioread32(chan->hdp));
 
 	si.chan = chan;
 	si.token = token;
@@ -1258,6 +1270,7 @@ static int __cpdma_chan_process(struct cpdma_chan *chan)
 
 	desc = chan->head;
 	if (!desc) {
+		printk("[V] - TX end here 1\n");
 		chan->stats.empty_dequeue++;
 		status = -ENOENT;
 		goto unlock_ret;
@@ -1267,6 +1280,7 @@ static int __cpdma_chan_process(struct cpdma_chan *chan)
 	status	= desc_read(desc, hw_mode);
 	outlen	= status & 0x7ff;
 	if (status & CPDMA_DESC_OWNER) {
+		printk("[V] - TX end here 2\n");
 		chan->stats.busy_dequeue++;
 		status = -EBUSY;
 		goto unlock_ret;
@@ -1407,7 +1421,7 @@ int cpdma_chan_int_ctrl(struct cpdma_chan *chan, bool enable)
 {
 	unsigned long flags;
 
-	printk("[V] cpdma_chan_int_ctrl, chan->chan_num = %d, enable = %d\n", chan->chan_num, enable);
+	//printk("[V] cpdma_chan_int_ctrl, chan->chan_num = %d, enable = %d\n", chan->chan_num, enable);
 
 	spin_lock_irqsave(&chan->lock, flags);
 	if (chan->state != CPDMA_STATE_ACTIVE) {

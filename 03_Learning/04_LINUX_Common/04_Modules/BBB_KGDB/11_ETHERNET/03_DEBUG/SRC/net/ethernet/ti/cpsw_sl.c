@@ -101,13 +101,13 @@ static const u16 cpsw_sl_reg_map_66ak2elg_am65[] = {
 	CPSW_SL_CTL_RX_CSF_EN |\
 	CPSW_SL_CTL_RX_CMF_EN)
 
-struct cpsw_sl {
-	struct device *dev;
-	void __iomem *sl_base;
-	const u16 *regs;
-	u32 control_features;
-	u32 idle_mask;
-};
+// struct cpsw_sl {
+// 	struct device *dev;
+// 	void __iomem *sl_base;
+// 	const u16 *regs;
+// 	u32 control_features;
+// 	u32 idle_mask;
+// };
 
 struct cpsw_sl_dev_id {
 	const char *device_id;
