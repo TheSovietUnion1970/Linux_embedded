@@ -1,0 +1,8 @@
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/ethernet/ti/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/03_DEBUG/CUSTOM/net/ethernet/ti/
+
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/phy/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/03_DEBUG/CUSTOM/net/phy/
+
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/phy/ti/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/03_DEBUG/CUSTOM/phy/ti/
+
+sudo cp /home/vinh/build_BBB_custom/linux-stable-rcn-ee/drivers/net/mdio/*.c /media/vinh/DATA/BBB/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/11_ETHERNET/03_DEBUG/CUSTOM/net/mdio/
+
