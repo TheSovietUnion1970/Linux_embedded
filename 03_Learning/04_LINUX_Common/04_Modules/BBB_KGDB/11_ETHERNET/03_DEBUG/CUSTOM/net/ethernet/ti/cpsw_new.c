@@ -66,6 +66,20 @@ int cpsw_remove(struct platform_device *pdev);
 struct platform_device *dbg_pdev;
 void __iomem *dbg_ss_regs = NULL;
 void __iomem *dbg_ss_res = NULL;
+
+void __iomem *ctrmdl_base = NULL;
+
+void __iomem *ale_base = NULL;
+#define ALE_TABLE_CONTROL	0x20
+    #define ALE_TABLE_WRITE     1u << 31
+#define ALE_TABLE		0x34
+#define ALE_PORTCTL0		0x40
+#define ALE_PORTCTL1		0x44
+    #define ALE_NO_LEARN            1u << 4
+    #define ALE_DROP_UNKNOWN_VLAN   1u << 3
+
+void __iomem *port1_base = NULL;
+#define P1_PORT_VLAN            0x14
 /* ========== */
 
 struct cpsw_devlink {
@@ -616,33 +630,33 @@ void cpsw_init_host_port(struct cpsw_priv *priv)
 }
 EXPORT_SYMBOL_GPL(cpsw_init_host_port);
 
-static void cpsw_port_add_dual_emac_def_ale_entries(struct cpsw_priv *priv,
-						    struct cpsw_slave *slave)
-{
-	u32 port_mask = 1 << priv->emac_port | ALE_PORT_HOST;
-	struct cpsw_common *cpsw = priv->cpsw;
-	u32 reg;
+// static void cpsw_port_add_dual_emac_def_ale_entries(struct cpsw_priv *priv,
+// 						    struct cpsw_slave *slave)
+// {
+// 	u32 port_mask = 1 << priv->emac_port | ALE_PORT_HOST;
+// 	struct cpsw_common *cpsw = priv->cpsw;
+// 	u32 reg;
 
-	printk("[V1] cpsw_port_add_dual_emac_def_ale_entries\n");
+// 	printk("[V1] cpsw_port_add_dual_emac_def_ale_entries\n");
 
-	reg = (cpsw->version == CPSW_VERSION_1) ? CPSW1_PORT_VLAN :
-	       CPSW2_PORT_VLAN;
-	slave_write(slave, slave->port_vlan, reg);
+// 	reg = (cpsw->version == CPSW_VERSION_1) ? CPSW1_PORT_VLAN :
+// 	       CPSW2_PORT_VLAN;
+// 	slave_write(slave, slave->port_vlan, reg);
 
-	cpsw_ale_add_vlan(cpsw->ale, slave->port_vlan, port_mask,
-			  port_mask, port_mask, 0);
-	cpsw_ale_add_mcast(cpsw->ale, priv->ndev->broadcast,
-			   ALE_PORT_HOST, ALE_VLAN, slave->port_vlan,
-			   ALE_MCAST_FWD);
-	cpsw_ale_add_ucast(cpsw->ale, priv->mac_addr,
-			   HOST_PORT_NUM, ALE_VLAN |
-			   ALE_SECURE, slave->port_vlan);
-	cpsw_ale_control_set(cpsw->ale, priv->emac_port,
-			     ALE_PORT_DROP_UNKNOWN_VLAN, 1);
-	/* learning make no sense in dual_mac mode */
-	cpsw_ale_control_set(cpsw->ale, priv->emac_port,
-			     ALE_PORT_NOLEARN, 1);
-}
+// 	cpsw_ale_add_vlan(cpsw->ale, slave->port_vlan, port_mask,
+// 			  port_mask, port_mask, 0);
+// 	cpsw_ale_add_mcast(cpsw->ale, priv->ndev->broadcast,
+// 			   ALE_PORT_HOST, ALE_VLAN, slave->port_vlan,
+// 			   ALE_MCAST_FWD);
+// 	cpsw_ale_add_ucast(cpsw->ale, priv->mac_addr,
+// 			   HOST_PORT_NUM, ALE_VLAN |
+// 			   ALE_SECURE, slave->port_vlan);
+// 	cpsw_ale_control_set(cpsw->ale, priv->emac_port,
+// 			     ALE_PORT_DROP_UNKNOWN_VLAN, 1);
+// 	/* learning make no sense in dual_mac mode */
+// 	cpsw_ale_control_set(cpsw->ale, priv->emac_port,
+// 			     ALE_PORT_NOLEARN, 1);
+// }
 
 static void cpsw_port_add_switch_def_ale_entries(struct cpsw_priv *priv,
 						 struct cpsw_slave *slave)
@@ -764,6 +778,77 @@ void phy_link_change_V(struct phy_device *phydev, bool up)
 }
 EXPORT_SYMBOL_GPL(phy_link_change_V);
 
+void ale_write(u32* ale_entry, u16 idx){
+    u8 i = 0;
+	if (!ale_base) {
+		printk("ale_base is NULL\n");
+	}
+	printk("ale_write > idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
+										ale_entry[0], ale_entry[1], ale_entry[2]);
+
+    for (i = 0; i < 3; i++){
+        iowrite32(ale_entry[i], ale_base + ALE_TABLE + 4 * i); // TBLW2, TBLW1, TBLW0
+    }
+
+    iowrite32(ALE_TABLE_WRITE | (idx&0x3F), ale_base + ALE_TABLE_CONTROL);   
+}
+
+static void cpsw_port_add_dual_emac_def_ale_entries(struct cpsw_priv *priv,
+						    struct cpsw_slave *slave)
+{
+	u32 port_mask = 1 << priv->emac_port | ALE_PORT_HOST;
+	struct cpsw_common *cpsw = priv->cpsw;
+	u32 reg;
+	u32 ale_entry[3];
+	u32 ale_control;
+
+	printk("[V1] cpsw_port_add_dual_emac_def_ale_entries\n");
+
+	// reg = (cpsw->version == CPSW_VERSION_1) ? CPSW1_PORT_VLAN :
+	//        CPSW2_PORT_VLAN;
+	// slave_write(slave, slave->port_vlan, reg);
+	iowrite32(0x1, port1_base + P1_PORT_VLAN);
+
+
+	printk("[V1] cpsw_ale_add_vlan\n");
+	cpsw_ale_add_vlanV(cpsw->ale, slave->port_vlan, port_mask,
+			  port_mask, port_mask, 0);
+	// ale_entry[0] = 0x0;
+	// ale_entry[1] = 0x20010000;
+	// ale_entry[2] = 0x3030003;
+	// ale_write(ale_entry, 1);
+
+	// cpsw_ale_add_mcast(cpsw->ale, priv->ndev->broadcast,
+	// 		   ALE_PORT_HOST, ALE_VLAN, slave->port_vlan,
+	// 		   ALE_MCAST_FWD);
+	ale_entry[0] = 0x4;
+	ale_entry[1] = 0x3001ffff;
+	ale_entry[2] = 0xffffffff;
+	ale_write(ale_entry, 2);
+
+	// cpsw_ale_add_ucast(cpsw->ale, priv->mac_addr,
+	// 		   HOST_PORT_NUM, ALE_VLAN |
+	// 		   ALE_SECURE, slave->port_vlan);
+	ale_entry[0] = 0x1;
+	ale_entry[1] = 0x30012476;
+	ale_entry[2] = 0x25e729f0;
+	ale_write(ale_entry, 3);
+
+
+	// cpsw_ale_control_set(cpsw->ale, priv->emac_port,
+	// 		     ALE_PORT_DROP_UNKNOWN_VLAN, 1);
+	// /* learning make no sense in dual_mac mode */
+	// cpsw_ale_control_set(cpsw->ale, priv->emac_port,
+	// 		     ALE_PORT_NOLEARN, 1);
+    ale_control = ioread32(ale_base + ALE_PORTCTL1);
+    ale_control |= (ALE_DROP_UNKNOWN_VLAN);
+    iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
+    /* learning make no sense in dual_mac mode */
+    ale_control = ioread32(ale_base + ALE_PORTCTL1);
+    ale_control |= (ALE_NO_LEARN);
+    iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
+}
+
 void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 {
 	// struct cpsw_common *cpsw = priv->cpsw;
@@ -840,6 +925,11 @@ void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 	// =============================================
 	struct cpsw_common *cpsw = priv->cpsw;
 	struct phy_device *phy;
+	ctrmdl_base = ioremap(0x44e10000, 0x1000);
+	ale_base = ioremap(0x4a100D00, 0x200);
+	port1_base = ioremap(0x4a100200, 0x100);
+	u32 ale_entry[3];
+	u32 ale_control;
 
 	cpsw_sl_reset(slave->mac_sl, 100);
 	cpsw_sl_ctl_reset(slave->mac_sl);
@@ -850,28 +940,13 @@ void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 
 	printk("[V] cpsw_slave_open, version = %d\n", cpsw->version);
 
-	switch (cpsw->version) {
-	case CPSW_VERSION_1:
-		slave_write(slave, TX_PRIORITY_MAPPING, CPSW1_TX_PRI_MAP);
-		/* Increase RX FIFO size to 5 for supporting fullduplex
-		 * flow control mode
-		 */
-		slave_write(slave,
-			    (CPSW_MAX_BLKS_TX << CPSW_MAX_BLKS_TX_SHIFT) |
-			    CPSW_MAX_BLKS_RX, CPSW1_MAX_BLKS);
-		break;
-	case CPSW_VERSION_2:
-	case CPSW_VERSION_3:
-	case CPSW_VERSION_4:
-		slave_write(slave, TX_PRIORITY_MAPPING, CPSW2_TX_PRI_MAP);
-		/* Increase RX FIFO size to 5 for supporting fullduplex
-		 * flow control mode
-		 */
-		slave_write(slave,
-			    (CPSW_MAX_BLKS_TX << CPSW_MAX_BLKS_TX_SHIFT) |
-			    CPSW_MAX_BLKS_RX, CPSW2_MAX_BLKS);
-		break;
-	}
+	slave_write(slave, TX_PRIORITY_MAPPING, CPSW2_TX_PRI_MAP);
+	/* Increase RX FIFO size to 5 for supporting fullduplex
+		* flow control mode
+		*/
+	slave_write(slave,
+			(CPSW_MAX_BLKS_TX << CPSW_MAX_BLKS_TX_SHIFT) |
+			CPSW_MAX_BLKS_RX, CPSW2_MAX_BLKS);
 
 	/* setup max packet size, and mac address */
 	cpsw_sl_reg_write(slave->mac_sl, CPSW_SL_RX_MAXLEN,
@@ -880,21 +955,43 @@ void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 
 	slave->mac_control = 0;	/* no link yet */
 
-	if (cpsw_is_switch_en(cpsw))
-		cpsw_port_add_switch_def_ale_entries(priv, slave);
-	else
-		cpsw_port_add_dual_emac_def_ale_entries(priv, slave);
+	// #################### [def_ale_entries] ####################
+	cpsw_port_add_dual_emac_def_ale_entries(priv, slave);
+	// ===============================
 
-	if (!slave->data->phy_node)
-		dev_err(priv->dev, "no phy found on slave %d\n",
-			slave->slave_num);
+	// iowrite32(0x1, port1_base + P1_PORT_VLAN);
+
+	// ale_entry[0] = 0x0;
+	// ale_entry[1] = 0x20010000;
+	// ale_entry[2] = 0x3030003;
+	// ale_write(ale_entry, 1);
+
+	// ale_entry[0] = 0x4;
+	// ale_entry[1] = 0x3001ffff;
+	// ale_entry[2] = 0xffffffff;
+	// ale_write(ale_entry, 2);
+
+	// ale_entry[0] = 0x1;
+	// ale_entry[1] = 0x30012476;
+	// ale_entry[2] = 0x25e729f0;
+	// ale_write(ale_entry, 3);
+
+    // ale_control = ioread32(ale_base + ALE_PORTCTL1);
+    // ale_control |= (ALE_DROP_UNKNOWN_VLAN);
+    // iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
+
+    // /* learning make no sense in dual_mac mode */
+    // ale_control = ioread32(ale_base + ALE_PORTCTL1);
+    // ale_control |= (ALE_NO_LEARN);
+    // iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
+	// #################### [E def_ale_entries] ####################
+
+	// #################### [of_phy_connect] ####################
 	// phy = of_phy_connect(priv->ndev, slave->data->phy_node,
 	// 		     &cpsw_adjust_link, 0, slave->data->phy_if);
 
-	// ==========
+	// ===============================
 	phy = of_phy_find_device(slave->data->phy_node);
-	//int ret;
-
 	phy->dev_flags |= 0;
 
 	printk("[V] *of_phy_connect\n");
@@ -910,26 +1007,26 @@ void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 	priv->ndev->phydev = phy;
 
 	netif_carrier_off(phy->attached_dev);
-	// ==========
-
-	if (!phy) {
-		dev_err(priv->dev, "phy \"%pOF\" not found on slave %d\n",
-			slave->data->phy_node,
-			slave->slave_num);
-		return;
-	}
-
+	// #################### [E of_phy_connect] ####################
 	phy->mac_managed_pm = true;
-
 	slave->phy = phy;
 
-	phy_attached_info(slave->phy);
+	printk("[V] PHY ATTACHED\n");
 
-	phy_start(slave->phy);
+	// #################### [phy_start] ####################
+	// phy_start(slave->phy);
+	// ===============================
+	slave->phy->state = PHY_UP;
+	mod_delayed_work(system_power_efficient_wq, &slave->phy->state_queue,
+			 0);
+	// #################### [E phy_start] ####################
 
-	/* Configure GMII_SEL register */
-	phy_set_mode_ext(slave->data->ifphy, PHY_MODE_ETHERNET,
-			 slave->data->phy_if);
+	// #################### [phy_set_mode_ext] ####################
+	// phy_set_mode_ext(slave->data->ifphy, PHY_MODE_ETHERNET,
+	// 		 slave->data->phy_if);
+	// ======================================
+	iowrite32(0xE0, ctrmdl_base + 0x650);
+	// #################### [E phy_set_mode_ext] ####################
 }
 EXPORT_SYMBOL_GPL(cpsw_slave_open);
 
@@ -1095,7 +1192,7 @@ static int cpsw_ndo_open(struct net_device *ndev)
 
 	/* [Print DEBUG] */
 	//Print_register_val_cpsw(cpsw);
-	//Print_ale_entry(cpsw->ale, 5);
+	Print_ale_entry(cpsw->ale, 5);
 	return 0;
 
 err_cleanup:
