@@ -129,7 +129,7 @@ irqreturn_t cpsw_rx_interrupt(int irq, void *dev_id)
 {
 	struct cpsw_common *cpsw = dev_id;
 
-	printk("[V] cpsw_rx_interrupt\n");
+	printk("[V] sample_rx_interrupt\n");
 	writel(0, &cpsw->wr_regs->rx_en);
 	cpdma_ctlr_eoi(cpsw->dma, CPDMA_EOI_RX);
 
@@ -282,15 +282,21 @@ void cpsw_rx_vlan_encap(struct sk_buff *skb)
 	if (!vid)
 		return;
 
-	/* Untag P0 packets if set for vlan */
-	if (!cpsw_ale_get_vlan_p0_untag(cpsw->ale, vid)) {
-		prio = (rx_vlan_encap_hdr >>
-			CPSW_RX_VLAN_ENCAP_HDR_PRIO_SHIFT) &
-			CPSW_RX_VLAN_ENCAP_HDR_PRIO_MSK;
+	// /* Untag P0 packets if set for vlan */
+	// if (!cpsw_ale_get_vlan_p0_untag(cpsw->ale, vid)) {
+	// 	prio = (rx_vlan_encap_hdr >>
+	// 		CPSW_RX_VLAN_ENCAP_HDR_PRIO_SHIFT) &
+	// 		CPSW_RX_VLAN_ENCAP_HDR_PRIO_MSK;
 
-		vtag = (prio << VLAN_PRIO_SHIFT) | vid;
-		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vtag);
-	}
+	// 	vtag = (prio << VLAN_PRIO_SHIFT) | vid;
+	// 	__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vtag);
+	// }
+	// prio = (rx_vlan_encap_hdr >>
+	// 	CPSW_RX_VLAN_ENCAP_HDR_PRIO_SHIFT) &
+	// 	CPSW_RX_VLAN_ENCAP_HDR_PRIO_MSK;
+
+	// vtag = (prio << VLAN_PRIO_SHIFT) | vid;
+	// __vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vtag);
 
 	/* strip vlan tag for VLAN-tagged packet */
 	if (pkt_type == CPSW_RX_VLAN_ENCAP_HDR_PKT_VLAN_TAG) {

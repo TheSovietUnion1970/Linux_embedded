@@ -2167,6 +2167,8 @@ int genphy_setup_forced(struct phy_device *phydev)
 {
 	u16 ctl = 0;
 
+	printk("[V1] genphy_setup_forced\n");
+
 	phydev->pause = 0;
 	phydev->asym_pause = 0;
 

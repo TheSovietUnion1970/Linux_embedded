@@ -810,13 +810,14 @@ static void cpsw_port_add_dual_emac_def_ale_entries(struct cpsw_priv *priv,
 	iowrite32(0x1, port1_base + P1_PORT_VLAN);
 
 
-	printk("[V1] cpsw_ale_add_vlan\n");
-	cpsw_ale_add_vlanV(cpsw->ale, slave->port_vlan, port_mask,
-			  port_mask, port_mask, 0);
-	// ale_entry[0] = 0x0;
-	// ale_entry[1] = 0x20010000;
-	// ale_entry[2] = 0x3030003;
-	// ale_write(ale_entry, 1);
+	// printk("[V1] cpsw_ale_add_vlan\n");
+	// cpsw_ale_add_vlanV(cpsw->ale, slave->port_vlan, port_mask,
+	// 		  port_mask, port_mask, 0);
+	ale_entry[0] = 0x0;
+	ale_entry[1] = 0x20010000;
+	ale_entry[2] = 0x3030003;
+	bitmap_set(priv->cpsw->ale->p0_untag_vid_mask, 1, 1); // vid = 1
+	ale_write(ale_entry, 1);
 
 	// cpsw_ale_add_mcast(cpsw->ale, priv->ndev->broadcast,
 	// 		   ALE_PORT_HOST, ALE_VLAN, slave->port_vlan,
@@ -956,34 +957,35 @@ void cpsw_slave_open(struct cpsw_slave *slave, struct cpsw_priv *priv)
 	slave->mac_control = 0;	/* no link yet */
 
 	// #################### [def_ale_entries] ####################
-	cpsw_port_add_dual_emac_def_ale_entries(priv, slave);
+	// cpsw_port_add_dual_emac_def_ale_entries(priv, slave);
 	// ===============================
 
-	// iowrite32(0x1, port1_base + P1_PORT_VLAN);
+	iowrite32(0x1, port1_base + P1_PORT_VLAN);
 
-	// ale_entry[0] = 0x0;
-	// ale_entry[1] = 0x20010000;
-	// ale_entry[2] = 0x3030003;
-	// ale_write(ale_entry, 1);
+	ale_entry[0] = 0x0;
+	ale_entry[1] = 0x20010000;
+	ale_entry[2] = 0x3030003;
+	//bitmap_set(priv->cpsw->ale->p0_untag_vid_mask, 1, 1); // vid = 1
+	ale_write(ale_entry, 1);
 
-	// ale_entry[0] = 0x4;
-	// ale_entry[1] = 0x3001ffff;
-	// ale_entry[2] = 0xffffffff;
-	// ale_write(ale_entry, 2);
+	ale_entry[0] = 0x4;
+	ale_entry[1] = 0x3001ffff;
+	ale_entry[2] = 0xffffffff;
+	ale_write(ale_entry, 2);
 
-	// ale_entry[0] = 0x1;
-	// ale_entry[1] = 0x30012476;
-	// ale_entry[2] = 0x25e729f0;
-	// ale_write(ale_entry, 3);
+	ale_entry[0] = 0x1;
+	ale_entry[1] = 0x30012476;
+	ale_entry[2] = 0x25e729f0;
+	ale_write(ale_entry, 3);
 
-    // ale_control = ioread32(ale_base + ALE_PORTCTL1);
-    // ale_control |= (ALE_DROP_UNKNOWN_VLAN);
-    // iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
+    ale_control = ioread32(ale_base + ALE_PORTCTL1);
+    ale_control |= (ALE_DROP_UNKNOWN_VLAN);
+    iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
 
-    // /* learning make no sense in dual_mac mode */
-    // ale_control = ioread32(ale_base + ALE_PORTCTL1);
-    // ale_control |= (ALE_NO_LEARN);
-    // iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
+    /* learning make no sense in dual_mac mode */
+    ale_control = ioread32(ale_base + ALE_PORTCTL1);
+    ale_control |= (ALE_NO_LEARN);
+    iowrite32(ale_control, ale_base + ALE_PORTCTL1);  
 	// #################### [E def_ale_entries] ####################
 
 	// #################### [of_phy_connect] ####################
@@ -1065,8 +1067,14 @@ void Print_register_val_cpsw(struct cpsw_common *cpsw){
     printk("--- [>>>>><<<<<] ---\n");
 
     printk("--- [cpdma_regs] ---\n");
-	for (i = 0; i < 49; i++){
+	for (i = 0; i < 64; i++){
 		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->dma->params.dmaregs + i*4));
+	}
+    printk("--- [>>>>><<<<<] ---\n");
+
+    printk("--- [state_ram] ---\n");
+	for (i = 0; i < 32; i++){
+		printk("# [%xh] = 0x%x\n", i*4, readl_relaxed((u8*)cpsw->dma->params.txhdp + i*4));
 	}
     printk("--- [>>>>><<<<<] ---\n");
 
@@ -1112,6 +1120,97 @@ static int cpsw_ndo_stop(struct net_device *ndev)
 
 static int cpsw_ndo_open(struct net_device *ndev)
 {
+// 	struct cpsw_priv *priv = netdev_priv(ndev);
+// 	struct cpsw_common *cpsw = priv->cpsw;
+// 	int ret;
+
+// 	dev_info(priv->dev, "starting ndev. mode: %s\n",
+// 		 cpsw_is_switch_en(cpsw) ? "switch" : "dual_mac");
+// 	ret = pm_runtime_get_sync(cpsw->dev);
+// 	if (ret < 0) {
+// 		pm_runtime_put_noidle(cpsw->dev);
+// 		return ret;
+// 	}
+
+// 	/* Notify the stack of the actual queue counts. */
+// 	ret = netif_set_real_num_tx_queues(ndev, cpsw->tx_ch_num);
+// 	if (ret) {
+// 		dev_err(priv->dev, "cannot set real number of tx queues\n");
+// 		goto pm_cleanup;
+// 	}
+
+// 	ret = netif_set_real_num_rx_queues(ndev, cpsw->rx_ch_num);
+// 	if (ret) {
+// 		dev_err(priv->dev, "cannot set real number of rx queues\n");
+// 		goto pm_cleanup;
+// 	}
+
+// 	/* Initialize host and slave ports */
+// 	if (!cpsw->usage_count)
+// 		cpsw_init_host_port(priv);
+// 	cpsw_slave_open(&cpsw->slaves[priv->emac_port - 1], priv);
+
+// 	/* initialize shared resources for every ndev */
+// 	if (!cpsw->usage_count) {
+// 		/* create rxqs for both infs in dual mac as they use same pool
+// 		 * and must be destroyed together when no users.
+// 		 */
+// 		ret = cpsw_create_xdp_rxqs(cpsw);
+// 		if (ret < 0)
+// 			goto err_cleanup;
+
+// 		ret = cpsw_fill_rx_channels(priv);
+// 		if (ret < 0)
+// 			goto err_cleanup;
+
+// 		if (cpsw->cpts) {
+// 			if (cpts_register(cpsw->cpts))
+// 				dev_err(priv->dev, "error registering cpts device\n");
+// 			else
+// 				writel(0x10, &cpsw->wr_regs->misc_en);
+// 		}
+
+// 		napi_enable(&cpsw->napi_rx);
+// 		napi_enable(&cpsw->napi_tx);
+
+// 		if (cpsw->tx_irq_disabled) {
+// 			cpsw->tx_irq_disabled = false;
+// 			enable_irq(cpsw->irqs_table[1]);
+// 		}
+
+// 		if (cpsw->rx_irq_disabled) {
+// 			cpsw->rx_irq_disabled = false;
+// 			enable_irq(cpsw->irqs_table[0]);
+// 		}
+// 	}
+
+// 	cpsw_restore(priv);
+
+// 	/* Enable Interrupt pacing if configured */
+// 	if (cpsw->coal_intvl != 0) {
+// 		struct ethtool_coalesce coal;
+
+// 		coal.rx_coalesce_usecs = cpsw->coal_intvl;
+// 		cpsw_set_coalesce(ndev, &coal, NULL, NULL);
+// 	}
+
+// 	cpdma_ctlr_start(cpsw->dma);
+// 	cpsw_intr_enable(cpsw);
+// 	cpsw->usage_count++;
+
+// 	/* [Print DEBUG] */
+// 	//Print_register_val_cpsw(cpsw);
+// 	Print_ale_entry(cpsw->ale, 5);
+// 	return 0;
+
+// err_cleanup:
+// 	cpsw_ndo_stop(ndev);
+
+// pm_cleanup:
+// 	pm_runtime_put_sync(cpsw->dev);
+// 	return ret;
+
+	// ==================================
 	struct cpsw_priv *priv = netdev_priv(ndev);
 	struct cpsw_common *cpsw = priv->cpsw;
 	int ret;
@@ -1119,80 +1218,36 @@ static int cpsw_ndo_open(struct net_device *ndev)
 	dev_info(priv->dev, "starting ndev. mode: %s\n",
 		 cpsw_is_switch_en(cpsw) ? "switch" : "dual_mac");
 	ret = pm_runtime_get_sync(cpsw->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(cpsw->dev);
-		return ret;
-	}
 
-	/* Notify the stack of the actual queue counts. */
-	ret = netif_set_real_num_tx_queues(ndev, cpsw->tx_ch_num);
-	if (ret) {
-		dev_err(priv->dev, "cannot set real number of tx queues\n");
-		goto pm_cleanup;
-	}
-
-	ret = netif_set_real_num_rx_queues(ndev, cpsw->rx_ch_num);
-	if (ret) {
-		dev_err(priv->dev, "cannot set real number of rx queues\n");
-		goto pm_cleanup;
-	}
+	// /* Notify the stack of the actual queue counts. */
+	// ret = netif_set_real_num_tx_queues(ndev, cpsw->tx_ch_num);
+	// ret = netif_set_real_num_rx_queues(ndev, cpsw->rx_ch_num);
 
 	/* Initialize host and slave ports */
-	if (!cpsw->usage_count)
-		cpsw_init_host_port(priv);
+	cpsw_init_host_port(priv);
 	cpsw_slave_open(&cpsw->slaves[priv->emac_port - 1], priv);
 
 	/* initialize shared resources for every ndev */
-	if (!cpsw->usage_count) {
-		/* create rxqs for both infs in dual mac as they use same pool
-		 * and must be destroyed together when no users.
-		 */
-		ret = cpsw_create_xdp_rxqs(cpsw);
-		if (ret < 0)
-			goto err_cleanup;
 
-		ret = cpsw_fill_rx_channels(priv);
-		if (ret < 0)
-			goto err_cleanup;
+	/* create rxqs for both infs in dual mac as they use same pool
+		* and must be destroyed together when no users.
+		*/
+	printk("[V1] yyy1 = 0x%x\n", priv->cpsw->dma->channels[32]->head);
 
-		if (cpsw->cpts) {
-			if (cpts_register(cpsw->cpts))
-				dev_err(priv->dev, "error registering cpts device\n");
-			else
-				writel(0x10, &cpsw->wr_regs->misc_en);
-		}
+	ret = cpsw_create_xdp_rxqs(cpsw);
+	ret = cpsw_fill_rx_channels(priv);
 
-		napi_enable(&cpsw->napi_rx);
-		napi_enable(&cpsw->napi_tx);
+	printk("[V1] yyy2 = 0x%x\n", priv->cpsw->dma->channels[32]->head);
 
-		if (cpsw->tx_irq_disabled) {
-			cpsw->tx_irq_disabled = false;
-			enable_irq(cpsw->irqs_table[1]);
-		}
-
-		if (cpsw->rx_irq_disabled) {
-			cpsw->rx_irq_disabled = false;
-			enable_irq(cpsw->irqs_table[0]);
-		}
-	}
-
-	cpsw_restore(priv);
-
-	/* Enable Interrupt pacing if configured */
-	if (cpsw->coal_intvl != 0) {
-		struct ethtool_coalesce coal;
-
-		coal.rx_coalesce_usecs = cpsw->coal_intvl;
-		cpsw_set_coalesce(ndev, &coal, NULL, NULL);
-	}
+	napi_enable(&cpsw->napi_rx);
+	napi_enable(&cpsw->napi_tx);
 
 	cpdma_ctlr_start(cpsw->dma);
 	cpsw_intr_enable(cpsw);
-	cpsw->usage_count++;
 
 	/* [Print DEBUG] */
-	//Print_register_val_cpsw(cpsw);
-	Print_ale_entry(cpsw->ale, 5);
+	Print_register_val_cpsw(cpsw);
+	//Print_ale_entry(cpsw->ale, 5);
 	return 0;
 
 err_cleanup:
@@ -1233,7 +1288,7 @@ static netdev_tx_t cpsw_ndo_start_xmit(struct sk_buff *skb,
 	txch = cpsw->txv[q_idx].ch;
 	txq = netdev_get_tx_queue(ndev, q_idx);
 	skb_tx_timestamp(skb);
-	//ETHER1_Print_Hex(skb->data, skb->len, "txch");
+	ETHER1_Print_Hex(skb->data, skb->len, "txch");
 	ret = cpdma_chan_submit(txch, skb, skb->data, skb->len,
 				priv->emac_port);
 	if (unlikely(ret != 0)) {

@@ -394,8 +394,11 @@ static int cpdma_chan_on(struct cpdma_chan *chan)
 		return -EINVAL;
 	}
 	dma_reg_write(ctlr, chan->int_set, chan->mask);
+	//printk("[V1] int_set = 0x%x, mask = 0x%x\n", chan->int_set, chan->mask);
+	//printk("[V1] head = 0x%x, rxfree = 0x%x\n", chan->head, chan->rxfree);
 	chan->state = CPDMA_STATE_ACTIVE;
 	if (chan->head) {
+		//printk("[V1] addr of rxhdp = 0x%x\n", chan->hdp);
 		chan_write(chan, hdp, desc_phys(pool, chan->head));
 		if (chan->rxfree)
 			chan_write(chan, rxfree, chan->count);
@@ -542,11 +545,124 @@ struct cpdma_ctlr *cpdma_ctlr_create(struct cpdma_params *params)
 
 int cpdma_ctlr_start(struct cpdma_ctlr *ctlr)
 {
+	// struct cpdma_chan *chan;
+	// unsigned long flags;
+	// int i, prio_mode;
+
+	// printk("[V] cpdma_ctlr_start, ctlr->chan_num = %d\n", ctlr->chan_num);
+
+	// spin_lock_irqsave(&ctlr->lock, flags);
+	// if (ctlr->state != CPDMA_STATE_IDLE) {
+	// 	spin_unlock_irqrestore(&ctlr->lock, flags);
+	// 	return -EBUSY;
+	// }
+
+	// if (ctlr->params.has_soft_reset) {
+	// 	unsigned timeout = 10 * 100;
+
+	// 	dma_reg_write(ctlr, CPDMA_SOFTRESET, 1);
+	// 	while (timeout) {
+	// 		if (dma_reg_read(ctlr, CPDMA_SOFTRESET) == 0)
+	// 			break;
+	// 		udelay(10);
+	// 		timeout--;
+	// 	}
+	// 	WARN_ON(!timeout);
+	// }
+
+	// for (i = 0; i < ctlr->num_chan; i++) {
+	// 	writel(0, ctlr->params.txhdp + 4 * i);
+	// 	writel(0, ctlr->params.rxhdp + 4 * i);
+	// 	writel(0, ctlr->params.txcp + 4 * i);
+	// 	writel(0, ctlr->params.rxcp + 4 * i);
+	// }
+
+	// dma_reg_write(ctlr, CPDMA_RXINTMASKCLEAR, 0xffffffff);
+	// dma_reg_write(ctlr, CPDMA_TXINTMASKCLEAR, 0xffffffff);
+
+	// dma_reg_write(ctlr, CPDMA_TXCONTROL, 1);
+	// dma_reg_write(ctlr, CPDMA_RXCONTROL, 1);
+
+	// ctlr->state = CPDMA_STATE_ACTIVE;
+
+	// prio_mode = 0;
+	// for (i = 0; i < ARRAY_SIZE(ctlr->channels); i++) {
+	// 	chan = ctlr->channels[i];
+	// 	if (chan) {
+	// 		cpdma_chan_set_chan_shaper(chan);
+	// 		cpdma_chan_on(chan);
+
+	// 		/* off prio mode if all tx channels are rate limited */
+	// 		if (is_tx_chan(chan) && !chan->rate)
+	// 			prio_mode = 1;
+	// 	}
+	// }
+
+	// _cpdma_control_set(ctlr, CPDMA_TX_PRIO_FIXED, prio_mode);
+	// _cpdma_control_set(ctlr, CPDMA_RX_BUFFER_OFFSET, 0);
+
+	// spin_unlock_irqrestore(&ctlr->lock, flags);
+	// return 0;
+
+	// ============================================
+// 	void* base_cpdma = ioremap(0x4a100800, 0x100);
+// 	void* base_txhdp = ioremap(0x4a100A00, 0x100);
+// 	void* base_rxhdp = (u8*)base_txhdp + 0x20;
+// 	void* base_txcp = (u8*)base_txhdp + 0x40;
+// 	void* base_rxcp = (u8*)base_txhdp + 0x60;
+// 	u32 cpdma_control, i;
+// #define CPDMA_CONTROL   	0x20
+// 	#define TX_PTYPE    1u << 0
+// #define CPDMA_RX_BUFF_OFFSET       	0x28
+
+//     iowrite32(1, base_cpdma + CPDMA_SOFTRESET);
+// 	//while(ioread32(base_cpdma + CPDMA_SOFTRESET)&0x1);
+// 	msleep(10);
+//     //ret = wait_register_update(data, base_cpdma, CPDMA_SOFTRESET, 0, BIT_VAL_0, 2000, "CPDMA_SOFTRESET");
+
+//     // 8 chan num
+//     for (i = 0; i < 8; i++){
+//         iowrite32(0, base_txhdp + 4*i);
+//         iowrite32(0, base_rxhdp + 4*i);
+//         iowrite32(0, base_txcp + 4*i);
+//         iowrite32(0, base_rxcp + 4*i);
+//     }
+
+//     iowrite32(0xffffffff, base_cpdma + CPDMA_RXINTMASKCLEAR);
+//     iowrite32(0xffffffff, base_cpdma + CPDMA_TXINTMASKCLEAR);
+
+//     // enable
+//     iowrite32(1, base_cpdma + CPDMA_TXCONTROL);
+//     iowrite32(1, base_cpdma + CPDMA_RXCONTROL);
+
+//     /* ctlr->state = CPDMA_STATE_ACTIVE; */
+
+//     /*
+//     cpdma_chan_set_chan_shaper
+//     cpdma_chan_on
+//     -> no need as chan->rate = 0 and CPDMA_STATE_ACTIVE
+//     */
+
+//     cpdma_control = ioread32(base_cpdma + CPDMA_CONTROL);
+//     cpdma_control |= TX_PTYPE; // uses the highest priority 7
+//     iowrite32(cpdma_control, base_cpdma + CPDMA_CONTROL);
+
+//     /* Data received at the start */
+//     iowrite32(0, base_cpdma + CPDMA_RX_BUFF_OFFSET);
+
+// 	return 0;
+
+	// ====================================
 	struct cpdma_chan *chan;
 	unsigned long flags;
 	int i, prio_mode;
+	void* base_cpdma = ioremap(0x4a100800, 0x100);
+	void* base_txhdp = ioremap(0x4a100a00, 0x100);
+	void* base_rxhdp = (u8*)base_txhdp + 0x20;
+	void* base_txcp = (u8*)base_txhdp + 0x40;
+	void* base_rxcp = (u8*)base_txhdp + 0x60;
 
-	printk("[V] cpdma_ctlr_start, ctlr->chan_num = %d\n", ctlr->chan_num);
+	printk("[V] cpdma_ctlr_start, base_cpdma = %x, dma_regs = %x\n", base_cpdma, ctlr->dmaregs);
 
 	spin_lock_irqsave(&ctlr->lock, flags);
 	if (ctlr->state != CPDMA_STATE_IDLE) {
@@ -577,8 +693,10 @@ int cpdma_ctlr_start(struct cpdma_ctlr *ctlr)
 	dma_reg_write(ctlr, CPDMA_RXINTMASKCLEAR, 0xffffffff);
 	dma_reg_write(ctlr, CPDMA_TXINTMASKCLEAR, 0xffffffff);
 
-	dma_reg_write(ctlr, CPDMA_TXCONTROL, 1);
-	dma_reg_write(ctlr, CPDMA_RXCONTROL, 1);
+	// dma_reg_write(ctlr, CPDMA_TXCONTROL, 1);
+	// dma_reg_write(ctlr, CPDMA_RXCONTROL, 1);
+    iowrite32(1, base_cpdma + CPDMA_TXCONTROL);
+    iowrite32(1, base_cpdma + CPDMA_RXCONTROL);
 
 	ctlr->state = CPDMA_STATE_ACTIVE;
 
@@ -586,7 +704,9 @@ int cpdma_ctlr_start(struct cpdma_ctlr *ctlr)
 	for (i = 0; i < ARRAY_SIZE(ctlr->channels); i++) {
 		chan = ctlr->channels[i];
 		if (chan) {
-			cpdma_chan_set_chan_shaper(chan);
+			//cpdma_chan_set_chan_shaper(chan);
+
+			printk("[V1] i = %d, ch = %x, head = 0x%x, rxfree = 0x%x\n", i, chan->chan_num, chan->head, chan->rxfree);
 			cpdma_chan_on(chan);
 
 			/* off prio mode if all tx channels are rate limited */

@@ -313,6 +313,8 @@ static int cpsw_ale_read(struct cpsw_ale *ale, int idx, u32 *ale_entry)
 {
 	int i;
 
+	//printk("cpsw_ale_read > idx = %d", idx);
+
 	WARN_ON(idx > ale->params.ale_entries);
 
 	writel_relaxed(idx, ale->params.ale_regs + ALE_TABLE_CONTROL);
@@ -328,8 +330,8 @@ static int cpsw_ale_write(struct cpsw_ale *ale, int idx, u32 *ale_entry)
 {
 	int i;
 
-	printk("cpsw_ale_write > idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
-										ale_entry[0], ale_entry[1], ale_entry[2]);
+	// printk("cpsw_ale_write > idx = %d, ale_entry[0][1][2] = 0x%x, 0x%x, 0x%x\n", idx,
+	// 									ale_entry[0], ale_entry[1], ale_entry[2]);
 
 	WARN_ON(idx > ale->params.ale_entries);
 
@@ -625,6 +627,8 @@ static void cpsw_ale_set_vlan_untag(struct cpsw_ale *ale, u32 *ale_entry,
 	cpsw_ale_vlan_set_fld(ale, ale_entry,
 			      ALE_ENT_VID_FORCE_UNTAGGED_MSK,
 			      untag_mask);
+
+	printk("[V1] ale->p0_untag_vid_mask = 0x%x, vid = %d\n", ale->p0_untag_vid_mask, vid);
 	if (untag_mask & ALE_PORT_HOST)
 		bitmap_set(ale->p0_untag_vid_mask, vid, 1);
 	else
@@ -636,6 +640,8 @@ int cpsw_ale_add_vlan(struct cpsw_ale *ale, u16 vid, int port_mask, int untag,
 {
 	u32 ale_entry[ALE_ENTRY_WORDS] = {0, 0, 0};
 	int idx;
+
+	printk("[V1] ******* cpsw_ale_add_vlan ***********\n");
 
 	idx = cpsw_ale_match_vlan(ale, vid);
 	if (idx >= 0)
@@ -674,9 +680,57 @@ int cpsw_ale_add_vlan(struct cpsw_ale *ale, u16 vid, int port_mask, int untag,
 	return 0;
 }
 
+	// ale_entry[0] = 0x0;
+	// ale_entry[1] = 0x20010000;
+	// ale_entry[2] = 0x3030003;
+	// ale_write(ale_entry, 1);
+
 int cpsw_ale_add_vlanV(struct cpsw_ale *ale, u16 vid, int port_mask, int untag,
 		      int reg_mcast, int unreg_mcast)
 {
+	// u32 ale_entry[ALE_ENTRY_WORDS] = {0, 0, 0};
+	// int idx = 1;
+
+	// idx = cpsw_ale_match_vlan(ale, vid);
+	// if (idx >= 0)
+	// 	cpsw_ale_read(ale, idx, ale_entry);
+
+	// cpsw_ale_set_entry_type(ale_entry, ALE_TYPE_VLAN);
+	// cpsw_ale_set_vlan_id(ale_entry, vid);
+	// cpsw_ale_set_vlan_untag(ale, ale_entry, vid, untag);
+
+	// printk("[V1] ale->params.nu_switch_ale = 0x%x\n", ale->params.nu_switch_ale);
+	// if (!ale->params.nu_switch_ale) {
+	// 	cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 			      ALE_ENT_VID_REG_MCAST_MSK, reg_mcast);
+	// 	cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 			      ALE_ENT_VID_UNREG_MCAST_MSK, unreg_mcast);
+	// } else {
+	// 	cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 			      ALE_ENT_VID_UNREG_MCAST_IDX,
+	// 			      NU_VLAN_UNREG_MCAST_IDX);
+	// 	cpsw_ale_set_vlan_mcast(ale, ale_entry, reg_mcast, unreg_mcast);
+	// }
+
+	// cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 		      ALE_ENT_VID_MEMBER_LIST, port_mask);
+
+	// if (idx < 0){
+	// 	idx = cpsw_ale_match_free(ale);
+	// 	printk("idx1 = %d\n", idx);
+	// }
+		
+	// // if (idx < 0){
+	// // 	idx = cpsw_ale_find_ageable(ale);
+	// // 	printk("idx2 = %d\n", idx);
+	// // }
+	// // if (idx < 0)
+	// // 	return -ENOMEM;
+
+	// cpsw_ale_write(ale, idx, ale_entry);
+	// return 0;
+
+	// =======================
 	u32 ale_entry[ALE_ENTRY_WORDS] = {0, 0, 0};
 	int idx = 1;
 
@@ -684,25 +738,23 @@ int cpsw_ale_add_vlanV(struct cpsw_ale *ale, u16 vid, int port_mask, int untag,
 	if (idx >= 0)
 		cpsw_ale_read(ale, idx, ale_entry);
 
-	cpsw_ale_set_entry_type(ale_entry, ALE_TYPE_VLAN);
-	cpsw_ale_set_vlan_id(ale_entry, vid);
-	cpsw_ale_set_vlan_untag(ale, ale_entry, vid, untag);
+	// cpsw_ale_set_entry_type(ale_entry, ALE_TYPE_VLAN);
+	// cpsw_ale_set_vlan_id(ale_entry, vid);
+	// cpsw_ale_set_vlan_untag(ale, ale_entry, vid, untag);
+	// cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 				ALE_ENT_VID_REG_MCAST_MSK, reg_mcast);
+	// cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 				ALE_ENT_VID_UNREG_MCAST_MSK, unreg_mcast);
+	// cpsw_ale_vlan_set_fld(ale, ale_entry,
+	// 		      ALE_ENT_VID_MEMBER_LIST, port_mask);
 
-	printk("[V1] ale->params.nu_switch_ale = 0x%x\n", ale->params.nu_switch_ale);
-	if (!ale->params.nu_switch_ale) {
-		cpsw_ale_vlan_set_fld(ale, ale_entry,
-				      ALE_ENT_VID_REG_MCAST_MSK, reg_mcast);
-		cpsw_ale_vlan_set_fld(ale, ale_entry,
-				      ALE_ENT_VID_UNREG_MCAST_MSK, unreg_mcast);
-	} else {
-		cpsw_ale_vlan_set_fld(ale, ale_entry,
-				      ALE_ENT_VID_UNREG_MCAST_IDX,
-				      NU_VLAN_UNREG_MCAST_IDX);
-		cpsw_ale_set_vlan_mcast(ale, ale_entry, reg_mcast, unreg_mcast);
-	}
+	printk("[V1] ale->params.ale_entries = 0x%x\n", ale->params.ale_entries);
+	
 
-	cpsw_ale_vlan_set_fld(ale, ale_entry,
-			      ALE_ENT_VID_MEMBER_LIST, port_mask);
+	ale_entry[0] = 0x0;
+	ale_entry[1] = 0x20010000;
+	ale_entry[2] = 0x3030003;
+	bitmap_set(ale->p0_untag_vid_mask, vid, 1);
 
 	if (idx < 0){
 		idx = cpsw_ale_match_free(ale);
