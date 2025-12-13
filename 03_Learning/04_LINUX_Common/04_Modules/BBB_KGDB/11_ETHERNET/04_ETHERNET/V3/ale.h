@@ -40,6 +40,17 @@ ale_entry[1] -> ale[63 - 32]
 ale_entry[2] -> ale[31 - 0] 
 */
 
+/* ALE table
+TBL0[31 - 0]  = TBL[31 - 0]  =>(32 bits) 4 bytes of LOW MAC addr
+TBL1[15 - 0]  = TBL[47 - 32] =>(16 bits) 2 bytes of HIGH MAC addr
+TBL1[27 - 16] = TBL[59 - 47] =>(12 bits) VLAN id
+TBL1[29 - 28] = TBL[61 - 60] =>(2 bits)  Entry type
+TBL1[31 - 30] = TBL[63 - 62] =>(2 bits)  Unicast type
+TBL2[0]       = TBL[64]      =>(1 bit)   Secure flags
+TBL2[1]       = TBL[65]      =>(1 bit)   Blocked/Super flags
+TBL2[4 - 2]   = TBL[68 - 66] =>(3 bits)  Port number
+*/
+
 #define ENTRY_TYPE_START    60
 #define ENTRY_TYPE_BITS     2
 
@@ -55,14 +66,17 @@ ale_entry[2] -> ale[31 - 0]
 #define SECURE_START        64
 #define SECURE_BITS         1
 
-#define BLOCKED_START       64
+#define BLOCKED_START       65
 #define BLOCKED_BITS        1
 
-#define SUPER_START         64
+#define SUPER_START         65
 #define SUPER_BITS          1
 
 #define PORT_NUM_START      66
 #define PORT_NUM_BITS       3 // (host port 0, slave port 1, slave port 2)
+
+void ale_read(struct ether_device_data *data, u32* ale_entry, u16 idx);
+void ale_write(struct ether_device_data *data, u32* ale_entry, u16 idx);
 
 void ale_add_vlan_id0(struct ether_device_data *data, u16 vid);
 void ale_add_vlan_id1(struct ether_device_data *data, u16 vid);

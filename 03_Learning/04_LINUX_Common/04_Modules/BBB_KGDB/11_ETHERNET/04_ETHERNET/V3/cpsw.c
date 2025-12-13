@@ -191,8 +191,12 @@ int phy_init_hw(struct ether_device_data *data){
     if (ret < 0) return -1;
 
     /* reset the phy */
-    ret = mido_write(data, PHY_ID0, MII_BMCR, BMCR_ISOLATE);
+    ret = mdio_read(data, PHY_ID0, MII_BMCR, &mmi_bmcr);
+    mmi_bmcr &=~ BMCR_ISOLATE;
+    mmi_bmcr |= BMCR_RESET | BMCR_ANRESTART;
+    ret = mido_write(data, PHY_ID0, MII_BMCR, mmi_bmcr);
     if (ret < 0) return -1;
+
     msleep(10); // wait reset bit is clear
     ret = mdio_read(data, PHY_ID0, MII_BMCR, &mmi_bmcr);
     if (ret < 0) return -1;
@@ -202,8 +206,10 @@ int phy_init_hw(struct ether_device_data *data){
     }
 
     /* BMCR may be reset to defaults */
-    ret = mido_write(data, PHY_ID0, MII_BMCR, BMCR_SPEED100 | BMCR_ANRESTART | BMCR_ANENABLE);
-    if (ret < 0) return -1;
+    // ret = mido_write(data, PHY_ID0, MII_BMCR, BMCR_SPEED100 | BMCR_ANRESTART | BMCR_ANENABLE);
+    // if (ret < 0) return -1;
+    // ret = mido_write(data, PHY_ID0, MII_BMCR, BMCR_ANRESTART | BMCR_ANENABLE);
+    // if (ret < 0) return -1;
 
     // disbale first
     smsc_phy_config_intr(data, 0);
@@ -358,25 +364,36 @@ int cpsw_open(struct ether_device_data *data){
 
     /* initialize shared resources for every ndev */
     if (ret == 0){
-        ret = p_create_xdp_rxqs(data, data->tx_dma_channel); // for rx only
+        ret = p_create_xdp_rxqs(data, chan_linear(data->rx_dma_channel)); // for rx only
         if (ret < 0) return -1;
 
+        // cpdma_rx_fill(data);
         napi_enable(&data->napi_tx);
+        napi_enable(&data->napi_rx);
     }
 
     /* Intr */
     if (ret == 0){
         /* cpdma_ctlr_start */
-        printk("CPDMA\n");
+        // printk("APPLY here main, desc_dma_phys main = 0x%x\n", ioread32(data->base_rxhdp));
+        //printk("CPDMA\n");
         cpdma_ctlr_start(data);
+        cpdma_rx_fill(data);
+        //printk("APPLY here main, desc_dma_phys main = 0x%x\n", ioread32(data->base_rxhdp));
         cpdma_intr_enable(data);
     }
 
+    // [TODO: DEBUG]
     // Print_register_val_cpsw(data,
-    //     SS_EN, HOST_EN, WR_EN, SL_EN, ALE_EN, CPDMA_EN);
+    //     SS_EN, HOST_EN, WR_EN, SL_EN, ALE_EN, CPDMA_EN, STSRAM_EN, MDIO_EN);
 
     Print_register_val_cpsw(data,
-        0, 0, 0, 0, 0, CPDMA_EN);
+        0, 0, 0, 0, 0, CPDMA_EN, STSRAM_EN, 0);
+
+    // Print_ale_entry(data, 5);
+    // Print_phy(data);
+
+    printk("APPLY here 2, desc_dma_phys 2 = 0x%x\n", ioread32(data->base_rxhdp));
     return ret;
 }
 
@@ -399,64 +416,6 @@ int cpsw_init(struct ether_device_data *data){
         }
     }
 
-    // /* Initialize host and slave ports */
-    // if (ret == 0){
-    //     printk("Host port\n");
-    //     // ale, ss, 
-    //     cpsw_init_host_port(data);
-
-    //     printk("cpsw_slave_open\n");
-    //     cpsw_slave_open(data);
-
-    //     if (ret == 0){
-    //         /* === phy = of_phy_connect(priv->ndev, slave->data->phy_node, ===*/
-    //         printk("of_phy_connect\n");
-    //         phy_init_hw(data);
-
-    //         /* phy_attached_info(slave->phy); */
-
-    //         /* phy_start(slave->phy); = set PHY_UP + start PHY machine*/
-
-    //         /* Configure GMII_SEL register */
-    //         phy_gmii_sel_mode(data);
-    //     }
-
-    //     if (ret == 0){
-    //         /* err = phy_start_aneg(phydev); -> */
-    //         /* TODO: lan87xx_config_aneg */
-    //         printk("genphy_config_advert\n");
-    //         ret = genphy_config_advert(data);
-    //     }
-
-    //     if (ret == 0){
-    //         // create a workqueue to check link every 1s
-    //         INIT_DELAYED_WORK(&data->phy_work, phy_status_work);
-    //         mod_delayed_work(system_power_efficient_wq, &data->phy_work,
-    //             1 * HZ);
-
-    //         // add a timer to remove old MAC entries every 10s
-    //         timer_setup(&data->timer, cpsw_ale_timer, 0);
-    //         data->timer.expires = jiffies + 10*HZ;
-    //         add_timer(&data->timer);
-    //     }
-    // }
-
-    // /* initialize shared resources for every ndev */
-    // if (ret == 0){
-    //     ret = p_create_xdp_rxqs(data, data->tx_dma_channel);
-    //     if (ret < 0) return -1;
-
-    //     napi_enable(&data->napi_tx);
-    // }
-
-    // /* Intr */
-    // if (ret == 0){
-    //     /* cpdma_ctlr_start */
-    //     printk("CPDMA\n");
-    //     cpdma_ctlr_start(data);
-    //     cpdma_intr_enable(data);
-    // }
-    
     return ret;
 }
 
@@ -467,10 +426,17 @@ int cpsw_remove(struct ether_device_data *data){
     cpdma_ctlr_stop(data);
     cpdma_intr_disable(data);
 
-    //gen_pool_destroy(data->desc_pool->gen_pool);
+    /* Free all rx desc */
+    cpdma_all_desc_rx_free(data);
 
     napi_disable(&data->napi_tx);
-    p_destroy_xdp_rxqs(data, data->tx_dma_channel);
+    napi_disable(&data->napi_rx);
+    p_destroy_xdp_rxqs(data, chan_linear(data->rx_dma_channel));
+
+    page_pool_destroy(data->pool[chan_linear(data->tx_dma_channel)]);
+    //page_pool_recycle_direct(data->pool[ch], page);
+
+    //if (data->pool[data->rx_dma_channel]) page_pool_destroy(data->pool[data->rx_dma_channel]);
 
     if (data->ndev){
         printk("unregister_netdev is called");

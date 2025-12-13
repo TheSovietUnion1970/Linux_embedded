@@ -22,7 +22,7 @@ void ale_write(struct ether_device_data *data, u32* ale_entry, u16 idx){
 										ale_entry[0], ale_entry[1], ale_entry[2]);
 
     for (i = 0; i < 3; i++){
-        iowrite32(ale_entry[i], data->base_ale + ALE_TABLE + 4 * i);
+        iowrite32(ale_entry[i], data->base_ale + ALE_TABLE + 4 * i); // TBLW2, TBLW1, TBLW0
     }
 
     iowrite32(ALE_TABLE_WRITE | (idx&0x3F), data->base_ale + ALE_TABLE_CONTROL);   
@@ -34,7 +34,7 @@ void ale_read(struct ether_device_data *data, u32* ale_entry, u16 idx){
     iowrite32((idx&0x3F), data->base_ale + ALE_TABLE_CONTROL);   
 
     for (i = 0; i < 3; i++){
-        ale_entry[i] = ioread32(data->base_ale + ALE_TABLE + 4 * i);
+        ale_entry[i] = ioread32(data->base_ale + ALE_TABLE + 4 * i); 
     } 
 }
 

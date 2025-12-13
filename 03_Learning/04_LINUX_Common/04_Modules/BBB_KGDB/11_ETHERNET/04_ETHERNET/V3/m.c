@@ -13,6 +13,7 @@
 #include "mdio.h"
 #include "cpsw.h"
 #include "cpdma.h"
+#include "debug.h"
 
 #define DRIVER_NAME "ether0_driver"
 #define DEVICE_NAME "ether0"

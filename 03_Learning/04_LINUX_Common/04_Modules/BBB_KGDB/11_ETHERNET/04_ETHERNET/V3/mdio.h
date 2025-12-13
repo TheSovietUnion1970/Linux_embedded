@@ -173,7 +173,8 @@ struct ether_device_data {
     void __iomem *base_mdio; 
 
     struct cpdma_desc_pool *desc_pool;
-    struct cpdma_desc *desc_dma; 
+    struct cpdma_desc *desc_dma; // for tx only
+    struct cpdma_desc *desc_dma_rx[128];
 
     struct net_device *ndev;
 	struct napi_struct		napi_rx;

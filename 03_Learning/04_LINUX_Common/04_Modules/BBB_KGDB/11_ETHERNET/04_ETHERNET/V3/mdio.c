@@ -288,6 +288,13 @@ int ether_mdio_init(struct ether_device_data* data){
     else {
         //printk("genphy_read_abilities: 0x%x\n", shareddata);
     }
+
+
+    /* TODO */
+    // ret = mido_write(data, PHY_ID0, MII_BMCR, 0x3000);
+    // if (ret < 0){
+    //     return -1;
+    // }
     
     return 0;
 }

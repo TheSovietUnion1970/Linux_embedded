@@ -4,6 +4,8 @@
 #include "mdio.h"
 #include "ale.h"
 
+#define MASK_BITS(n, s) (((1u << n) - 1) << s)
+
 /* CPSW_BASE */
 #define CPSW_CONTROL            0x04
     #define CPSW_VLAN_AWARE     1u << 1
@@ -24,6 +26,7 @@
     #define ALE_CLEAR_TABLE		1u << 30
     #define AGE_OUT_NOW		    1u << 29
     #define ALE_P0_UNI_FLOOD    1u << 8
+    #define ALE_BYPASS_MODE     1u << 4
     #define ALE_VLAN_AWARE      1u << 2
 #define ALE_PRESCALE		0x10
 #define ALE_AGING_TIMER		0x14
