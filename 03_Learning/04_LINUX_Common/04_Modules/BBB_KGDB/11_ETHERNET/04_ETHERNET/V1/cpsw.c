@@ -387,8 +387,8 @@ int cpsw_open(struct ether_device_data *data){
     // Print_register_val_cpsw(data,
     //     SS_EN, HOST_EN, WR_EN, SL_EN, ALE_EN, CPDMA_EN, STSRAM_EN, MDIO_EN);
 
-    Print_register_val_cpsw(data,
-        0, 0, 0, 0, 0, CPDMA_EN, STSRAM_EN, 0);
+    // Print_register_val_cpsw(data,
+    //     0, 0, 0, 0, 0, CPDMA_EN, STSRAM_EN, 0);
 
     // Print_ale_entry(data, 5);
     // Print_phy(data);
@@ -433,8 +433,8 @@ int cpsw_remove(struct ether_device_data *data){
     napi_disable(&data->napi_rx);
     p_destroy_xdp_rxqs(data, chan_linear(data->rx_dma_channel));
 
-    page_pool_destroy(data->pool[chan_linear(data->tx_dma_channel)]);
-    //page_pool_recycle_direct(data->pool[ch], page);
+    //page_pool_destroy(data->pool[chan_linear(data->tx_dma_channel)]);
+    //page_pool_recycle_direct(data->pool[chan_linear(data->rx_dma_channel)], page);
 
     //if (data->pool[data->rx_dma_channel]) page_pool_destroy(data->pool[data->rx_dma_channel]);
 

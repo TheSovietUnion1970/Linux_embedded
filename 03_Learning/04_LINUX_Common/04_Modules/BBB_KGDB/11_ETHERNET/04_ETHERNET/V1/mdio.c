@@ -11,6 +11,28 @@
 #include <linux/atomic.h>
 #include "mdio.h"
 
+/* Print data */
+void ETHER1_Print_Hex(u8 *data, u16 len, u8 *name){
+    char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars
+    u16 i;
+
+    if (!data || len == 0)
+        return;
+
+    printk("# %s (len=%u bytes):\n", name, len);
+
+    for (i = 0; i < len; i++) {
+        int pos = (i % 8) * 3;
+        snprintf(&line[pos], sizeof(line) - pos, "%02X ", data[i]);
+
+        // Print every 8 bytes, or at the end of data
+        if ((i % 8) == 7 || i == len - 1) {
+            printk("  %s\n", line);
+            memset(line, 0, sizeof(line));
+        }
+    }
+}
+
 int wait_register_update(struct ether_device_data *data, void __iomem *mem, u16 reg_offset, u16 bit_offset, u8 bit_val, u16 delay_ms, u8* name_register){
     unsigned long timeout;
     timeout = jiffies + msecs_to_jiffies(delay_ms);
@@ -44,7 +66,6 @@ int wait_val_update(struct ether_device_data *data, u16* var, u16 val, u16 delay
 }
 
 int clock_init(struct ether_device_data *data){
-    int ret;
 
     iowrite32(0x02, data->base_clk + 0x144);
     iowrite32(0x02, data->base_clk + 0x120);
@@ -60,12 +81,11 @@ int clock_init(struct ether_device_data *data){
     //     return ret;
     // }
     data->clk_freq = 125000000;
-    printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
+    //printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
     return 0;
 }
 
 int clock_deinit(struct ether_device_data *data){
-    int ret;
 
     iowrite32(0, data->base_clk + 0x144);
     iowrite32(0, data->base_clk + 0x120);
@@ -135,7 +155,7 @@ int wait_for_user_access(struct ether_device_data *data)
 	return -ETIMEDOUT;
 }
 
-int mido_read(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16* dataX){
+int mdio_read(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16* dataX){
     u32 reg = 0;
     int ret = 0;
 
@@ -171,8 +191,36 @@ int mido_read(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16* data
     return 0;
 }
 
+int mido_write(struct ether_device_data *data, u32 phy_id, u32 phy_reg, u16 dataX){
+    u32 reg = 0;
+    int ret = 0;
+
+    /* Check idle state */
+    reg = ioread32(data->base_mdio + MDIO_MDIOCONTROL);
+    if ((reg&CONTROL_IDLE)) {
+        printk("Idle state\n");
+        return -1;
+    }
+
+    /* Clear GO bit */
+    iowrite32(0x00, data->base_mdio + MDIO_MDIOUSERACCESS0);
+
+	reg = (USERACCESS_GO | USERACCESS_WRITE | (phy_reg << 21) |
+	       (phy_id << 16) | ((dataX)&USERACCESS_DATA));
+    iowrite32(reg, data->base_mdio + MDIO_MDIOUSERACCESS0);
+
+    /* wait GO bit is cleared */
+    ret = wait_register_update(data, data->base_mdio, MDIO_MDIOUSERACCESS0, USERACCESS_GO_BIT, 0, 2000, "USERACCESS_GO_BIT");
+    if (ret < 0){
+        printk("Failed writting to MDIO, reg = 0x%x\n", reg);
+        return -1;
+    }
+
+    return 0;
+}
+
 int ether_mdio_init(struct ether_device_data* data){
-    u32 mdioalive = 0, mdiover = 0, mdioc = 0;
+    u32 mdioalive = 0, mdiover = 0;
     u16 shareddata = 0;
     int ret;
 
@@ -181,41 +229,72 @@ int ether_mdio_init(struct ether_device_data* data){
     msleep(1000);
 
     // iowrite32(0x3, data->base_clk + 0x14);
-    printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
+    //printk("clk = 0x%x\n", ioread32(data->base_clk + 0x14));
 
     /* Read version */
     mdiover = ioread32(data->base_mdio + MDIO_MDIOVER);
     if (mdiover){
-        printk("Revision: %d.%d\n", (mdiover >> 8)&0xFF, (mdiover)&0xFF);
+        //printk("Revision: %d.%d\n", (mdiover >> 8)&0xFF, (mdiover)&0xFF);
     }
 
     /* get phy mask from the alive register */
     mdioalive = ioread32(data->base_mdio + MDIO_MDIOALIVE);
     if (mdioalive){
-        printk("detected phy mask %x\n", mdioalive);
+        //printk("detected phy mask %x\n", mdioalive);
     }
 
     mdio_enable(data);
 
     /* Read register 2 */
-    ret = mido_read(data, PHY_ID0, 2, &shareddata);
+    ret = mdio_read(data, PHY_ID0, MII_PHYSID1, &shareddata);
     if (ret < 0){
         return -1;
     }
     else {
-        printk("PHY ID Number: 0x%x\n", shareddata%0xFFFF);
+        //printk("PHY ID Number: 0x%x\n", shareddata%0xFFFF);
     }
 
     /* Read register 3 */
-    ret = mido_read(data, PHY_ID0, 3, &shareddata);
+    ret = mdio_read(data, PHY_ID0, MII_PHYSID2, &shareddata);
     if (ret < 0){
         return -1;
     }
     else {
-        printk("PHY ID Number: 0x%x\n", shareddata%0xFC00);
-        printk("Model Number: %d\n", shareddata%0x3F0);
-        printk("Revision Number: %d\n", shareddata%0xF);
+        // printk("PHY ID Number: 0x%x\n", shareddata%0xFC00);
+        // printk("Model Number: %d\n", shareddata%0x3F0);
+        // printk("Revision Number: %d\n", shareddata%0xF);
     }
 
+    /* Disable interrupts */
+    ret = mido_write(data, PHY_ID0, MII_LAN83C185_IM, 0x00);
+    if (ret < 0){
+        return -1;
+    }
+
+    /* Read ISF */
+    ret = mdio_read(data, PHY_ID0, MII_LAN83C185_ISF, &shareddata);
+    if (ret < 0){
+        return -1;
+    }
+    else {
+        //printk("MII_LAN83C185_ISF: 0x%x\n", shareddata%0xFE);
+    }
+
+    /* genphy_read_abilities */
+    ret = mdio_read(data, PHY_ID0, MII_BMSR, &shareddata);
+    if (ret < 0){
+        return -1;
+    }
+    else {
+        //printk("genphy_read_abilities: 0x%x\n", shareddata);
+    }
+
+
+    /* TODO */
+    // ret = mido_write(data, PHY_ID0, MII_BMCR, 0x3000);
+    // if (ret < 0){
+    //     return -1;
+    // }
+    
     return 0;
 }

@@ -6,10 +6,29 @@
 
 #include "mdio.h"
 
+#define TX_DMA_CHANNEL 7 // -> interrupt mask: 7
+#define RX_DMA_CHANNEL 32 // -> interrupt mask: 0
+
+#define CPSW_MAX_PACKET_SIZE 1526
+#define CPSW_RX_VLAN_ENCAP_HDR_SIZE 4
+#define CPSW_RX_VLAN_ENCAP_HDR_PKT_TYPE_SHIFT	8
+#define CPSW_RX_VLAN_ENCAP_HDR_PKT_TYPE_MSK	GENMASK(1, 0)
+#define CPSW_RX_VLAN_ENCAP_HDR_VID_SHIFT	16
+#define VLAN_VID_MASK		0x0fff /* VLAN Identifier */
+enum {
+	CPSW_RX_VLAN_ENCAP_HDR_PKT_VLAN_TAG = 0,
+	CPSW_RX_VLAN_ENCAP_HDR_PKT_RESERV,
+	CPSW_RX_VLAN_ENCAP_HDR_PKT_PRIO_TAG,
+	CPSW_RX_VLAN_ENCAP_HDR_PKT_UNTAG,
+};
 
 #define chan_linear(chan_num)	((chan_num) & (32 - 1))
-#define CPSW_MAX_QUEUES 8
+/* The buf includes headroom compatible with both skb and xdpf */
 #define CPSW_HEADROOM_NA (max(XDP_PACKET_HEADROOM, NET_SKB_PAD) + NET_IP_ALIGN)
+#define CPSW_HEADROOM  ALIGN(CPSW_HEADROOM_NA, sizeof(long))
+
+#define CPSW_BD_RAM_SIZE		0x2000
+#define CPSW_CPDMA_DESCS_POOL_SIZE_DEFAULT 256
 
 /* CPSW_CPDMA */
 #define CPDMA_RXTHRESH		0x0c0
@@ -56,14 +75,11 @@
 #define CPDMA_EOI_MISC		0x3
 
 /* WRAPPER */
+#define WR_CONTROL          0x08
 #define WR_C0_RX_THRESH_EN  0x10
 #define WR_C0_RX_EN         0x14
 #define WR_C0_TX_EN         0x18
 #define WR_C0_MISC_EN       0x1c
-#define TX_INT_SET          0x88
-#define TX_INT_CLEAR        0x8c
-#define RX_INT_SET          0xa8
-#define RX_INT_CLEAR        0xac
 
 /* Descriptor mode bits */
 #define CPDMA_DESC_SOP		BIT(31)
@@ -84,9 +100,18 @@ irqreturn_t misc_handler(int irq, void *dev_id);
 
 int p_create_ports(struct ether_device_data *data);
 int p_register_ports(struct ether_device_data *data);
-int p_create_xdp_rxqs(struct ether_device_data *data);
-void p_destroy_xdp_rxqs(struct ether_device_data *data);
+int p_create_xdp_rxqs(struct ether_device_data *data, int ch);
+void p_destroy_xdp_rxqs(struct ether_device_data *data, int ch);
+
+void cpdma_submit_tx(struct ether_device_data* data, u8* buf, u16 len, u8 dir, int ch);
+void cpdma_submit_rx(struct ether_device_data* data, dma_addr_t dma, u8* buf, u32 len, u8 dir, int ch, u8 idx, u8 idle);
+
+void cpdma_all_desc_rx_free(struct ether_device_data* data);
 
 void run_test(struct ether_device_data *data);
+
+int cpdma_desc_pool_create(struct ether_device_data *data, phys_addr_t desc_mem_phys, u32 bd_ram_size, u32 descs_pool_size);
+
+int cpdma_rx_fill(struct ether_device_data* data);
 
 #endif /* CPDMA_H */

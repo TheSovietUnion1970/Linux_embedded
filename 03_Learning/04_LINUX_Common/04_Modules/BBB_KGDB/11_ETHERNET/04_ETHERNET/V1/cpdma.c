@@ -123,6 +123,8 @@ irqreturn_t rx_handler(int irq, void *dev_id){
     iowrite32(0, data->base_wr + WR_C0_RX_EN);
     iowrite32(CPDMA_EOI_RX, data->base_cpdma + CPDMA_MACEOIVECTOR); 
 
+    napi_schedule(&data->napi_rx);
+
     return IRQ_HANDLED; 
 }
 
@@ -216,9 +218,10 @@ cpdma_desc_alloc(struct cpdma_desc_pool *pool)
 		gen_pool_alloc(pool->gen_pool, pool->desc_size);
 }
 
-void cpdma_desc_free(struct cpdma_desc_pool *pool, struct cpdma_desc __iomem *desc)
+void cpdma_desc_free(struct cpdma_desc_pool *pool, struct cpdma_desc **desc)
 {
-	gen_pool_free(pool->gen_pool, (unsigned long)desc, pool->desc_size);
+	gen_pool_free(pool->gen_pool, (unsigned long)(*desc), pool->desc_size);
+    (*desc) = NULL;
 }
 
 /* DMA submit */
@@ -238,6 +241,7 @@ void cpdma_submit_rx(struct ether_device_data* data, dma_addr_t dma, u8* buf, u3
     /* allocate dma_desc */
     /* desc_pool is alreay allocated in cpsw_init, half for tx (128) and half for rx (128) */
     dma_desc = cpdma_desc_alloc(data->desc_pool);
+    dma_desc->hw_len = 0;
     desc_dma_phys = desc_phys(data->desc_pool, dma_desc);
     data->desc_dma_rx[idx] = dma_desc;
 
@@ -255,9 +259,11 @@ void cpdma_submit_rx(struct ether_device_data* data, dma_addr_t dma, u8* buf, u3
     // store desc into rxhdp
     /* only write when not in idle state */
     if (!idle) {
-        printk("APPLY here, desc_dma_phys = 0x%x\n", desc_dma_phys);
-        iowrite32((u32)desc_dma_phys, data->base_rxhdp + 4*0); // at channel 0
-        printk("APPLY here 2, desc_dma_phys 2 = 0x%x\n", ioread32(data->base_rxhdp));
+        // dma_desc_tmp = dma_desc;
+        //dma_desc_tmp->hw_len = 0;
+        //printk("APPLY here, desc_dma_phys = 0x%x\n", desc_dma_phys);
+        iowrite32((u32)desc_dma_phys, data->base_rxhdp + 4*chan_linear(data->rx_dma_channel)); // at channel 0
+        //printk("APPLY here 2, desc_dma_phys 2 = 0x%x\n", ioread32(data->base_rxhdp));
     }
 
     //cpdma_desc_free(data->desc_pool, dma_desc);
@@ -344,7 +350,7 @@ void cpdma_all_desc_rx_free(struct ether_device_data* data){
     u8 i = 0;
 
     for (i = 0; i < 128; i++){
-        cpdma_desc_free(data->desc_pool, data->desc_dma_rx[i]);
+        cpdma_desc_free(data->desc_pool, &data->desc_dma_rx[i]);
     }
 }
 
@@ -478,7 +484,7 @@ int tx_mq_poll(struct napi_struct *napi_tx, int budget){
         hw_mode = ioread32(&data->desc_dma->hw_mode);
 
         dma_unmap_single(data->dev, desc_dma, len, 1);
-        cpdma_desc_free(data->desc_pool, data->desc_dma);
+        cpdma_desc_free(data->desc_pool, &data->desc_dma);
         data->desc_dma = NULL;
 
         //printk("hw_mode end = 0x%x\n", hw_mode);
@@ -499,8 +505,158 @@ int tx_mq_poll(struct napi_struct *napi_tx, int budget){
     return 0;
 }
 
-int rx_mq_poll(struct napi_struct *napi_tx, int budget){
-    struct ether_device_data *data = container_of(napi_tx, struct ether_device_data, napi_tx);
+static unsigned int cpsw_rxbuf_total_len(unsigned int len)
+{
+	len += CPSW_HEADROOM;
+	len += SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+
+	return SKB_DATA_ALIGN(len);
+}
+
+#define VLAN_HLEN 4
+void cpsw_rx_vlan_encap(struct sk_buff *skb)
+{
+	//struct cpsw_priv *priv = netdev_priv(skb->dev);
+	u32 rx_vlan_encap_hdr = *((u32 *)skb->data);
+	//struct cpsw_common *cpsw = priv->cpsw;
+	u16 vtag, vid, prio, pkt_type;
+
+	/* Remove VLAN header encapsulation word */
+	skb_pull(skb, CPSW_RX_VLAN_ENCAP_HDR_SIZE);
+
+	pkt_type = (rx_vlan_encap_hdr >>
+		    CPSW_RX_VLAN_ENCAP_HDR_PKT_TYPE_SHIFT) &
+		    CPSW_RX_VLAN_ENCAP_HDR_PKT_TYPE_MSK;
+	/* Ignore unknown & Priority-tagged packets*/
+	if (pkt_type == CPSW_RX_VLAN_ENCAP_HDR_PKT_RESERV ||
+	    pkt_type == CPSW_RX_VLAN_ENCAP_HDR_PKT_PRIO_TAG)
+		return;
+
+	vid = (rx_vlan_encap_hdr >>
+	       CPSW_RX_VLAN_ENCAP_HDR_VID_SHIFT) &
+	       VLAN_VID_MASK;
+	/* Ignore vid 0 and pass packet as is */
+	if (!vid)
+		return;
+
+	// /* Untag P0 packets if set for vlan */
+	// if (!cpsw_ale_get_vlan_p0_untag(cpsw->ale, vid)) {
+	// 	prio = (rx_vlan_encap_hdr >>
+	// 		CPSW_RX_VLAN_ENCAP_HDR_PRIO_SHIFT) &
+	// 		CPSW_RX_VLAN_ENCAP_HDR_PRIO_MSK;
+
+	// 	vtag = (prio << VLAN_PRIO_SHIFT) | vid;
+	// 	__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vtag);
+	// }
+	// prio = (rx_vlan_encap_hdr >>
+	// 	CPSW_RX_VLAN_ENCAP_HDR_PRIO_SHIFT) &
+	// 	CPSW_RX_VLAN_ENCAP_HDR_PRIO_MSK;
+
+	// vtag = (prio << VLAN_PRIO_SHIFT) | vid;
+	// __vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vtag);
+
+	/* strip vlan tag for VLAN-tagged packet */
+	if (pkt_type == CPSW_RX_VLAN_ENCAP_HDR_PKT_VLAN_TAG) {
+		memmove(skb->data + VLAN_HLEN, skb->data, 2 * ETH_ALEN);
+		skb_pull(skb, VLAN_HLEN);
+	}
+}
+
+int rx_mq_poll(struct napi_struct *napi_rx, int budget){
+    struct ether_device_data *data = container_of(napi_rx, struct ether_device_data, napi_rx);
+    unsigned long flags;
+    struct cpdma_desc* desc;
+    struct page *new_page;
+    u8* payload;
+    dma_addr_t desc_dma, dma_buf;
+    u32 len, hw_mode;
+    u8 idx = 0;
+    struct sk_buff *skb;
+    void *pa;
+
+    //spin_lock_irqsave(&data->lock, flags);
+
+    //desc_dma = ioread32(data->base_rxhdp + 4*0);
+   // printk("dma_desc_tmp = 0x%x", data->desc_dma_rx[idx]);
+
+    if (data->desc_dma_rx[idx]->sw_token && data->desc_dma_rx[idx]) {
+        hw_mode = ioread32(&data->desc_dma_rx[idx]->hw_mode);
+        len = ioread32(&data->desc_dma_rx[idx]->hw_len);
+        dma_buf = ioread32(&data->desc_dma_rx[idx]->hw_buffer);
+        pa = page_address(data->desc_dma_rx[idx]->sw_token);
+        // len = dma_desc_tmp->hw_len;
+        // printk("len = %d\n", len);
+        payload = page_address(data->desc_dma_rx[idx]->sw_token) + CPSW_HEADROOM_NA + 4;
+
+        ETHER1_Print_Hex(payload, len, "RXXXXX");
+    }
+
+
+    /* Get dma addr of desc */
+    desc_dma = desc_phys(data->desc_pool, data->desc_dma_rx[idx]);
+    /* Store desc to complete pointer */
+    iowrite32(desc_dma, data->base_rxcp + 4*chan_linear(data->rx_dma_channel));
+
+    //origlen &= ~CPDMA_DMA_EXT_MAP;
+    dma_sync_single_for_cpu(data->dev, dma_buf, len, 0); // dir = 0
+
+    // ======================
+
+    /* Free the old page for the next new one */
+    cpdma_desc_free(data->desc_pool, &data->desc_dma_rx[idx]);
+    //page_pool_recycle_direct(data->pool[chan_linear(data->rx_dma_channel)], (struct page *)dma_desc_tmp->sw_token);
+
+    /* Process the next receive */
+    new_page = page_pool_dev_alloc_pages(data->pool[chan_linear(data->rx_dma_channel)]); // for rx only
+    if (!new_page) {
+        printk("Error: allocate rx page\n");
+        return -1;
+    }
+
+    // =======================[build_skb]==================
+	skb = build_skb(pa, cpsw_rxbuf_total_len(CPSW_MAX_PACKET_SIZE));
+	if (!skb) {
+		// ndev->stats.rx_dropped++;
+		// page_pool_recycle_direct(pool, page);
+        printk("DROPPED\n");
+		//goto requeue;
+        return -1;
+	}
+	skb->offload_fwd_mark = 0;
+	skb_reserve(skb, CPSW_HEADROOM_NA);
+	skb_put(skb, len);
+	skb->dev = data->ndev;
+
+	//if (status & CPDMA_RX_VLAN_ENCAP)
+	cpsw_rx_vlan_encap(skb);
+
+	skb->protocol = eth_type_trans(skb, data->ndev);
+    //skb->protocol = 0x8;
+
+	/* mark skb for recycling */
+	skb_mark_for_recycle(skb);
+	netif_receive_skb(skb);
+
+    printk("Done rx_mq_poll\n");
+	printk("[V1] len1 = 0x%x, len2 = 0x%x, offload_fwd_mark = 0x%x, ts_enabled = 0x%x, protocol = 0x%x", 
+		CPSW_MAX_PACKET_SIZE,
+		cpsw_rxbuf_total_len(CPSW_MAX_PACKET_SIZE),
+		skb->offload_fwd_mark,
+		0,
+		skb->protocol);
+
+    // ======================[cpdma_submit_rx]====================
+
+    dma_buf = page_pool_get_dma_addr(new_page) + CPSW_HEADROOM_NA;
+    cpdma_submit_rx(data, dma_buf, (u8*)new_page, CPSW_MAX_PACKET_SIZE, 0, chan_linear(data->rx_dma_channel), idx, false);
+
+    // if ((hw_mode&CPDMA_DESC_EOQ) && (!(hw_mode&CPDMA_DESC_OWNER))){
+        /* End of rx_mq_poll */
+        napi_complete_done(napi_rx, 1);
+        iowrite32(0xff, data->base_wr + WR_C0_RX_EN);
+    // }
+
+    //spin_unlock_irqrestore(&data->lock, flags);
 
     return 0;
 }
@@ -545,6 +701,14 @@ static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *ndev)
         printk("error getting data\n");
         return -1;
     }
+
+    // add pading to 60 bytes (minimum for ARP ethernet packet)
+	if (skb_put_padto(skb, 60)) {
+        printk("PADDING failed\n");
+		// cpsw_err(priv, tx_err, "packet pad failed\n");
+		// ndev->stats.tx_dropped++;
+		return NET_XMIT_DROP;
+	}
 
     /* ndev for queues */
     q_idx = skb_get_queue_mapping(skb);
