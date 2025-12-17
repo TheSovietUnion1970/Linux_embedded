@@ -1,5 +1,25 @@
 #include <stdio.h>
+#include <string.h>
 #include "parse.h"
+
+void Print_Hex(uint8_t *data, uint16_t len){
+    char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars
+    uint16_t i;
+
+    if (!data || len == 0)
+        return;
+
+    for (i = 0; i < len; i++) {
+        int pos = (i % 8) * 3;
+        snprintf(&line[pos], sizeof(line) - pos, "%02X ", data[i]);
+
+        // Print every 8 bytes, or at the end of data
+        if ((i % 8) == 7 || i == len - 1) {
+            printf("  %s\n", line);
+            memset(line, 0, sizeof(line));
+        }
+    }
+}
 
 void print_ether_header(const struct ether_header *eth) {
     printf("=== Ether Header ===\n");
@@ -42,7 +62,8 @@ void print_ipv4_header(const struct ipv4_header *ip) {
            (ip->dest_ip >> 24) & 0xFF);
 }
 
-void print_icmp_header(const struct icmp_header *icmp) {
+void print_icmp_header(const struct icmp_header *icmp, uint16_t len_pkt) {
+    uint16_t payload_len = 0;
     printf("=== ICMP Header ===\n");
     printf("Type               : %u ", icmp->type);
     switch (icmp->type) {
@@ -57,9 +78,16 @@ void print_icmp_header(const struct icmp_header *icmp) {
         printf("Identifier         : %u\n", ntohs(icmp->rest_of_header >> 16));
         printf("Sequence Number    : %u\n", ntohs(icmp->rest_of_header & 0xFFFF));
     }
+
+    payload_len = len_pkt - sizeof(struct ether_header) - sizeof(struct ipv4_header);
+
+    printf("Payload[%d]:\n", payload_len);
+    Print_Hex((uint8_t*)icmp + sizeof(struct ether_header) + sizeof(struct ipv4_header), payload_len);
+
 }
 
-void print_tcp_header(const struct tcp_header *tcp) {
+void print_tcp_header(const struct tcp_header *tcp, uint16_t len_pkt) {
+    uint16_t payload_len = 0;
     printf("=== TCP Header ===\n");
     printf("Source Port        : %u\n", ntohs(tcp->source_port));
     printf("Destination Port   : %u\n", ntohs(tcp->dest_port));
@@ -79,6 +107,11 @@ void print_tcp_header(const struct tcp_header *tcp) {
     printf("Window Size        : %u\n", ntohs(tcp->window));
     printf("Checksum           : 0x%04x\n", ntohs(tcp->checksum));
     printf("Urgent Pointer     : %u\n", ntohs(tcp->urgent_pointer));
+
+    payload_len = len_pkt - sizeof(struct ether_header) - sizeof(struct ipv4_header);
+
+    printf("Payload[%d]:\n", payload_len);
+    Print_Hex((uint8_t*)tcp + sizeof(struct ether_header) + sizeof(struct ipv4_header), payload_len);
 }
 
 // Example usage: parse a raw packet buffer (starting after Ethernet header)
@@ -104,12 +137,12 @@ void parse_and_print_packet(const uint8_t *packet, size_t len, uint8_t* name_pac
     if (ip->protocol == 1) {  // ICMP
         if (len >= ip_hdr_len + sizeof(struct icmp_header)) {
             const struct icmp_header *icmp = (const struct icmp_header *)(packet + ip_hdr_len + 14);
-            print_icmp_header(icmp);
+            print_icmp_header(icmp, len);
         }
     } else if (ip->protocol == 6) {  // TCP
         if (len >= ip_hdr_len + sizeof(struct tcp_header)) {
             const struct tcp_header *tcp = (const struct tcp_header *)(packet + ip_hdr_len);
-            print_tcp_header(tcp);
+            print_tcp_header(tcp, len);
         }
     }
 
