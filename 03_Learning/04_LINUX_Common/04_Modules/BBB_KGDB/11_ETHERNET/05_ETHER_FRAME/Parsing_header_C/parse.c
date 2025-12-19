@@ -86,7 +86,70 @@ void print_icmp_header(const struct icmp_header *icmp, uint16_t len_pkt) {
 
 }
 
-void print_tcp_header(const struct tcp_header *tcp, uint16_t len_pkt) {
+void parse_tcp_options(const struct tcp_header *tcp) {
+    size_t hdr_len = tcp->data_offset * 4;
+    size_t opt_len = hdr_len - 20;
+    const uint8_t *opt_ptr = &tcp->mss.kind;
+
+    // printf("TCP Header Length: %zu bytes\n", hdr_len);
+    //printf("Options Length: %zu bytes\n", opt_len);
+    printf("=== Options[%zu] ===\n", opt_len);
+
+    while (opt_len > 0) {
+        uint8_t kind = opt_ptr[0];
+
+        if (kind == 0) {  // End of options
+            printf("End of options\n");
+            break;
+        }
+        if (kind == 1) {  // NOP
+            printf("NOP (padding)\n");
+            opt_ptr++;
+            opt_len--;
+            continue;
+        }
+
+        if (opt_len < 2) break;  // malformed
+        uint8_t len = opt_ptr[1];
+        if (len < 2 || opt_len < len) break;  // malformed
+
+        switch (kind) {
+            case 2:  // Maximum segment size
+                if (len == 4) {
+                    uint16_t mss = ntohs(((union tcp_options *)opt_ptr)->mss.value);
+                    printf("MSS: %u\n", mss);
+                }
+                break;
+            case 3:  // Window Scale
+                if (len == 3) {
+                    uint8_t shift = ((union tcp_options *)opt_ptr)->window_scale.shift;
+                    printf("Window Scale: shift %u (multiply by %u)\n", shift, 1U << shift);
+                }
+                break;
+            case 4:  // SACK Permitted
+                if (len == 2) printf("SACK Permitted\n");
+                break;
+            case 8:  // Timestamp
+                if (len == 10) {
+                    uint32_t tsval = ntohl(((union tcp_options *)opt_ptr)->timestamp.tsval);
+                    uint32_t tsecr = ntohl(((union tcp_options *)opt_ptr)->timestamp.tsecr);
+                    printf("Timestamp: TSval=%u, TSecr=%u\n", tsval, tsecr);
+                }
+                break;
+            case 5:  // SACK (variable length)
+                printf("SACK blocks (len=%u)\n", len);
+                break;
+            default:
+                printf("Unknown option: kind=%u, len=%u\n", kind, len);
+                break;
+        }
+
+        opt_ptr += len;
+        opt_len -= len;
+    }
+}
+
+void print_tcp_header(const struct tcp_header *tcp) {
     uint16_t payload_len = 0;
     printf("=== TCP Header ===\n");
     printf("Source Port        : %u\n", ntohs(tcp->source_port));
@@ -108,14 +171,17 @@ void print_tcp_header(const struct tcp_header *tcp, uint16_t len_pkt) {
     printf("Checksum           : 0x%04x\n", ntohs(tcp->checksum));
     printf("Urgent Pointer     : %u\n", ntohs(tcp->urgent_pointer));
 
-    payload_len = len_pkt - sizeof(struct ether_header) - sizeof(struct ipv4_header);
+    payload_len = tcp->data_offset * 4 - 20;
 
-    printf("Payload[%d]:\n", payload_len);
-    Print_Hex((uint8_t*)tcp + sizeof(struct ether_header) + sizeof(struct ipv4_header), payload_len);
+    // printf("Payload[%d]:\n", payload_len);
+    // Print_Hex((uint8_t*)tcp + 20, payload_len);
+    if (payload_len > 0){
+        parse_tcp_options(tcp);
+    }
 }
 
 // Example usage: parse a raw packet buffer (starting after Ethernet header)
-void parse_and_print_packet(const uint8_t *packet, size_t len, uint8_t* name_packet) {
+void parse_and_print_packet(const uint8_t *packet, size_t len, uint8_t* name_packet, uint8_t eth_h, uint8_t ipv4_h) {
     if (len < sizeof(struct ipv4_header)) {
         printf("Packet too short for IPv4 header\n");
         return;
@@ -125,8 +191,8 @@ void parse_and_print_packet(const uint8_t *packet, size_t len, uint8_t* name_pac
     const struct ipv4_header *ip = (const struct ipv4_header *)((uint8_t*)packet + sizeof(struct ether_header));
 
     printf("================== %s ==================\n", name_packet);
-    print_ether_header(eth);
-    print_ipv4_header(ip);
+    if (eth_h) print_ether_header(eth);
+    if (ipv4_h) print_ipv4_header(ip);
 
     size_t ip_hdr_len = ip->ihl * 4;
     if (len < ip_hdr_len) {
@@ -141,8 +207,8 @@ void parse_and_print_packet(const uint8_t *packet, size_t len, uint8_t* name_pac
         }
     } else if (ip->protocol == 6) {  // TCP
         if (len >= ip_hdr_len + sizeof(struct tcp_header)) {
-            const struct tcp_header *tcp = (const struct tcp_header *)(packet + ip_hdr_len);
-            print_tcp_header(tcp, len);
+            const struct tcp_header *tcp = (const struct tcp_header *)(packet + ip_hdr_len + 14);
+            print_tcp_header(tcp);
         }
     }
 
