@@ -149,6 +149,71 @@ void parse_tcp_options(const struct tcp_header *tcp) {
     }
 }
 
+// Helper function to parse a name-list
+void parse_name_list(const uint8_t **ptr, size_t *remaining, const char* name) {
+    if (*remaining < 4) {
+        printf("Truncated before %s length\n", name);
+        return;
+    }
+    uint32_t len = ntohl(*(const uint32_t*)*ptr);
+    *ptr += 4;
+    *remaining -= 4;
+
+    if (*remaining < len) {
+        printf("Truncated %s (expected %u bytes)\n", name, len);
+        return;
+    }
+
+    printf("%s (%u bytes):\n  %.*s\n", name, len, (int)len, *ptr);
+    *ptr += len;
+    *remaining -= len;
+}
+
+void parse_ssh_kexinit(const uint8_t *payload, size_t payload_len) {
+    if (payload_len == 0 || payload[0] != 20) {
+        printf("Not a valid SSH_MSG_KEXINIT (code 20)\n");
+        return;
+    }
+
+    const uint8_t *ptr = payload + 1;  // Skip message code
+    size_t remaining = payload_len - 1;
+
+    if (remaining < 16) {
+        printf("Packet too short for cookie\n");
+        return;
+    }
+
+    // Cookie
+    printf("Cookie: ");
+    for (int i = 0; i < 16; i++) {
+        printf("%02x", ptr[i]);
+    }
+    printf("\n");
+    ptr += 16;
+    remaining -= 16;
+
+    parse_name_list(&ptr, &remaining, "1.kex_algorithms");
+    parse_name_list(&ptr, &remaining, "2.server_host_key_algorithms");
+    parse_name_list(&ptr, &remaining, "3.encryption_algorithms_client_to_server");
+    parse_name_list(&ptr, &remaining, "4.encryption_algorithms_server_to_client");
+    parse_name_list(&ptr, &remaining, "5.mac_algorithms_client_to_server");
+    parse_name_list(&ptr, &remaining, "6.mac_algorithms_server_to_client");
+    parse_name_list(&ptr, &remaining, "7.compression_algorithms_client_to_server");
+    parse_name_list(&ptr, &remaining, "8.compression_algorithms_server_to_client");
+    parse_name_list(&ptr, &remaining, "9.languages_client_to_server");
+    parse_name_list(&ptr, &remaining, "10.languages_server_to_client");
+
+    if (remaining < 5) {
+        printf("Truncated at end\n");
+        return;
+    }
+
+    printf("first_kex_packet_follows: %s\n", *ptr ? "true" : "false");
+    ptr++;
+    uint32_t reserved = ntohl(*(const uint32_t*)ptr);
+    printf("reserved: 0x%08x\n", reserved);
+}
+
 void print_tcp_header(const struct tcp_header *tcp) {
     uint16_t payload_len = 0;
     printf("=== TCP Header ===\n");
@@ -213,5 +278,111 @@ void parse_and_print_packet(const uint8_t *packet, size_t len, uint8_t* name_pac
     }
 
     printf("================== === === ==================\n");
+}
+
+void parse_and_print_ssh_kexinit(uint8_t *packet, size_t len, uint8_t* name_packet){
+    const struct ipv4_header *ip = (const struct ipv4_header *)((uint8_t*)packet + sizeof(struct ether_header));
+    size_t ip_hdr_len = ip->ihl * 4;
+
+    if (ip->protocol == 6) {  // TCP
+        if (len >= ip_hdr_len + sizeof(struct tcp_header)) {
+            const struct tcp_header *tcp = (const struct tcp_header *)(packet + ip_hdr_len + 14);
+            //print_tcp_header(tcp);
+
+            // SSH packet format: packet_length (4) + padding_length (1) + payload...
+            uint8_t *ssh_packet = packet + sizeof(struct ether_header)
+                                                + sizeof(struct ipv4_header)
+                                                + tcp->data_offset * 4;  // point to start of SSH payload (after TCP header)
+
+            uint32_t packet_length = ntohl(*(uint32_t*)ssh_packet);
+            uint8_t padding_length = ssh_packet[4];
+
+            printf("SSH Packet Length: %u\n", packet_length);
+            printf("Padding Length: %u\n", padding_length);
+
+            // Payload starts at offset 5
+            const uint8_t *kexinit_payload = ssh_packet + 5;
+            size_t kexinit_len = packet_length - padding_length - 1;  // exclude padding and padding_length byte
+
+            printf("KEXINIT payload length: %zu\n\n", kexinit_len);
+
+            // Now parse the KEXINIT message
+            parse_ssh_kexinit(kexinit_payload, kexinit_len);  
+        } 
+    }
+}
+
+// ========
+// Helper function to read and print an SSH string (uint32 length + data)
+const uint8_t* read_string(const uint8_t **ptr, size_t *remaining, const char* name) {
+    if (*remaining < 4) {
+        printf("Truncated before %s length\n", name);
+        return NULL;
+    }
+
+    uint32_t len = ntohl(*(const uint32_t*)*ptr);
+    *ptr += 4;
+    *remaining -= 4;
+
+    if (*remaining < len) {
+        printf("Truncated %s (expected %u bytes, have %zu)\n", name, len, *remaining);
+        return NULL;
+    }
+
+    printf("%s (%u bytes):\n  ", name, len);
+
+    // Print printable ASCII, hex for others
+    for (uint32_t i = 0; i < len; i++) {
+        uint8_t c = (*ptr)[i];
+        if (c >= 32 && c <= 126) {
+            putchar(c);
+        } else {
+            printf("\\x%02x", c);
+        }
+    }
+    printf("\n");
+
+    const uint8_t *data = *ptr;
+    *ptr += len;
+    *remaining -= len;
+
+    return data;
+}
+
+// Parse SSH_MSG_KEX_ECDH_REPLY (code 31) or KEXDH_REPLY (code 30)
+void parse_ssh_kex_reply(const uint8_t *payload, size_t payload_len) {
+    if (payload_len < 1) {
+        printf("Payload too short\n");
+        return;
+    }
+
+    uint8_t msg_code = payload[0];
+    if (msg_code != 30 && msg_code != 31) {
+        printf("Not a key exchange reply (expected code 30 or 31, got %u)\n", msg_code);
+        return;
+    }
+
+    printf("=== SSH Key Exchange Reply (code %u) ===\n", msg_code);
+    printf("Server is sending its host key, ephemeral key, and signature\n");
+
+    const uint8_t *ptr = payload + 1;
+    size_t remaining = payload_len - 1;
+
+    // 1. Server host key algorithm name
+    const uint8_t *host_key_alg = read_string(&ptr, &remaining, "1.Server Host Key Algorithm");
+    if (!host_key_alg) return;
+
+    // 2. Server public host key blob
+    read_string(&ptr, &remaining, "2.Server Public Host Key Blob");
+
+    // 3. Server ephemeral public key (Q_s)
+    read_string(&ptr, &remaining, "3.Server Ephemeral Public Key (Q_s)");
+
+    // 4. Signature of the exchange hash
+    read_string(&ptr, &remaining, "4.Signature of Exchange Hash");
+
+    printf("Key exchange reply complete.\n");
+    printf("Both sides can now derive the shared secret and session keys.\n");
+    printf("Next step: SSH_MSG_NEWKEYS (code 21) from both sides → encryption begins.\n");
 }
 
