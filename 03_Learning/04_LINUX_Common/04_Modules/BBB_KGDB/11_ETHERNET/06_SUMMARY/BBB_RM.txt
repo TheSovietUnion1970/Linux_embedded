@@ -1,0 +1,10 @@
+PACKET FORWARDING PROCESS:
++ Ingress filtering: check port state (forwarding, …)
++ VLAN-aware lookup: VLAN tag, super flag, …
++ VLAN-aware lookup
++ Egress
+
+LEARNING/UPDATING/TOUCHING:
++ Learning: learn addr with VLAN
++ Updating: update addr, MAC, port …
++ Touching
