@@ -1,0 +1,2 @@
++ Run 'make'
++ Copy m.ko to the target and load it to kernel

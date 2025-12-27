@@ -1,1 +1,0 @@
-ethernet is a fast protocol
