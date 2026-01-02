@@ -1,0 +1,2 @@
+Port VLAN - assign ports to VLAN - for single end devices (untagged frames)
+VLAN - the logical grouping of devices - for switch-to-switch (VLAN tagged frames)
