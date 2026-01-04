@@ -1,0 +1,4 @@
+git config --global core.autocrlf false     # Never auto-convert line endings
+git config --global core.eol lf             # Enforce LF on checkout
+
+git config --global core.safecrlf true      # Warn if CRLF would be introduced
