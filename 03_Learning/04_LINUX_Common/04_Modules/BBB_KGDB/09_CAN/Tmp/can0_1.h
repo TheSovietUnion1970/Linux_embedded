@@ -21,6 +21,8 @@
 #define DRIVER_NAME "can0_driver"
 #define DEVICE_NAME "can0"
 
+#define MAX_BUFFER_LEN 8
+
 #define RD 0
 #define WR 1
 
@@ -154,7 +156,7 @@ struct can_device_data {
     struct clk *edma_clk;
     int dma_channel_tx;
     int dma_channel_rx;
-    u8 dma_buffer_tx[256];
+    u8 dma_buffer_tx[MAX_BUFFER_LEN];
     u8* dma_buffer_rx; // use dma_alloc_coherent
     dma_addr_t dma_buffer_phys;
     u8 byte_num_tx;
@@ -163,7 +165,9 @@ struct can_device_data {
 };
 
 /* functions */
-int dma_param_set(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr);
+int dma_param_set_tx(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_src_addr);
+int dma_param_set_rx(struct can_device_data* data, int ch, u8 byte_num, dma_addr_t dma_dst_addr);
+
 void Dma_read(struct can_device_data* data);
 void Clear_rx_flag(struct can_device_data* data);
 void Reading_received_msg(struct can_device_data *data, u8 msg_num);

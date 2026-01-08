@@ -37,35 +37,37 @@ static irqreturn_t irqHandler(int irq, void *d){
             printk("0x8000 - raw1 = 0x%x, raw2 = 0x%x, dlc = 0x%x, id = 0x%x\n", raw_data1, raw_data2, dlc, id);
         }
         else if ((es&(1u << 3)) == 1u << 3){
+            Clear_TxRqst_mctl(data); // clear TxRqst
+            Set_MsgNum_cmd(data, intpnd_x); // write updated cleared TxRqst to msg RAM
             printk("tx here\n");
+            data->count_many = 0;
         }
     }
     else { // msg object interrupt
-        can_arb = ioread32(data->base + CAN_IF2ARB);
-        id = (can_arb >> 18)&0x7FF;
-
-        if (id == ID_received){
+        if ((es&(1u << 8)) == 1u << 8){
+            dev_err(data->dev, "Parity error, es = 0x%x\n", es);
+        }
+        else if ((es&(1u << 3)) == 1u << 3){
+            Clear_TxRqst_mctl(data); // clear TxRqst
+            Set_MsgNum_cmd(data, Int0ID); // write updated cleared TxRqst to msg RAM
+            printk("tx here\n");
+            data->count_many = 0;
+        }
+        else if ((es&(1u << 4)) == 1u << 4){
             Reading_received_msg(data, Int0ID);
 
+            can_arb = ioread32(data->base + CAN_IF2ARB);
             raw_data1 = ioread32(data->base + CAN_IF2DATA);
             raw_data2 = ioread32(data->base + CAN_IF2DATB);
             can_mctl = ioread32(data->base + CAN_IF2MCTL);
             can_arb = ioread32(data->base + CAN_IF2ARB);
 
+            id = (can_arb >> 18)&0x7FF;
             dlc = can_mctl&0xF;
             
             printk("msg obj - cmd = 0x%x, raw1 = 0x%x, raw2 = 0x%x, dlc = 0x%x, id = 0x%x\n", cmd, raw_data1, raw_data2, dlc, id);
-        }
-        can_arb = ioread32(data->base + CAN_IF1ARB);
-        id = (can_arb >> 18)&0x7FF;
-        if (id == ID_sent){
-            // es is 0x7 as there is no CAN activity after transmit
-            Clear_TxRqst_mctl(data); // clear TxRqst
-            Set_MsgNum_cmd(data, Int0ID); // write updated cleared TxRqst to msg RAM
-            printk("es = 0x%x\n", es);
-        }
-        else {
-            printk("xxxx\n");
+
+            data->count_many = 0;
         }
     }
 #else
@@ -84,19 +86,37 @@ static irqreturn_t irqHandler(int irq, void *d){
             //Disable_all_INT(data);
             //schedule_work(&data->re_request_work);
         }
+        else if ((es&(1u << 3)) == 1u << 3){
+            Clear_TxRqst_mctl(data); // clear TxRqst
+            Set_MsgNum_cmd(data, intpnd_x); // write updated cleared TxRqst to msg RAM
+            printk("tx here\n");
+            data->count_many = 0;
+        }
     }
     else { // msg object interrupt
-        Reading_received_msg(data, Int0ID);
+        if ((es&(1u << 8)) == 1u << 8){
+            dev_err(data->dev, "Parity error, es = 0x%x\n", es);
+        }
+        else if ((es&(1u << 4)) == 1u << 4){
+            Reading_received_msg(data, Int0ID);
 
             dlc = can_mctl&0xF;
             id = can_mctl&CAN_IFxARB_ID;
             //cmd = ioread32(data->base + CAN_IF2CMD);
             printk("msg obj [DMA] - dlc = 0x%x, id = 0x%x\n", dlc, id);
+        }
+        else if ((es&(1u << 3)) == 1u << 3){
+            Clear_TxRqst_mctl(data); // clear TxRqst
+            Set_MsgNum_cmd(data, Int0ID); // write updated cleared TxRqst to msg RAM
+            printk("tx here\n");
+            data->count_many = 0;
+        }
 
         //Disable_all_INT(data);
         //schedule_work(&data->re_request_work);
     }
-#endif
+
+    #endif
     Clear_rx_flag(data);
 
     // Clear_MsgNum_cmd(data);
@@ -133,7 +153,8 @@ static void request_work(struct work_struct *work)
         tx12 = ioread32(data->base + CAN_TXRQ12);
         mux12 = ioread32(data->base + CAN_INTMUX12);
     
-        printk("WORK -> txrq = 0x%x, can_mctl = 0x%x\n", ioread32(data->base + CAN_TXRQ12), ioread32(data->base + CAN_IF1MCTL));
+        //printk("WORK -> txrq = 0x%x, can_mctl = 0x%x\n", ioread32(data->base + CAN_TXRQ12), ioread32(data->base + CAN_IF1MCTL));
+        printk("WORK -> data->byte_num_tx = 0x%x\n", data->byte_num_tx);
 
         if (data->dma_buffer_tx[0] == 0xFF) data->dma_buffer_tx[0] = 0;
         if (data->dma_buffer_tx[1] == 0xFF) data->dma_buffer_tx[1] = 0;
@@ -265,7 +286,7 @@ static int can0_probe(struct platform_device *pdev){
 
     /* Create a work */
     INIT_WORK(&data->re_request_work, request_work);
-    //schedule_work(&data->re_request_work);
+    schedule_work(&data->re_request_work);
 
     return 0;
 }
@@ -288,7 +309,7 @@ static int can0_remove(struct platform_device *pdev){
     }
 
     if (data->if2_chan){
-        dma_free_coherent(data->dev, 256, data->dma_buffer_rx, data->dma_buffer_phys);
+        dma_free_coherent(data->dev, MAX_BUFFER_LEN, data->dma_buffer_rx, data->dma_buffer_phys);
         dmaengine_terminate_sync(data->if2_chan);
         dma_release_channel(data->if2_chan);
     }
