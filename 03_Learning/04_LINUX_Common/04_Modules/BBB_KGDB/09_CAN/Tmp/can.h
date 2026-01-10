@@ -15,8 +15,8 @@
 #include <linux/dmaengine.h>
 #include <linux/dma-mapping.h>
 #include <linux/completion.h>
-#include "can0_1.h"
-#include "main1.h"
+#include "can.h"
+#include "main.h"
 
 #define DRIVER_NAME "can0_driver"
 #define DEVICE_NAME "can0"
