@@ -1,0 +1,26 @@
+1. === [BOOTING PROCESS on SOC] ===
+== Before power up
+ - Bootloader -> boot flash (in SoC)
+ - SW (dtb, OS, rfs) -> mass memory flash (out of SoC)
+== At power (boot ROM -> bootloader (eMMC or SD))
+ - PC = reset vector's addr (in **on-chip** boot ROM) -> boot ROM decides PC=eMMC or SD card
+ - CPU exe from PC -> exe bootloader on **boot ROM**
+== Boot trap
+ - [reset vector -> Bl] = CPU exe 1st ins of bootloader
+ - [Bl] CPU - init RAM ctrller
+ - [Bl] CPU - init CPU's reg for map stack + heap into RAM
+ - [Bl] CPU - load dtb + OS (kernel, initrfs)
+== End of Boot trap
+ - [Bl -> krn] = CPU exe 1st ins of OS
+ - [krn] - CPU - **load initramfs** (take I/O drivers, tools (modprobe)) -> mount ro SD card
+ - [krn] - SPU -> init process (PID1): read /etc/initab
+   + (re)mounts SD card (rfs) rw:
+   + services/daemons
+   + usable state (login, graphics)
+
+
+2. === [BOOTING PROCESS SOC vs MCU] ===
+ - Single core >< Multi core
+ - internal flash >< external (eMMC, SD card)
+ - Flash -> application >< Boot ROM -> SPL -> kernel
+

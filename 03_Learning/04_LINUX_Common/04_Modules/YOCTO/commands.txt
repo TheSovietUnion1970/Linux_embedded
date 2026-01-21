@@ -1,1 +1,10 @@
+git clone https://github.com/yoctoproject/poky.git
+git checkout -b kirkstone my_kk
+
+sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib \
+     build-essential chrpath socat libsdl1.2-dev xterm
+
 source oe-init-build-env
+
+cd build
+bitbake -k core-image-minimal

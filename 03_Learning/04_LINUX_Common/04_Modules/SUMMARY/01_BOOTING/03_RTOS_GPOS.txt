@@ -1,0 +1,4 @@
+1. ==== [RTOS vs GPOS] ===
+ - phys access >< vir access
+ - switches: predictable >< latency (spinlocks)
+ - car, robotics >< mobile device (android, iOS)
