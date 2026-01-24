@@ -1,0 +1,5 @@
+nmcli device wifi list
+sudo nmcli device wifi connect 64DVC --ask
+
+nmcli connection show --active 
+sudo nmcli connection down 64DVC

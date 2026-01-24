@@ -1,0 +1,3 @@
+export CC_x86_for_arm=/home/vinh/build_BBB_custom/gcc-11.3.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
+sudo make ARCH=arm CROSS_COMPILE=${CC_x86_for_arm} -C /home/vinh/build_BBB_custom/linux-stable-rcn-ee M=drivers/net/wireless/ti/wl18xx/ modules
+sudo scp ./drivers/net/wireless/ti/wl18xx/wl18xx.ko debian@192.168.137.2:/home/debian/
