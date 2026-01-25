@@ -1,0 +1,14 @@
+Byte Stream:
+ - pipes
+ - FIFO
+ - ...
+
+Pipes:
+ - No named filesystem
+ - Related processes - fork()
+ - pipe(fdp[2]), close(), write(), read()
+
+FIFO:
+ - file on DISK
+ - for both (Unrelated or related)
+ - mkfifo(), open(), close(), write(), read()

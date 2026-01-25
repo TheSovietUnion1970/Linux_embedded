@@ -1,0 +1,20 @@
+Socket - allows processes (programs) to communicate with each other — either on the same machine or across a network.
+
+Socket Internet domain (IPv4 and IPv6) = devices on the SAME SUBNET or DIFFERENT one with router FORWARDING or internal forwarding              
+                                         Socket cannot communicate with different subnet if no forwarding
+ - Binding socket on Server ~ bind stuff (type + mask ip (0x000000) + port num) to socket stick 
+    -> any client want to send data to Server, set the same type, port num and network interface that Server has 
+ - Can test:
+   + PC has wlp1s0 (172.20.10.14)
+   + BBB has usb0 (192.168.137.2)
+    -> Data goes from usb0 (192.168.137.2) on BBB to usb0 (192.168.137.1) on PC, the IPv4 forwarding will forward data from 
+       usb0 (192.168.137.1) on PC to wlp1s0 (172.20.10.14) on PC
+      => Server (PC): Client IP: 192.168.137.2, client port: 50704
+      => Client (BBB): Server IP: 172.20.10.14, server port: 2000
+       : Server will choose the interface that server can communicate with, here is usb0 (192.168.137.2) on BBB
+    -> if 'sudo ip link set usb0 down', process on BBB and one on PC cannot communicate with each other
+
+ - (TCP vs UDP)-IPv4 or (stream vs datagram)-Unix
+   + connection-oriented >< connectionless
+   + reliable >< non reliable (error checking, order, retransmission if error)
+   + Files, web >< video, gaming (IPv4)

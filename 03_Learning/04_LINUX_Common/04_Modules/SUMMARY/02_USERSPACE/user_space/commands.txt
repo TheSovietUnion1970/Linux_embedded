@@ -1,0 +1,1 @@
+sudo cp -r /home/vinh/user_space/ /home/vinh/D/LINUX/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/SUMMARY/02_USERSPACE/

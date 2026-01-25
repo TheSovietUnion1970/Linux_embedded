@@ -1,0 +1,4 @@
+px -au(x) -> 'x' will list all terminal-detached process
+
+kill -l -> list all signals (SIGKILL(9), SIGCHLD(17))
+kill -9 <PID>

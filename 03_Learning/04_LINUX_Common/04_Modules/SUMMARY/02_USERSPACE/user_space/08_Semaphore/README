@@ -1,0 +1,20 @@
+Synchronization - semaphore
+
+Semaphore:
+ - SystemV
+ - SystemD:
+  + Named
+  + Unamed
+
+systemV:
+ - No file name
+ - access(), ftok(), semget(), semctl(), semop()
+
+systemD named:
+ - File on RAM
+ - sem_open(), sem_wait(), sem_post(), sem_getvalue(), sem_close, sem_unlink()
+
+systemD unamed:
+ - File on RAM
+ - sem_init(), sem_wait(), sem_post(), sem_destroy()
+

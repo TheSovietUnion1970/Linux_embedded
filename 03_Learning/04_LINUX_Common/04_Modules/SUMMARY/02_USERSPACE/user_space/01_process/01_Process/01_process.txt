@@ -1,0 +1,3 @@
+- process - has its OWN MEMORY SPACE
+	  - allocated into every parts of USER-SPACE MEM
+	  - via system call INTERFACE

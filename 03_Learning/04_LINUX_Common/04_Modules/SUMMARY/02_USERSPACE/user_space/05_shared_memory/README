@@ -1,0 +1,43 @@
+Shared memory:
+ - SystemV
+ - SystemD (POSIX):
+  + Named
+  + Anonymous
+ - File-mapping
+
+SystemV:
+ - No named filesystem, but having key and ID of segment
+ - Segment in RAM, existed until shmctl(IPC_RMID)
+ - ftok(), shmget(), shmat(), shmdt(), shmctl()
+
+SystemD named:
+ - Virtual named filesystem
+ - RAM file (no disk involvement), existed until shm_unlink(SHM_NAME)
+ - shm_open(), ftruncate(), mmap(), munmap(), close()
+
+SystemD unnamed/anonymous:
+ - No named filesystem
+ - Segment in RAM, used for process using fork()
+ - mmap(), munmap()
+
+File-mapping:
+ - File on DISK
+ - file in disk, existed until unlink(FILE_PATH)
+ - open(), ftruncate(), mmap(), munmap(), close()
+
+Test:
+# Buffer on virtual kernel filesystem (POSIX named)
+vinh@vinh-Inspiron-15-3520:~$ cat /dev/shm/posix_shm 
+Hello from POSIX named shared memory!
+-> This is after ./w
+
+vinh@vinh-Inspiron-15-3520:~$ cat /dev/shm/posix_shm 
+cat: /dev/shm/posix_shm: No such file or directory
+-> This is after ./r
+
+# Buffer on special file (on SD card disk) (file-mapping)
+vinh@vinh-Inspiron-15-3520:~/user_space/05_shared_memory/02_Code$ cat shared_data.dat 
+Hello from File-mapping shared memory PID=1297971
+
+vinh@vinh-Inspiron-15-3520:~/user_space/05_shared_memory/02_Code$ cat shared_data.dat 
+cat: shared_data.dat: No such file or directory

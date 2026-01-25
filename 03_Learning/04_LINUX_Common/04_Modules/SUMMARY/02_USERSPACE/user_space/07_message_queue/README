@@ -1,0 +1,23 @@
+Message - Message queue
+
+Message queue:
+ - SystemV
+ - SystemD
+
+SystemV:
+ - No named virtual filesystem
+ - ftok(), msgget(), msgsnd()
+
+SystemD:
+ - named virtual filesystem
+ - mq_attr - mq_maxmsg, mq_msgsize, mq_curmsgs
+ - mq_open(), mq_send(), mq_receive(), mq_close() 
+
+Test:
+vinh@vinh-Inspiron-15-3520:~$ cat /dev/mqueue/myqueue 
+QSIZE:42         NOTIFY:0     SIGNO:0     NOTIFY_PID:0  
+-> This is after ./w
+
+vinh@vinh-Inspiron-15-3520:~$ cat /dev/mqueue/myqueue 
+QSIZE:0          NOTIFY:0     SIGNO:0     NOTIFY_PID:0  
+-> This is after ./r
