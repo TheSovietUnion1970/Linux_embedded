@@ -1,0 +1,15 @@
+(5):
+ - swapping - kswapd
+ - mapping - MMU, X -> MMU: page fault
+ - fair access 
+ - protections
+ - shared memory (buffer, *.so)
+ 
+*SysCallIf          *IntraKernelIf 
+malloc/free         kmalloc/kfree
+mmap/munmap         ioremap/iounmap
+           
+SysCallIf -> memory mapping -> arch-specific mod (HW) -> MMU
+          -> swap file      ->
+          -> core mem mng   ->
+             (algos - mem alloc)

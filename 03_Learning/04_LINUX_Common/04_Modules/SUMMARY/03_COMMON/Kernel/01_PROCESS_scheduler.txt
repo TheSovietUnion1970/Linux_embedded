@@ -1,0 +1,9 @@
+(7)
+- create/copy processes: fork()
+- CPU scheduling + context switch: schedule()
+- Handle INT: (FIQ, IRQ)
+- Send signals: SIGINT (Ctrl + C)
+- Timer: sleep()
+- Clean up exit: exit(0)
+- Loadable module support: modprobe -> module_init()/module_exit()
+
