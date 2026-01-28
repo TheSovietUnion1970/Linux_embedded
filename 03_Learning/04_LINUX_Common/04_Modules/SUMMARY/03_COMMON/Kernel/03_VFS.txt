@@ -1,0 +1,18 @@
+(5)
+ - Cache: (dentry - path, page - file data)
+ - journaling: flush/sync
+ - permissions
+ - uniform APIs
+ - filesystems/executables[ELF or a.out] formats
+ 
+VFS arch:
+ - CallIf -> VFS -> filesystem (ext, fat)           -> cache -> dev driv (char/blkc)
+                                          -> binary ->
+ 
+i-node - data structure ~ metadata of a file in 
+       - hide file system details
+       - pointer to metadata -> proper operations
+
+=== commands ====
+mount | grep vfat -> check filesystem format of a block
+ls -i <file> -> check i-node number
