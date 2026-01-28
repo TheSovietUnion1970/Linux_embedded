@@ -6,8 +6,8 @@
  - filesystems/executables[ELF or a.out] formats
  
 VFS arch:
- - CallIf -> VFS -> filesystem (ext, fat)           -> cache -> dev driv (char/blkc)
-                                          -> binary ->
+ - CallIf -> VFS -> filesystem (ext, fat)                       -> cache -> dev driv (char/blkc)
+                                          -> binary (ELF, PE32) ->
  
 i-node - data structure ~ metadata of a file in 
        - hide file system details
