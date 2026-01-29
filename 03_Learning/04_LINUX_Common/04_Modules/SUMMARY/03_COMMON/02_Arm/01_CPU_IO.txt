@@ -1,0 +1,5 @@
+ - Via system bus (address + ctr/sts + data)
+ - Data ready? - POLLING/INTERRUPT
+ - DMA: + Burst -> CPU inactive -> DMA complete
+        + Cycle stealing -> steal 1 cycle -> control to CPU...
+        + Transparent -> when CPU not using the bus
