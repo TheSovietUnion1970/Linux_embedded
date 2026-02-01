@@ -1,0 +1,4 @@
+objdump -t <bin> -> symbol table
+objdump -h <bin> -> header
+objdump -S <bin> -> Source assembly
+

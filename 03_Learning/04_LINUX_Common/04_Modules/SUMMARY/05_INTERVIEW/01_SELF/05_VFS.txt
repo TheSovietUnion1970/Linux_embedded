@@ -1,0 +1,5 @@
+User Space: Syscall If
+Kernel Space:
+- Kernel entry point -> syscall handler (syscall_open())
+- REQUESTS -> VFS -> inode + cach (path) -> which filesystem
+- Filesystem-SPECIFIC drivers

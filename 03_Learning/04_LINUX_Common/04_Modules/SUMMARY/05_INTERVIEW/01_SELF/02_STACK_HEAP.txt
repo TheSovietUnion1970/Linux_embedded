@@ -1,0 +1,6 @@
+- Local vars
+- Parameters
+
+- Return addr -> next instructions
+- CPU contexts (registers)
+- Temporary values -> return a + b

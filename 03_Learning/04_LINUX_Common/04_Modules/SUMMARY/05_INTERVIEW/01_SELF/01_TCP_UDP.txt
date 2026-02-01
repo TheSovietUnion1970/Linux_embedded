@@ -1,0 +1,9 @@
+- CONNECTION: oriented       ><  not oriented
+- GUARANTEE:  retransmission ><  not -> error
+- ORDER:      YES            ><  NO
+- CRC:        YES            ><  NO
+
+- LATENCY:    SLOW           ><  FAST
+
+-> TCP: correctness + completeness -> web, file explo
+-> UDP: Speed -> gaming, streaming

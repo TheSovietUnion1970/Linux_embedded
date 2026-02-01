@@ -1,0 +1,25 @@
+fork() + read::
+
+Process		Virtual addr(PTE)	Physical page	Mode	Ref count
+
+Parent		page 0			Phys A		RO	2
+Parent		page 1			Phys B		RO	2
+Parent		page 2			Phys C		RO	2
+
+Child		page 0			Phys A		RO	2
+Child		page 1			Phys B		RO	2
+Child		page 2			Phys C		RO	2
+
+write::
+
+Process		Virtual addr(PTE)	Physical page	Mode	Ref count
+
+Parent		page 0			Phys A		RO	2
+Parent		page 1			Phys B		RO	2
+Parent		page 2			Phys C		RO	1
+
+Child		page 0			Phys A		RO	2
+Child		page 1			Phys B		RO	2
+Child		page 2			Phys D		W	1
+
+-> only pages modified get copied -> effecient for fork() = COW
