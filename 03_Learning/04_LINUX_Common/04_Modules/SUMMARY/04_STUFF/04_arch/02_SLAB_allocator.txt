@@ -1,0 +1,53 @@
+1. slab/slub/slob allocator - Create a cache - multi pages (1-4) = multi identical kernel objs
+
+2. Overall slab operations
+ - -> partial slab
+ - if no partial slab -> empty slab (has all free objects)
+ - if no empty slab   -> ask buddy allocator = new slab 
+
+3. SLAB (original) vs SLUB (common)
+ - Per-CPU metadata   -> metadata per obj	vs 	metadata per page
+ - Per-CPU caching    -> complex queues		vs	signle freelist
+ -> mem + size	      -> higher			vs	smaller
+
+4. Temp
+Allocate object on CPU 3 ===========
+    ↓
+1. per-CPU freelist has objects?  ──yes──► take one (no lock) ──► done
+    ↓ no
+2. Current slab page has free objects?  ──yes──► move some to per-CPU freelist (page lock only)
+    ↓ no
+3. Global partial slab list has usable slabs?  ──yes──► take lock → move objects to per-CPU freelist
+    ↓ no
+4. Request new page(s) from buddy allocator
+    ↓
+   Initialize new slab(s)
+    ↓
+   Add new slab(s) to global partial/empty list
+    ↓
+   Move some objects from new slab to per-CPU freelist (under lock)
+    ↓
+   Release lock
+    ↓
+   Now allocate from per-CPU freelist (fast again)
+
+
+Free object on CPU 3 ===========
+    ↓
+1. Per-CPU freelist has space?  ──yes──► add object to per-CPU freelist (no lock) ──► done
+    ↓ no (per-CPU freelist is "full")
+2. Current slab page can accept more free objects?  
+   ──yes──► add object back to current slab page freelist (page lock only)
+   ↓ no (current slab page is full or not suitable)
+3. Move some objects from per-CPU freelist to global shared slab?  
+   ──yes──► take global lock → move batch of free objects to shared slab's freelist
+   ↓ no (no need to flush yet)
+4. If slab becomes completely free after freeing?
+    ↓ yes
+   Remove slab from global partial list
+    ↓
+   Return page(s) to buddy allocator (deallocate physical page)
+    ↓
+   Release any locks
+    ↓
+   Done — object is freed

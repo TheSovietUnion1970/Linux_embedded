@@ -1,0 +1,37 @@
+1. Monolithic vs Microkernel [4]
+- where drivers/fs run 	Kernel (single)		vs 		User (seperate)
+        network
+
+- talks amg services	Direct func call	vs		IPC/msg passing
+
+- mem proctection	none			vs 		strong (seperate)
+
+- driver crash		whole die		vs		only driver dies
+
+ => Hyprid: loadable modules + layers (VFS, net stack) + organization (drivers/, fs/)
+	BUT services still run in SINGLE, SHARED, PREVILIDGED mem space
+
+2. Organizations:
+- archiecture-specific code (arch/arm/)
+- core kernel (kernel/, mm/, init/)
+- VFS (fs/ext4, ...)
+- network stack (net/)
+- device driver (drivers/)
+- Security (crypto/, security/)
+
+
+3. Kernel core:
+kernel/         → Process
+    └─ sched/     → CPU scheduler
+    └─ fork.c     → Process/thread creation
+    └─ signal.c   → Signal delivery
+
+mm/             → mem management
+    └─ page_alloc.c → Physical page allocator
+    └─ slab.c       → Small dynamic object allocator
+    └─ page_fault.c → What happens when you touch a page
+    └─ vmscan.c     → Reclaim memory when low
+
+init/           → Boot + init code
+    └─ main.c       → start_kernel() — the kernel's main()
+    └─ do_mounts.c  → Mounts the initial rootfs
