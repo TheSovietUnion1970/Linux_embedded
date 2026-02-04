@@ -1,0 +1,15 @@
+1. KERNEL PANIC = kernel detects FATAL ERRORS -> unsafe to go ahead
+- Reasons:
+ + null defer
+ + Invald mem access (use-after-free)
+ + Stack overflow
+ + Deadlock detected (no timeout)
+ + HW (not map, registers before clocking)
+ 
+2. OOPS = kernel detects ILLEGAL OPS -> MAY go ahead
+- Reasons:
+ + null defer
+ + Invald mem access (use-after-free)
+ + Stack overflow
+ + Deadlock detected (no timeout)
+ + HW (not map, registers before clocking)
