@@ -1,0 +1,2 @@
+Hard IRQ: cat /proc/interrupts
+Soft IRQ: cat /proc/softirqs

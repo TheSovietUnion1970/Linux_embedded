@@ -1,0 +1,6 @@
+Kmalloc vs Vmalloc::
+Memory type: physical contiguous		vs		virtual contiguous (not physical contiguous)
+Size       : medium	     			vs		large
+Speed      : fast				vs		slow
+Ex         : task_struct, sk_buff		vs		
+

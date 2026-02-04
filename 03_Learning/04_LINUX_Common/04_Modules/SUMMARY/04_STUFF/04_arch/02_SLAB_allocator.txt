@@ -10,20 +10,20 @@
  - Per-CPU caching    -> complex queues		vs	signle freelist
  -> mem + size	      -> higher			vs	smaller
 
-4. Temp
+4. Maps
 Allocate object on CPU 3 ===========
     ↓
-1. per-CPU freelist has objects?  ──yes──► take one (no lock) ──► done
+1. per-CPU freelist has objects?  ──yes──► take one (no lock) ──► done (FAST PATH)
     ↓ no
-2. Current slab page has free objects?  ──yes──► move some to per-CPU freelist (page lock only)
+2. Current slab page has free objects?  ──yes──► move some to per-CPU freelist from slab page's freelist (page lock only)
     ↓ no
-3. Global partial slab list has usable slabs?  ──yes──► take lock → move objects to per-CPU freelist
+3. Global partial slab list has usable slabs?  ──yes──► take lock → move objects to per-CPU freelist (SLOW PATH)
     ↓ no
 4. Request new page(s) from buddy allocator
     ↓
    Initialize new slab(s)
     ↓
-   Add new slab(s) to global partial/empty list
+   Add new slab(s) to global partial/empty SLAB list
     ↓
    Move some objects from new slab to per-CPU freelist (under lock)
     ↓
@@ -31,6 +31,10 @@ Allocate object on CPU 3 ===========
     ↓
    Now allocate from per-CPU freelist (fast again)
 
+=> VISUAL:
+Per-CPU freelist head → objA → objB → objC → NULL
+   - ObjA is allocated
+Per-CPU freelist head → objB → objC → NULL
 
 Free object on CPU 3 ===========
     ↓
@@ -51,3 +55,8 @@ Free object on CPU 3 ===========
    Release any locks
     ↓
    Done — object is freed
+   
+=> VISUAL:
+Per-CPU freelist head → objA → objB → objC → NULL
+   - ObjX is freed
+Per-CPU freelist head → objX → objA → objB → objC → NULL

@@ -1,0 +1,6 @@
+Hard IRQ vs Soft IRQ (bottom half)::
+Triggered by	: HW		vs		SW (kernel code)
+exe ctx		: interrupt	vs		process/softirq
+sleep/block	: No		vs 		Yes
+priority	: Highest	vs		Lower
+duration	: short		vs		Longer

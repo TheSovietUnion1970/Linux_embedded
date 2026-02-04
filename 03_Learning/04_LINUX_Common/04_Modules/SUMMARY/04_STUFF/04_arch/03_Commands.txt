@@ -1,0 +1,10 @@
+sudo cat /proc/slabinfo | grep struct
+
+task_struct         1414   1653  10496    3    8 : tunables    0    0    0 : slabdata    551    551      0
+=> 1414/1663 active/total objects
+=> Each obj has 10496 bytes
+=> Each slab has 3 objs
+=> Each slab has 8 pages
+=> 551 active / 551 total slabs
+
+=> num of slabs: 551 * 3 (objs per slab) = 1653 total objects
