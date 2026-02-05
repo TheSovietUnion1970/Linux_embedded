@@ -1,0 +1,7 @@
+DRIVERS:
+Character vs Block vs Network
+Type	: byte stream		vs		block		vs	packet
+fos	: open,..		vs		open, release	vs	X
+
+file	: /dev/<name>		vs		/dev/sdX	vs	eth0, wlan0
+struct  : struct cdev		vs 		struct gendisk	vs	struct net_device
