@@ -1,0 +1,29 @@
+Fundamentals
+
+	What is the difference between user space and kernel space?
+
+	Explain the Linux kernel architecture (monolithic, modules).
+
+	What happens when a system boots from power-on to user space?
+
+Kernel Internals
+
+	Explain Linux memory management (virtual memory, page tables).
+
+	What is slab / slub allocator?
+
+	Difference between kmalloc and vmalloc?
+
+	What causes a kernel panic?
+
+	How do you debug a kernel crash?
+
+Interrupts
+
+	What is an interrupt?
+
+	Difference between hard IRQ and soft IRQ?
+
+	What is tasklet vs workqueue?
+
+	Why must you keep interrupt handlers short?

@@ -1,0 +1,23 @@
+Driver Basics
+
+	What are the major parts of a Linux device driver?
+
+	Difference between character, block, and network drivers?
+
+	Explain probe() and remove() functions.
+
+Device Tree
+
+	What is Device Tree?
+
+	How does a driver bind to a device tree node?
+
+	Difference between platform driver and platform device?
+
+Driver Coding
+
+	How do you access hardware registers safely?
+
+	How do you handle concurrency in drivers?
+
+	What locking mechanisms are used in kernel space?
