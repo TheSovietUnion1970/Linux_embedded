@@ -1,0 +1,17 @@
+1. Definition:
+The speed of data transmission -> CPU will sample data at the specific baudrate
+
+Baud Rate: Number of signal changes per second.
+Bit Rate: Number of data bits transmitted per second.
+If one signal change represents one bit, Baud Rate = Bit Rate. 
+
+2. Calculation:
+- Desired br = perating frequency/(X mode * divider)
+  Ex: Xmode - 16 => br = 115200 = 48MHz/(16*26) where divider = 26
+
+3. x16 operation
+ - Start bit: after 8 clocks -> begin sampling every 16 clocks from then
+
+4. Idle line - 1
+ -> start bit - 0
+ -> stop bit - 1

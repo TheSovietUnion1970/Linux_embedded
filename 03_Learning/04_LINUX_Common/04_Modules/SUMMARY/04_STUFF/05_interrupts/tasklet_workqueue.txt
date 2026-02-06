@@ -1,4 +1,5 @@
 Tasklet vs Workqueue::
+[3]
 ctx		: softirq-atomic	vs	thread
 sleep/mutex	: no -> spin_lock..	vs	yes
 PID		: no			vs	yes -> [kworker/<name>]

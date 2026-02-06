@@ -1,2 +1,3 @@
-Unbounded latency
-Nested interrupts
+Unsupported nested interrupts -> Unbounded latency (higher waits prolonged lower)
+
+atomic -> 3 NOs (no preemption, no sleep, no interrupt)
