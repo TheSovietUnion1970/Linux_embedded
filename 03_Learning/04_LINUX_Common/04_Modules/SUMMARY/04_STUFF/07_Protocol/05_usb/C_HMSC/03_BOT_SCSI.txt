@@ -1,0 +1,10 @@
+BOT:
+ + CBW 		(H->D)
+ + Data stage 	(H->D)
+ + CSW 		(D->H)
+
+SCSI commands: - wrapped in BOT
+ + INQUIRY		-> vendor + product id
+ + READ CAPACITY
+ + READ 10
+ + WRITE 10

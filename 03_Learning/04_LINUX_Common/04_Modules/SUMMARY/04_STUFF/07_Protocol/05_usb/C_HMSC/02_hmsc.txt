@@ -1,0 +1,26 @@
+OVERAL:
+ High level
+ If
+ Structure
+ 
+
+1. High level
+ + device as removable disk
+ + implement: BOT + SCSI
+
+2. Num of interfaces: 1
+ + If0 -> bInterfaceClass	: 0x8 = MSC
+          bInterfaceSubClass 	: 0x6 = SCSI
+          bInterfaceProtocol	: 0x50 = BOT
+          
+          -> BULK IN and BULK OUT
+ 
+ 
+4. Des structure
+ + General header
+ 
+ + Config header
+ 
+ + If0 - MSC
+ + ep if0 - BULK IN
+ + ep if0 - BULK OUT

@@ -10,8 +10,10 @@ OVERAL:
  + Debugging, configuration, AT commands
 
 2. Num of interfaces: 2
- + If0 -> class: comm (0x2) -> interrupt IN	-> notification (serial state)
- + If1 -> class: CDC  (0xA) -> Bulk IN + OUT	-> serial data
+ + If0 -> bInterfaceClass	: 0x2 = comm -> interrupt IN	-> notification (serial state)
+          bInterfaceSubClass	: 0x2 = ACM
+          bInterfaceProtocol	: 0x1 = AT commands
+ + If1 -> bInterfaceClass: CDC  (0xA) -> Bulk IN + OUT	-> serial data
  
 3. Components:
  + Header -> subtype: 0x0	-> version: 1.1
