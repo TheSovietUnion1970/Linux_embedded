@@ -79,3 +79,12 @@
   + 2 - CDC
   + 3 - HID
   + 8 - MSC
+  
+8. Speed negotiation
+ - Idle: LOW when no device
+ - connection - > D+/D- change (know the speed + device here)
+ - reset -> D+/D- LOW by host ~ 10ms
+ - speed -> by dev (confirm)
+    + D- HIGH -> LS
+    + D+ HIGH -> FS
+    + chirp signaling -> HS
