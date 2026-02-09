@@ -1,0 +1,20 @@
+GPIOs
+Clock
+
+[3]
+INIT:
+ + Bit timing -> 1 bit = Sync (1 tq) + pro time (3 tq) + phase1 (4 tq) + phase2 Seg (4 tq)
+ 	      -> tq - basic unit of bit timing
+ + Can mode   -> mormal
+ 	      -> listen-only
+ 	      -> slient
+ 	      -> loopback - testing
+NORMAL:
+ ...
+
+FIFO
+Int
+DMA
+
+-> Enable
+

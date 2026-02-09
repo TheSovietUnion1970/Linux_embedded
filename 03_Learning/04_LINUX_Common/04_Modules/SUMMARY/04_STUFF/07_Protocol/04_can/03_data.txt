@@ -1,0 +1,6 @@
+Classic	-> 8-byte payload
+FD	-> 64-byte payload
+XL	-> 2048-byte payload (2k)
+
+Frame: SOF + ID(11 or 29 + RTR) + CTRL(IDE + R0 + R1) + DLC[1] + PAYLOAD + CRC[2] + ACK + EOF
+	

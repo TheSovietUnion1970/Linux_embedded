@@ -1,0 +1,12 @@
+GPIOs
+Clock
+
+[2]
+data + parity + stop
+baudrate + oversampling
+
+FIFO
+Int
+DMA
+
+-> Enable

@@ -1,0 +1,35 @@
+"leave one slot empty" rule => differentiate between full and empty
+-> At first, r = w -> nothing to read
+-> After data written, ALWAYS w < r = 1
+		       ELSE   w = r -< nothing to read
+
+Index:  0   1   2   3   4   5   6   7
+        ┌───┬───┬───┬───┬───┬───┬───┬───┐
+Initial:│   │   │   │   │   │   │   │   │
+        └───┴───┴───┴───┴───┴───┴───┴───┘
+               ↑read/write                    
+           
+=> write 5 bytes A B C D E, haven't read anything
+	┌───┬───┬───┬───┬───┬───┬───┬───┐
+        │ A │ B │ C │ D │ E │   │   │   │
+        └───┴───┴───┴───┴───┴───┴───┴───┘
+               ↑read              ↑write   
+       
+=> Then, A B C are read, write more 5 bytes F G H I J    
+	┌───┬───┬───┬───┬───┬───┬───┬───┐
+        │ I │ J │ C │ D │ E │ F │ G │ H │ -> FULL
+        └───┴───┴───┴───┴───┴───┴───┴───┘
+                           ↑   ↑
+               write read
+          
+                
+=> Then, read the rest: D E, F G H I J    
+	┌───┬───┬───┬───┬───┬───┬───┬───┐
+        │ I │ J │ Y │ D │ E │ F │ G │ H │ -> Nothing to read
+        └───┴───┴───┴───┴───┴───┴───┴───┘
+                           ↑    
+            write = read
+               
+==>
+	if write == read -> nothing to read
+	if write - read = 1 -> full, if writeen -> old data is overwritten

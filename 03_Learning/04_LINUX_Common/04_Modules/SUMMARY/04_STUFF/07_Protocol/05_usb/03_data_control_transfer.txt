@@ -1,0 +1,53 @@
+============= USB Transaction:
+	SETUP phase			        <PID>
+	  SOF			: Idle + Sync + SOF     + | Frame no.   | + | CRC5  | + EOP + Idle	
+	  Token packet		:               SETUP   + | ADDR + ENDP |   |       |
+	  Data packet		:               DATA0/1 + | DATA[8]     | + | CRC16 |
+	  Handshake packet	: 		ACK     + |      X      |   |   X   |
+	  
+	DATA phase (IN or OUT)
+	  SOF:
+	  Token packet		: 		IN/OUT
+	  Data packet:
+	  Handshake packet	:		ACK/NAK/STALL
+	  
+	STATUS phase
+	  SOF:
+	  Token packet		: 		IN/OUT
+	  Handshake packet	:		ACK/NAK/STALL
+	  
+============= PID:
+SOF	0xA
+SETUP	0xD
+
+DATA0	0x3
+DATA1	0xB
+
+ACK	0x2
+NAK	0xA
+STALL	0xE
+
+============= Ex:
+- READ USB Transaction GetDesc_pkt
+	const u8 GetDesc_pkt[8] = {
+	    0x80,       // bmRequestType: Device-to-host, Standard, Device
+	    0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
+	    0x00, 0x01, // wValue: Descriptor Index = 0 (LOW), Type = DEVICE (1) (HIGH)
+	    0x00, 0x00, // wIndex: 0
+	    0x12, 0x00  // wLength: 18 bytes (Device descriptor length)
+	};
+	SETUP.SEND -> SETUPphase.Datapacket.DATA[8] = GetDesc_pkt
+	DATA.RECV  <- DATAphase.Datapacket.DATA[8]
+	     	   <- DATAphase.Datapacket.DATA[8]
+	     	   <- DATAphase.Datapacket.DATA[2]
+
+- WRITE USB Transaction SetAddr_pkt	     
+	const u8 SetAddr_pkt[8] = {
+	    0x00,       // bmRequestType: Host-to-device, Standard, Device
+	    0x05,       // bRequest: USB_REQ_SET_ADDRESS
+	    0x01, 0x00, // wValue: Device address: 1
+	    0x00, 0x00, // wIndex: 0
+	    0x00, 0x00  // wLength: 0
+	};
+	SETUP.SEND -> SETUPphase.Datapacket.DATA[8] = SetAddr_pkt
+	DATA.SEND  -> NO data packet as wLength = 0

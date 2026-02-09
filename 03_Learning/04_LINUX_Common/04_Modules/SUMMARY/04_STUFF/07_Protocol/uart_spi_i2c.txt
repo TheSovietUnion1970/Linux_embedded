@@ -1,0 +1,3 @@
+UART -> point-to-point, long dis,  medium speed
+SPI  -> 		short dis, high speed , displays + memory 
+I2C  -> multi devices				sensors -> common in embedded

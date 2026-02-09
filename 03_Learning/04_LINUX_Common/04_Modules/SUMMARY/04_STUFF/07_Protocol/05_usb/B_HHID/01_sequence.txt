@@ -1,0 +1,62 @@
+- Getting descriptor with default address 0
+	const u8 GetDesc_pkt[8] = {
+	    0x80,       // bmRequestType: Device-to-host, Standard, Device
+	    0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
+	    0x00, 0x01, // wValue: Descriptor Index = 0 (LOW), Type = DEVICE (1) (HIGH)
+	    0x00, 0x00, // wIndex: 0
+	    0x12, 0x00  // wLength: 18 bytes (Device descriptor length)
+	};
+	SETUP.SEND -> SETUPphase.Datapacket.DATA[8] = GetDesc_pkt
+	DATA.RECV  <- DATAphase.Datapacket.DATA[8]
+	     	   <- DATAphase.Datapacket.DATA[8]
+	     	   <- DATAphase.Datapacket.DATA[2]
+
+- Setting address 0x1 with default address 0
+	const u8 SetAddr_pkt[8] = {
+	    0x00,       // bmRequestType: Host-to-device, Standard, Device
+	    0x05,       // bRequest: USB_REQ_SET_ADDRESS
+	    0x01, 0x00, // wValue: Device address: 1 (1–127)
+	    0x00, 0x00, // wIndex: 0
+	    0x00, 0x00  // wLength: 0
+	};
+	SETUP.SEND -> SETUPphase.Datapacket.DATA[8] = SetAddr_pkt
+	DATA.SEND  -> NO data packet as wLength = 0
+	
+- Getting descriptor with new address 0x1 ~ Getting descriptor with default address 0
+
+- Getting descriptor with new address 0x1
+	const u8 GetDesc_pkt2[8] = {
+	    0x80,       // bmRequestType: Device-to-host, Standard, Device
+	    0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
+	    0x00, 0x02, // wValue: Descriptor Index = 0 (LOW), Type = DEVICE (1) (HIGH)
+	    0x00, 0x00, // wIndex: 0
+	    0x09, 0x00  // wLength: 9 bytes (Device descriptor length)
+	};
+
+- Getting all descriptors with new address 0x1	**************** [DIFF] *************************
+	const u8 GetDescAll_pkt[8] = {
+	    0x80,       // bmRequestType: Device-to-host, Standard, Device
+	    0x06,       // bRequest: USB_REQ_GET_DESCRIPTOR
+	    0x00, 0x02, // wValue: Index=0 (LOW), Type=INTERFACE (2) (HIGH) → 0x0200
+	    0x00, 0x00, // wIndex: 
+	    0x22, 0x00  // wLength: 34 bytes 
+	};
+	
+- Getting configuration with new address 0x1, data recieved should be Configuration value 1 (LOW)
+	const u8 GetConf_pkt[8] = {
+	    0x80,       // bmRequestType: Device-to-host, Standard, Device
+	    0x08,       // bRequest: USB_REQ_GET_CONFIGURATION
+	    0x00, 0x01, // wValue: 0 = meaningless
+	    0x00, 0x00, // wIndex: 0
+	    0x01, 0x00  // wLength: 1 byte (Configuration descriptor length)
+	};
+
+- Setting configuration with new address 0x1	
+	const u8 SetConf_pkt[8] = {
+	    0x00,       // bmRequestType: Host-to-Device, Standard, Device
+	    0x09,       // bRequest: USB_REQ_SET_CONFIGURATION
+	    0x01, 0x00, // wValue: Configuration value 1 from Getting configuration
+	    0x00, 0x00, // wIndex: 0
+	    0x00, 0x00  // wLength: 0 (no data phase)
+	};
+	

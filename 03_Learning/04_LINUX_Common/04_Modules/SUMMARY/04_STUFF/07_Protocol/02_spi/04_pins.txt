@@ -1,0 +1,2 @@
+Apart from 4 pins
+-> support 3 pins (SLK, CS, SISO)

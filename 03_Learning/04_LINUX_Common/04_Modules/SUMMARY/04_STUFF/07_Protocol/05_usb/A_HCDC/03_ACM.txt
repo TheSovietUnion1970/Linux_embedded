@@ -1,0 +1,3 @@
+ACM - Abstract control module -> serial emulation
+Treat CDC device as virtual COM/serial port
+	Ex: Arduino, USB-to-STM32, ...

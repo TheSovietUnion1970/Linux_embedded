@@ -1,0 +1,23 @@
+Clock
+
+[3]
+USB reset[0]::
+
+PHY init[3]::
+ + Session End Comparator -> aware when device connection
+ + No VBUS detections -> host
+ + D+/D-
+ -> ~1 ms
+ 
+USB init[3]::
+ + Choose speed
+ + host mode
+ + ep0 + epN
+ -> into session
+ 
+FIFO
+Int
+DMA
+
+-> Enable
+

@@ -1,0 +1,40 @@
+OVERAL:
+ High level
+ If
+ Components
+ CDC Requests
+ Structure
+
+1. High level
+ + device as USB Virtual COM Port 
+ + Debugging, configuration, AT commands
+
+2. Num of interfaces: 2
+ + If0 -> class: comm (0x2) -> interrupt IN	-> notification (serial state)
+ + If1 -> class: CDC  (0xA) -> Bulk IN + OUT	-> serial data
+ 
+3. Components:
+ + Header -> subtype: 0x0	-> version: 1.1
+ + ACM	  -> subtype: 0x2	-> bmCapabilities: 0x6 = Connection + line coding + Send Break
+ + Union  -> subtype: 0x6	-> Master = 0(if0), Slave = 1(if1)
+ => Components for vir COM port
+ 
+4. CDC requests
+ + SetLineCoding   - 0x20 -> Set baudrate, parity, stop bits, data bits
+ + GetLineCoding   - 0x21
+ + SetCtrLineState - 0x22 -> DTR=1, RTS=1
+ 
+5. Des structure
+ + General header
+ 
+ + Config header
+ 
+ + If0 - comm
+ + Header
+ + ACM
+ + Union
+ + ep if0 - INT
+ 
+ + If1 - data
+ + ep if1 - OUT
+ + ep if1 - IN

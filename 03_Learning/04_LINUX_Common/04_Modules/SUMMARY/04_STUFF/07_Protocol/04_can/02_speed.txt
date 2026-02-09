@@ -1,0 +1,4 @@
+Type::		Speed::
+Classic		Upto 1Mbps, 500kbps -> common
+FD		Upto 5Mbps (even 8Mpbs)
+XL		Upto 20Mbps

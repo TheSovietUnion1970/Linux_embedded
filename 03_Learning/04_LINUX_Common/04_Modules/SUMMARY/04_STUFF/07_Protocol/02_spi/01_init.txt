@@ -1,0 +1,18 @@
+GPIOs
+Clock
+
+[4]
+Master/Slave
+CPOL + CPHA, Data order + size
+Speed clock
+CS high
+
+FIFO
+Int
+DMA
+
+-> Enable
+
+===
+CPOL = 0 -> 0-idle
+CPHA = 0 -> leading

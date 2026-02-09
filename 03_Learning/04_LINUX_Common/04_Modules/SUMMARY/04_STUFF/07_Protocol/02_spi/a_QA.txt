@@ -1,0 +1,4 @@
+1. CS low for 2 slaves at the same time?
+=> depend:
+ + MOSI is disabled -> ok
+ + else, both drives the line simutaneously -> data corruption + electrical damage

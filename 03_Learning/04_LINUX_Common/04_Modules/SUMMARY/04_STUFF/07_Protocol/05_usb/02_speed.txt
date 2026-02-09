@@ -1,0 +1,4 @@
+Type::		Speed::
+Low		1.5 Mbps
+Full		12 Mbps
+High		480 Mbps

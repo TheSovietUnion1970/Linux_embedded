@@ -15,3 +15,5 @@ If one signal change represents one bit, Baud Rate = Bit Rate.
 4. Idle line - 1
  -> start bit - 0
  -> stop bit - 1
+ 
+5. Data order -> LSB

@@ -1,0 +1,5 @@
+[4]::
+- Parity error	: MISMATCH between parity bit and actual data bits
+- Framing error	: RX device -X stop bit
+- Overrun error	: New data overwrites old one
+- Break cond	: Logic 0 - longer than data bits

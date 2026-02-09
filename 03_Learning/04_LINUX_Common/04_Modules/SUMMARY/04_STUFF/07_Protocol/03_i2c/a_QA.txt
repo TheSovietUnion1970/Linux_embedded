@@ -1,0 +1,16 @@
+1. Why does I²C need pull-up resistors?
+ => YEs
+  + pull-up resistors - actively drive low, X drive high -> ACK logic 0
+  
+2. What is a general call address?
+ => All slaves are 0x0 -> broadcast msg
+
+3. What happens if the slave does not ACK?
+ => Not ACK -> SDA high
+
+4. What is clock stretching?
+ => Slave -> SCL low for a litte (more time to process data)
+ 
+5. How does arbitration work in I²C?
+ + multi masters - single bus
+ + The first - 0 -> wins

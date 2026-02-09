@@ -1,0 +1,4 @@
+Various speed 4MHz - 80MHz
+Ex:
+Max7219 <= 10MHz
+Arduino =~ 4Mhz

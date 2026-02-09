@@ -1,0 +1,27 @@
+OVERAL:
+ High level
+ If
+ Components
+ Structure
+
+1. High level
+ + low-bandwidth, human-input -X: custom driver
+
+2. Num of interfaces: 1
+ + If0 -> bInterfaceClass	: 0x3 = HID -> interrupt IN
+          bInterfaceSubClass 	: 0x1 = Boot interface -> allow before OS loads full
+          bInterfaceProtocol	: Type: 0x1 = Keyboard, 0x02 = Mouse
+ 
+3. HID Des Components:
+ + bDescriptorTypeNext		: 0x22 -> Report des
+ + wDescriptorLength		: 0x5  -> size of report = 5 bytes
+ 				  -> ID + button + x + y + z
+ 
+4. Des structure
+ + General header
+ 
+ + Config header
+ 
+ + If0 - HID
+ + HID Descriptor
+ + ep if0 - INT

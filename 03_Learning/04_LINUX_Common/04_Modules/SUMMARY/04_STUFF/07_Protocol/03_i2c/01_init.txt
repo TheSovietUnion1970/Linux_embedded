@@ -1,0 +1,14 @@
+GPIOs
+Clock
+
+[3]
+Master/slave
+Speed mode[5]
+Addressing mode (7 or 10 bits)
+
+FIFO
+Int
+DMA
+
+-> Enable
+

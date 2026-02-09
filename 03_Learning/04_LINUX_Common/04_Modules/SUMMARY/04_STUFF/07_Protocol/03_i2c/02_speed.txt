@@ -1,0 +1,6 @@
+Mode::		Speed::
+Standard 	100kHz
+Fast		400kHz -> common
+Fast+		1MHz
+High-speed	3.4MHz
+Ultra-fast	5 MHz -> wo

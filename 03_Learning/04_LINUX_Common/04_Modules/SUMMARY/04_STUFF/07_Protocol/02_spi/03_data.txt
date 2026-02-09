@@ -1,0 +1,6 @@
+SPI can send multiple bytes when CS is low - MSB(default) or LSB
+-> common: 2–128 bytes
+
+Relations:
+1 master - 1 slave
+1 master - n slaves
