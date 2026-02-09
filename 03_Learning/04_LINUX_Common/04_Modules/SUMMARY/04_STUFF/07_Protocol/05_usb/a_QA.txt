@@ -1,0 +1,81 @@
+=== USB Basics (Warm-up) ===
+1. Difference between USB 2.0 and USB 3.x? 
+ + Speed > (5-10Gbps >< 480Mbps)
+ + full-duplex
+ 
+2. What is hot-plugging in USB?
+ + No sys shutdown
+ + Auto detect
+ + Auto driver config
+ 
+3. Why is USB called a tiered star topology?
+ + ... image
+ 
+=== USB Architecture & Roles ===
+1. What is USB dual-role device (DRD) and OTG?
+ + OTG -> DRD
+ 
+=== USB Physical Layer ===
+1. What are D+ and D- lines?
+ + D+ -> green
+ + D- -> white
+ 
+2. What is pull-up resistor used for in USB?
+ + Device connection >< always presence
+   * Full -> D+
+   * Low  -> D-
+ + Idle high
+ 
+3. Difference between full-speed and high-speed signaling?
+ + Speed
+ + Backward compatibility from high to full
+ + Apply: audio, mice >< drive, video
+ 
+4. What is USB suspend and remote wakeup?
+ + USB suspend 		- low-pwr on devs
+ + USB remote wakeup	- dev - signal - sleep host
+ 
+===  *****************Enumeration Process (VERY IMPORTANT) ****** ===
+[7]
+1. What is USB enumeration?
+ - behind-the-sence process:
+  + detect
+  + unique addr
+  + des -> type, capbs
+  
+2. Steps involved in USB enumeration[5]
+ + Device Detection (D+ and D-)
+ + Power + reset -> idy speed
+ 
+ + Assign addr
+ + Read des: 
+   - dev
+   - config
+   - if/ep
+   
+ + SET_CONFIGURATION
+  => device in operational state
+  
+3. What is default control endpoint (EP0)?
+ + source/sink of data - mandatory -> enum + dev config
+ 
+4. Pipe and Endpoint
+ + Pipe - channel -    dir
+ + Ep   - src of data- undir
+  -> pipe (sw abs) uses Ep (phy buffer)
+  
+5. Endpoint - addr
+ + 1 endpoint -> multi devices via uni addr of device
+ + USB2.0 ->  64 to 128 endpoint
+ 
+6. Transfer types:
+ + Control
+ + Bulk		-> data integrity
+ + Interrupr	-> small + low-latency data
+ + Isochronous	-> loss data >< critical timing
+ 
+7. What is USB class
+ - func peripherals -> host (Class, SubClass, Protocol)
+  + 2 - CDC
+  + 3 - HID
+  + 8 - MSC
