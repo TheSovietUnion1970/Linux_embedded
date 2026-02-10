@@ -37,13 +37,7 @@
  
 ===  *****************Enumeration Process (VERY IMPORTANT) ****** ===
 [7]
-1. What is USB enumeration?
- - behind-the-sence process:
-  + detect
-  + unique addr
-  + des -> type, capbs
-  
-2. Steps involved in USB enumeration[5]
+1.Steps involved in USB enumeration[5] - behind-the-sence process
  + Device Detection (D+ and D-)
  + Power + reset -> idy speed
  
@@ -81,10 +75,12 @@
   + 8 - MSC
   
 8. Speed negotiation
- - Idle: LOW when no device
+ - Idle: Both - LOW when no device
  - connection - > D+/D- change (know the speed + device here)
  - reset -> D+/D- LOW by host ~ 10ms
- - speed -> by dev (confirm)
+ - speed -> by dev (confirm) - J state as default
     + D- HIGH -> LS
     + D+ HIGH -> FS
     + chirp signaling -> HS
+       - chirp K		: device -> host
+       - chirp K,J,K,J,...	: host   -> device

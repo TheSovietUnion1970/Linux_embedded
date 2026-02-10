@@ -1,0 +1,8 @@
+D+H, D-L -> 1
+D+L, D-H -> 0
+
+J state - default
+   D+H, D-L -> 1 : full speed
+   D+L, D-H -> 0 : low speed
+K state
+   vice versa
