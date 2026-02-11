@@ -19,7 +19,7 @@ For full speed:
   State K = 0
 vice versa ...
 
-==================================================
+==================== NRZI ======================
 === Data on wire applied for NRZI + stuff bit(6)
   -> data integrity + sync
 Ex: 
@@ -42,3 +42,28 @@ On the wire with NRZI:
 ==== Some notes:
 - Y = yes, flip
 - N = No, no flip
+
+==================== PREAMBLE PID =========================
+host (full) -> hub(full) -> low dev
+ + Normal	: SOF packet 	           -> Token packet -> data packet -> handshake packet
+ + PRE PID	: SOF packet -> PRE packet -> Token packet -> data packet -> handshake packet
+                                (~handshake)
+
+==================== SPLIT TRANSFER =========================
+host (high) -> hub(high) -> full/low dev
+
+Idle + Sync + SOF        + | Split_S_C + Port + Hub + SC + EpType + ENDP | + | CRC5  | + EOP + Idle
+             SPLIT (0xE)
+             
+HOST			HUB			DEVICE
+  ---- HS-split S pkt --->
+                                   I
+                         ------- FS SETUP PHASE --->
+                         <------ FS DATA PHASE ---->
+                         <------ FS STATUS PHASE -->            
+  <--- HS-split C pkt ----    
+
+==================== microframe =========================
+ - Frame (full/low speed) = 1ms - every 1ms
+ - Microframe (high speed) = 125us - every 125us
+   => SOF

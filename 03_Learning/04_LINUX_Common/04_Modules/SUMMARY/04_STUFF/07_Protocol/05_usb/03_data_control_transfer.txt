@@ -2,7 +2,7 @@
 	SETUP phase			        <PID>
 	  SOF			: Idle + Sync + SOF     + | Frame no.   | + | CRC5  | + EOP + Idle	
 	  Token packet		:               SETUP   + | ADDR + ENDP |   |       |
-	  Data packet		:               DATA0/1 + | DATA[8]     | + | CRC16 |
+	  Data packet		:               DATA0/1 + |DATA[bMPktSz]| + | CRC16 |
 	  Handshake packet	: 		ACK     + |      X      |   |   X   |
 	  
 	DATA phase (IN or OUT)
@@ -23,9 +23,29 @@ SETUP	0xD
 DATA0	0x3
 DATA1	0xB
 
+OUT	0x1
+IN	0x9
+
 ACK	0x2
 NAK	0xA
 STALL	0xE
+
+PRE	0xC
+SPLIT   0xE
+
+============= Field size:
+Sync	-> 8 (FS/LS) or 32 (HS)
+PID 	-> 8 = 4 bit (H) + 4-bit check field (L)
+Frameno	-> 11, MAX - 7FF
+ADDR	-> 7
+ENDP	-> 4
+DATA	-> 0 - 1024 - DEFINED: bMaxPacketSize
+
+============= Standard - Class - Vendor:
+Standard-Class
+Vendor		- if dev func X covered - standard USB spec
+
+Most common: standard-dev, class-if
 
 ============= Ex:
 - READ USB Transaction GetDesc_pkt

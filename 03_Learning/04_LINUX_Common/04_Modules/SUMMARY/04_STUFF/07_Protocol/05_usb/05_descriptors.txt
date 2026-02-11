@@ -1,0 +1,23 @@
+[5]
+dev des: global information
+ + version
+ + Vendor + Product ID
+ + bNumConfigurations (usually 1)
+ 
+config des:
+ + bNumInterfaces
+ + bConfigurationValue
+ + bMaxPower
+ 
+If des: specific functions
+ + role (base + sub + protocol)
+ 
+Ep des: communication method
+ + addr
+ + attributes
+ + ptk_s + interVal
+ 
+String des: human-reable
+ + maler name
+ + serial num
+
