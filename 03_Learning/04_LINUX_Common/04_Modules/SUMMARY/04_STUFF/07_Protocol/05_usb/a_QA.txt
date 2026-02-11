@@ -84,3 +84,8 @@
     + chirp signaling -> HS
        - chirp K		: device -> host
        - chirp K,J,K,J,...	: host   -> device
+
+9. NAK vs STALL
+  - NAK: 	V request >< X process or No -> data
+  - STALL:	N request -> unrecoverable error
+   My Ex: when sending 32-byte CBW, I got STALL as CBW is only 31 bytes

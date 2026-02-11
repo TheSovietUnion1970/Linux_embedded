@@ -5,4 +5,40 @@ J state - default
    D+H, D-L -> 1 : full speed
    D+L, D-H -> 0 : low speed
 K state
-   vice versa
+   D+L, D-H -> 0 : full speed
+   D+H, D-L -> 1 : low speed
+
+SE0
+   D+L, D-L
+SE1
+   D+H, D-H
+
+==================================================
+For full speed:
+  State J = 1
+  State K = 0
+vice versa ...
+
+==================================================
+=== Data on wire applied for NRZI + stuff bit(6)
+  -> data integrity + sync
+Ex: 
+In full speed: J state first
+Data: 1  1  0  1  0  1  0  0
+      N  N  Y  N  Y  N  Y  Y
+
+On the wire with NRZI:
+  D+  1  1  0  0  1  1  0  1
+  D-  0  0  1  1  0  0  1  0
+   ===   ===   ===
+In full speed: K state first
+Data: 0  1  0  1  0  1  0  0
+      Y  N  Y  N  Y  N  Y  Y
+
+On the wire with NRZI:
+  D+  1  1  0  0  1  1  0  1
+  D-  0  0  1  1  0  0  1  0
+
+==== Some notes:
+- Y = yes, flip
+- N = No, no flip

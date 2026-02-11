@@ -1,0 +1,22 @@
+Get Max LUN by control transfer:
+const u8 GetMaxLUN_pkt[8] = {
+    0xA1,  // bmRequestType: IN, Class, Interface
+    0xFE,  // bRequest: Get Max LUN (MSC-specific)
+    0x00, 0x00,  // wValue: 0
+    0x00, 0x00,  // wIndex: Interface 0
+    0x01, 0x00   // wLength: 1 byte
+};
+
+Then in CBW, LUN number is used
+u8 cbw_initial[31] = {
+    0x55, 0x53, 0x42, 0x43,  // dCBWSignature: 0x43425355 (LE "USBC")
+    0x01, 0x00, 0x00, 0x00,  // dCBWTag: 0x00000001
+    0x24, 0x00, 0x00, 0x00,  // dCBWDataTransferLength: 0x00000024 (36 bytes, Data-In)
+    0x80,                    // bmCBWFlags: 0x80 (IN direction)
+    0x00,                    // bCBWLUN: 0x00
+    0x06,                    // bCBWCBLength: 0x06 (6-byte SCSI cmd)
+    0x12, 0x00, 0x00, 0x00, 0x24, 0x00,  // CBWCB: INQUIRY (0x12) + params (LUN=0x00, page=0x00, reserved=0x00, alloc len=0x0024)
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // Padding (10 zeros to reach 31 bytes)
+    0x00, 0x00  // Final padding zeros
+};
+  => INQUIRY
