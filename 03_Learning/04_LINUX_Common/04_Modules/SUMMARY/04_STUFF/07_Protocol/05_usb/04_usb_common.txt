@@ -47,7 +47,7 @@ On the wire with NRZI:
 host (full) -> hub(full) -> low dev
  + Normal	: SOF packet 	           -> Token packet -> data packet -> handshake packet
  + PRE PID	: SOF packet -> PRE packet -> Token packet -> data packet -> handshake packet
-                                (~handshake)
+    (0xC)                      (~handshake)
 
 ==================== SPLIT TRANSFER =========================
 host (high) -> hub(high) -> full/low dev

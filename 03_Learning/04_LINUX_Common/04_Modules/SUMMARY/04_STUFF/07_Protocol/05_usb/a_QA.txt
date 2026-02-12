@@ -24,7 +24,9 @@
  + Device connection >< always presence
    * Full -> D+
    * Low  -> D-
- + Idle high
+ + Idle:
+   * connection: J state
+   * no connection: SE0
  
 3. Difference between full-speed and high-speed signaling?
  + Speed
@@ -60,7 +62,7 @@
   
 5. Endpoint - addr
  + 1 endpoint -> multi devices via uni addr of device
- + USB2.0 ->  64 to 128 endpoint
+ + USB2.0 ->  64 to 128 endpoints
  
 6. Transfer types:
  + Control
