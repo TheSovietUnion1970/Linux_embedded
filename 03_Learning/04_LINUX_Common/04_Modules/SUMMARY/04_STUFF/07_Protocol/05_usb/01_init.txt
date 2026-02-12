@@ -1,3 +1,8 @@
+====== Overview
+USB ctrl <--- UTMI ---> PHY
+              ULPI (mobile if)
+
+====== Init process
 Clock
 
 [3]
@@ -9,12 +14,12 @@ PHY init[5]::
  
  + D+/D-
  + Power up PHY
- + Speed mode
+ + Speed mode or speed nego
  
  -> ~1 ms
  
 USB init[3]::
- + Choose speed
+ + Choose speed or speed nego
  + host/dev/otg mode
  + ep0 + epN
  -> into session
