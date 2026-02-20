@@ -1,0 +1,6 @@
+Out of a network:
+ -> router: find the best path 
+ 		based on ROUTING TABLE 1 -> NEXT router (next hoop) -> ... -> des IP
+ 		
+    router   <- based on ROUTING TABLE 2
+ 					 <- NEXT router (next hoop) <- ... <- des IP 

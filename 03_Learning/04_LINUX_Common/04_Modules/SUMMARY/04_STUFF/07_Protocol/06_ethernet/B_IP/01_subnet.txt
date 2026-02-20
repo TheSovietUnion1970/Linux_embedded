@@ -1,0 +1,15 @@
+Subnet - network + host
+255.255.255.0 -> 1 network - 254 host devices
+ + 192.168.137.0 	-> subnet addr
+ + 192.168.137.255 	-> Broadcast addr
+ 
+255.255.255.128 -> 2 network - 126 host devices
+ # subnet 1
+ + 192.168.137.0 	-> subnet1 addr
+ + 192.168.137.127 	-> Broadcast1 addr
+ 
+ # subnet 2
+ + 192.168.137.128 	-> subnet2 addr
+ + 192.168.137.255 	-> Broadcast2 addr
+ 
+

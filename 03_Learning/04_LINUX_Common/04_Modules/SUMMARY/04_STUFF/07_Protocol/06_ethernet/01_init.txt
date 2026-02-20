@@ -1,0 +1,43 @@
+====== Overview
+		  MII
+MAC ctrler <--- DATA LINEs ---> PHY 	: r/w E data frame
+           <----- MDIO ------->		: r/w regs PHY
+
+====== Init process
+Clock (MAC + PHY)
+
+[3]
+RMII/MII/RGMII 	- clk, mode
+
+PHY 		- speed (10/100Mpbs) or auto nego
+   	        - full/half duplex
+   	        - advertise - sp + duplex 
+   	        - INT
+   	        - PWR-down detect
+   	        
+MAC		- ALE (learn/no_learn, drop unkn VLAN)
+		- dual/switch mode
+		- port Forwarding
+		- Max pkt sz
+		- MAC addr
+		
+		- VLAN tagging + unicast/multicast
+		
+=> Wait for link up
+
+FIFO
+Int
+DMA
+
+-> Enable
+
+
+** Notes **
+MAC 	= Medium access control
+MII 	= Medium independent interface
+PHY 	= Physical layer
+MDIO 	= Management data I/O 
+           + MDC (MDIO if clock)
+           + MDD (MDIO data)
+CPSW	= Common platform E Switch
+

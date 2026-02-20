@@ -1,0 +1,6 @@
+Type::		Speed::
+Low		10Mbps
+Fast		100Mbps
+Gigabit		1Gbps
+2.5G		2.5Gbps
+5G		5Gbps

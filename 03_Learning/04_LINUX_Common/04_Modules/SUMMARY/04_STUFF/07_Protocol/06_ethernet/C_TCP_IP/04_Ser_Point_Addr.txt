@@ -1,0 +1,7 @@
+~ Port addressing = 2 byte
+Layer 4 - transport
+
+-> multi app - shared network
+Ex: 
+ + HTTP=80
+ + HTTPS=443

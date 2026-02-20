@@ -1,0 +1,38 @@
+1. Access port vs Trunk port =================
+- Access port - port->End device
+- Trunk port  - port->access port
+                port->T port on another sw
+
+              < ========= SW A =========>	   < ======= SW B ==========>
+Device 1 <--> A port1 -	 Forward	  Trunk cable      Forward  - B port1 <--> Device 1
+Device 2 <--> A port2 - <-------> T port1  <-----> T port2 <------> - B port2 <--> Device 2
+Device 3 <--> A port3 -					            - B port3 <--> Device 3
+          (1)              (2)                (3)
+
+(1) - Untagged frame 
+(2) - Forwarding Untagged frame 
+(3) - Tagged frame (802.1Q) 
+
+** Note **
+A port = Access port
+T port = Trunk port
+
+2. MAC table (CAM table) =================
+- dynamic database: MAC - port+VLAN
+Ex:
+MAC Address         VLAN   Port
+00:11:22:33:44:55   10     Gi0/5
+AA:BB:CC:DD:EE:FF   20     Gi0/8
+
+Learn:
+LEARN 	 with unknown SRC MAC addr
+NO LEARN with unknown DST MAC addr
+         -> flood this frame to all ports - same VLAN
+
+=== Code
+ale_add_ucast(data, VID_USED, mac_addr, ALE_VLAN | ALE_SECURE, HOST_PORT_NUM);
+ -> Set up src_mac_add -> VID_USED+HOST_PORT_NUM to table by HW
+ -> with only SPECIFIC mac_addr+VLAN will get packet
+ 
+ale_add_mcast(data, VID_USED, broadcast, ALE_VLAN, ALE_PORT_HOST, ALE_MCAST_FWD);
+ -> all devices - same VLAN will get packet

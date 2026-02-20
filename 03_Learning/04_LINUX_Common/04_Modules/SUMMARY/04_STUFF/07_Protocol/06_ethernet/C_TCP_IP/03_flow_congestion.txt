@@ -1,0 +1,13 @@
+FLOW 	vs	CONGESTION::
+
+Def  : X overwhelm	vs	avoid cogestion                              
+       Rer			on network = reducing packet rate
+Layer: LINK		vs	NETWORK/TRANSPORT
+Trig : RX buffer	vs	network - overloaded
+       filled			with traffics
+       
+=== error control
+ - LINK layer - detect + correct ERRORs
+ 
+=== sliding window
+ - traffic CONGESTION is avoided

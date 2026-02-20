@@ -1,0 +1,3 @@
+SAR - base on MTU 
+ + DIVIDE on wire
+ + REASSEMBLE on dst
