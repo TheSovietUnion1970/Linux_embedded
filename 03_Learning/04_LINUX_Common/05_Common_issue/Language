@@ -1,0 +1,11 @@
+sudo apt install ibus-unikey
+ibus restart
+
+ibus list-engine | grep -i unikey
+-> check the path again
+
+gsettings reset org.gnome.desktop.input-sources sources
+gsettings reset org.gnome.desktop.input-sources mru-sources
+-> reset input resource
+
+Settings → Keyboard → Input Sources → +
