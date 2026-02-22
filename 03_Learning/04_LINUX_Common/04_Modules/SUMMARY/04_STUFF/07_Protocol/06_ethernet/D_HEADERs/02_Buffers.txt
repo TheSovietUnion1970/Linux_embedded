@@ -1,0 +1,10 @@
+1. ARP
+ - ARP header[24]
+ - Payload
+ 
+2. PING
+ - IPv4 header[20]
+ - ICMP[8]
+ - Payload
+ 
+
