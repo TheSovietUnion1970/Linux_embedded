@@ -1,0 +1,5 @@
+Twisted-pair cable
+
+Cat5A 	-> 100m-1G		-> H
+Cat6	-> 100m-1G, 55m-10G	-> H/W
+Cat6a	-> 100m-10G		-> W
