@@ -12,8 +12,8 @@ RMII/MII/RGMII 	- clk, mode
 PHY 		- speed (10/100Mpbs) or auto nego
    	        - full/half duplex
    	        - advertise - sp + duplex 
-   	        - INT
-   	        - PWR-down detect
+   	        - INT - connection
+   	        - INT - PWR-down detect
    	        
 MAC		- ALE (learn/no_learn, drop unkn VLAN)
 		- dual/switch mode
