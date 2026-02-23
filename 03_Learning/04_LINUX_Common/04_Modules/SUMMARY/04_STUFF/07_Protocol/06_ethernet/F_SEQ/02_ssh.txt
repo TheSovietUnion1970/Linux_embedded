@@ -1,0 +1,11 @@
+IP
+TCP
+SSH Transport Layer Protocol
+	-> integrity + confi
+SSH User Auth Protocol
+	-> user -> server
+SSH connection Protocol
+	-> multi channels - single SSH pro
+	 + Remote access
+	 + SFTP/SCP
+
