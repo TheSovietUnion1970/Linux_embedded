@@ -9,3 +9,10 @@ SSH connection Protocol
 	 + Remote access
 	 + SFTP/SCP
 
+
+==== Sequence ====
+1. 3-way handshake TCP - only in TCP
+2. String ex
+3. Algo ex
+4. Key ex
+5. Service req
