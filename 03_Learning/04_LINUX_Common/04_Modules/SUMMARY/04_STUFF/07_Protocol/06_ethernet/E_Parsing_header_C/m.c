@@ -33,8 +33,12 @@ void main(){
     // parse_and_print_packet(ssh_tx8, sizeof(ssh_tx8), "ssh_tx8", 0, 0);
     // parse_ssh_kex_reply(ssh_tx8 + 71, 188 - 5);
 
-    // /* ======================== TELNET ========================== */
-    parse_and_print_packet(tn_tx1, sizeof(tn_tx1), "tn_tx1", 0, 0);
-    parse_and_print_packet(tn_rx1, sizeof(tn_rx1), "tn_rx1", 0, 0);
+    // /* ======================== CURL GOOGL ========================== */
+    // parse_and_print_packet(gg1_tx, sizeof(gg1_tx), "gg1_tx", 0, 0);
+    // parse_and_print_packet(gg1_rx, sizeof(gg1_rx), "gg1_rx", 0, 0);
+    // parse_and_print_packet(gg2_tx, sizeof(gg2_tx), "gg2_tx", 0, 0);
+
+    parse_and_print_packet(gg3_tx, sizeof(gg3_tx), "gg3_tx", 0, 0);
+    parse_and_print_packet(gg3_rx, sizeof(gg3_rx), "gg3_rx", 0, 0);
 }
 

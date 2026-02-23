@@ -1,0 +1,44 @@
+DNS::
+
+1. === 3-way TCP handshake =============== ::
+SYN		=>
+SYN + ACK	<=
+ACK		=>
+
+2. === TLS hansshake ======================::
+ClientHello	=>
+ -> Client info, ciph suite
+ServerHello	<=
+ -> Server chooses
+
+Cert		<=
+ -> Cert ver
+  + prove server id
+  + pub key
+
+Client key ex	=>
+ -> shared sec by key ex mecha
+ 
+Chg Ciph spec	=>
+ClientFinish
+ -> switching to secure communication now
+ 
+Chg Ciph spec   <=
+ServerFinish
+ -> switching to secure communication now
+ -> Indicate a succussful hshake
+ -> shared sec on server
+ 
+3. === Applications ==========================::
+HTTP Request	=>
+HTTP Response	<=
+
+** Note **
+Client key ex
+-> RSA, 
+c: gen shared secret -> encrypt it with pub key from server cert
+s: decrypt it with its own priv key
+ -> both have shared se.. -> session key for app
+ 
+
+
