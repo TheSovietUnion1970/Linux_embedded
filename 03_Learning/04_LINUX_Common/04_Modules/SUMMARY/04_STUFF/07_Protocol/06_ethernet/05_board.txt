@@ -1,0 +1,15 @@
+Bosch::
+SK-AM62 Cortex A - Evaluation
+ - Ethernet PHY - DP83867 - MII
+	>< LAN8720 - RMII (lower cost)
+	
+Renesas::
+Cortext A - Evaluation
+RZ/G2M
+RZ/G2N
+RZ/G2H
+RZ/G3S
+ - etheravb
+ - Ethernet PHY - RTL8211 - RMII
+
+Link: https://www.renesas.com/en/products/microcontrollers-microprocessors/rz-mpus/rzg-series?srsltid=AfmBOoq7Oyh9kEpvXCx82ufs8ZhK2pNDvZOyv0tRJZz7d456FwNlNsbz#related-boards-kits
