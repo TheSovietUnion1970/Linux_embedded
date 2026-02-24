@@ -4,3 +4,17 @@ Fast		100Mbps
 Gigabit		1Gbps
 2.5G		2.5Gbps
 5G		5Gbps
+
+
+=== Speed nego ===
+Both - FLPs (Fast Link Pulses) - twisted-pair - every 10ms - until ACK
+FLP - 16-bit word = Link Code Word
+ + D0-4	  : Selector (1=IEEE 802.3)
+ + D5-12  : Ability  (10/100/1000) - (duplex) - (pause frame (flow ctrl))
+ + D13	  : remote fault -> detect link fail
+ + D14	  : ACK
+ + D15    : Next page
+
+
+>< NLP -> 10Mbps, no auto - every 16ms - until ACK
+

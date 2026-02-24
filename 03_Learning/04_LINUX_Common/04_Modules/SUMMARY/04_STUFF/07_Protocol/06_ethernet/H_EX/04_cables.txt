@@ -1,0 +1,7 @@
+1[W]. Stuck at 10Mpbs
+ -> Bad reset PHY + X advertise -> stuck at default speed
+ => Advertise
+ => Check 'ethtool eth0'
+ 
+2[H]. No RX
+ -> Not having pre-allocated des, no pre buffer ptr
