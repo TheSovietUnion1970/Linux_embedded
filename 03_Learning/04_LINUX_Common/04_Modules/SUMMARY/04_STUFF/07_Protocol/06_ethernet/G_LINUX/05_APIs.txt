@@ -1,0 +1,4 @@
+of_phy_connect	-> connect dev to PHY
+
+of_mdio			-> Open Firmware mdio
+of_mdiobus_register	-> reg mdio bus

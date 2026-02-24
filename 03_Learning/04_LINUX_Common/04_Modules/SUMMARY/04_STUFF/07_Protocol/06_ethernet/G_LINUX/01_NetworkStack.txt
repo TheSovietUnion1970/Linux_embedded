@@ -1,0 +1,27 @@
+Application
+
+System call
+
+Network stack
+
+sk_buff
+eth0/wifi0
+
+Driver
+
+Controller/HW
+
+
+===== Network stack
++ Socket layer
++ TCP/UDP stack	-> connection managment
++ Netfilter	-> ip forward, NAT
++ TC		-> QoS, fair queue (flows - bandwidth fairly), rate limit (10/100 Mbps)
+
+==== Driver
++ XDP - eBPF	::
+  (ext Berkely Pkt Filter)
+	+ XDP_PASS	->sk_buff
+	+ XDP_DROP, XDP_ABORTED
+	+ XDP_TX
+	+ XDP_REDIRECT ->user space(AF_XDP) or ->another NIC

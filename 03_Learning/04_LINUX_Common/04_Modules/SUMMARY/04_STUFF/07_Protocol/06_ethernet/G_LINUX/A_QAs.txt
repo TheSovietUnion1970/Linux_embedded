@@ -1,0 +1,7 @@
+1. What is zero-copy networking?
+	-> network if <-> mem - X CPU
+	   DMA + MMU
+	   
+2. What happens if interrupt and NAPI run simultaneously?
+	-> tandem
+

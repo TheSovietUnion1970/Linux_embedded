@@ -1,0 +1,10 @@
+net_dev -	-> represent network if
+ 		-> cmd: ip addr, ip  link, ifconfig
+ 
+net_device_ops	-> method - kernel -> network driver
+	ndo_open
+	ndo_stop
+	ndo_start_xmit
+
+	ndo_set_rx_mode
+	ndo_set_mac_addres

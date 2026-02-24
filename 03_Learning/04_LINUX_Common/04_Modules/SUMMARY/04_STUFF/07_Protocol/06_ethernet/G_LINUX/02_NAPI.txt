@@ -1,0 +1,6 @@
+NAPI polling::
+netif_napi_add()
+napi_schedule() - RX handler
+napi_complete() - TX handler
+napi_enable()
+napi_disable()
