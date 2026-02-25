@@ -52,7 +52,7 @@ host (full) -> hub(full) -> low dev
 ==================== SPLIT TRANSFER =========================
 host (high) -> hub(high) -> full/low dev
 
-Idle + Sync + SOF        + | Split_S_C + Port + Hub + SC + EpType + ENDP | + | CRC5  | + EOP + Idle
+Idle + Sync + PID        + | Hub + Port + SC + EpType + ENDP | + | CRC5  | + EOP + Idle
              SPLIT (0xE)
              
 HOST			HUB			DEVICE

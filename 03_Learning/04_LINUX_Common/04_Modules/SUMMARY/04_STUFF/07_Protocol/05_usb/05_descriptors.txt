@@ -9,7 +9,7 @@ config des:
  + bConfigurationValue
  + bMaxPower
  
-If des: specific functions
+If des: specific functions/ USB class
  + role (base + sub + protocol)
  
 Ep des: communication method

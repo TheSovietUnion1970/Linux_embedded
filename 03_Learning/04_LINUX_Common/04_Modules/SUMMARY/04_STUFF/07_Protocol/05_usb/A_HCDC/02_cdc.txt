@@ -11,7 +11,7 @@ OVERAL:
 
 2. Num of interfaces: 2
  + If0 -> bInterfaceClass	: 0x2 = comm -> interrupt IN	-> notification (serial state)
-          bInterfaceSubClass	: 0x2 = ACM
+          bInterfaceSubClass	: 0x2 = ACM-> emulate serial com
           bInterfaceProtocol	: 0x1 = AT commands
  + If1 -> bInterfaceClass: CDC  (0xA) -> Bulk IN + OUT	-> serial data
  

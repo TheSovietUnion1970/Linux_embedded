@@ -1,0 +1,11 @@
+URB - core mechanism - USB transaction
+ + usb_fill_control_urb
+ + usb_fill_bulk_urb
+ + usb_fill_int_urb
+ 
+ -> usb_submit_urb
+
+Anchor - data struct - manage milti URBs
+ + init_usb_anchor()
+ + usb_anchor_urb()
+

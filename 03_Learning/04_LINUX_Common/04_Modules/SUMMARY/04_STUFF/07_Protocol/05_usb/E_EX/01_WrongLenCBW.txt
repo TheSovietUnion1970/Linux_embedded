@@ -1,0 +1,4 @@
+For BBB, Host BBB will send the 31-byte data CBW to USB drive device 
+=> situation: after sending the CBW, the BBB request data in but got error (multiple PID IN is sent from host)
+=> reason: FIFO entry size is 4-byte, so whenever data is loaded into FIFO, 4-byte data is transferred into FIFO at a time -> only 28 bytes or 32 bytes are transmitted serially, not 31 bytes as expected
+=> solution: use iowrite8 to load 1-byte data at a time
