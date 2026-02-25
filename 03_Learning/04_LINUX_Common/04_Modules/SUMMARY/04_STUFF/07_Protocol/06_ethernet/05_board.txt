@@ -13,3 +13,5 @@ RZ/G3S
  - Ethernet PHY - RTL8211 - RMII
 
 Link: https://www.renesas.com/en/products/microcontrollers-microprocessors/rz-mpus/rzg-series?srsltid=AfmBOoq7Oyh9kEpvXCx82ufs8ZhK2pNDvZOyv0tRJZz7d456FwNlNsbz#related-boards-kits
+
+Link EtherAvb: https://www.renesas.com/en/document/fly/ethernet-avb-end-station?srsltid=AfmBOop0mdI9Rt_FsdEiaGHIR08XWX4uUSlk_swFjYfdT5iUV9mFM--m

@@ -3,3 +3,16 @@ Twisted-pair cable
 Cat5A 	-> 100m-1G		-> H
 Cat6	-> 100m-1G, 55m-10G	-> H/W
 Cat6a	-> 100m-10G		-> W
+
+==== RMII ====
+TX[1:0]
+TX_EN
+
+RX[1:0]
+RX_ER
+
+REFCLK
+CRS_DV - carrer sense + data valid
+
+MDIO_CLK
+MDIO_DATA
