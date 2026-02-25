@@ -1,0 +1,12 @@
+1. What is xHCI?
+ - eXtensible Host Controller If - standard specification
+ 
+2. What is the role of PCI in USB host controllers? - Peripheral Component If
+ - Attach - local bus -> hw
+ - Purpose:
+  + Bridging + transport
+  + MMIO
+  + INT
+  
+3. How does Linux detect USB controller?
+ - via PCI - boot-up OR hot-plug event

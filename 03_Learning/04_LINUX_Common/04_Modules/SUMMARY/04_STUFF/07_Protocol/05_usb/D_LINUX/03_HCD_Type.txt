@@ -1,0 +1,11 @@
+OHCI 	- 1.0
+EHCI 	- 2.0
+xHCI 	- 3.0	-> default for new system
+
+DWC2	- 2.0
+DWC3	- 3.0
+
+MUSB
+
+
+

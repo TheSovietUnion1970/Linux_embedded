@@ -1,0 +1,3 @@
+-> Implement USB gadget -> as USB device
+
+drivers/usb/gadget/composite.c

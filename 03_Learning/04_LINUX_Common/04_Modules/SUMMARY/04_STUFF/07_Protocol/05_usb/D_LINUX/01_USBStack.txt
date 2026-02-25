@@ -1,0 +1,19 @@
+======== Layer =========
+Application
+
+Class 		HID,MS,CDC,Audio,..
+./usb/class
+./usb/storage
+./hid/usbhid
+
+Core		API, dt, enumeration, urb, sys
+./usb/core
+
+Host ctrl	low-level, micro frames, INT
+./usb/host
+
+HW
+
+======== Core =========
+usb_submit_urb()	-> control, bulk, int, iso - through
+usb_set_interface()	-> set alternate if
