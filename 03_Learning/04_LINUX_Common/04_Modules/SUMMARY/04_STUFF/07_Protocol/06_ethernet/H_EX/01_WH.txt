@@ -3,5 +3,9 @@
  => Advertise
  => Check 'ethtool eth0'
  
-2[H]. No RX
+2[H]. No RX interrupt
  -> Not having pre-allocated des, no pre buffer ptr
+ 
+3[W]. ARP but not ICMP
+ -> Proper driver
+ => Not having routing set (check ip route)
