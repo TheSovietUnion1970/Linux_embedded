@@ -1,0 +1,23 @@
+1. ARP
+ - Protocol: Ipv4
+ - Op:
+   + 1=request
+   + 2=reply
+   
+2. ICMP
+ - Type:
+   + 0/8=request/reply
+   + 11 =Time ex
+   + 3  =Des unre
+   
+3. Ipv4
+ - TTL
+ - Protocol: 6 or 17
+ - IP
+ 
+4. TCP
+ - Flags - SYN/ACK/PSH
+ - Window sz (flow control)
+ - Port
+   
+ 

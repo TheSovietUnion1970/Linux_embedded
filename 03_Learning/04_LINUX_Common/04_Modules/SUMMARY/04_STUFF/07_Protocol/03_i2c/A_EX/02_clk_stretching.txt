@@ -1,0 +1,7 @@
+Hang!!!
+
+Slave - LOW SCL - long time
+ -> timeout error
+ 
+ => i2c-bcm2835 supports clk stretch
+ => Disble timeout

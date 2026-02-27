@@ -1,0 +1,8 @@
+TCP: net/ipv4/tcp_output.c
+tcp_do_sendmsg -> __tcp_transmit_skb -> skb_reset_transport_header ...
+
+IP: net/ipv4/ip_output.c
+__ip_queue_xmit -> skb_reset_network_header
+
+MAC: net/core/dev.c
+__dev_queue_xmit -> skb_reset_mac_header
