@@ -1,0 +1,8 @@
+2000 bytes
+1. 1460 + 40 (Ipv4 + TCP)
+2. 540  + 40 (Tpv4 + TCP) 
+
+		1		2
+ID		123		123
+Frag offset	0		1460/8 = 182
+MF		1		0
