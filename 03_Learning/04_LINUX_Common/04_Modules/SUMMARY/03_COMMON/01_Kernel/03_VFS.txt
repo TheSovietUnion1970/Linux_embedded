@@ -14,5 +14,8 @@ i-node - data structure ~ metadata of a file in
        - pointer to metadata -> proper operations
 
 === commands ====
+cat /proc/meminfo:
+ + Cached	 the bytes of dentry + file content
+ + SwapCached	 the bytes of swapped between RAM and cache  
 mount | grep vfat -> check filesystem format of a block
 ls -i <file> -> check i-node number
