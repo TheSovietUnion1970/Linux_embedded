@@ -1,0 +1,8 @@
+1. How to access phy adde from userspace:
+ - /dev/mem
+   Ex:
+   + sudo dd if=/dev/mem of=/tmp/dump.bin bs=1 skip=2147483648 count=4
+   + xxd /tmp/dump.bin:
+     -> 00000000: ffff ffff 
+     
+ - /dev/mem + mmap()

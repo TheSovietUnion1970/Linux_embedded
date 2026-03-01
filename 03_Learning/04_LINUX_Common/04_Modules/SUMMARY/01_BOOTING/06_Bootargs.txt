@@ -1,0 +1,20 @@
+=== Bootargs:
+ + console=ttyO0,115200n8
+ + root=/dev/mmcblk0p1 ro
+ + rootfstype=ext4
+ + rootwait
+
+=== Commands
+ + setenv bootargs <string>
+ + setenv fdtfile <dtb>
+ + saveenv
+ + boot
+ 
+ + printenv bootargs
+ 
+=== MMC
+ext4load mmc 0:1 ${loadaddr} /boot/uEnv.txt	 -> dev0, partition 1
+env import -t ${loadaddr} ${filesize}
+
+mmc dev 0 					-> switch to dev 0
+mmc part  					-> show partition on the current dev

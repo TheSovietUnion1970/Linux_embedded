@@ -4,3 +4,5 @@ Size       : medium	     			vs		large
 Speed      : fast				vs		slow
 Ex         : task_struct, sk_buff		vs		
 
+
+Kzalloc = Kmalloc + zero

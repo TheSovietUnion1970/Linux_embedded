@@ -1,0 +1,6 @@
+Read-Copy-Update
+
+Read interation over a large data 
+ - X overhead + lock + atomic
+ 
+Ex: list_for_each_entry_rcu

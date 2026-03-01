@@ -1,0 +1,3 @@
+GFP = Get Free Pages
+GFP_KERNEL - process ctx
+GFP_ATOMIC - irq ctx (hard, doft, tasklet)

@@ -3,8 +3,7 @@
  - layers:
    + System Call IF
    + process + memory + network + virtualFile
-   + Device drivers
-   + Loadable modules (*.ko)
+   + Device drivers (*.ko)
 
 2. ==== [DTB] ===
  - HW descriptions

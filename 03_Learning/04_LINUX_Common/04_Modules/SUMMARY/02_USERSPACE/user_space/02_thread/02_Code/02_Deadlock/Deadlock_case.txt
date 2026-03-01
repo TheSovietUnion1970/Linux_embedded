@@ -1,0 +1,2 @@
+Lock inversion	-> lock each other
+phread_join 	-> wait each other completion

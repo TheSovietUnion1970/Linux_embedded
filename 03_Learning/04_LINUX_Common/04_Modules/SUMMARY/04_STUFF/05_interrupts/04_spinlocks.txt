@@ -1,0 +1,4 @@
+Spinlock, mutex -> mutual exclusion for shared data
+
+Spinlock -> irq ctx (spin_lock_irqsave + spin_unlock_irqstore)
+mutex -> X

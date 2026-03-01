@@ -1,0 +1,12 @@
+Workqueue:
+ + schedule_work
+ + schedule_delayed_work
+ + queue_work
+ + queue_delayed_work
+
+Tasklet:
+ + tasklet_schedule
+ + tasklet_hi_schedule
+ 
+Timer:
+ + timer_setup + add_timer(new expire)

@@ -1,0 +1,27 @@
+NON_ATOMIC:
+vinh@vinh-Inspiron-15-3520:~/D/Test$ ./c
+Starting 20 threads, each incrementing 10000 times...
+→ Race condition! Lost updates detected.
+Difference: 107862
+vinh@vinh-Inspiron-15-3520:~/D/Test$ ./c
+Starting 20 threads, each incrementing 10000 times...
+→ Race condition! Lost updates detected.
+Difference: 39139
+vinh@vinh-Inspiron-15-3520:~/D/Test$ ./c
+Starting 20 threads, each incrementing 10000 times...
+→ Race condition! Lost updates detected.
+Difference: 134757
+
+ATOMIC:
+vinh@vinh-Inspiron-15-3520:~/D/Test$ ./c
+Starting 20 threads, each incrementing 10000 times...
+Final counter value: 200000
+Expected value: 200000
+vinh@vinh-Inspiron-15-3520:~/D/Test$ ./c
+Starting 20 threads, each incrementing 10000 times...
+Final counter value: 200000
+Expected value: 200000
+vinh@vinh-Inspiron-15-3520:~/D/Test$ ./c
+Starting 20 threads, each incrementing 10000 times...
+Final counter value: 200000
+Expected value: 200000

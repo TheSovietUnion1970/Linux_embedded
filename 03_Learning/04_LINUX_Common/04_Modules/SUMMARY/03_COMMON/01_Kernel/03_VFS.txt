@@ -19,3 +19,12 @@ cat /proc/meminfo:
  + SwapCached	 the bytes of swapped between RAM and cache  
 mount | grep vfat -> check filesystem format of a block
 ls -i <file> -> check i-node number
+
+=== CPU cache  >< Page cache ===
+    HW	       >< OS
+    <-> DRAM   >< <-> disk
+    cache line >< page
+      (64B)        (4kB)
+    dat/ins    >< dat
+    
+ => free -h 

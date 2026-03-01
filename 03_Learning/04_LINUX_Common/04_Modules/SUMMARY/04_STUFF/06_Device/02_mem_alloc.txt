@@ -1,0 +1,6 @@
+struct gen_pool -> prepare a PRE-ALLOCATED space: devm_gen_pool_create()
+
+obj = gen_pool_alloc() -> dynamically create obj from this space
+gen_pool_free(obj)   -> free
+
+If the space has no space left -> gen_pool_alloc -> NULL

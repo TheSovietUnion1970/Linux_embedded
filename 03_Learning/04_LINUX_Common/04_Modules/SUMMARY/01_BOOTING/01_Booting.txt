@@ -1,19 +1,18 @@
 1. === [BOOTING PROCESS on SOC] ===
 == Before power up
- - Bootloader -> boot flash (in SoC)
- - SW (dtb, OS, rfs) -> mass memory flash (out of SoC)
+ - Bootloader (SPL, main) + SW (dtb, OS, rfs) -> mass memory flash (out of SoC)
 == At power (boot ROM -> bootloader (eMMC or SD))
- - PC = reset vector's addr (in **on-chip** boot ROM) -> boot ROM decides PC=eMMC or SD card
- - CPU exe from PC -> exe bootloader on **boot ROM**
+ - PC p= reset vector's addr => boot ROM decides PC=eMMC or SD card
+ - CPU EXE from PC => load SPL -> SR
+ - SPL init DR/clk/wdg, <- main
 == Boot trap
- - [reset vector -> Bl] = CPU exe 1st ins of bootloader
- - [Bl] CPU - init RAM ctrller
- - [Bl] CPU - init CPU's reg for map stack + heap into RAM
+ - [SPL -> Bl] = CPU exe 1st ins of bootloader
+ - [Bl] CPU - the rest DR
  - [Bl] CPU - load dtb + OS (kernel, initrfs)
 == End of Boot trap
  - [Bl -> krn] = CPU exe 1st ins of OS
  - [krn] - CPU - **load initramfs** (take I/O drivers, tools (modprobe)) -> mount ro SD card
- - [krn] - SPU -> init process (PID1): read /etc/initab
+ - [krn] - CPU -> init process (PID1): read /etc/initab
    + (re)mounts SD card (rfs) rw:
    + services/daemons
    + usable state (login, graphics)
@@ -22,5 +21,16 @@
 2. === [BOOTING PROCESS SOC vs MCU] ===
  - Single core >< Multi core
  - internal flash >< external (eMMC, SD card)
- - Flash -> application >< Boot ROM -> SPL -> kernel
+ - Flash -> application >< Boot ROM -> SPL -> main -> kernel
+ 
+3. === Command ===
+debian@arm:~$ sudo ls -l /proc/1/exe
+sudo lrwxrwxrwx 1 root root 0 Feb 25 02:17 /proc/1/exe -> /lib/systemd/systemd
+
+debian@arm:~$ ls -l /sbin/init
+lrwxrwxrwx 1 root root 20 Aug  7  2022 /sbin/init -> /lib/systemd/systemd
+ 
+debian@arm:~$ cat /proc/cmdline
+console=ttyO0,115200n8 root=/dev/mmcblk0p1 ro rootfstype=ext4 rootwait
+ => kernel uses default: /sbin/init
 

@@ -1,0 +1,8 @@
+Multi cores - access - multi vars - the SAME cache line (64 bytes)
+-> False sharing 
+-> Cache performance LOW::
+
+ + Core B's copy - invalidated
+ + Core B - fetch the latest <- core A 
+ + Core B  - modifies y → marks the line dirty again
+ + Core A's copy - invalidated

@@ -1,3 +1,6 @@
 - process - has its OWN MEMORY SPACE
 	  - allocated into every parts of USER-SPACE MEM
 	  - via system call INTERFACE
+	  
+- Process Control Block (PCB)
+   -> data struct -> all info: running proc (reg, PC, mem map)

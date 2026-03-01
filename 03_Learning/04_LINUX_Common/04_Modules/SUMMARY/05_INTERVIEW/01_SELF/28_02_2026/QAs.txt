@@ -1,0 +1,20 @@
+1. Difference between U-Boot and GRUB?
+  U-boot - IoT + first stage
+  GRUB   - PC  + after BIOS/UEFI
+  
+2. What is JTAG used for?
+  Debug + emulate
+  
+3. What is EEPROM used for?
+  small non-volatile data
+  
+4. NOR vs NAND flash difference?
+NOR  - faster   - exe + firmware
+NAND - capacity - data storage
+
+5. FPGA vs ASIC -> circuit
+ + Field-Programable Gate       Array	-> reprogramble
+ + App-specific      Intergrate circuit -> fixed
+ 
+6. what is DDR?
+ + Double data rate -> both on Rising and Falling
