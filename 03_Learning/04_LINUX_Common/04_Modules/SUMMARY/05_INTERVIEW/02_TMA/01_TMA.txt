@@ -1,0 +1,11 @@
+- Linked list
+- Stack for convert strings
+- struct padding
+
+- Struct - Union
+- Pros + Cons -> inline and macro (lack ';', wrong param, no error report)
+
+- STPs protocol in Network
+- Kernel process manage -> preempt, non-premempt, round robin, cooperative
+
+- Some protocols in L2(ARP), L3(IPv4, IPv6, ICMP, and routing protocols (OSPF, BGP))
