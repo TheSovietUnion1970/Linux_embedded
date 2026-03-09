@@ -1,0 +1,22 @@
+source oe-init-build-env build-bbb
+
+bitbake-layers create-layer ../meta-mybbb
+bitbake-layers add-layer ../meta-mybbb
+
+Cpy recipes-kernel (linux-stable-rcn-ee_6.18.bb, files/)
+Cpy local.conf (local.conf -> ??? must set beaglebone-yocto)
+
+// clean all output
+bitbake linux-stable-rcn-ee -c cleanall
+rm -rf cache/ sstate-cache/ tmp/cache/ downloads/git2
+
+// check
+bitbake -p # reparse everything with new MACHINE
+bitbake -e | grep ^MACHINE=
+bitbake-layers show-recipes | grep linux-stable
+
+bitbake linux-stable-rcn-ee -c fetch -f 	-> fetch the newest
+bitbake linux-stable-rcn-ee 			-> run the rest
+
+=== Output ===
+build-bbb/tmp/deploy/images/beaglebone-yocto/

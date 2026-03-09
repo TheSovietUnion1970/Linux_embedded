@@ -1,0 +1,41 @@
+source oe-init-build-env build-bbb
+
+bitbake-layers create-layer ../meta-mybbb
+bitbake-layers add-layer ../meta-mybbb
+
+meta-mybbb/recipes-kernel/linux/linux-stable-rcn-ee_6.12.bb
+
+git ls-remote https://github.com/RobertCNelson/linux-stable-rcn-ee.git | grep 5.15.177
+
+rm -rf cache/ sstate-cache/ tmp/cache/
+bitbake -p # reparse everything with new MACHINE
+bitbake -e | grep ^MACHINE=
+bitbake-layers show-recipes linux-stable-rcn-ee
+
+=======
+bitbake linux-stable-rcn-ee -c cleanall
+bitbake -p
+bitbake linux-stable-rcn-ee
+
+bitbake linux-stable-rcn-ee -c devshell
+
+================ LOCAL
+git clone https://github.com/RobertCNelson/linux-stable-rcn-ee.git --branch=5.15.177-bone43 --depth=1
+
+/////////////////
+git clone git://git.yoctoproject.org/poky.git
+cd poky
+git checkout kirkstone
+git checkout -b mykk
+
+source oe-init-build-env build-bbb-local
+
+bitbake-layers create-layer ../meta-mybbb-local
+bitbake-layers add-layer ../meta-mybbb-local
+
+cp -r ~/D/LINUX/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/YOCTO/02_BBB/5.15.177-bone43-local/recipes-kernel ~/Yocto/poky/meta-mybbb-local
+cp ~/D/LINUX/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/YOCTO/02_BBB/5.15.177-bone43-local/local.conf ~/Yocto/poky/build-bbb-local/conf
+
+bitbake -k linux-stable-rcn-ee 
+
+sudo rm -rf meta-mybbb-local build-bbb-local
