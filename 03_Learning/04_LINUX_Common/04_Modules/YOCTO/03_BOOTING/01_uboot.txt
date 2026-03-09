@@ -1,0 +1,14 @@
+After formatting:
+
+# === WIPE FIRST 10MB OF DISK ===
+// Wiping the first 10MB of $DISK
+sudo dd if=/dev/zero of=${DISK} bs=1M count=10
+
+# === WRITE BOOTLOADER ===
+// bs0 | bs1 | bs2 => only bs1 and 2 are written 
+sudo dd if=/home/vinh/MLO of=${DISK} count=2 seek=1 bs=128k
+
+// After MLO, the next starting point is 384 (128*3)
+sudo dd if=/home/vinh/u-boot.img of=${DISK} count=4 seek=1 bs=384k
+
+With these commands above (MLO + uboot), the prompt is shown but ERROR: No partition found (no Linux, rootfs)

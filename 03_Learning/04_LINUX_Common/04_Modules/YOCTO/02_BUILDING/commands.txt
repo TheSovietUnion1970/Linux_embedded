@@ -1,3 +1,8 @@
+=== Location ===
+recipes-kernel	-> meta...
+local.conf	-> build...
+
+=== Commands ===
 source oe-init-build-env build-bbb
 
 bitbake-layers create-layer ../meta-mybbb
