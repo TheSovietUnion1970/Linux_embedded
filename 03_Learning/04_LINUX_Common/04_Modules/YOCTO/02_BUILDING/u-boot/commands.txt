@@ -1,0 +1,7 @@
+Modify bblayers.conf + local.conf
+
+git clone git://git.yoctoproject.org/meta-ti
+git clone -b kirkstone git://git.yoctoproject.org/meta-arm
+
+bitbake-layers show-recipes u-boot
+bitbake-layers show-appends u-boot
