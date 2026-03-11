@@ -1,0 +1,15 @@
+A. === Common ===
++ Yocto 	- open src 	-> tools + templates -> custom L dis
++ Bitbake	- task exeor	-> parse rep
+				-> resolve depen
+				-> build task
++ Recipe	- how build sw	->:
+				   + src
+				   + depen
+				   + instruction
++ Layer		- organize meta	-> Ex:
+				   + meta
+				   + meta-poky
+				   + meta-arm  -> u-boot
+				   + meta-yocto-bsp -> bsp layer
+				   + meta-custom -> user
