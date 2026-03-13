@@ -10,7 +10,7 @@ Gigabit		1Gbps
 Both - FLPs (Fast Link Pulses) - twisted-pair - every 10ms - until ACK
 FLP - 16-bit word = Link Code Word
  + D0-4	  : Selector (1=IEEE 802.3)
- + D5-12  : Ability  (10/100/1000) - (duplex) - (pause frame (flow ctrl))
+ + D5-12  : (speed) - (duplex) - (pause frame (flow ctrl - full duplex))
  + D13	  : remote fault -> detect link fail
  + D14	  : ACK
  + D15    : Next page

@@ -1,7 +1,7 @@
 net_dev -	-> represent network if
  		-> cmd: ip addr, ip  link, ifconfig
  
-net_device_ops	-> method - kernel -> network driver
+net_device_ops	-> method - usr space -> kernel-network driver
 	ndo_open
 	ndo_stop
 	ndo_start_xmit

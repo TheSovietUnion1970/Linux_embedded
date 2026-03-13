@@ -2,7 +2,7 @@ netif_rx		- Hardirq
 netif_receive_skb	- Softirq, NAPI
 	=> queue skb: per-CPU queue -> core network stack
 	
-netif_carrier_on/off				=> inform PHY link functioning
+netif_carrier_on/off				=> inform - net subsys PHY link functioning
 
 netif_tx_wake_all_queues/netif_wake_queue	=> Stop (all) TX queues
 

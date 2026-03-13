@@ -7,7 +7,7 @@ Network stack
 sk_buff
 eth0/wifi0
 
-Driver
+Driver (XDP)
 
 Controller/HW
 
