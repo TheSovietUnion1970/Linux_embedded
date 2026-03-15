@@ -9,6 +9,7 @@ inherit uboot-config cml1
 DEPENDS += "kern-tools-native"
 
 do_configure () {
+    bbwarn "u-boot-configure -> do_configure"
     if [ -n "${UBOOT_CONFIG}" ]; then
         unset i j
         for config in ${UBOOT_MACHINE}; do

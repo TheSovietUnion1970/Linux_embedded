@@ -1,0 +1,39 @@
+1. File Type
+.bbclass -> resuable logic - by bb
+	=> inherit <bbclass> in *.bb
+.inc     -> copied + inserted in *.bb
+	=> require <inc>
+	
+2. Recipe Type 
+recipes-core 		-> neccessary tools for L sys
+	+ glibc
+	+ coreutils
+	+ systemd
+recipes-devtools	-> tools for build process (native) or debug
+	+ gcc
+	+ gdb
+	+ python3
+recipes-kernel		-> kernel
+recipes-bsp		-> HW
+	+ uboot
+	
+3. bb strcuture
+ - Bitbake -> pull more recipes:
+  + inherit <bbclass>
+  + DEPENDS += <package>
+  
+  + BBCLASSEXTEND = "native" → creates xxx-native
+  
+4. Tasks:
+ + do_fetch
+ + do_unpack
+ + do_patch
+ + do_configure
+ + do_compile
+ 
+ + do_install
+ + do_package
+ + do_populate_sysroot
+ + do_deploy
+ 
+ + do_build -> run all

@@ -31,6 +31,7 @@ UBOOT_INITIAL_ENV ?= "${PN}-initial-env"
 require u-boot-configure.inc
 
 do_compile () {
+    bbwarn "u-boot.inc -> do_compile"
     if [ "${@bb.utils.filter('DISTRO_FEATURES', 'ld-is-gold', d)}" ]; then
         sed -i 's/$(CROSS_COMPILE)ld$/$(CROSS_COMPILE)ld.bfd/g' ${S}/config.mk
     fi
@@ -90,6 +91,7 @@ do_compile () {
 }
 
 do_install () {
+    bbwarn "u-boot.inc -> do_install"
     if [ -n "${UBOOT_CONFIG}" ]
     then
         for config in ${UBOOT_MACHINE}; do
@@ -207,6 +209,7 @@ FILES:${PN} = "/boot ${datadir}"
 RDEPENDS:${PN} += "${PN}-env"
 
 do_deploy () {
+    bbwarn "u-boot.inc -> do_deploy"
     if [ -n "${UBOOT_CONFIG}" ]
     then
         for config in ${UBOOT_MACHINE}; do

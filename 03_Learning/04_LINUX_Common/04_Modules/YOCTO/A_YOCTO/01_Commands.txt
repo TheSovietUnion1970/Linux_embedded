@@ -1,0 +1,2 @@
+bitbake -e gettext-native | grep ^FILE=
+	=> find which RECIPE has this package

@@ -27,15 +27,18 @@ UBOOT_BINARY = "u-boot.img"
 
 # Proper out-of-tree build (use "all" instead of "MLO" target)
 do_configure() {
+    bbwarn "u-boot-v -> do_configure"
     oe_runmake -C ${S} O=${B} ${UBOOT_MACHINE}
 }
 
 do_compile() {
+    bbwarn "u-boot-v -> do_compile"
     oe_runmake -C ${S} O=${B} all
 }
 
 # Deploy MLO and u-boot.img correctly
 do_deploy:append() {
+    bbwarn "u-boot-v -> do_deploy"
     install -d ${DEPLOYDIR}
 
 	# Prioritize the wrapped MLO
