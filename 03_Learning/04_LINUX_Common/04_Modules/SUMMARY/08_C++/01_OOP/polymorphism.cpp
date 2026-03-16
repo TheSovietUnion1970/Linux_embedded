@@ -2,6 +2,9 @@
 #include <string>
 using namespace std;
 
+// Functions/Operators can be overloaded either by changing the number of arguments or changing the type of arguments. - during compile time
+
+/* AT COMPILING TIME */
 class Geeks {
 public:
 
@@ -22,8 +25,6 @@ public:
         << endl ;
     }
 };
-
-// Functions/Operators can be overloaded either by changing the number of arguments or changing the type of arguments. - during compile time
 
 class Complex {
 public:
@@ -57,7 +58,25 @@ public:
     }
 };
 
+/* AT RUNNING TIME */
+class Base {
+public:
+    // Virtual function
+    virtual void display() {
+        cout << "Base class function" << endl;
+    }
+};
+
+class Derived : public Base {
+public:
+    // Overriding the base class function
+    void display() override {
+        cout << "Derived class function" << endl;
+    }
+};
+
 int main() {
+    /* AT COMPILING TIME */
     // ========== function overloaded
     cout << "Function overloaded" << endl;
     Geeks gfg;
@@ -87,5 +106,15 @@ int main() {
 
     IntStr s3 = s1 + s2;
     cout << "Final " << s3.a << " - " << s3.b << endl;
+
+    /* AT RUNNING TIME */
+    Base* basePtr;
+    Derived derivedObj;
+    // Pointing base class pointer to
+    basePtr = &derivedObj;
+
+    // Calling the display function
+    // using base class pointer
+    basePtr->display();
     return 0;
 }
