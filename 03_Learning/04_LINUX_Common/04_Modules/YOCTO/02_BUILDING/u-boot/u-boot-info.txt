@@ -1,0 +1,9 @@
+1. EXTRA_OEMAKE - u-boot.inc:
+ + cross-compiler			-> arm
+ + host-compiler			-> tools on PC ('mkimage'->uboot image; 'fixdep'->solve depen..)
+ + STAGING_INCDIR + STAGING_LIBDIR	-> Finds headers + libs
+ 
+2. UBOOT_INITIAL_ENV - u-boot.inc:
+ + Stores env: bootargs,... 
+   -> install into /etc/u-boot-v-initial-env
+ 
