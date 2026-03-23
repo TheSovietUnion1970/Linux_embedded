@@ -9,7 +9,7 @@
 - Loadable module support: modprobe -> module_init()/module_exit()
 
 2. === MANAGEMENT ===
- - Round-Robin		-> fixed-time slice
+ - Round-Robin		-> fixed-time slice, X -> FIFO
  - Cooperative		-> voluntarily give up - ONLY WHEN - done / waiting (sleep, I/O)
  - Preemption		-> ...
  - Non-preemption	-> ... once it's done

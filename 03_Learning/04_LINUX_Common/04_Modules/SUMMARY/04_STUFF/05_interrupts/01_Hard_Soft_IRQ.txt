@@ -1,4 +1,4 @@
-Hard IRQ vs Soft IRQ (bottom half)::
+Hard IRQ (top half) vs Soft IRQ (bottom half)::
 [4]
 Triggered by	: HW		vs		SW (kernel code)
 exe ctx		: interrupt	vs		softirq

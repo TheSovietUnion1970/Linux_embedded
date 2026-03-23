@@ -1,0 +1,8 @@
+RTS - Real-time system		-> restrict time	-> bare mental + RTOS
+GPS - General-purpose system	-> latency		-> Linux
+
+RTS:
+ + Hard real-time	-> must
+ + Soft real-time	-> small lentecy
+ 	: CONFIG_PREEMPT
+ 	  CONFIG_PREEMPT_RT -> better

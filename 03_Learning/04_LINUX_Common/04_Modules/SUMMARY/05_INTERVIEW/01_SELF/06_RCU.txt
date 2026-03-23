@@ -4,3 +4,28 @@ Read interation over a large data
  - X overhead + lock + atomic
  
 Ex: list_for_each_entry_rcu
+	-> add / remove a node in a linked list:
+	
+	
+Time ────────────────────────────────────────────────────────────────→
+
+Reader1 ──[ reader ]──────[ reader ]───────────────[ reader ]──────
+Reader2 ───────[ reader ]────────────────[ reader ]────────────────
+Reader3 ─────────────[ reader ]────────────────────────────────────
+Reader4 ──[ reader ]──────────────────────────[ reader ]──────────
+Reader5 ───────────────────[ reader ]──────────────────────────────
+
+Updater ───────────────────────┬──────────────────────────────┬────
+                               │                          Grace Period
+                            Pointer Swap
+                               (a new node added)
+                               
+Ex 5 readers read over a long linked list, from Pointer Swap onward, readers will read the new node >< the current reader will see no new node (old linked list), updater waits until 'Grace Period' (no readers happens) -> free the old linked list
+
+** note **
+[ reader ] = [rcu_read_lock() ... read() ... rcu_read_unlock()]
+
+
+======= Context ======
+- Atomic 	-> rcu_read_lock/rcu_read_unlock 
+- Process	-> synchronize_rcu = wait 'Grace Period' -> sleep

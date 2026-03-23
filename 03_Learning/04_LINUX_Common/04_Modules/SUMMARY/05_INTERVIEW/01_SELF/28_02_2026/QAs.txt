@@ -1,5 +1,5 @@
 1. Difference between U-Boot and GRUB?
-  U-boot - IoT + first stage
+  U-boot - IoT + after SPL/MLO
   GRUB   - PC  + after BIOS/UEFI
   
 2. What is JTAG used for?

@@ -1,0 +1,4 @@
+CC - cross compilation:
+ + Cross-compiler	-> binary
+ + Binutils		-> as (assembler), ld (linker), ar (archive creator)
+ + Sysroot		-> necessary headers + libs
