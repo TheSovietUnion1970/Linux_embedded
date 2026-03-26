@@ -1,0 +1,20 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0@EXTENDPRAUTO@
+LICENSE:libacl: LGPL-2.1-or-later
+DESCRIPTION: ACL allows you to provide different levels of access to files and folders for different users.
+SUMMARY: Utilities for managing POSIX Access Control Lists
+RDEPENDS:libacl: glibc (>= 2.35) libattr (>= 2.5.1)
+RPROVIDES:libacl:  libacl (=2.3.1)
+SECTION: libs
+PKG:libacl: libacl1
+FILES:libacl: /usr/lib/lib*.so.*
+FILES_INFO:libacl: {"/usr/lib/libacl.so.1": 18, "/usr/lib/libacl.so.1.1.2301": 25896}
+pkg_postinst:libacl: #!/bin/sh\nset -e\nif [ x"$D" = "x" ]; then\n\tif [ -x /sbin/ldconfig ]; then /sbin/ldconfig ; fi\nfi\n
+FILERPROVIDESFLIST:libacl: /usr/lib/libacl.so.1.1.2301
+FILERPROVIDES:/usr/lib/libacl.so.1.1.2301:libacl:  libacl.so.1(ACL_1.0) libacl.so.1(ACL_1.1) libacl.so.1(ACL_1.1) libacl.so.1(ACL_1.2) libacl.so.1(ACL_1.2) libacl.so.1
+FILERDEPENDSFLIST:libacl: /usr/lib/libacl.so.1.1.2301
+FILERDEPENDS:/usr/lib/libacl.so.1.1.2301:libacl:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.33) libc.so.6(GLIBC_2.4) libattr.so.1 libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+PKGSIZE:libacl: 25914

@@ -1,0 +1,13 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-doc: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains documentation.
+SUMMARY:attr-doc: Utilities for manipulating filesystem extended attributes - Documentation files
+SECTION:attr-doc: doc
+PKG:attr-doc: attr-doc
+FILES:attr-doc: /usr/share/doc /usr/share/man /usr/share/info /usr/share/gtk-doc             /usr/share/gnome/help
+FILES_INFO:attr-doc: {"/usr/share/doc/attr/CHANGES": 12426, "/usr/share/doc/attr/COPYING": 18312, "/usr/share/doc/attr/COPYING.LGPL": 26763, "/usr/share/doc/attr/PORTING": 3221, "/usr/share/man/man1/attr.1": 6138, "/usr/share/man/man1/getfattr.1": 4428, "/usr/share/man/man1/setfattr.1": 3913, "/usr/share/man/man3/attr_get.3": 4678, "/usr/share/man/man3/attr_getf.3": 10, "/usr/share/man/man3/attr_list.3": 6502, "/usr/share/man/man3/attr_listf.3": 11, "/usr/share/man/man3/attr_multi.3": 7342, "/usr/share/man/man3/attr_multif.3": 12, "/usr/share/man/man3/attr_remove.3": 3702, "/usr/share/man/man3/attr_removef.3": 13, "/usr/share/man/man3/attr_set.3": 5830, "/usr/share/man/man3/attr_setf.3": 10}
+PKGSIZE:attr-doc: 103311

@@ -1,0 +1,13 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-doc: ACL allows you to provide different levels of access to files and folders for different users.  This package contains documentation.
+SUMMARY:acl-doc: Utilities for managing POSIX Access Control Lists - Documentation files
+SECTION:acl-doc: doc
+PKG:acl-doc: acl-doc
+FILES:acl-doc: /usr/share/doc /usr/share/man /usr/share/info /usr/share/gtk-doc             /usr/share/gnome/help
+FILES_INFO:acl-doc: {"/usr/share/doc/acl/CHANGES": 21819, "/usr/share/doc/acl/COPYING": 18311, "/usr/share/doc/acl/COPYING.LGPL": 26762, "/usr/share/doc/acl/PORTING": 3212, "/usr/share/doc/acl/extensions.txt": 2257, "/usr/share/doc/acl/libacl.txt": 2961, "/usr/share/man/man1/chacl.1": 4856, "/usr/share/man/man1/getfacl.1": 6359, "/usr/share/man/man1/setfacl.1": 10579, "/usr/share/man/man3/acl_add_perm.3": 2516, "/usr/share/man/man3/acl_calc_mask.3": 3235, "/usr/share/man/man3/acl_check.3": 3549, "/usr/share/man/man3/acl_clear_perms.3": 2274, "/usr/share/man/man3/acl_cmp.3": 2351, "/usr/share/man/man3/acl_copy_entry.3": 2245, "/usr/share/man/man3/acl_copy_ext.3": 3293, "/usr/share/man/man3/acl_copy_int.3": 2691, "/usr/share/man/man3/acl_create_entry.3": 3344, "/usr/share/man/man3/acl_delete_def_file.3": 2789, "/usr/share/man/man3/acl_delete_entry.3": 2539, "/usr/share/man/man3/acl_delete_perm.3": 2540, "/usr/share/man/man3/acl_dup.3": 2471, "/usr/share/man/man3/acl_entries.3": 2131, "/usr/share/man/man3/acl_equiv_mode.3": 2726, "/usr/share/man/man3/acl_error.3": 2231, "/usr/share/man/man3/acl_extended_fd.3": 3117, "/usr/share/man/man3/acl_extended_file.3": 3914, "/usr/share/man/man3/acl_extended_file_nofollow.3": 29, "/usr/share/man/man3/acl_free.3": 2387, "/usr/share/man/man3/acl_from_mode.3": 2363, "/usr/share/man/man3/acl_from_text.3": 2766, "/usr/share/man/man3/acl_get_entry.3": 3921, "/usr/share/man/man3/acl_get_fd.3": 2878, "/usr/share/man/man3/acl_get_file.3": 4081, "/usr/share/man/man3/acl_get_perm.3": 2714, "/usr/share/man/man3/acl_get_permset.3": 2520, "/usr/share/man/man3/acl_get_qualifier.3": 3961, "/usr/share/man/man3/acl_get_tag_type.3": 2443, "/usr/share/man/man3/acl_init.3": 2600, "/usr/share/man/man3/acl_set_fd.3": 2845, "/usr/share/man/man3/acl_set_file.3": 4856, "/usr/share/man/man3/acl_set_permset.3": 2832, "/usr/share/man/man3/acl_set_qualifier.3": 3385, "/usr/share/man/man3/acl_set_tag_type.3": 2403, "/usr/share/man/man3/acl_size.3": 2554, "/usr/share/man/man3/acl_to_any_text.3": 5012, "/usr/share/man/man3/acl_to_text.3": 3144, "/usr/share/man/man3/acl_valid.3": 2527, "/usr/share/man/man5/acl.5": 15961}
+PKGSIZE:acl-doc: 225254

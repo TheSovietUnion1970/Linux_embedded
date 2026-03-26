@@ -1,0 +1,15 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-locale-en+quot: ACL allows you to provide different levels of access to files and folders for different users.  This package contains language translation files for the en@quot locale.
+SUMMARY:acl-locale-en+quot: Utilities for managing POSIX Access Control Lists - en@quot translations
+RPROVIDES:acl-locale-en+quot: acl-locale en+quot-translation
+RRECOMMENDS:acl-locale-en+quot: virtual-locale-en+quot
+SECTION: libs
+PKG:acl-locale-en+quot: acl-locale-en+quot
+FILES:acl-locale-en+quot: /usr/share/locale/en@quot
+FILES_INFO:acl-locale-en+quot: {"/usr/share/locale/en@quot/LC_MESSAGES/acl.mo": 8497}
+PKGSIZE:acl-locale-en+quot: 8497

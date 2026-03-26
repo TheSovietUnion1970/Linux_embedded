@@ -1,0 +1,33 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-ptest: ACL allows you to provide different levels of access to files and folders for different users.  This package contains a test directory /usr/lib/acl/ptest for package test purposes.
+SUMMARY:acl-ptest: Utilities for managing POSIX Access Control Lists - Package test files
+RDEPENDS:acl-ptest: acl bash coreutils e2fsprogs-mke2fs gawk make perl perl-module-constant perl-module-cwd perl-module-file-basename perl-module-file-path perl-module-file-spec perl-module-filehandle perl-module-getopt-std perl-module-posix shadow glibc (>= 2.35) libattr (>= 2.5.1)
+RRECOMMENDS:acl-ptest:  ptest-runner
+SECTION:acl-ptest: devel
+PKG:acl-ptest: acl-ptest
+ALLOW_EMPTY:acl-ptest: 1
+FILES:acl-ptest:  /usr/lib/acl/ptest
+FILES_INFO:acl-ptest: {"/usr/lib/acl/ptest/.libs/libtestlookup.la": 19, "/usr/lib/acl/ptest/.libs/libtestlookup.so": 22, "/usr/lib/acl/ptest/.libs/libtestlookup.so.0": 22, "/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0": 9460, "/usr/lib/acl/ptest/Makefile": 137049, "/usr/lib/acl/ptest/build-aux/ar-lib": 5875, "/usr/lib/acl/ptest/build-aux/compile": 7400, "/usr/lib/acl/ptest/build-aux/config.guess": 49348, "/usr/lib/acl/ptest/build-aux/config.rpath": 18717, "/usr/lib/acl/ptest/build-aux/config.sub": 35276, "/usr/lib/acl/ptest/build-aux/depcomp": 23568, "/usr/lib/acl/ptest/build-aux/install-sh": 15358, "/usr/lib/acl/ptest/build-aux/ltmain.sh": 335534, "/usr/lib/acl/ptest/build-aux/missing": 6878, "/usr/lib/acl/ptest/build-aux/test-driver": 4879, "/usr/lib/acl/ptest/run-ptest": 264, "/usr/lib/acl/ptest/test/Makemodule.am": 922, "/usr/lib/acl/ptest/test/cp.test": 675, "/usr/lib/acl/ptest/test/getfacl-lfs.test": 269, "/usr/lib/acl/ptest/test/getfacl-noacl.test": 924, "/usr/lib/acl/ptest/test/getfacl-recursive.test": 2915, "/usr/lib/acl/ptest/test/make-tree": 757, "/usr/lib/acl/ptest/test/malformed-restore-double-owner.acl": 88, "/usr/lib/acl/ptest/test/malformed-restore.test": 504, "/usr/lib/acl/ptest/test/misc.test": 8495, "/usr/lib/acl/ptest/test/nfs/nfs-dir.test": 1159, "/usr/lib/acl/ptest/test/nfs/nfsacl.test": 979, "/usr/lib/acl/ptest/test/root/getfacl.test": 446, "/usr/lib/acl/ptest/test/root/permissions.test": 5139, "/usr/lib/acl/ptest/test/root/restore.test": 579, "/usr/lib/acl/ptest/test/root/setfacl.test": 2890, "/usr/lib/acl/ptest/test/run": 9954, "/usr/lib/acl/ptest/test/runwrapper": 146, "/usr/lib/acl/ptest/test/sbits-restore.test": 458, "/usr/lib/acl/ptest/test/setfacl-X.test": 1834, "/usr/lib/acl/ptest/test/sort-getfacl-output": 83, "/usr/lib/acl/ptest/test/test.group": 95, "/usr/lib/acl/ptest/test/test.passwd": 172, "/usr/lib/acl/ptest/test/test_group.c": 3204, "/usr/lib/acl/ptest/test/test_passwd.c": 2978, "/usr/lib/acl/ptest/test/utf8-filenames.test": 807}
+FILERPROVIDESFLIST:acl-ptest: /usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0
+FILERPROVIDES:/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0:acl-ptest:  libtestlookup.so.0
+FILERDEPENDSFLIST:acl-ptest: /usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0 /usr/lib/acl/ptest/build-aux/ar-lib /usr/lib/acl/ptest/build-aux/compile /usr/lib/acl/ptest/build-aux/config.guess /usr/lib/acl/ptest/build-aux/config.rpath /usr/lib/acl/ptest/build-aux/config.sub /usr/lib/acl/ptest/build-aux/depcomp /usr/lib/acl/ptest/build-aux/install-sh /usr/lib/acl/ptest/build-aux/missing /usr/lib/acl/ptest/build-aux/test-driver /usr/lib/acl/ptest/run-ptest /usr/lib/acl/ptest/test/run /usr/lib/acl/ptest/test/runwrapper /usr/lib/acl/ptest/test/sort-getfacl-output
+FILERDEPENDS:/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0:acl-ptest:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.4) libattr.so.1 libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/ar-lib:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/compile:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/config.guess:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/config.rpath:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/config.sub:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/depcomp:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/install-sh:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/missing:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/build-aux/test-driver:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/run-ptest:acl-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/acl/ptest/test/run:acl-ptest:  /usr/bin/perl
+FILERDEPENDS:/usr/lib/acl/ptest/test/runwrapper:acl-ptest:  /bin/bash
+FILERDEPENDS:/usr/lib/acl/ptest/test/sort-getfacl-output:acl-ptest:  /usr/bin/perl
+PKGSIZE:acl-ptest: 696141

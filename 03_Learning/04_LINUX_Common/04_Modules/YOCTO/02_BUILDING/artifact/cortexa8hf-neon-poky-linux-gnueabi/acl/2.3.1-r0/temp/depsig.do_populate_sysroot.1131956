@@ -1,0 +1,29 @@
+OEOuthashBasic
+14
+attr: 1f10d4341fdbf8f751f025f27d65016fc1c651fa892f260f74ef8e149e600d1d
+gcc-runtime: 4b6cb168565422e29eb2f9d2e72b83f22e3c33c8197481454f55bde8536df2ff
+glibc: 6a499e94898a055fb0c153d4f16b65159e699105f77300d0fb081f7d20b5e0c7
+libgcc: 8f0bcb5a344c0d9ae807480a7ce75a29c0162fde9c323919cc4603bcbbeeaf03
+libtool-cross: 6cc3764462cf424880e1e1a2d66b1e39f3f49dd185b8a8c2b623e2225df97c60
+linux-libc-headers: da9cd726479a97f31943c88f9d11a103bc5ded2afcce3b04083b31ed1dc34098
+opkg-utils: eaeb5714037859ea3b5bb42e6d0a1a82e74f3d154be90ea7f22b3186b548822a
+SSTATE_PKGSPEC=sstate:acl:cortexa8hf-neon-poky-linux-gnueabi:2.3.1:r0:cortexa8hf-neon:10:
+task=populate_sysroot
+drwx                                                                                       .
+drwx                                                                                       ./sysroot-destdir
+drwx                                                                                       ./sysroot-destdir/sysroot-providers
+-rw-                    3 2344f08e51026cf9ab687357a588e941f1a861cfed58272911c2288a7ab1f52b ./sysroot-destdir/sysroot-providers/acl
+drwx                                                                                       ./sysroot-destdir/usr
+drwx                                                                                       ./sysroot-destdir/usr/include
+drwx                                                                                       ./sysroot-destdir/usr/include/acl
+-rw-                 2611 04f0336bf33c213ff1becd622c97794d345593203fcc5e3e4ea77296c7f4aff5 ./sysroot-destdir/usr/include/acl/libacl.h
+drwx                                                                                       ./sysroot-destdir/usr/include/sys
+-rw-                 3700 f45fb88f57192ba818bd8dc837fbb7fde62d6c2a2c6852517802b8700417f711 ./sysroot-destdir/usr/include/sys/acl.h
+drwx                                                                                       ./sysroot-destdir/usr/lib
+lrwx                                                                                       ./sysroot-destdir/usr/lib/libacl.so -> libacl.so.1.1.2301
+lrwx                                                                                       ./sysroot-destdir/usr/lib/libacl.so.1 -> libacl.so.1.1.2301
+-rwx                25812 a68c839d2fe7c773c51325c0cd05b647a689b987703cbaf378c46985acc41c0f ./sysroot-destdir/usr/lib/libacl.so.1.1.2301
+drwx                                                                                       ./sysroot-destdir/usr/lib/acl
+drwx                                                                                       ./sysroot-destdir/usr/lib/pkgconfig
+-rw-                  203 850d478c17d45ef5ee705d5b9e3a01bbaa7c2b124a0bd4d14da0923635ff736f ./sysroot-destdir/usr/lib/pkgconfig/libacl.pc
+drwx                                                                                       ./sysroot-destdir/usr/share

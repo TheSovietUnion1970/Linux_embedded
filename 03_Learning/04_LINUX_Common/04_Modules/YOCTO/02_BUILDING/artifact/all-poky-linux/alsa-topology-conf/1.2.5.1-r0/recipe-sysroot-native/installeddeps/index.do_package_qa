@@ -1,0 +1,2 @@
+TaskDeps: do_packagedata do_package do_install do_compile do_configure do_prepare_recipe_sysroot do_deploy_source_date_epoch do_patch do_fetch do_unpack
+pseudo-native

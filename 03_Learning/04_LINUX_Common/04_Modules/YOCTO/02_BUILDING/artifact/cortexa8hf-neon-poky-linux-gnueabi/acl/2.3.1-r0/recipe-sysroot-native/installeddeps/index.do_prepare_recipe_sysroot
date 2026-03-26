@@ -1,0 +1,26 @@
+TaskDeps: do_fetch
+attr
+autoconf-native
+automake-native
+binutils-cross-arm
+flex-native
+gcc-cross-arm
+gcc-runtime
+gettext-minimal-native
+gettext-native
+glibc
+gmp-native
+gnu-config-native
+libgcc
+libmpc-native
+libtool-cross
+libtool-native
+linux-libc-headers
+m4-native
+mpfr-native
+opkg-utils
+pseudo-native
+texinfo-dummy-native
+xz-native
+zlib-native
+zstd-native

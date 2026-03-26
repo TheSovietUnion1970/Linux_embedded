@@ -1,0 +1,13 @@
+PN: alsa-topology-conf
+PV: 1.2.5.1
+PR: r0
+PKGV: 1.2.5.1
+PKGR: r0@EXTENDPRAUTO@
+LICENSE: BSD-3-Clause
+DESCRIPTION: Provides a method for audio drivers to load their mixers, routing, PCMs and capabilities from user space at runtime without changing any driver source code.
+SUMMARY: ALSA topology configuration files
+SECTION: base
+PKG:alsa-topology-conf: alsa-topology-conf
+FILES:alsa-topology-conf: *
+FILES_INFO:alsa-topology-conf: {"/usr/share/alsa/topology/broadwell/broadwell.conf": 5937, "/usr/share/alsa/topology/bxtrt298/bxt_i2s.conf": 74488, "/usr/share/alsa/topology/hda-dsp/skl_hda_dsp_generic-tplg.conf": 195027, "/usr/share/alsa/topology/sklrt286/skl_i2s.conf": 66635}
+PKGSIZE:alsa-topology-conf: 342087

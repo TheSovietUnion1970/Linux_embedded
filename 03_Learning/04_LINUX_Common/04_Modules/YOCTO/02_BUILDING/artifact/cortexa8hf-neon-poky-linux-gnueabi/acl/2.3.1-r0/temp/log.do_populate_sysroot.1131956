@@ -1,0 +1,44 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are ['/home/vinh/Yocto/poky/meta/recipes-core/glibc/glibc_2.35.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/binutils/binutils-cross_2.38.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/gcc/gcc-cross_11.5.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/gcc/gcc-runtime_11.5.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-cross_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-native_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/quilt/quilt-native_0.67.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-support/attr/attr_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-core/gettext/gettext_0.21.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/autoconf/autoconf_2.71.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/automake/automake_1.16.5.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/patch/patch_2.7.6.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']
+NOTE: Installed into sysroot: []
+NOTE: Skipping as already exists in sysroot: ['glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libtool-cross', 'libtool-native', 'quilt-native', 'attr', 'gettext-native', 'autoconf-native', 'automake-native', 'patch-native', 'pseudo-native', 'texinfo-dummy-native', 'gnu-config-native', 'flex-native', 'zlib-native', 'linux-libc-headers', 'zstd-native', 'mpfr-native', 'gmp-native', 'xz-native', 'libmpc-native', 'opkg-utils', 'gettext-minimal-native', 'm4-native', 'libgcc', 'attr-native']
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function sstate_task_prefunc
+DEBUG: Python function sstate_task_prefunc finished
+DEBUG: Executing python function do_populate_sysroot
+DEBUG: Executing shell function sysroot_stage_all
+0 blocks
+0 blocks
+0 blocks
+DEBUG: Shell function sysroot_stage_all finished
+DEBUG: Executing python function sysroot_strip
+DEBUG: runstrip: ['arm-poky-linux-gnueabi-strip', '--remove-section=.comment', '--remove-section=.note', '--strip-unneeded', '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sysroot-destdir/usr/lib/libacl.so.1.1.2301']
+DEBUG: Python function sysroot_strip finished
+DEBUG: Python function do_populate_sysroot finished
+DEBUG: Executing python function do_qa_staging
+NOTE: QA checking staging
+DEBUG: Python function do_qa_staging finished
+DEBUG: Executing python function sstate_task_postfunc
+DEBUG: Executing python function do_siteconfig
+DEBUG: Executing python function siteconfig_do_siteconfig
+DEBUG: No site_config directory, skipping do_siteconfig
+DEBUG: Python function siteconfig_do_siteconfig finished
+DEBUG: Python function do_siteconfig finished
+NOTE: Using umask 0o002 (not 22) for sstate packaging
+DEBUG: Preparing tree /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sysroot-destdir for packaging at /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sstate-build-populate_sysroot/sysroot-destdir
+DEBUG: Executing python function target_add_sysroot_deps
+DEBUG: Python function target_add_sysroot_deps finished
+DEBUG: Executing python function sstate_hardcode_path
+NOTE: Removing hardcoded paths from sstate package: 'find /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sstate-build-populate_sysroot/ \( -name "*.la" -o -name "*-config" -o -name "*_config" -o -name "postinst-*" \) -type f | xargs grep -l -e '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot' -e '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native' -e '/home/vinh/Yocto/poky/build-vinh/tmp/hosttools' | tee /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''
+DEBUG: Python function sstate_hardcode_path finished
+DEBUG: Executing python function sstate_report_unihash
+DEBUG: Reported task 1bf34d1985d31d0b67642e9b176573b5965a48a310329a9beae6344f3635f94a as unihash 1bf34d1985d31d0b67642e9b176573b5965a48a310329a9beae6344f3635f94a to unix:///home/vinh/Yocto/poky/build-vinh/hashserve.sock
+DEBUG: Python function sstate_report_unihash finished
+DEBUG: Executing shell function sstate_create_package
+DEBUG: Shell function sstate_create_package finished
+DEBUG: Executing python function sstate_hardcode_path_unpack
+DEBUG: Python function sstate_hardcode_path_unpack finished
+DEBUG: Executing python function uninative_changeinterp
+DEBUG: Python function uninative_changeinterp finished
+DEBUG: Staging files from /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sysroot-destdir to /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/cortexa8hf-neon/acl
+DEBUG: Python function sstate_task_postfunc finished

@@ -1,0 +1,10 @@
+prefix=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr
+exec_prefix=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr
+libdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib
+includedir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include
+
+Name:		libacl
+Description:	A library for POSIX Access Control Lists
+Version:	2.3.1
+Cflags:		-I${includedir}
+Libs:		-L${libdir} -lacl

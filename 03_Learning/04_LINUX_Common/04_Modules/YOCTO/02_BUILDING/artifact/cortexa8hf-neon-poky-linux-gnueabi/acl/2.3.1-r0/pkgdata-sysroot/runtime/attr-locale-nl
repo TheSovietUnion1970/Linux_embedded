@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-nl: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the nl locale.
+SUMMARY:attr-locale-nl: Utilities for manipulating filesystem extended attributes - nl translations
+RPROVIDES:attr-locale-nl: attr-locale nl-translation
+RRECOMMENDS:attr-locale-nl: virtual-locale-nl
+SECTION: libs
+PKG:attr-locale-nl: attr-locale-nl
+FILES:attr-locale-nl: /usr/share/locale/nl
+FILES_INFO:attr-locale-nl: {"/usr/share/locale/nl/LC_MESSAGES/attr.mo": 2372}
+PKGSIZE:attr-locale-nl: 2372

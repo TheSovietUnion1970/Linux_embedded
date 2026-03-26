@@ -1,0 +1,156 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are ['/home/vinh/Yocto/poky/meta/recipes-core/glibc/glibc_2.35.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/gcc/gcc-cross_11.5.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/gcc/gcc-runtime_11.5.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-cross_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-native_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/quilt/quilt-native_0.67.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-support/attr/attr_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-core/gettext/gettext_0.21.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/autoconf/autoconf_2.71.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/automake/automake_1.16.5.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/dwarfsrcfiles/dwarfsrcfiles.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/patch/patch_2.7.6.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/rpm/rpm_4.17.1.bb:do_populate_sysroot']
+NOTE: Installed into sysroot: ['dwarfsrcfiles-native', 'rpm-native', 'file-native', 'popt-native', 'sqlite3-native', 'libgcrypt-native', 'python3-native', 'lua-native', 'bzip2-native', 'elfutils-native', 'libgpg-error-native', 'libcap-native', 'libnsl2-native', 'ncurses-native', 'libtirpc-native', 'gdbm-native', 'readline-native', 'openssl-native', 'util-linux-libuuid-native', 'libffi-native', 'libmicrohttpd-native', 'libarchive-native', 'curl-native', 'perl-native', 'gnutls-native', 'lzo-native', 'make-native', 'libidn2-native', 'libunistring-native', 'nettle-native']
+NOTE: Skipping as already exists in sysroot: ['glibc', 'gcc-cross-arm', 'gcc-runtime', 'libtool-cross', 'libtool-native', 'quilt-native', 'attr', 'gettext-native', 'autoconf-native', 'automake-native', 'patch-native', 'pseudo-native', 'libgcc', 'linux-libc-headers', 'opkg-utils', 'xz-native', 'zstd-native', 'gettext-minimal-native', 'zlib-native', 'mpfr-native', 'binutils-cross-arm', 'gmp-native', 'texinfo-dummy-native', 'gnu-config-native', 'libmpc-native', 'flex-native', 'm4-native', 'attr-native']
+DEBUG: sed -e 's:^[^/]*/:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/:g' /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/rpm-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/libgcrypt-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/python3-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/lua-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/elfutils-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/libgpg-error-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/ncurses-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/openssl-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/curl-native/fixmepath /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/perl-native/fixmepath | xargs sed -i -e 's:FIXMESTAGINGDIRTARGET:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot:g; s:FIXMESTAGINGDIRHOST:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native:g' -e 's:FIXME_PSEUDO_SYSROOT:/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/pseudo-native:g' -e 's:FIXME_HOSTTOOLS_DIR:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools:g' -e 's:FIXME_PKGDATA_DIR:/home/vinh/Yocto/poky/build-vinh/tmp/pkgdata/beaglebone-yocto:g' -e 's:FIXME_PSEUDO_LOCALSTATEDIR:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/pseudo/:g' -e 's:FIXME_LOGFIFO:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.1460375:g'
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function sstate_task_prefunc
+DEBUG: Python function sstate_task_prefunc finished
+DEBUG: Executing python function do_package
+DEBUG: Executing python function package_convert_pr_autoinc
+DEBUG: Python function package_convert_pr_autoinc finished
+DEBUG: Executing python function package_prepare_pkgdata
+NOTE: Installed into pkgdata-sysroot: ['attr', 'glibc', 'gcc-runtime', 'opkg-utils', 'linux-libc-headers', 'libgcc']
+DEBUG: Python function package_prepare_pkgdata finished
+DEBUG: Executing python function perform_packagecopy
+DEBUG: Python function perform_packagecopy finished
+DEBUG: Executing python function split_and_strip_files
+DEBUG: runstrip: ['arm-poky-linux-gnueabi-strip', '--remove-section=.comment', '--remove-section=.note', '--strip-unneeded', '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/package/usr/lib/libacl.so.1.1.2301']
+DEBUG: runstrip: ['arm-poky-linux-gnueabi-strip', '--remove-section=.comment', '--remove-section=.note', '--strip-unneeded', '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/package/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0']
+DEBUG: runstrip: ['arm-poky-linux-gnueabi-strip', '--remove-section=.comment', '--remove-section=.note', '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/package/usr/bin/getfacl']
+DEBUG: runstrip: ['arm-poky-linux-gnueabi-strip', '--remove-section=.comment', '--remove-section=.note', '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/package/usr/bin/setfacl']
+DEBUG: runstrip: ['arm-poky-linux-gnueabi-strip', '--remove-section=.comment', '--remove-section=.note', '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/package/usr/bin/chacl']
+DEBUG: Python function split_and_strip_files finished
+DEBUG: Executing python function fixup_perms
+DEBUG: Python function fixup_perms finished
+DEBUG: Executing python function package_do_split_locales
+DEBUG: Python function package_do_split_locales finished
+DEBUG: Executing python function populate_packages
+DEBUG: Python function populate_packages finished
+DEBUG: Executing python function package_fixsymlinks
+DEBUG: acl-ptest contains dangling link /usr/lib/acl/ptest/libtestlookup.la
+NOTE: acl-ptest contains dangling symlink to /usr/lib/acl/ptest/libtestlookup.la
+DEBUG: acl-dev contains dangling link /usr/lib/libacl.so.1.1.2301
+DEBUG: target found in libacl
+DEBUG: Python function package_fixsymlinks finished
+DEBUG: Executing python function package_name_hook
+DEBUG: Executing python function debian_package_name_hook
+arm-poky-linux-gnueabi-objdump: Warning: Separate debug info file /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/libacl/usr/lib/libacl.so.1.1.2301 found, but CRC does not match - ignoring
+arm-poky-linux-gnueabi-objdump: Warning: Separate debug info file /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/libacl/usr/lib/libacl.so.1.1.2301 found, but CRC does not match - ignoring
+DEBUG: LIBNAMES: pkg libacl libs 1 bins 0 sonames ['libacl.so.1']
+NOTE: debian: renaming libacl to libacl1
+DEBUG: LIBNAMES: pkg acl-staticdev libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-src libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-ptest libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-sv libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-pl libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-gl libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-fr libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-es libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-en+quot libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-en+boldquot libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-locale-de libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-doc libs 0 bins 0 sonames []
+arm-poky-linux-gnueabi-objdump: '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl-dev/usr/lib/libacl.so': No such file
+DEBUG: LIBNAMES: pkg acl-dev libs 1 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl-dbg libs 0 bins 0 sonames []
+DEBUG: LIBNAMES: pkg acl libs 0 bins 1 sonames []
+DEBUG: Python function debian_package_name_hook finished
+DEBUG: Python function package_name_hook finished
+DEBUG: Executing python function package_do_filedeps
+DEBUG: Python function package_do_filedeps finished
+DEBUG: Executing python function package_do_shlibs
+DEBUG: Reading shlib providers in /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/pkgdata-sysroot/shlibs2
+DEBUG: calculating shlib provides for acl-src
+DEBUG: LIBNAMES: pkg acl-src sonames set()
+DEBUG: calculating shlib provides for acl-dbg
+DEBUG: LIBNAMES: pkg acl-dbg sonames set()
+DEBUG: calculating shlib provides for libacl
+DEBUG: registering libacl-2.3.1 as shlib provider for libacl.so.1
+DEBUG: adding ldconfig call to postinst for libacl
+DEBUG: LIBNAMES: pkg libacl sonames {('libacl.so.1', '/usr/lib', '2.3.1')}
+DEBUG: calculating shlib provides for acl-ptest
+DEBUG: registering acl-ptest-2.3.1 as shlib provider for libtestlookup.so.0
+DEBUG: LIBNAMES: pkg acl-ptest sonames {('libtestlookup.so.0', '/usr/lib/acl/ptest/.libs', '2.3.1')}
+DEBUG: calculating shlib provides for acl-staticdev
+DEBUG: LIBNAMES: pkg acl-staticdev sonames set()
+DEBUG: calculating shlib provides for acl-dev
+DEBUG: LIBNAMES: pkg acl-dev sonames set()
+DEBUG: calculating shlib provides for acl-doc
+DEBUG: LIBNAMES: pkg acl-doc sonames set()
+DEBUG: calculating shlib provides for acl
+DEBUG: LIBNAMES: pkg acl sonames set()
+DEBUG: calculating shlib provides for acl-locale-de
+DEBUG: LIBNAMES: pkg acl-locale-de sonames set()
+DEBUG: calculating shlib provides for acl-locale-en+boldquot
+DEBUG: LIBNAMES: pkg acl-locale-en+boldquot sonames set()
+DEBUG: calculating shlib provides for acl-locale-en+quot
+DEBUG: LIBNAMES: pkg acl-locale-en+quot sonames set()
+DEBUG: calculating shlib provides for acl-locale-es
+DEBUG: LIBNAMES: pkg acl-locale-es sonames set()
+DEBUG: calculating shlib provides for acl-locale-fr
+DEBUG: LIBNAMES: pkg acl-locale-fr sonames set()
+DEBUG: calculating shlib provides for acl-locale-gl
+DEBUG: LIBNAMES: pkg acl-locale-gl sonames set()
+DEBUG: calculating shlib provides for acl-locale-pl
+DEBUG: LIBNAMES: pkg acl-locale-pl sonames set()
+DEBUG: calculating shlib provides for acl-locale-sv
+DEBUG: LIBNAMES: pkg acl-locale-sv sonames set()
+DEBUG: calculating shlib requirements for acl-src
+DEBUG: calculating shlib requirements for acl-dbg
+DEBUG: calculating shlib requirements for libacl
+DEBUG: libacl: Dependency libattr.so.1 requires package libattr (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/libacl/usr/lib/libacl.so.1.1.2301)
+DEBUG: libacl: Dependency libc.so.6 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/libacl/usr/lib/libacl.so.1.1.2301)
+DEBUG: libacl: Dependency ld-linux-armhf.so.3 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/libacl/usr/lib/libacl.so.1.1.2301)
+DEBUG: calculating shlib requirements for acl-ptest
+DEBUG: acl-ptest: Dependency ld-linux-armhf.so.3 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl-ptest/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0)
+DEBUG: acl-ptest: Dependency libattr.so.1 requires package libattr (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl-ptest/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0)
+DEBUG: acl-ptest: Dependency libc.so.6 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl-ptest/usr/lib/acl/ptest/.libs/libtestlookup.so.0.0.0)
+DEBUG: calculating shlib requirements for acl-staticdev
+DEBUG: calculating shlib requirements for acl-dev
+DEBUG: calculating shlib requirements for acl-doc
+DEBUG: calculating shlib requirements for acl
+DEBUG: acl: Dependency libacl.so.1 requires package libacl (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/setfacl)
+DEBUG: acl: Dependency ld-linux-armhf.so.3 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/setfacl)
+DEBUG: acl: Dependency libacl.so.1 requires package libacl (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/getfacl)
+DEBUG: acl: Dependency ld-linux-armhf.so.3 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/getfacl)
+DEBUG: acl: Dependency libc.so.6 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/chacl)
+DEBUG: acl: Dependency ld-linux-armhf.so.3 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/chacl)
+DEBUG: acl: Dependency libc.so.6 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/setfacl)
+DEBUG: acl: Dependency libc.so.6 requires package glibc (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/getfacl)
+DEBUG: acl: Dependency libacl.so.1 requires package libacl (used by files: /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/packages-split/acl/usr/bin/chacl)
+DEBUG: calculating shlib requirements for acl-locale-de
+DEBUG: calculating shlib requirements for acl-locale-en+boldquot
+DEBUG: calculating shlib requirements for acl-locale-en+quot
+DEBUG: calculating shlib requirements for acl-locale-es
+DEBUG: calculating shlib requirements for acl-locale-fr
+DEBUG: calculating shlib requirements for acl-locale-gl
+DEBUG: calculating shlib requirements for acl-locale-pl
+DEBUG: calculating shlib requirements for acl-locale-sv
+DEBUG: Python function package_do_shlibs finished
+DEBUG: Executing python function package_do_pkgconfig
+DEBUG: Python function package_do_pkgconfig finished
+DEBUG: Executing python function read_shlibdeps
+DEBUG: Python function read_shlibdeps finished
+DEBUG: Executing python function package_depchains
+DEBUG: Python function package_depchains finished
+DEBUG: Executing python function emit_pkgdata
+DEBUG: Python function emit_pkgdata finished
+DEBUG: Python function do_package finished
+DEBUG: Executing python function sstate_task_postfunc
+NOTE: Using umask 0o002 (not 22) for sstate packaging
+DEBUG: Executing python function target_add_sysroot_deps
+DEBUG: Python function target_add_sysroot_deps finished
+DEBUG: Executing python function sstate_hardcode_path
+NOTE: Removing hardcoded paths from sstate package: 'find /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sstate-build-package/ \( -name "*.la" -o -name "*-config" -o -name "*_config" -o -name "postinst-*" \) -type f | xargs grep -l -e '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot' -e '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native' -e '/home/vinh/Yocto/poky/build-vinh/tmp/hosttools' | tee /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/sstate-build-package/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''
+DEBUG: Python function sstate_hardcode_path finished
+DEBUG: Executing python function sstate_report_unihash
+DEBUG: Reported task db9af2fb0959b1c8d2709ee57f39ae0e957d27a140c5c81766aa120c9e243b3e as unihash db9af2fb0959b1c8d2709ee57f39ae0e957d27a140c5c81766aa120c9e243b3e to unix:///home/vinh/Yocto/poky/build-vinh/hashserve.sock
+DEBUG: Python function sstate_report_unihash finished
+DEBUG: Executing shell function sstate_create_package
+DEBUG: Shell function sstate_create_package finished
+DEBUG: Executing python function sstate_hardcode_path_unpack
+DEBUG: Python function sstate_hardcode_path_unpack finished
+DEBUG: Executing python function uninative_changeinterp
+DEBUG: Python function uninative_changeinterp finished
+DEBUG: Python function sstate_task_postfunc finished

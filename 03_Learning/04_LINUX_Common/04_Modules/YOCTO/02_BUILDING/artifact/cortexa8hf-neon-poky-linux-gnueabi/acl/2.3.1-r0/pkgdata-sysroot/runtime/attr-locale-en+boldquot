@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-en+boldquot: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the en@boldquot locale.
+SUMMARY:attr-locale-en+boldquot: Utilities for manipulating filesystem extended attributes - en@boldquot translations
+RPROVIDES:attr-locale-en+boldquot: attr-locale en+boldquot-translation
+RRECOMMENDS:attr-locale-en+boldquot: virtual-locale-en+boldquot
+SECTION: libs
+PKG:attr-locale-en+boldquot: attr-locale-en+boldquot
+FILES:attr-locale-en+boldquot: /usr/share/locale/en@boldquot
+FILES_INFO:attr-locale-en+boldquot: {"/usr/share/locale/en@boldquot/LC_MESSAGES/attr.mo": 6214}
+PKGSIZE:attr-locale-en+boldquot: 6214

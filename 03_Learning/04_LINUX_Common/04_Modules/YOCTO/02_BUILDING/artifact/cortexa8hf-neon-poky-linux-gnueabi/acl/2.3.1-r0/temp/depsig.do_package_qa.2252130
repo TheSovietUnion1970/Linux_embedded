@@ -1,0 +1,5 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:acl:cortexa8hf-neon-poky-linux-gnueabi:2.3.1:r0:cortexa8hf-neon:10:
+task=package_qa
+drwx                                                                                       .

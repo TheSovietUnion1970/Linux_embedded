@@ -1,0 +1,11 @@
+DEBUG: Executing python function do_unpack
+DEBUG: Executing python function base_do_unpack
+NOTE: Unpacking /home/vinh/Yocto/poky/build-vinh/downloads/alsa-topology-conf-1.2.5.1.tar.bz2 to /home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/
+DEBUG: Python function base_do_unpack finished
+DEBUG: Python function do_unpack finished
+DEBUG: Executing python function create_source_date_epoch_stamp
+DEBUG: Newest file found: /home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/alsa-topology-conf-1.2.5.1/README.md
+DEBUG: SOURCE_DATE_EPOCH: 1615488529
+DEBUG: Python function create_source_date_epoch_stamp finished
+DEBUG: Executing python function do_qa_unpack
+DEBUG: Python function do_qa_unpack finished

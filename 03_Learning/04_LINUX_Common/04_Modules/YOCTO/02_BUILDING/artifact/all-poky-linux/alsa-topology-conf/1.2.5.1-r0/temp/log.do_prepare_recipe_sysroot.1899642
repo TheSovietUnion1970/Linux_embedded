@@ -1,0 +1,7 @@
+DEBUG: Executing python function do_prepare_recipe_sysroot
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are ['virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']
+NOTE: Installed into sysroot: ['pseudo-native']
+NOTE: Skipping as already exists in sysroot: []
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Python function do_prepare_recipe_sysroot finished

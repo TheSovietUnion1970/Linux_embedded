@@ -1,0 +1,12 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:acl::2.3.1:r0::10:
+task=populate_lic
+drwx                                                                                       .
+drwx                                                                                       ./license-destdir
+drwx                                                                                       ./license-destdir/acl
+-rw-                18311 a45a845012742796534f7e91fe623262ccfb99460a2bd04015bd28d66fba95b8 ./license-destdir/acl/COPYING
+-rw-                26762 01b1f9f2c8ee648a7a596a1abe8aa4ed7899b1c9e5551bda06da6e422b04aa55 ./license-destdir/acl/COPYING.LGPL
+-rw-                17622 606aa26338f69ce178f1cbc648b7574aec4b5bbaeb20f4df36ff49010cb8fbbd ./license-destdir/acl/generic_GPL-2.0-or-later
+-rw-                25906 1ccf09bf2f598308df4bed9cd8e9657dc5cd0973d2800318f2e241486e2edf3f ./license-destdir/acl/generic_LGPL-2.1-or-later
+-rw-                   63 5d2d9a45bbe8470d6fff146d091a81500182554a33eff07e8d562dc85c8804dc ./license-destdir/acl/recipeinfo

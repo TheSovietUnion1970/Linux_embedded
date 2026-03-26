@@ -1,0 +1,7 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:alsa-topology-conf:all-poky-linux:1.2.5.1:r0:allarch:10:
+task=deploy_source_date_epoch
+drwx                                                                                       .
+drwx                                                                                       ./deploy-source-date-epoch
+-rw-                   10 80ed8ffdfa74406f1806698ff3ead03e37f3113b60331ca5d2a690844ebfa2ba ./deploy-source-date-epoch/__source_date_epoch.txt

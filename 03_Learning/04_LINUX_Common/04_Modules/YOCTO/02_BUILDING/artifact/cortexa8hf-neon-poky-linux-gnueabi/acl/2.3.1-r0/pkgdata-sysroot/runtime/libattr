@@ -1,0 +1,20 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE:libattr: LGPL-2.1-or-later
+DESCRIPTION: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.
+SUMMARY: Utilities for manipulating filesystem extended attributes
+RDEPENDS:libattr: glibc (>= 2.35)
+RPROVIDES:libattr:  libattr (=2.5.1)
+SECTION: libs
+PKG:libattr: libattr1
+FILES:libattr: /usr/lib/lib*.so.*
+FILES_INFO:libattr: {"/usr/lib/libattr.so.1": 19, "/usr/lib/libattr.so.1.1.2501": 17704}
+pkg_postinst:libattr: #!/bin/sh\nset -e\nif [ x"$D" = "x" ]; then\n\tif [ -x /sbin/ldconfig ]; then /sbin/ldconfig ; fi\nfi\n
+FILERPROVIDESFLIST:libattr: /usr/lib/libattr.so.1.1.2501
+FILERPROVIDES:/usr/lib/libattr.so.1.1.2501:libattr:  libattr.so.1(ATTR_1.0) libattr.so.1(ATTR_1.1) libattr.so.1(ATTR_1.1) libattr.so.1(ATTR_1.2) libattr.so.1(ATTR_1.2) libattr.so.1(ATTR_1.3) libattr.so.1(ATTR_1.3) libattr.so.1
+FILERDEPENDSFLIST:libattr: /usr/lib/libattr.so.1.1.2501
+FILERDEPENDS:/usr/lib/libattr.so.1.1.2501:libattr:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.4) libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+PKGSIZE:libattr: 17723

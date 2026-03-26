@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-fr: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the fr locale.
+SUMMARY:attr-locale-fr: Utilities for manipulating filesystem extended attributes - fr translations
+RPROVIDES:attr-locale-fr: attr-locale fr-translation
+RRECOMMENDS:attr-locale-fr: virtual-locale-fr
+SECTION: libs
+PKG:attr-locale-fr: attr-locale-fr
+FILES:attr-locale-fr: /usr/share/locale/fr
+FILES_INFO:attr-locale-fr: {"/usr/share/locale/fr/LC_MESSAGES/attr.mo": 2481}
+PKGSIZE:attr-locale-fr: 2481

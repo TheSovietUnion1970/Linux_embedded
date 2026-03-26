@@ -1,0 +1,295 @@
+#!/bin/sh
+
+__BITBAKE_LAST_LINE=0
+
+# Emit a useful diagnostic if something fails:
+bb_sh_exit_handler() {
+    ret=$?
+    if [ "$ret" != 0 ]; then
+        echo "WARNING: exit code $ret from a shell command."
+    fi
+    exit $ret
+}
+
+bb_bash_exit_handler() {
+    ret=$?
+    { set +x; } > /dev/null
+    trap "" DEBUG
+    if [ "$ret" != 0 ]; then
+        echo "WARNING: ${BASH_SOURCE[0]}:${__BITBAKE_LAST_LINE} exit $ret from '$1'"
+
+        echo "WARNING: Backtrace (BB generated script): "
+        for i in $(seq 1 $((${#FUNCNAME[@]} - 1))); do
+            if [ "$i" -eq 1 ]; then
+                echo -e "	#$((i)): ${FUNCNAME[$i]}, ${BASH_SOURCE[$((i-1))]}, line ${__BITBAKE_LAST_LINE}"
+            else
+                echo -e "	#$((i)): ${FUNCNAME[$i]}, ${BASH_SOURCE[$((i-1))]}, line ${BASH_LINENO[$((i-1))]}"
+            fi
+        done
+    fi
+    exit $ret
+}
+
+bb_bash_debug_handler() {
+    local line=${BASH_LINENO[0]}
+    # For some reason the DEBUG trap trips with lineno=1 when scripts exit; ignore it
+    if [ "$line" -eq 1 ]; then
+        return
+    fi
+
+    # Track the line number of commands as they execute. This is so we can have access to the failing line number
+    # in the EXIT trap. See http://gnu-bash.2382.n7.nabble.com/trap-echo-quot-trap-exit-on-LINENO-quot-EXIT-gt-wrong-linenumber-td3666.html
+    if [ "${FUNCNAME[1]}" != "bb_bash_exit_handler" ]; then
+        __BITBAKE_LAST_LINE=$line
+    fi
+}
+
+case $BASH_VERSION in
+"") trap 'bb_sh_exit_handler' 0
+    set -e
+    ;;
+*)  trap 'bb_bash_exit_handler "$BASH_COMMAND"' 0
+    trap '{ bb_bash_debug_handler; } 2>/dev/null' DEBUG
+    set -e
+    shopt -s extdebug
+    ;;
+esac
+export AR="arm-poky-linux-gnueabi-gcc-ar"
+export AS="arm-poky-linux-gnueabi-as "
+export BUILD_AR="ar"
+export BUILD_AS="as "
+export BUILD_CC="gcc "
+export BUILD_CCLD="gcc "
+export BUILD_CFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export BUILD_CPP="gcc  -E"
+export BUILD_CPPFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/include"
+export BUILD_CXX="g++ "
+export BUILD_CXXFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export BUILD_FC="gfortran "
+export BUILD_LD="ld "
+export BUILD_LDFLAGS="-L/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/lib                         -L/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-O1 -Wl,--allow-shlib-undefined -Wl,--dynamic-linker=/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/lib/ld-linux-x86-64.so.2"
+export BUILD_NM="nm"
+export BUILD_RANLIB="ranlib -D"
+export BUILD_STRIP="strip"
+export CC="arm-poky-linux-gnueabi-gcc  -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8 -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot"
+export CCLD="arm-poky-linux-gnueabi-gcc  -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8 -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot"
+export CC_FOR_BUILD="gcc "
+export CFLAGS=" -O2 -pipe -g -feliminate-unused-debug-types -fmacro-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0=/usr/src/debug/acl/2.3.1-r0                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0=/usr/src/debug/acl/2.3.1-r0                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot=                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native= "
+export CFLAGS_FOR_BUILD="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export CONFIG_SITE="/home/vinh/Yocto/poky/meta/site/endian-little /home/vinh/Yocto/poky/meta/site/arm-common /home/vinh/Yocto/poky/meta/site/arm-32 /home/vinh/Yocto/poky/meta/site/common-linux /home/vinh/Yocto/poky/meta/site/common-glibc /home/vinh/Yocto/poky/meta/site/arm-linux /home/vinh/Yocto/poky/meta/site/common"
+export CPP="arm-poky-linux-gnueabi-gcc -E --sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot  -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8 -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security"
+export CPPFLAGS=""
+export CPPFLAGS_FOR_BUILD="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/include"
+export CPP_FOR_BUILD="gcc  -E"
+export CXX="arm-poky-linux-gnueabi-g++  -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8 -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot"
+export CXXFLAGS=" -O2 -pipe -g -feliminate-unused-debug-types -fmacro-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0=/usr/src/debug/acl/2.3.1-r0                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0=/usr/src/debug/acl/2.3.1-r0                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot=                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native=  -fvisibility-inlines-hidden"
+export CXXFLAGS_FOR_BUILD="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export CXX_FOR_BUILD="g++ "
+export FC="arm-poky-linux-gnueabi-gfortran  -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8 -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot"
+export GETTEXTDATADIRS=":/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/share/gettext"
+export GIT_CEILING_DIRECTORIES="/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0"
+export HOME="/home/vinh"
+export LC_ALL="en_US.UTF-8"
+export LD="arm-poky-linux-gnueabi-ld --sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot "
+export LDFLAGS="-Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed -fmacro-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0=/usr/src/debug/acl/2.3.1-r0                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0=/usr/src/debug/acl/2.3.1-r0                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot=                      -fdebug-prefix-map=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native=  -Wl,-z,relro,-z,now"
+export LDFLAGS_FOR_BUILD="-L/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/lib                         -L/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-O1 -Wl,--allow-shlib-undefined -Wl,--dynamic-linker=/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/lib/ld-linux-x86-64.so.2"
+export LD_FOR_BUILD="ld "
+export LOGNAME="vinh"
+export MAKE="make"
+export NM="arm-poky-linux-gnueabi-gcc-nm"
+export OBJCOPY="arm-poky-linux-gnueabi-objcopy"
+export OBJDUMP="arm-poky-linux-gnueabi-objdump"
+export OMP_NUM_THREADS="4"
+export PATH="/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/usr/bin:/home/vinh/Yocto/poky/scripts:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/bin/arm-poky-linux-gnueabi:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/bin/crossscripts:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/bin:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/bin:/home/vinh/Yocto/poky/bitbake/bin:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools"
+export PERL_HASH_SEED="0"
+export PKG_CONFIG_DIR="/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/lib/pkgconfig"
+export PKG_CONFIG_DISABLE_UNINSTALLED="yes"
+export PKG_CONFIG_LIBDIR="/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/lib/pkgconfig"
+export PKG_CONFIG_PATH="/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/lib/pkgconfig:/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/share/pkgconfig"
+export PKG_CONFIG_SYSROOT_DIR="/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot"
+export PKG_CONFIG_SYSTEM_INCLUDE_PATH="/usr/include"
+export PKG_CONFIG_SYSTEM_LIBRARY_PATH="/lib:/usr/lib"
+export PSEUDO_DISABLED="1"
+export PSEUDO_UNLOAD="1"
+export PYTHONHASHSEED="0"
+export RANLIB="arm-poky-linux-gnueabi-gcc-ranlib"
+export READELF="arm-poky-linux-gnueabi-readelf"
+unset SHELL
+export SOURCE_DATE_EPOCH="1615877002"
+export STRINGS="arm-poky-linux-gnueabi-strings"
+export STRIP="arm-poky-linux-gnueabi-strip"
+export TZ="UTC"
+export USER="vinh"
+export base_bindir="/bin"
+export base_libdir="/lib"
+export base_prefix=""
+export base_sbindir="/sbin"
+export bindir="/usr/bin"
+export datadir="/usr/share"
+export docdir="/usr/share/doc"
+export exec_prefix="/usr"
+export includedir="/usr/include"
+export infodir="/usr/share/info"
+export libdir="/usr/lib"
+export libexecdir="/usr/libexec"
+export localstatedir="/var"
+export lt_cv_sys_lib_dlsearch_path_spec="/usr/lib /lib"
+export mandir="/usr/share/man"
+export nonarch_base_libdir="/lib"
+export nonarch_libdir="/usr/lib"
+export oldincludedir="/usr/include"
+export prefix="/usr"
+export sbindir="/usr/sbin"
+export servicedir="/srv"
+export sharedstatedir="/com"
+export sysconfdir="/etc"
+export systemd_system_unitdir="/lib/systemd/system"
+export systemd_unitdir="/lib/systemd"
+export systemd_user_unitdir="/usr/lib/systemd/user"
+
+# line: 1, file: autogenerated
+do_configure() {
+    autotools_do_configure
+}
+
+# line: 156, file: /home/vinh/Yocto/poky/meta/classes/autotools.bbclass
+autotools_do_configure() {
+	# WARNING: gross hack follows:
+	# An autotools built package generally needs these scripts, however only
+	# automake or libtoolize actually install the current versions of them.
+	# This is a problem in builds that do not use libtool or automake, in the case
+	# where we -need- the latest version of these scripts.  e.g. running a build
+	# for a package whose autotools are old, on an x86_64 machine, which the old
+	# config.sub does not support.  Work around this by installing them manually
+	# regardless.
+
+	PRUNE_M4=""
+
+	for ac in `find /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1 -ignore_readdir_race -name configure.in -o -name configure.ac`; do
+		rm -f `dirname $ac`/configure
+	done
+	if [ -e /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/configure.in -o -e /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/configure.ac ]; then
+		olddir=`pwd`
+		cd /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1
+		mkdir -p /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/share/aclocal
+		ACLOCAL="aclocal --system-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot/usr/share/aclocal/"
+		if [ x"default" = xdefault ]; then
+			acpaths=
+			for i in `find /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1 -ignore_readdir_race -maxdepth 2 -name \*.m4|grep -v 'aclocal.m4'| \
+				grep -v 'acinclude.m4' | sed -e 's,\(.*/\).*$,\1,'|sort -u`; do
+				acpaths="$acpaths -I $i"
+			done
+		else
+			acpaths="default"
+		fi
+		acpaths="$acpaths  -I /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal/"
+		AUTOV=`automake --version | sed -e '1{s/.* //;s/\.[0-9]\+$//};q'`
+		automake --version
+		echo "AUTOV is $AUTOV"
+		if [ -d /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal-$AUTOV ]; then
+			ACLOCAL="$ACLOCAL --automake-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal-$AUTOV"
+		fi
+		# autoreconf is too shy to overwrite aclocal.m4 if it doesn't look
+		# like it was auto-generated.  Work around this by blowing it away
+		# by hand, unless the package specifically asked not to run aclocal.
+		if ! echo --exclude=autopoint --exclude=gtkdocize | grep -q "aclocal"; then
+			rm -f aclocal.m4
+		fi
+		if [ -e configure.in ]; then
+			CONFIGURE_AC=configure.in
+		else
+			CONFIGURE_AC=configure.ac
+		fi
+		if grep -q "^[[:space:]]*AM_GLIB_GNU_GETTEXT" $CONFIGURE_AC; then
+			if grep -q "sed.*POTFILES" $CONFIGURE_AC; then
+				: do nothing -- we still have an old unmodified configure.ac
+	    		else
+				bbnote Executing glib-gettextize --force --copy
+				echo "no" | glib-gettextize --force --copy
+			fi
+		elif [ "acl" != "gettext" ] && grep -q "^[[:space:]]*AM_GNU_GETTEXT" $CONFIGURE_AC; then
+			# We'd call gettextize here if it wasn't so broken...
+			cp /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/share/gettext/config.rpath /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/
+			if [ -d /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/po/ ]; then
+				cp -f /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/share/gettext/po/Makefile.in.in /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/po/
+				if [ ! -e /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/po/remove-potcdate.sin ]; then
+					cp /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot-native/usr/share/gettext/po/remove-potcdate.sin /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/po/
+				fi
+			fi
+			PRUNE_M4="$PRUNE_M4 gettext.m4 iconv.m4 lib-ld.m4 lib-link.m4 lib-prefix.m4 nls.m4 po.m4 progtest.m4"
+		fi
+		mkdir -p m4
+
+		for i in $PRUNE_M4; do
+			find /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1 -ignore_readdir_race -name $i -delete
+		done
+
+		bbnote Executing ACLOCAL=\"$ACLOCAL\" autoreconf -Wcross --verbose --install --force --exclude=autopoint --exclude=gtkdocize $acpaths
+		ACLOCAL="$ACLOCAL" autoreconf -Wcross -Wno-obsolete --verbose --install --force --exclude=autopoint --exclude=gtkdocize $acpaths || die "autoreconf execution failed."
+		cd $olddir
+	fi
+	if [ -e /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/configure ]; then
+		oe_runconf
+	else
+		bbnote "nothing to configure"
+	fi
+}
+
+# line: 21, file: /home/vinh/Yocto/poky/meta/classes/logging.bbclass
+bbnote() {
+	if [ -p /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.832872 ] ; then
+		printf "%b\0" "bbnote $*" > /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.832872
+	else
+		echo "NOTE: $*"
+	fi
+}
+
+# line: 48, file: /home/vinh/Yocto/poky/meta/classes/base.bbclass
+die() {
+	bbfatal_log "$*"
+}
+
+# line: 88, file: /home/vinh/Yocto/poky/meta/classes/autotools.bbclass
+oe_runconf() {
+	# Use relative path to avoid buildpaths in files
+	cfgscript_name="`basename /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/configure`"
+	cfgscript=`python3 -c "import os; print(os.path.relpath(os.path.dirname('/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/acl-2.3.1/configure'), '.'))"`/$cfgscript_name
+	if [ -x "$cfgscript" ] ; then
+		bbnote "Running $cfgscript  --build=x86_64-linux 		  --host=arm-poky-linux-gnueabi 		  --target=arm-poky-linux-gnueabi 		  --prefix=/usr 		  --exec_prefix=/usr 		  --bindir=/usr/bin 		  --sbindir=/usr/sbin 		  --libexecdir=/usr/libexec 		  --datadir=/usr/share 		  --sysconfdir=/etc 		  --sharedstatedir=/com 		  --localstatedir=/var 		  --libdir=/usr/lib 		  --includedir=/usr/include 		  --oldincludedir=/usr/include 		  --infodir=/usr/share/info 		  --mandir=/usr/share/man 		  --disable-silent-rules 		  --disable-dependency-tracking 		  --with-libtool-sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot  --disable-static  --enable-nls $@"
+		if ! CONFIG_SHELL=${CONFIG_SHELL-/bin/bash}  $cfgscript  --build=x86_64-linux 		  --host=arm-poky-linux-gnueabi 		  --target=arm-poky-linux-gnueabi 		  --prefix=/usr 		  --exec_prefix=/usr 		  --bindir=/usr/bin 		  --sbindir=/usr/sbin 		  --libexecdir=/usr/libexec 		  --datadir=/usr/share 		  --sysconfdir=/etc 		  --sharedstatedir=/com 		  --localstatedir=/var 		  --libdir=/usr/lib 		  --includedir=/usr/include 		  --oldincludedir=/usr/include 		  --infodir=/usr/share/info 		  --mandir=/usr/share/man 		  --disable-silent-rules 		  --disable-dependency-tracking 		  --with-libtool-sysroot=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/recipe-sysroot  --disable-static  --enable-nls "$@"; then
+			bbnote "The following config.log files may provide further information."
+			bbnote `find /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build -ignore_readdir_race -type f -name config.log`
+			bbfatal_log "configure failed"
+		fi
+	else
+		bbfatal "no configure script found at $cfgscript"
+	fi
+}
+
+# line: 54, file: /home/vinh/Yocto/poky/meta/classes/logging.bbclass
+bbfatal() {
+	if [ -p /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.832872 ] ; then
+		printf "%b\0" "bbfatal $*" > /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.832872
+	else
+		echo "ERROR: $*"
+	fi
+	exit 1
+}
+
+# line: 66, file: /home/vinh/Yocto/poky/meta/classes/logging.bbclass
+bbfatal_log() {
+	if [ -p /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.832872 ] ; then
+		printf "%b\0" "bbfatal_log $*" > /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/temp/fifo.832872
+	else
+		echo "ERROR: $*"
+	fi
+	exit 1
+}
+
+cd '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build'
+do_configure
+
+# cleanup
+ret=$?
+trap '' 0
+exit $ret

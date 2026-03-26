@@ -1,0 +1,13 @@
+PN: opkg-utils
+PV: 0.5.0
+PR: r0
+PKGV: 0.5.0
+PKGR: r0
+LICENSE: GPL-2.0-or-later
+DESCRIPTION: Additional utilities for the opkg package manager.
+SUMMARY: Additional utilities for the opkg package manager
+SECTION: base
+PKG:opkg-utils-locale: opkg-utils-locale
+FILES:opkg-utils-locale: /usr/share/locale
+FILES_INFO:opkg-utils-locale: {}
+PKGSIZE:opkg-utils-locale: 0

@@ -1,0 +1,18 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:alsa-topology-conf:all-poky-linux:1.2.5.1:r0:allarch:10:
+task=packagedata
+drwx                                                                                       .
+drwx                                                                                       ./pkgdata-pdata-input
+-rw-                   52 86c6b8fea26abe0ea5b7583273c03c228f161212d9ed20dd38b83ec5c27cc511 ./pkgdata-pdata-input/alsa-topology-conf
+drwx                                                                                       ./pkgdata-pdata-input/extended
+-rw-                   42 56063a220acdf73c49a0473242c17a3d20357328850ab9a1bc5dee12d31b8aba ./pkgdata-pdata-input/extended/alsa-topology-conf-src.json.zstd
+-rw-                  174 9f2e8cf41a8c879d4b26c0285025bbc93f141b24e90570ff673a272d005fcd77 ./pkgdata-pdata-input/extended/alsa-topology-conf.json.zstd
+drwx                                                                                       ./pkgdata-pdata-input/runtime
+-rw-                  699 7528119134ff6734f3b547db9529463bd7926cab39e0474b6c3c6b83c7c91787 ./pkgdata-pdata-input/runtime/alsa-topology-conf
+-rw-                  622 67eb832b8e5509a181c0fd323ec8749da40aa4df3a731688bdfc0859491642c4 ./pkgdata-pdata-input/runtime/alsa-topology-conf-src
+-rw-                    0 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 ./pkgdata-pdata-input/runtime/alsa-topology-conf.packaged
+drwx                                                                                       ./pkgdata-pdata-input/runtime-reverse
+lrwx                                                                                       ./pkgdata-pdata-input/runtime-reverse/alsa-topology-conf -> ../runtime/alsa-topology-conf
+drwx                                                                                       ./pkgdata-pdata-input/runtime-rprovides
+drwx                                                                                       ./pkgdata-pdata-input/shlibs2

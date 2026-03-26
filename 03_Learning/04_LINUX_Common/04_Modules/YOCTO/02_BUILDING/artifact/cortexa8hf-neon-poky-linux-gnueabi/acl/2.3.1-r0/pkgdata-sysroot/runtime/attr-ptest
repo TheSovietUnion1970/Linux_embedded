@@ -1,0 +1,29 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-ptest: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains a test directory /usr/lib/attr/ptest for package test purposes.
+SUMMARY:attr-ptest: Utilities for manipulating filesystem extended attributes - Package test files
+RDEPENDS:attr-ptest: attr coreutils gawk make perl perl-module-constant perl-module-cwd perl-module-file-basename perl-module-file-path perl-module-file-spec perl-module-filehandle perl-module-getopt-std perl-module-posix
+RRECOMMENDS:attr-ptest:  ptest-runner
+SECTION:attr-ptest: devel
+PKG:attr-ptest: attr-ptest
+ALLOW_EMPTY:attr-ptest: 1
+FILES:attr-ptest:  /usr/lib/attr/ptest
+FILES_INFO:attr-ptest: {"/usr/lib/attr/ptest/Makefile": 72497, "/usr/lib/attr/ptest/build-aux/ar-lib": 5875, "/usr/lib/attr/ptest/build-aux/compile": 7400, "/usr/lib/attr/ptest/build-aux/config.guess": 49348, "/usr/lib/attr/ptest/build-aux/config.rpath": 18717, "/usr/lib/attr/ptest/build-aux/config.sub": 35276, "/usr/lib/attr/ptest/build-aux/depcomp": 23568, "/usr/lib/attr/ptest/build-aux/install-sh": 15358, "/usr/lib/attr/ptest/build-aux/ltmain.sh": 335534, "/usr/lib/attr/ptest/build-aux/missing": 6878, "/usr/lib/attr/ptest/build-aux/test-driver": 4879, "/usr/lib/attr/ptest/run-ptest": 142, "/usr/lib/attr/ptest/test/Makemodule.am": 234, "/usr/lib/attr/ptest/test/README": 489, "/usr/lib/attr/ptest/test/attr.test": 7015, "/usr/lib/attr/ptest/test/root/getfattr.test": 2113, "/usr/lib/attr/ptest/test/run": 10263, "/usr/lib/attr/ptest/test/sort-getfattr-output": 83}
+FILERDEPENDSFLIST:attr-ptest: /usr/lib/attr/ptest/build-aux/ar-lib /usr/lib/attr/ptest/build-aux/compile /usr/lib/attr/ptest/build-aux/config.guess /usr/lib/attr/ptest/build-aux/config.rpath /usr/lib/attr/ptest/build-aux/config.sub /usr/lib/attr/ptest/build-aux/depcomp /usr/lib/attr/ptest/build-aux/install-sh /usr/lib/attr/ptest/build-aux/missing /usr/lib/attr/ptest/build-aux/test-driver /usr/lib/attr/ptest/run-ptest /usr/lib/attr/ptest/test/run /usr/lib/attr/ptest/test/sort-getfattr-output
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/ar-lib:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/compile:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/config.guess:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/config.rpath:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/config.sub:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/depcomp:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/install-sh:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/missing:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/build-aux/test-driver:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/run-ptest:attr-ptest:  /bin/sh
+FILERDEPENDS:/usr/lib/attr/ptest/test/run:attr-ptest:  /usr/bin/perl
+FILERDEPENDS:/usr/lib/attr/ptest/test/sort-getfattr-output:attr-ptest:  /usr/bin/perl
+PKGSIZE:attr-ptest: 595669

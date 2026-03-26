@@ -1,0 +1,22 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:acl:cortexa8hf-neon-poky-linux-gnueabi:2.3.1:r0:cortexa8hf-neon:10:
+task=package_write_rpm
+drwx                                                                                       .
+drwx                                                                                       ./deploy-rpms
+drwx                                                                                       ./deploy-rpms/cortexa8hf_neon
+-rw-                32325 dbbae1901cfda13094bb9924d6e899a887a0bf7262f9698aa4083c2f3b37a9bd ./deploy-rpms/cortexa8hf_neon/acl-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-               117315 44c83082417446d64d6f4708705995273d2bc96bbbfa60e1f7ec5debf274a2d2 ./deploy-rpms/cortexa8hf_neon/acl-dbg-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                10204 5d5bc401f248798c3c921c2e74e0c65f474dd72c9f0339e2d38135fe8b0a5110 ./deploy-rpms/cortexa8hf_neon/acl-dev-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                59763 11be974521b0b2462eeeca9cd2f353c8b535f1cbd2b15ed91ab26105a228f01b ./deploy-rpms/cortexa8hf_neon/acl-doc-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                10145 69cc09817dea7034549809f6f560bf72df66d6129ceea3ad7d4cc6ff643f3fa7 ./deploy-rpms/cortexa8hf_neon/acl-locale-de-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9271 c09e3525cb12fc4c9af39b4078967b459e9f2178e6d370e4310994d12958fc06 ./deploy-rpms/cortexa8hf_neon/acl-locale-en+boldquot-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9222 1b41a5931000f41d9ee9041aa32576f7668c3c660f3e7fec5cff4529d0f07d8a ./deploy-rpms/cortexa8hf_neon/acl-locale-en+quot-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9665 079fd2a374a1ab60e0cc7348370b4441d53137125d3f42fc9fde2afef1a58cc5 ./deploy-rpms/cortexa8hf_neon/acl-locale-es-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9612 d13643ca32bdf872f95a8625f9e5b571cb6674e9137510e63a3bd518da5590f5 ./deploy-rpms/cortexa8hf_neon/acl-locale-fr-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9679 4252b8568f2ef96575f90ccdb52df474ce6d51d61f29f025f2ef9e10b2de9a6f ./deploy-rpms/cortexa8hf_neon/acl-locale-gl-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9774 0a9000806255efe3d955ecaa83d3f14accb10e1a6b3dfd02453afd0b02c4c856 ./deploy-rpms/cortexa8hf_neon/acl-locale-pl-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                 9560 a7fa5e4df5cd0b81b732bb849fdf7baa8f2f9b7424dcd7a6a735528df5a3f332 ./deploy-rpms/cortexa8hf_neon/acl-locale-sv-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-               190427 0bf93549c43246f639463f8fbf17834f091a74947e58471424d3db70340cbb7f ./deploy-rpms/cortexa8hf_neon/acl-ptest-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                56922 19bdd6d9fdf4f1cf298a630b93809668425116c888c3d2e0037c825eaa8118d2 ./deploy-rpms/cortexa8hf_neon/acl-src-2.3.1-r0.cortexa8hf_neon.rpm
+-rw-                20960 b67c515cf779c2c135e4fac81910a54a2cdea59f642fadb7cbe61f40c5fd6de1 ./deploy-rpms/cortexa8hf_neon/libacl1-2.3.1-r0.cortexa8hf_neon.rpm

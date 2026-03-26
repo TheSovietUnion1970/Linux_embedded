@@ -1,0 +1,14 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-staticdev: ACL allows you to provide different levels of access to files and folders for different users.  This package contains static libraries for software development.
+SUMMARY:acl-staticdev: Utilities for managing POSIX Access Control Lists - Development files (Static Libraries)
+RDEPENDS:acl-staticdev: acl-dev (= 2.3.1-r0)
+SECTION:acl-staticdev: devel
+PKG:acl-staticdev: acl-staticdev
+FILES:acl-staticdev: /usr/lib/*.a /lib/*.a /usr/lib/acl/*.a
+FILES_INFO:acl-staticdev: {}
+PKGSIZE:acl-staticdev: 0

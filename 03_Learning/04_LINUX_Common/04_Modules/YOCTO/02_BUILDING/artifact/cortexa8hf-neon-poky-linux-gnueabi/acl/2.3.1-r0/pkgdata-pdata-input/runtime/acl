@@ -1,0 +1,18 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0
+LICENSE:acl: GPL-2.0-or-later
+DESCRIPTION: ACL allows you to provide different levels of access to files and folders for different users.
+SUMMARY: Utilities for managing POSIX Access Control Lists
+RDEPENDS:acl: glibc (>= 2.35) libacl (>= 2.3.1)
+SECTION: libs
+PKG:acl: acl
+FILES:acl: /usr/bin/* /usr/sbin/* /usr/libexec/* /usr/lib/lib*.so.*             /etc /com /var             /bin/* /sbin/*             /lib/*.so.*             /lib/udev /usr/lib/udev             /lib/udev /usr/lib/udev             /usr/share/acl /usr/lib/acl/*             /usr/share/pixmaps /usr/share/applications             /usr/share/idl /usr/share/omf /usr/share/sounds             /usr/lib/bonobo/servers
+FILES_INFO:acl: {"/usr/bin/chacl": 13696, "/usr/bin/getfacl": 22192, "/usr/bin/setfacl": 30388}
+FILERDEPENDSFLIST:acl: /usr/bin/chacl /usr/bin/getfacl /usr/bin/setfacl
+FILERDEPENDS:/usr/bin/chacl:acl:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.4) libc.so.6(GLIBC_2.34) libacl.so.1(ACL_1.0) libacl.so.1 libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+FILERDEPENDS:/usr/bin/getfacl:acl:  ld-linux-armhf.so.3(GLIBC_2.4) libacl.so.1(ACL_1.0) libc.so.6(GLIBC_2.33) libc.so.6(GLIBC_2.4) libc.so.6(GLIBC_2.34) libacl.so.1 libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+FILERDEPENDS:/usr/bin/setfacl:acl:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.33) libc.so.6(GLIBC_2.34) libc.so.6(GLIBC_2.4) libacl.so.1(ACL_1.0) libacl.so.1 libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+PKGSIZE:acl: 66276

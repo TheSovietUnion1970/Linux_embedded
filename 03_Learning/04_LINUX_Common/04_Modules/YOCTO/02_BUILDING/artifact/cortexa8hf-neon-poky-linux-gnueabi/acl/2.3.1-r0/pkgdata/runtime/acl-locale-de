@@ -1,0 +1,15 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0@EXTENDPRAUTO@
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-locale-de: ACL allows you to provide different levels of access to files and folders for different users.  This package contains language translation files for the de locale.
+SUMMARY:acl-locale-de: Utilities for managing POSIX Access Control Lists - de translations
+RPROVIDES:acl-locale-de: acl-locale de-translation
+RRECOMMENDS:acl-locale-de: virtual-locale-de
+SECTION: libs
+PKG:acl-locale-de: acl-locale-de
+FILES:acl-locale-de: /usr/share/locale/de
+FILES_INFO:acl-locale-de: {"/usr/share/locale/de/LC_MESSAGES/acl.mo": 8722}
+PKGSIZE:acl-locale-de: 8722

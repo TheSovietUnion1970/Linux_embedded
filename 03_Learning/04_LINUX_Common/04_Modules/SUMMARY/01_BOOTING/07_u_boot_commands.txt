@@ -1,0 +1,24 @@
+1. boot.scr
+boot.scr - atomatic script -> boot without stopping at '=>' + load the correct kernel with version
+=> printenv script boot.scr                                                             
+script=boot.scr                                                                                                                         
+scriptaddr=0x80000000  
+
+2. kernel_addr_r (=loadaddr), fdt_addr_r, ramdisk_addr_t
+=> printenv loadaddr kernel_addr_r fdt_addr_r ramdisk_addr_r                    
+loadaddr=0x82000000                                                             
+kernel_addr_r=0x82000000                                                        
+fdt_addr_r=0x88000000                                                           
+ramdisk_addr_r=0x88080000  
+
+3. bootdelay, bootcmd 
+=> printenv bootdelay bootcmd                                                   
+bootdelay=2                                                                     
+bootcmd=if test ${boot_fit} -eq 1; then run update_to_fit; fi; run findfdt; run 
+init_console; run envboot; run distro_bootcmd 
+
+4. mmc
+mmc dev 0	-> switch to dev 0 (SD card)
+mmc part	-> show info
+ext4ls mmc 0:1	-> show dir
+ext4load mmc 0:1 ${kernel_addr_r} /boot/vmlinuz-5.15.177

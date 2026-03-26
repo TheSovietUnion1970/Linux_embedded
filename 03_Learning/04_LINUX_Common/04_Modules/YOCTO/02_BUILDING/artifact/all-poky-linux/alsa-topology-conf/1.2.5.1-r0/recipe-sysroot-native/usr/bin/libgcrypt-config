@@ -1,0 +1,4 @@
+#!/bin/sh
+echo 'ERROR: /home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/usr/bin/libgcrypt-config should not be used, use an alternative such as pkg-config' >&2
+echo '--should-not-have-used-/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/usr/bin/libgcrypt-config'
+exit 1

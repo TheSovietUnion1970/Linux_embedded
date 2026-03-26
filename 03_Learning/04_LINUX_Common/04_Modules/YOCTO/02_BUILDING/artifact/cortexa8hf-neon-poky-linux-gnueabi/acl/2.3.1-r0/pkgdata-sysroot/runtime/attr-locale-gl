@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-gl: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the gl locale.
+SUMMARY:attr-locale-gl: Utilities for manipulating filesystem extended attributes - gl translations
+RPROVIDES:attr-locale-gl: attr-locale gl-translation
+RRECOMMENDS:attr-locale-gl: virtual-locale-gl
+SECTION: libs
+PKG:attr-locale-gl: attr-locale-gl
+FILES:attr-locale-gl: /usr/share/locale/gl
+FILES_INFO:attr-locale-gl: {"/usr/share/locale/gl/LC_MESSAGES/attr.mo": 3666}
+PKGSIZE:attr-locale-gl: 3666

@@ -1,0 +1,53 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are ['/home/vinh/Yocto/poky/meta/recipes-devtools/quilt/quilt-native_0.67.bb:do_populate_sysroot']
+NOTE: Installed into sysroot: ['quilt-native']
+NOTE: Skipping as already exists in sysroot: []
+DEBUG: sed -e 's:^[^/]*/:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/:g' /home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/quilt-native/fixmepath | xargs sed -i -e 's:FIXMESTAGINGDIRTARGET:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot:g; s:FIXMESTAGINGDIRHOST:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native:g' -e 's:FIXME_PSEUDO_SYSROOT:/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-components/x86_64/pseudo-native:g' -e 's:FIXME_HOSTTOOLS_DIR:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools:g' -e 's:FIXME_PKGDATA_DIR:/home/vinh/Yocto/poky/build-vinh/tmp/pkgdata/beaglebone-yocto:g' -e 's:FIXME_PSEUDO_LOCALSTATEDIR:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/pseudo/:g' -e 's:FIXME_LOGFIFO:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/temp/fifo.3986461:g'
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function do_patch
+DEBUG: Executing python function patch_do_patch
+DEBUG: Searching for run-ptest in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Searching for 0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Searching for 0001-test-patch-out-failing-bits.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+NOTE: Applying patch '0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch' (../meta/recipes-support/attr/acl/0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch)
+NOTE: Applying patch '0001-test-patch-out-failing-bits.patch' (../meta/recipes-support/attr/acl/0001-test-patch-out-failing-bits.patch)
+DEBUG: Python function patch_do_patch finished
+DEBUG: Python function do_patch finished
+DEBUG: Executing python function do_qa_patch
+DEBUG: Python function do_qa_patch finished

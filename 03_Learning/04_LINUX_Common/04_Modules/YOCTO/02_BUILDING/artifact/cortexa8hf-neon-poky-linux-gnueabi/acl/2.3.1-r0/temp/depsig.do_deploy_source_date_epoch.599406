@@ -1,0 +1,7 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:acl:cortexa8hf-neon-poky-linux-gnueabi:2.3.1:r0:cortexa8hf-neon:10:
+task=deploy_source_date_epoch
+drwx                                                                                       .
+drwx                                                                                       ./deploy-source-date-epoch
+-rw-                   10 3b194356f407bcc077e30acbd39dd0b211b293eb823728186f0c6f1c530e95f6 ./deploy-source-date-epoch/__source_date_epoch.txt

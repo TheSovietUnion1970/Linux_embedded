@@ -1,0 +1,45 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:alsa-topology-conf:all-poky-linux:1.2.5.1:r0:allarch:10:
+task=package
+drwxr-xr-x       root       root 1615488529                                                                                       ./package
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share/alsa
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share/alsa/topology
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share/alsa/topology/broadwell
+-rw-r--r--       root       root 1615488529                 5937 8c28597081e63a67c2c29c9201d5cfd0910a8288d89b28af74eb0d0c524fa20d ./package/usr/share/alsa/topology/broadwell/broadwell.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share/alsa/topology/bxtrt298
+-rw-r--r--       root       root 1615488529                74488 4e9e092bb71278506ea4d58b6b8e17811ebcc9be5e9a0f796dcd6e74511c2bec ./package/usr/share/alsa/topology/bxtrt298/bxt_i2s.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share/alsa/topology/hda-dsp
+-rw-r--r--       root       root 1615488529               195027 f4727228387bb6d6d9ed66998c2b7ccdd52d85c1f882591b0c3437ded2bae024 ./package/usr/share/alsa/topology/hda-dsp/skl_hda_dsp_generic-tplg.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./package/usr/share/alsa/topology/sklrt286
+-rw-r--r--       root       root 1615488529                66635 a0d5260e25ad5e3e40b2f33eabaa1fe448a33dc2d1a157646c3a7e792fc76705 ./package/usr/share/alsa/topology/sklrt286/skl_i2s.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split
+drwxrwxrwx       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share/alsa
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share/alsa/topology
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share/alsa/topology/broadwell
+-rw-r--r--       root       root 1615488529                 5937 8c28597081e63a67c2c29c9201d5cfd0910a8288d89b28af74eb0d0c524fa20d ./packages-split/alsa-topology-conf/usr/share/alsa/topology/broadwell/broadwell.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share/alsa/topology/bxtrt298
+-rw-r--r--       root       root 1615488529                74488 4e9e092bb71278506ea4d58b6b8e17811ebcc9be5e9a0f796dcd6e74511c2bec ./packages-split/alsa-topology-conf/usr/share/alsa/topology/bxtrt298/bxt_i2s.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share/alsa/topology/hda-dsp
+-rw-r--r--       root       root 1615488529               195027 f4727228387bb6d6d9ed66998c2b7ccdd52d85c1f882591b0c3437ded2bae024 ./packages-split/alsa-topology-conf/usr/share/alsa/topology/hda-dsp/skl_hda_dsp_generic-tplg.conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf/usr/share/alsa/topology/sklrt286
+-rw-r--r--       root       root 1615488529                66635 a0d5260e25ad5e3e40b2f33eabaa1fe448a33dc2d1a157646c3a7e792fc76705 ./packages-split/alsa-topology-conf/usr/share/alsa/topology/sklrt286/skl_i2s.conf
+drwxrwxrwx       root       root 1615488529                                                                                       ./packages-split/alsa-topology-conf-src
+drwxr-xr-x       root       root 1615488529                                                                                       ./pkgdata
+-rw-r--r--       root       root 1615488529                   52 86c6b8fea26abe0ea5b7583273c03c228f161212d9ed20dd38b83ec5c27cc511 ./pkgdata/alsa-topology-conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./pkgdata/extended
+-rw-r--r--       root       root 1615488529                   42 56063a220acdf73c49a0473242c17a3d20357328850ab9a1bc5dee12d31b8aba ./pkgdata/extended/alsa-topology-conf-src.json.zstd
+-rw-r--r--       root       root 1615488529                  174 9f2e8cf41a8c879d4b26c0285025bbc93f141b24e90570ff673a272d005fcd77 ./pkgdata/extended/alsa-topology-conf.json.zstd
+drwxr-xr-x       root       root 1615488529                                                                                       ./pkgdata/runtime
+-rw-r--r--       root       root 1615488529                  713 b43e383f660d7c1150421c82b3b7cdccc5dd2ede89c0fc08e0b734fbbba47a11 ./pkgdata/runtime/alsa-topology-conf
+-rw-r--r--       root       root 1615488529                  636 d638ddb1f960c0a467bfdd10c32854bc89960fe1583be67a0ecaec3cbda4878d ./pkgdata/runtime/alsa-topology-conf-src
+-rw-r--r--       root       root 1615488529                    0 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 ./pkgdata/runtime/alsa-topology-conf.packaged
+drwxr-xr-x       root       root 1615488529                                                                                       ./pkgdata/runtime-reverse
+lrwxrwxrwx       root       root 1615488529                                                                                       ./pkgdata/runtime-reverse/alsa-topology-conf -> ../runtime/alsa-topology-conf
+drwxr-xr-x       root       root 1615488529                                                                                       ./pkgdata/runtime-rprovides
+drwxr-xr-x       root       root 1615488529                                                                                       ./pkgdata/shlibs2

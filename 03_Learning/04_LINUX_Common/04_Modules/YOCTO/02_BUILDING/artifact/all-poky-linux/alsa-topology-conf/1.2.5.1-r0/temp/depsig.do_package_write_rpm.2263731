@@ -1,0 +1,8 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:alsa-topology-conf:all-poky-linux:1.2.5.1:r0:allarch:10:
+task=package_write_rpm
+drwx                                                                                       .
+drwx                                                                                       ./deploy-rpms
+drwx                                                                                       ./deploy-rpms/noarch
+-rw-                21966 93877a0ee21aace82bafce95d07f2f7a8375377e85910dffad3abc506f982761 ./deploy-rpms/noarch/alsa-topology-conf-1.2.5.1-r0.noarch.rpm

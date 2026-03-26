@@ -1,0 +1,13 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-src: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains sources for debugging purposes.
+SUMMARY:attr-src: Utilities for manipulating filesystem extended attributes - Source files
+SECTION:attr-src: devel
+PKG:attr-src: attr-src
+FILES:attr-src: /usr/src/debug
+FILES_INFO:attr-src: {"/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/include/error_context.h": 1569, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/include/misc.h": 954, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/include/walk_tree.h": 1294, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libattr/attr_copy_action.c": 3380, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libattr/attr_copy_check.c": 1026, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libattr/attr_copy_fd.c": 4617, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libattr/attr_copy_file.c": 4594, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libattr/libattr.c": 11200, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libattr/syscalls.c": 2769, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libmisc/high_water_alloc.c": 1334, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libmisc/next_line.c": 1475, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libmisc/quote.c": 1637, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libmisc/unquote.c": 1362, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/libmisc/walk_tree.c": 7047, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/tools/attr.c": 6347, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/tools/getfattr.c": 12767, "/usr/src/debug/attr/2.5.1-r0/attr-2.5.1/tools/setfattr.c": 10902, "/usr/src/debug/attr/2.5.1-r0/build/include/attr/attributes.h": 8004, "/usr/src/debug/attr/2.5.1-r0/build/include/attr/libattr.h": 1411}
+PKGSIZE:attr-src: 83689

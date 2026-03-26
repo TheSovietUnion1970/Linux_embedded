@@ -1,0 +1,16 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-dev: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains symbolic links, header files, and related items necessary for software development.
+SUMMARY:attr-dev: Utilities for manipulating filesystem extended attributes - Development files
+RDEPENDS:attr-dev: attr (= 2.5.1-r0) libattr
+RRECOMMENDS:attr-dev: coreutils-dev gawk-dev glibc-dev libattr-dev make-dev perl-dev perl-module-constant-dev perl-module-cwd-dev perl-module-file-basename-dev perl-module-file-path-dev perl-module-file-spec-dev perl-module-filehandle-dev perl-module-getopt-std-dev perl-module-posix-dev update-alternatives-opkg-dev
+SECTION:attr-dev: devel
+PKG:attr-dev: attr-dev
+ALLOW_EMPTY:attr-dev: 1
+FILES:attr-dev: /usr/include /lib/lib*.so /usr/lib/lib*.so /usr/lib/*.la                 /usr/lib/*.o /usr/lib/pkgconfig /usr/share/pkgconfig                 /usr/share/aclocal /lib/*.o                 /usr/lib/attr/*.la /lib/*.la                 /usr/lib/cmake /usr/share/cmake
+FILES_INFO:attr-dev: {"/usr/include/attr/attributes.h": 8004, "/usr/include/attr/error_context.h": 1569, "/usr/include/attr/libattr.h": 1411, "/usr/lib/libattr.so": 19, "/usr/lib/pkgconfig/libattr.pc": 216}
+PKGSIZE:attr-dev: 11219

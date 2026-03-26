@@ -1,0 +1,13 @@
+PN: alsa-topology-conf
+PV: 1.2.5.1
+PR: r0
+PKGV: 1.2.5.1
+PKGR: r0
+LICENSE: BSD-3-Clause
+DESCRIPTION:alsa-topology-conf-src: Provides a method for audio drivers to load their mixers, routing, PCMs and capabilities from user space at runtime without changing any driver source code.  This package contains sources for debugging purposes.
+SUMMARY:alsa-topology-conf-src: ALSA topology configuration files - Source files
+SECTION:alsa-topology-conf-src: devel
+PKG:alsa-topology-conf-src: alsa-topology-conf-src
+FILES:alsa-topology-conf-src: /usr/src/debug
+FILES_INFO:alsa-topology-conf-src: {}
+PKGSIZE:alsa-topology-conf-src: 0

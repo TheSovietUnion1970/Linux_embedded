@@ -1,0 +1,10 @@
+prefix=${pcfiledir}/../../../usr
+exec_prefix=${pcfiledir}/../../../usr
+libdir=${pcfiledir}/../../../usr/lib
+includedir=${pcfiledir}/../../../usr/include
+
+Name:		libacl
+Description:	A library for POSIX Access Control Lists
+Version:	2.3.1
+Cflags:		-I${includedir}
+Libs:		-L${libdir} -lacl

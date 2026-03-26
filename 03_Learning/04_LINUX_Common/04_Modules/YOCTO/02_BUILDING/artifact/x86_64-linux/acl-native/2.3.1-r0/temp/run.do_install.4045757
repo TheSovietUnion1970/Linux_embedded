@@ -1,0 +1,204 @@
+#!/bin/sh
+
+__BITBAKE_LAST_LINE=0
+
+# Emit a useful diagnostic if something fails:
+bb_sh_exit_handler() {
+    ret=$?
+    if [ "$ret" != 0 ]; then
+        echo "WARNING: exit code $ret from a shell command."
+    fi
+    exit $ret
+}
+
+bb_bash_exit_handler() {
+    ret=$?
+    { set +x; } > /dev/null
+    trap "" DEBUG
+    if [ "$ret" != 0 ]; then
+        echo "WARNING: ${BASH_SOURCE[0]}:${__BITBAKE_LAST_LINE} exit $ret from '$1'"
+
+        echo "WARNING: Backtrace (BB generated script): "
+        for i in $(seq 1 $((${#FUNCNAME[@]} - 1))); do
+            if [ "$i" -eq 1 ]; then
+                echo -e "	#$((i)): ${FUNCNAME[$i]}, ${BASH_SOURCE[$((i-1))]}, line ${__BITBAKE_LAST_LINE}"
+            else
+                echo -e "	#$((i)): ${FUNCNAME[$i]}, ${BASH_SOURCE[$((i-1))]}, line ${BASH_LINENO[$((i-1))]}"
+            fi
+        done
+    fi
+    exit $ret
+}
+
+bb_bash_debug_handler() {
+    local line=${BASH_LINENO[0]}
+    # For some reason the DEBUG trap trips with lineno=1 when scripts exit; ignore it
+    if [ "$line" -eq 1 ]; then
+        return
+    fi
+
+    # Track the line number of commands as they execute. This is so we can have access to the failing line number
+    # in the EXIT trap. See http://gnu-bash.2382.n7.nabble.com/trap-echo-quot-trap-exit-on-LINENO-quot-EXIT-gt-wrong-linenumber-td3666.html
+    if [ "${FUNCNAME[1]}" != "bb_bash_exit_handler" ]; then
+        __BITBAKE_LAST_LINE=$line
+    fi
+}
+
+case $BASH_VERSION in
+"") trap 'bb_sh_exit_handler' 0
+    set -e
+    ;;
+*)  trap 'bb_bash_exit_handler "$BASH_COMMAND"' 0
+    trap '{ bb_bash_debug_handler; } 2>/dev/null' DEBUG
+    set -e
+    shopt -s extdebug
+    ;;
+esac
+export AR="ar"
+export AS="as "
+export BUILD_AR="ar"
+export BUILD_AS="as "
+export BUILD_CC="gcc "
+export BUILD_CCLD="gcc "
+export BUILD_CFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export BUILD_CPP="gcc  -E"
+export BUILD_CPPFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include"
+export BUILD_CXX="g++ "
+export BUILD_CXXFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export BUILD_FC="gfortran "
+export BUILD_LD="ld "
+export BUILD_LDFLAGS="-L/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -L/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-O1 -Wl,--allow-shlib-undefined -Wl,--dynamic-linker=/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/lib/ld-linux-x86-64.so.2"
+export BUILD_NM="nm"
+export BUILD_RANLIB="ranlib -D"
+export BUILD_STRIP="strip"
+export CC="gcc "
+export CCLD="gcc "
+export CC_FOR_BUILD="gcc "
+export CFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export CFLAGS_FOR_BUILD="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export CONFIG_SITE="/home/vinh/Yocto/poky/meta/site/endian-little /home/vinh/Yocto/poky/meta/site/common-linux /home/vinh/Yocto/poky/meta/site/common-glibc /home/vinh/Yocto/poky/meta/site/x86_64-linux /home/vinh/Yocto/poky/meta/site/common"
+export CPP="gcc  -E"
+export CPPFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include"
+export CPPFLAGS_FOR_BUILD="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include"
+export CPP_FOR_BUILD="gcc  -E"
+export CXX="g++ "
+export CXXFLAGS="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export CXXFLAGS_FOR_BUILD="-isystem/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include -O2 -pipe"
+export CXX_FOR_BUILD="g++ "
+export FC="gfortran "
+export GIT_CEILING_DIRECTORIES="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0"
+export HOME="/home/vinh"
+export LC_ALL="en_US.UTF-8"
+export LD="ld "
+export LDFLAGS="-L/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -L/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-O1 -Wl,--allow-shlib-undefined -Wl,--dynamic-linker=/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/lib/ld-linux-x86-64.so.2"
+export LDFLAGS_FOR_BUILD="-L/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -L/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath-link,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib                         -Wl,-rpath,/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib                         -Wl,-O1 -Wl,--allow-shlib-undefined -Wl,--dynamic-linker=/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/lib/ld-linux-x86-64.so.2"
+export LD_FOR_BUILD="ld "
+export LOGNAME="vinh"
+export MAKE="make"
+export NM="nm"
+export OBJCOPY="objcopy"
+export OBJDUMP="objdump"
+export OMP_NUM_THREADS="4"
+export PATH="/home/vinh/Yocto/poky/scripts/native-intercept:/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/usr/bin:/home/vinh/Yocto/poky/scripts:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin/x86_64-linux:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/bin:/home/vinh/Yocto/poky/bitbake/bin:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools"
+export PERL_HASH_SEED="0"
+export PKG_CONFIG_DIR="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib/pkgconfig"
+export PKG_CONFIG_DISABLE_UNINSTALLED="yes"
+export PKG_CONFIG_LIBDIR="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib/pkgconfig"
+export PKG_CONFIG_PATH="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib/pkgconfig:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/pkgconfig"
+export PKG_CONFIG_SYSROOT_DIR=""
+unset PKG_CONFIG_SYSTEM_INCLUDE_PATH
+unset PKG_CONFIG_SYSTEM_LIBRARY_PATH
+export PSEUDO_DISABLED="1"
+export PSEUDO_UNLOAD="1"
+export PYTHONHASHSEED="0"
+export RANLIB="ranlib -D"
+export READELF="readelf"
+unset SHELL
+export SOURCE_DATE_EPOCH="1615877002"
+export STRINGS="strings"
+export STRIP="strip"
+export TZ="UTC"
+export USER="vinh"
+export base_bindir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/bin"
+export base_libdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib"
+export base_prefix="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native"
+export base_sbindir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/sbin"
+export bindir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin"
+export datadir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share"
+export docdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/doc"
+export exec_prefix="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr"
+export includedir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include"
+export infodir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/info"
+export libdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib"
+export libexecdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/libexec"
+export localstatedir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/var"
+export lt_cv_sys_lib_dlsearch_path_spec="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib /lib /lib64 /usr/lib /usr/lib64"
+export mandir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/man"
+export nonarch_base_libdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib"
+export nonarch_libdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib"
+export oldincludedir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include"
+export prefix="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr"
+export sbindir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/sbin"
+export servicedir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/srv"
+export sharedstatedir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/com"
+export sysconfdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/etc"
+export systemd_system_unitdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib/systemd/system"
+export systemd_unitdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/lib/systemd"
+export systemd_user_unitdir="/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib/systemd/user"
+
+# line: 1, file: autogenerated
+do_install() {
+    autotools_do_install
+}
+
+# line: 242, file: /home/vinh/Yocto/poky/meta/classes/autotools.bbclass
+autotools_do_install() {
+	oe_runmake 'DESTDIR=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/image' install
+	# Info dir listing isn't interesting at this point so remove it if it exists.
+	if [ -e "/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/image/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/info/dir" ]; then
+		rm -f /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/image/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/info/dir
+	fi
+}
+
+# line: 57, file: /home/vinh/Yocto/poky/meta/classes/base.bbclass
+oe_runmake() {
+	oe_runmake_call "$@" || die "oe_runmake failed"
+}
+
+# line: 48, file: /home/vinh/Yocto/poky/meta/classes/base.bbclass
+die() {
+	bbfatal_log "$*"
+}
+
+# line: 52, file: /home/vinh/Yocto/poky/meta/classes/base.bbclass
+oe_runmake_call() {
+	bbnote make -j 4  "$@"
+	make -j 4  "$@"
+}
+
+# line: 66, file: /home/vinh/Yocto/poky/meta/classes/logging.bbclass
+bbfatal_log() {
+	if [ -p /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/temp/fifo.4045757 ] ; then
+		printf "%b\0" "bbfatal_log $*" > /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/temp/fifo.4045757
+	else
+		echo "ERROR: $*"
+	fi
+	exit 1
+}
+
+# line: 21, file: /home/vinh/Yocto/poky/meta/classes/logging.bbclass
+bbnote() {
+	if [ -p /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/temp/fifo.4045757 ] ; then
+		printf "%b\0" "bbnote $*" > /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/temp/fifo.4045757
+	else
+		echo "NOTE: $*"
+	fi
+}
+
+cd '/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/build'
+do_install
+
+# cleanup
+ret=$?
+trap '' 0
+exit $ret

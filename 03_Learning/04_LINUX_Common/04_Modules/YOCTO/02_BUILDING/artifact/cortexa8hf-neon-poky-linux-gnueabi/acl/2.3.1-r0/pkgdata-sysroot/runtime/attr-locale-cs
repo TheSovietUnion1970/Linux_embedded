@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-cs: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the cs locale.
+SUMMARY:attr-locale-cs: Utilities for manipulating filesystem extended attributes - cs translations
+RPROVIDES:attr-locale-cs: attr-locale cs-translation
+RRECOMMENDS:attr-locale-cs: virtual-locale-cs
+SECTION: libs
+PKG:attr-locale-cs: attr-locale-cs
+FILES:attr-locale-cs: /usr/share/locale/cs
+FILES_INFO:attr-locale-cs: {"/usr/share/locale/cs/LC_MESSAGES/attr.mo": 3860}
+PKGSIZE:attr-locale-cs: 3860

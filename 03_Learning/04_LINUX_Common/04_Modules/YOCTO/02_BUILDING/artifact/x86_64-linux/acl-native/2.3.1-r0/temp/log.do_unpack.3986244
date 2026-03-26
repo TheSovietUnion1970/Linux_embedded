@@ -1,0 +1,53 @@
+DEBUG: Executing python function do_unpack
+DEBUG: Executing python function base_do_unpack
+NOTE: Unpacking /home/vinh/Yocto/poky/build-vinh/downloads/acl-2.3.1.tar.gz to /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/
+DEBUG: Searching for run-ptest in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+NOTE: Unpacking /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/run-ptest to /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/
+DEBUG: Searching for 0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+NOTE: Unpacking /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch to /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/
+DEBUG: Searching for 0001-test-patch-out-failing-bits.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+NOTE: Unpacking /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/0001-test-patch-out-failing-bits.patch to /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/
+DEBUG: Python function base_do_unpack finished
+DEBUG: Python function do_unpack finished
+DEBUG: Executing python function create_source_date_epoch_stamp
+DEBUG: Newest file found: /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/acl-2.3.1/po/en@quot.gmo
+DEBUG: SOURCE_DATE_EPOCH: 1615877002
+DEBUG: Python function create_source_date_epoch_stamp finished
+DEBUG: Executing python function do_qa_unpack
+DEBUG: Python function do_qa_unpack finished

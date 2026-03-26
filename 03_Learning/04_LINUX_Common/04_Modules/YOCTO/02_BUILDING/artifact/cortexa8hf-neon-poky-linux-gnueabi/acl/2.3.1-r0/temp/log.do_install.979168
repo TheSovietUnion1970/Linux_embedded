@@ -1,0 +1,67 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are ['/home/vinh/Yocto/poky/meta/recipes-core/glibc/glibc_2.35.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/gcc/gcc-cross_11.5.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/gcc/gcc-runtime_11.5.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-cross_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-native_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/quilt/quilt-native_0.67.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-support/attr/attr_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-core/gettext/gettext_0.21.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/autoconf/autoconf_2.71.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/automake/automake_1.16.5.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/patch/patch_2.7.6.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']
+NOTE: Installed into sysroot: []
+NOTE: Skipping as already exists in sysroot: ['glibc', 'gcc-cross-arm', 'gcc-runtime', 'libtool-cross', 'libtool-native', 'quilt-native', 'attr', 'gettext-native', 'autoconf-native', 'automake-native', 'patch-native', 'pseudo-native', 'libgcc', 'linux-libc-headers', 'opkg-utils', 'xz-native', 'zlib-native', 'mpfr-native', 'binutils-cross-arm', 'zstd-native', 'gmp-native', 'texinfo-dummy-native', 'gnu-config-native', 'libmpc-native', 'flex-native', 'm4-native', 'gettext-minimal-native', 'attr-native']
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function autotools_aclocals
+DEBUG: SITE files ['endian-little', 'bit-32', 'arm-common', 'arm-32', 'common-linux', 'common-glibc', 'arm-linux', 'arm-linux-gnueabi', 'common']
+DEBUG: Python function autotools_aclocals finished
+DEBUG: Executing shell function do_install
+NOTE: make -j 4 DESTDIR=/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image install
+Making install in po
+make[1]: Entering directory '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build/po'
+installing ../../acl-2.3.1/po/de.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/de/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/es.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/es/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/fr.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/fr/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/gl.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/gl/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/pl.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/pl/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/sv.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/sv/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/en@boldquot.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/en@boldquot/LC_MESSAGES/acl.mo
+installing ../../acl-2.3.1/po/en@quot.gmo as /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/locale/en@quot/LC_MESSAGES/acl.mo
+if test "acl" = "gettext-tools"; then \
+  /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/gettext/po; \
+  for file in Makefile.in.in remove-potcdate.sin quot.sed boldquot.sed en@quot.header en@boldquot.header insert-header.sin Rules-quot   Makevars.template; do \
+    /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 ../../acl-2.3.1/po/$file \
+		    /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/gettext/po/$file; \
+  done; \
+  for file in Makevars; do \
+    rm -f /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/gettext/po/$file; \
+  done; \
+else \
+  : ; \
+fi
+make[1]: Leaving directory '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build/po'
+make[1]: Entering directory '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build'
+make[2]: Entering directory '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build'
+subst_install_header() { file=`echo "$1" | sed -e 's,^.*/,,'`; sed -e "s/\<EXPORT\>/extern/" < "$1" > "include/$file.t" || exit 1; /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p "$2" || exit 1; /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 "include/$file.t" "$2/$file" || exit 1; rm -f "include/$file.t"; }; subst_install_header "../acl-2.3.1/include/libacl.h" "/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/include/acl"
+subst_install_header() { file=`echo "$1" | sed -e 's,^.*/,,'`; sed -e "s/\<EXPORT\>/extern/" < "$1" > "include/$file.t" || exit 1; /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p "$2" || exit 1; /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 "include/$file.t" "$2/$file" || exit 1; rm -f "include/$file.t"; }; subst_install_header "../acl-2.3.1/include/acl.h" "/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/include/sys"
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/doc/acl'
+ /bin/bash ./libtool   --mode=install /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c   libacl.la '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 ../acl-2.3.1/doc/extensions.txt ../acl-2.3.1/doc/CHANGES ../acl-2.3.1/doc/COPYING ../acl-2.3.1/doc/COPYING.LGPL ../acl-2.3.1/doc/libacl.txt ../acl-2.3.1/doc/PORTING '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/doc/acl'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/man/man1'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/man/man3'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/man/man5'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 ../acl-2.3.1/man/man1/chacl.1 ../acl-2.3.1/man/man1/getfacl.1 ../acl-2.3.1/man/man1/setfacl.1 '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/man/man1'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 ../acl-2.3.1/man/man5/acl.5 '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/man/man5'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 ../acl-2.3.1/man/man3/acl_add_perm.3 ../acl-2.3.1/man/man3/acl_calc_mask.3 ../acl-2.3.1/man/man3/acl_check.3 ../acl-2.3.1/man/man3/acl_clear_perms.3 ../acl-2.3.1/man/man3/acl_cmp.3 ../acl-2.3.1/man/man3/acl_copy_entry.3 ../acl-2.3.1/man/man3/acl_copy_ext.3 ../acl-2.3.1/man/man3/acl_copy_int.3 ../acl-2.3.1/man/man3/acl_create_entry.3 ../acl-2.3.1/man/man3/acl_delete_def_file.3 ../acl-2.3.1/man/man3/acl_delete_entry.3 ../acl-2.3.1/man/man3/acl_delete_perm.3 ../acl-2.3.1/man/man3/acl_dup.3 ../acl-2.3.1/man/man3/acl_entries.3 ../acl-2.3.1/man/man3/acl_equiv_mode.3 ../acl-2.3.1/man/man3/acl_error.3 ../acl-2.3.1/man/man3/acl_extended_fd.3 ../acl-2.3.1/man/man3/acl_extended_file.3 ../acl-2.3.1/man/man3/acl_extended_file_nofollow.3 ../acl-2.3.1/man/man3/acl_free.3 ../acl-2.3.1/man/man3/acl_from_mode.3 ../acl-2.3.1/man/man3/acl_from_text.3 ../acl-2.3.1/man/man3/acl_get_entry.3 ../acl-2.3.1/man/man3/acl_get_fd.3 ../acl-2.3.1/man/man3/acl_get_file.3 ../acl-2.3.1/man/man3/acl_get_perm.3 ../acl-2.3.1/man/man3/acl_get_permset.3 ../acl-2.3.1/man/man3/acl_get_qualifier.3 ../acl-2.3.1/man/man3/acl_get_tag_type.3 ../acl-2.3.1/man/man3/acl_init.3 ../acl-2.3.1/man/man3/acl_set_fd.3 ../acl-2.3.1/man/man3/acl_set_file.3 ../acl-2.3.1/man/man3/acl_set_permset.3 ../acl-2.3.1/man/man3/acl_set_qualifier.3 ../acl-2.3.1/man/man3/acl_set_tag_type.3 ../acl-2.3.1/man/man3/acl_size.3 ../acl-2.3.1/man/man3/acl_to_any_text.3 ../acl-2.3.1/man/man3/acl_to_text.3 ../acl-2.3.1/man/man3/acl_valid.3 '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/share/man/man3'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib/pkgconfig'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c -m 644 libacl.pc '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib/pkgconfig'
+libtool: install: /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c .libs/libacl.so.1.1.2301 /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib/libacl.so.1.1.2301
+libtool: install: (cd /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib && { ln -s -f libacl.so.1.1.2301 libacl.so.1 || { rm -f libacl.so.1 && ln -s libacl.so.1.1.2301 libacl.so.1; }; })
+libtool: install: (cd /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib && { ln -s -f libacl.so.1.1.2301 libacl.so || { rm -f libacl.so && ln -s libacl.so.1.1.2301 libacl.so; }; })
+libtool: install: /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c .libs/libacl.lai /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/lib/libacl.la
+libtool: warning: remember to run 'libtool --finish /usr/lib'
+ /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/bin'
+  /bin/bash ./libtool   --mode=install /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c chacl getfacl setfacl '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/bin'
+libtool: warning: 'libacl.la' has not been installed in '/usr/lib'
+libtool: install: /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c .libs/chacl /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/bin/chacl
+libtool: warning: 'libacl.la' has not been installed in '/usr/lib'
+libtool: install: /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c .libs/getfacl /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/bin/getfacl
+libtool: warning: 'libacl.la' has not been installed in '/usr/lib'
+libtool: install: /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c .libs/setfacl /home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/image/usr/bin/setfacl
+make[2]: Leaving directory '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build'
+make[1]: Leaving directory '/home/vinh/Yocto/poky/build-vinh/tmp/work/cortexa8hf-neon-poky-linux-gnueabi/acl/2.3.1-r0/build'
+DEBUG: Shell function do_install finished
+DEBUG: Executing shell function remove_libtool_la
+DEBUG: Shell function remove_libtool_la finished

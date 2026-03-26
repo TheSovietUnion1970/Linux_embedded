@@ -1,0 +1,26 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are []
+NOTE: Installed into sysroot: []
+NOTE: Skipping as already exists in sysroot: []
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function do_fetch
+DEBUG: Executing python function base_do_fetch
+DEBUG: Trying PREMIRRORS
+DEBUG: For url ['https', 'www.alsa-project.org', '/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2', '', '', OrderedDict()] comparing ['git', 'sourceware.org', '/git/glibc.git', '', '', OrderedDict()] to ['https', 'downloads.yoctoproject.org', '/mirror/sources/', '', '', OrderedDict()]
+DEBUG: For url ['https', 'www.alsa-project.org', '/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2', '', '', OrderedDict()] comparing ['git', 'sourceware.org', '/git/binutils-gdb.git', '', '', OrderedDict()] to ['https', 'downloads.yoctoproject.org', '/mirror/sources/', '', '', OrderedDict()]
+DEBUG: Trying Upstream
+DEBUG: Fetching https://www.alsa-project.org/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2 using command '/usr/bin/env wget -t 2 -T 100 -O /home/vinh/Yocto/poky/build-vinh/downloads/alsa-topology-conf-1.2.5.1.tar.bz2.tmp -P /home/vinh/Yocto/poky/build-vinh/downloads 'https://www.alsa-project.org/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2''
+DEBUG: Fetcher accessed the network with the command /usr/bin/env wget -t 2 -T 100 -O /home/vinh/Yocto/poky/build-vinh/downloads/alsa-topology-conf-1.2.5.1.tar.bz2.tmp -P /home/vinh/Yocto/poky/build-vinh/downloads 'https://www.alsa-project.org/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2'
+DEBUG: Running export PSEUDO_DISABLED=1; export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"; export SSH_AUTH_SOCK="/run/user/1000/keyring/ssh"; export PATH="/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/usr/bin:/home/vinh/Yocto/poky/scripts:/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/usr/bin/allarch-poky-linux:/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot/usr/bin/crossscripts:/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/usr/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/usr/bin:/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/all-poky-linux/alsa-topology-conf/1.2.5.1-r0/recipe-sysroot-native/bin:/home/vinh/Yocto/poky/bitbake/bin:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools"; export HOME="/home/vinh"; /usr/bin/env wget -t 2 -T 100 -O /home/vinh/Yocto/poky/build-vinh/downloads/alsa-topology-conf-1.2.5.1.tar.bz2.tmp -P /home/vinh/Yocto/poky/build-vinh/downloads 'https://www.alsa-project.org/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2' --progress=dot -v
+--2026-03-21 04:39:19--  https://www.alsa-project.org/files/pub/lib/alsa-topology-conf-1.2.5.1.tar.bz2
+Resolving www.alsa-project.org (www.alsa-project.org)... 45.14.194.44
+Connecting to www.alsa-project.org (www.alsa-project.org)|45.14.194.44|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 11697 (11K) [application/octet-stream]
+Saving to: ‘/home/vinh/Yocto/poky/build-vinh/downloads/alsa-topology-conf-1.2.5.1.tar.bz2.tmp’
+
+
+2026-03-21 04:39:20 (95.9 MB/s) - ‘/home/vinh/Yocto/poky/build-vinh/downloads/alsa-topology-conf-1.2.5.1.tar.bz2.tmp’ saved [11697/11697]
+
+DEBUG: Python function base_do_fetch finished
+DEBUG: Python function do_fetch finished

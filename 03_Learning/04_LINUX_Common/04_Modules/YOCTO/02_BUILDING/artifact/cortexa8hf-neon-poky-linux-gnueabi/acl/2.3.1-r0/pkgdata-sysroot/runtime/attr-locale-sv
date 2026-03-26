@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-sv: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the sv locale.
+SUMMARY:attr-locale-sv: Utilities for manipulating filesystem extended attributes - sv translations
+RPROVIDES:attr-locale-sv: attr-locale sv-translation
+RRECOMMENDS:attr-locale-sv: virtual-locale-sv
+SECTION: libs
+PKG:attr-locale-sv: attr-locale-sv
+FILES:attr-locale-sv: /usr/share/locale/sv
+FILES_INFO:attr-locale-sv: {"/usr/share/locale/sv/LC_MESSAGES/attr.mo": 2278}
+PKGSIZE:attr-locale-sv: 2278

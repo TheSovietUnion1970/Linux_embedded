@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-de: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the de locale.
+SUMMARY:attr-locale-de: Utilities for manipulating filesystem extended attributes - de translations
+RPROVIDES:attr-locale-de: attr-locale de-translation
+RRECOMMENDS:attr-locale-de: virtual-locale-de
+SECTION: libs
+PKG:attr-locale-de: attr-locale-de
+FILES:attr-locale-de: /usr/share/locale/de
+FILES_INFO:attr-locale-de: {"/usr/share/locale/de/LC_MESSAGES/attr.mo": 6268}
+PKGSIZE:attr-locale-de: 6268

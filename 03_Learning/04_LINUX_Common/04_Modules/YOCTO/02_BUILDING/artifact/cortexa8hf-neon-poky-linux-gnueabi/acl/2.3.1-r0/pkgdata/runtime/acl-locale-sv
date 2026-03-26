@@ -1,0 +1,15 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0@EXTENDPRAUTO@
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-locale-sv: ACL allows you to provide different levels of access to files and folders for different users.  This package contains language translation files for the sv locale.
+SUMMARY:acl-locale-sv: Utilities for managing POSIX Access Control Lists - sv translations
+RPROVIDES:acl-locale-sv: acl-locale sv-translation
+RRECOMMENDS:acl-locale-sv: virtual-locale-sv
+SECTION: libs
+PKG:acl-locale-sv: acl-locale-sv
+FILES:acl-locale-sv: /usr/share/locale/sv
+FILES_INFO:acl-locale-sv: {"/usr/share/locale/sv/LC_MESSAGES/acl.mo": 6612}
+PKGSIZE:acl-locale-sv: 6612

@@ -1,0 +1,174 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are ['/home/vinh/Yocto/poky/meta/recipes-core/gettext/gettext-minimal-native_0.21.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/libtool/libtool-native_2.4.7.bb:do_populate_sysroot', '/home/vinh/Yocto/poky/meta/recipes-devtools/quilt/quilt-native_0.67.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/autoconf/autoconf_2.71.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-devtools/automake/automake_1.16.5.bb:do_populate_sysroot', 'virtual:native:/home/vinh/Yocto/poky/meta/recipes-support/attr/attr_2.5.1.bb:do_populate_sysroot']
+NOTE: Installed into sysroot: []
+NOTE: Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'quilt-native', 'autoconf-native', 'automake-native', 'attr-native', 'texinfo-dummy-native', 'gnu-config-native', 'm4-native']
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing shell function autotools_preconfigure
+DEBUG: Shell function autotools_preconfigure finished
+DEBUG: Executing python function autotools_aclocals
+DEBUG: SITE files ['endian-little', 'common-linux', 'common-glibc', 'bit-64', 'x86_64-linux', 'common']
+DEBUG: Python function autotools_aclocals finished
+DEBUG: Executing shell function do_configure
+automake (GNU automake) 1.16.5
+Copyright (C) 2021 Free Software Foundation, Inc.
+License GPLv2+: GNU GPL version 2 or later <https://gnu.org/licenses/gpl-2.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Tom Tromey <tromey@redhat.com>
+       and Alexandre Duret-Lutz <adl@gnu.org>.
+AUTOV is 1.16
+NOTE: Executing ACLOCAL="aclocal --system-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal/ --automake-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal-1.16" autoreconf -Wcross --verbose --install --force --exclude=autopoint --exclude=gtkdocize -I /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/acl-2.3.1/m4/
+autoreconf: export WARNINGS=cross,no-obsolete
+autoreconf: Entering directory '.'
+autoreconf: running: aclocal --system-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal/ --automake-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal-1.16 -I /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/acl-2.3.1/m4/ --force -I m4
+autoreconf: configure.ac: tracing
+autoreconf: running: libtoolize --copy --force
+libtoolize: putting auxiliary files in AC_CONFIG_AUX_DIR, 'build-aux'.
+libtoolize: copying file 'build-aux/ltmain.sh'
+libtoolize: putting macros in AC_CONFIG_MACRO_DIRS, 'm4'.
+libtoolize: copying file 'm4/libtool.m4'
+libtoolize: copying file 'm4/ltoptions.m4'
+libtoolize: copying file 'm4/ltsugar.m4'
+libtoolize: copying file 'm4/ltversion.m4'
+libtoolize: copying file 'm4/lt~obsolete.m4'
+autoreconf: configure.ac: not using Intltool
+autoreconf: configure.ac: not using Gtkdoc
+autoreconf: running: aclocal --system-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal/ --automake-acdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/aclocal-1.16 -I /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/acl-2.3.1/m4/ --force -I m4
+autoreconf: running: /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin/autoconf --include=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/acl-2.3.1/m4/ --force
+autoreconf: running: /home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin/autoheader --include=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/acl-2.3.1/m4/ --force
+autoreconf: running: automake --add-missing --copy --force-missing
+configure.ac:26: installing 'build-aux/compile'
+configure.ac:23: installing 'build-aux/missing'
+Makefile.am: installing 'build-aux/depcomp'
+autoreconf: Leaving directory '.'
+NOTE: Running ../acl-2.3.1/configure  --build=x86_64-linux 		  --host=x86_64-linux 		  --target=x86_64-linux 		  --prefix=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr 		  --exec_prefix=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr 		  --bindir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin 		  --sbindir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/sbin 		  --libexecdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/libexec 		  --datadir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share 		  --sysconfdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/etc 		  --sharedstatedir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/com 		  --localstatedir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/var 		  --libdir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/lib 		  --includedir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include 		  --oldincludedir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/include 		  --infodir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/info 		  --mandir=/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/share/man 		  --disable-silent-rules 		  --disable-dependency-tracking 		    --disable-static  --disable-nls 
+configure: loading site script /home/vinh/Yocto/poky/meta/site/endian-little
+configure: loading site script /home/vinh/Yocto/poky/meta/site/common-linux
+configure: loading site script /home/vinh/Yocto/poky/meta/site/common-glibc
+configure: loading site script /home/vinh/Yocto/poky/meta/site/x86_64-linux
+configure: loading site script /home/vinh/Yocto/poky/meta/site/common
+checking for a BSD-compatible install... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/install -c
+checking whether build environment is sane... yes
+checking for a race-free mkdir -p... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking whether make supports nested variables... (cached) yes
+checking for x86_64-linux-gcc... gcc 
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether gcc  accepts -g... yes
+checking for gcc  option to enable C11 features... none needed
+checking whether gcc  understands -c and -o together... yes
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of gcc ... none
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... yes
+checking for wchar.h... yes
+checking for minix/config.h... no
+checking whether it is safe to define __EXTENSIONS__... yes
+checking whether _XOPEN_SOURCE should be defined... no
+checking whether __attribute__((visibility())) is supported... yes
+checking whether byte ordering is bigendian... (cached) no
+checking for special C compiler options needed for large files... no
+checking for _FILE_OFFSET_BITS value needed for large files... no
+checking for x86_64-linux-ar... ar
+checking the archiver (ar) interface... ar
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking how to print strings... printf
+checking for a sed that does not truncate output... (cached) sed
+checking for grep that handles long lines and -e... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/grep
+checking for egrep... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/grep -E
+checking for fgrep... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/grep -F
+checking for ld used by gcc ... ld 
+checking if the linker (ld ) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... nm
+checking the name lister (nm) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for ld  option to reload object files... -r
+checking for x86_64-linux-file... no
+checking for file... file
+checking for x86_64-linux-objdump... objdump
+checking how to recognize dependent libraries... pass_all
+checking for x86_64-linux-dlltool... no
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for x86_64-linux-ar... (cached) ar
+checking for archiver @FILE support... @
+checking for x86_64-linux-strip... strip
+checking for x86_64-linux-ranlib... ranlib -D
+checking command to parse nm output from gcc  object... ok
+checking for sysroot... no
+checking for a working dd... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/dd
+checking how to truncate binary pipes... /home/vinh/Yocto/poky/build-vinh/tmp/hosttools/dd bs=4096 count=1
+checking for x86_64-linux-mt... no
+checking for mt... no
+checking if : is a manifest tool... no
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc  supports -fno-rtti -fno-exceptions... no
+checking for gcc  option to produce PIC... -fPIC -DPIC
+checking if gcc  PIC flag -fPIC -DPIC works... yes
+checking if gcc  static flag -static works... yes
+checking if gcc  supports -c -o file.o... yes
+checking if gcc  supports -c -o file.o... (cached) yes
+checking whether the gcc  linker (ld  -m elf_x86_64) supports shared libraries... yes
+checking whether -lc should be explicitly linked in... no
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... no
+checking whether NLS is requested... no
+checking for msgfmt... no
+checking for gmsgfmt... :
+checking for xgettext... no
+checking for msgmerge... no
+checking for ld... ld  -m elf_x86_64
+checking if the linker (ld  -m elf_x86_64) is GNU ld... yes
+checking for shared library run path origin... done
+checking 32-bit host C ABI... no
+checking how to run the C preprocessor... gcc  -E
+checking for ELF binary format... yes
+checking for the common suffixes of directories in the library search path... lib,lib,lib64
+checking for CFPreferencesCopyAppValue... no
+checking for CFLocaleCopyCurrent... no
+checking whether to use NLS... no
+checking for attr/error_context.h... yes
+checking for getxattr in -lattr... yes
+configure: creating ./config.status
+config.status: creating libacl.pc
+config.status: creating Makefile
+config.status: creating po/Makefile.in
+config.status: creating include/config.h
+config.status: executing depfiles commands
+config.status: executing libtool commands
+config.status: executing po-directories commands
+config.status: creating po/POTFILES
+config.status: creating po/Makefile
+config.status: executing include/acl commands
+config.status: executing include/sys commands
+DEBUG: Shell function do_configure finished
+DEBUG: Executing python function do_qa_configure
+NOTE: Checking autotools environment for common misconfiguration
+NOTE: Checking configure output for unrecognised options
+DEBUG: Python function do_qa_configure finished
+DEBUG: Executing shell function autotools_postconfigure
+DEBUG: Shell function autotools_postconfigure finished

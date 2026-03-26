@@ -1,0 +1,70 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are []
+NOTE: Installed into sysroot: []
+NOTE: Skipping as already exists in sysroot: []
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function do_fetch
+DEBUG: Executing python function base_do_fetch
+DEBUG: Trying PREMIRRORS
+DEBUG: For url ['https', 'download.savannah.gnu.org', '/releases/acl/acl-2.3.1.tar.gz', '', '', OrderedDict()] comparing ['git', 'sourceware.org', '/git/glibc.git', '', '', OrderedDict()] to ['https', 'downloads.yoctoproject.org', '/mirror/sources/', '', '', OrderedDict()]
+DEBUG: For url ['https', 'download.savannah.gnu.org', '/releases/acl/acl-2.3.1.tar.gz', '', '', OrderedDict()] comparing ['git', 'sourceware.org', '/git/binutils-gdb.git', '', '', OrderedDict()] to ['https', 'downloads.yoctoproject.org', '/mirror/sources/', '', '', OrderedDict()]
+DEBUG: Trying Upstream
+DEBUG: Fetching https://download.savannah.gnu.org/releases/acl/acl-2.3.1.tar.gz using command '/usr/bin/env wget -t 2 -T 100 -O /home/vinh/Yocto/poky/build-vinh/downloads/acl-2.3.1.tar.gz.tmp -P /home/vinh/Yocto/poky/build-vinh/downloads 'https://download.savannah.gnu.org/releases/acl/acl-2.3.1.tar.gz''
+DEBUG: Fetcher accessed the network with the command /usr/bin/env wget -t 2 -T 100 -O /home/vinh/Yocto/poky/build-vinh/downloads/acl-2.3.1.tar.gz.tmp -P /home/vinh/Yocto/poky/build-vinh/downloads 'https://download.savannah.gnu.org/releases/acl/acl-2.3.1.tar.gz'
+DEBUG: Running export PSEUDO_DISABLED=1; export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"; export SSH_AUTH_SOCK="/run/user/1000/keyring/ssh"; export PATH="/home/vinh/Yocto/poky/scripts/native-intercept:/home/vinh/Yocto/poky/build-vinh/tmp/sysroots-uninative/x86_64-linux/usr/bin:/home/vinh/Yocto/poky/scripts:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin/x86_64-linux:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/usr/bin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/sbin:/home/vinh/Yocto/poky/build-vinh/tmp/work/x86_64-linux/acl-native/2.3.1-r0/recipe-sysroot-native/bin:/home/vinh/Yocto/poky/bitbake/bin:/home/vinh/Yocto/poky/build-vinh/tmp/hosttools"; export HOME="/home/vinh"; /usr/bin/env wget -t 2 -T 100 -O /home/vinh/Yocto/poky/build-vinh/downloads/acl-2.3.1.tar.gz.tmp -P /home/vinh/Yocto/poky/build-vinh/downloads 'https://download.savannah.gnu.org/releases/acl/acl-2.3.1.tar.gz' --progress=dot -v
+--2026-03-21 03:34:03--  https://download.savannah.gnu.org/releases/acl/acl-2.3.1.tar.gz
+Resolving download.savannah.gnu.org (download.savannah.gnu.org)... 2001:470:142:5::200, 209.51.188.200
+Connecting to download.savannah.gnu.org (download.savannah.gnu.org)|2001:470:142:5::200|:443... connected.
+HTTP request sent, awaiting response... 302 Moved Temporarily
+Location: https://nongnu.niranjan.co/acl/acl-2.3.1.tar.gz [following]
+--2026-03-21 03:34:05--  https://nongnu.niranjan.co/acl/acl-2.3.1.tar.gz
+Resolving nongnu.niranjan.co (nongnu.niranjan.co)... 2001:bc8:304d::1, 51.158.149.147
+Connecting to nongnu.niranjan.co (nongnu.niranjan.co)|2001:bc8:304d::1|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 518292 (506K) [application/octet-stream]
+Saving to: ‘/home/vinh/Yocto/poky/build-vinh/downloads/acl-2.3.1.tar.gz.tmp’
+
+
+2026-03-21 03:34:10 (150 KB/s) - ‘/home/vinh/Yocto/poky/build-vinh/downloads/acl-2.3.1.tar.gz.tmp’ saved [518292/518292]
+
+DEBUG: Searching for run-ptest in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Searching for 0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Searching for 0001-test-patch-out-failing-bits.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/x86-64
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Python function base_do_fetch finished
+DEBUG: Python function do_fetch finished

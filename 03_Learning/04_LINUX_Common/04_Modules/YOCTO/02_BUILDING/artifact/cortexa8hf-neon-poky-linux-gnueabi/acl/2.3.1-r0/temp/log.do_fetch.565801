@@ -1,0 +1,57 @@
+DEBUG: Executing python function extend_recipe_sysroot
+NOTE: Direct dependencies are []
+NOTE: Installed into sysroot: []
+NOTE: Skipping as already exists in sysroot: []
+DEBUG: Python function extend_recipe_sysroot finished
+DEBUG: Executing python function do_fetch
+DEBUG: Executing python function base_do_fetch
+DEBUG: Searching for run-ptest in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Searching for 0001-tests-do-not-hardcode-the-build-path-into-a-helper-l.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Searching for 0001-test-patch-out-failing-bits.patch in paths:
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/poky
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/beaglebone-yocto
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/armv7a
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/arm
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl-2.3.1/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/acl/
+    /home/vinh/Yocto/poky/meta/recipes-support/attr/files/
+DEBUG: Python function base_do_fetch finished
+DEBUG: Python function do_fetch finished

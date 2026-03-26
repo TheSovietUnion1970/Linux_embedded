@@ -1,0 +1,22 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE:attr: GPL-2.0-or-later
+DESCRIPTION: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.
+SUMMARY: Utilities for manipulating filesystem extended attributes
+RDEPENDS:attr: update-alternatives-opkg glibc (>= 2.35) libattr (>= 2.5.1)
+SECTION: libs
+PKG:attr: attr
+FILES:attr: /usr/bin/* /usr/sbin/* /usr/libexec/* /usr/lib/lib*.so.*             /etc /com /var             /bin/* /sbin/*             /lib/*.so.*             /lib/udev /usr/lib/udev             /lib/udev /usr/lib/udev             /usr/share/attr /usr/lib/attr/*             /usr/share/pixmaps /usr/share/applications             /usr/share/idl /usr/share/omf /usr/share/sounds             /usr/lib/bonobo/servers
+FILES_INFO:attr: {"/etc/xattr.conf": 681, "/usr/bin/attr": 9600, "/usr/bin/getfattr": 18032, "/usr/bin/setfattr.attr": 13852}
+pkg_postinst:attr: #!/bin/sh\nset -e\n\tupdate-alternatives --install /usr/bin/setfattr setfattr /usr/bin/setfattr.attr 100\n
+pkg_prerm:attr: #!/bin/sh\nset -e\n\tupdate-alternatives --remove  setfattr /usr/bin/setfattr.attr\n
+FILERPROVIDESFLIST:attr:  /usr/bin/setfattr.attr
+FILERPROVIDES:/usr/bin/setfattr.attr:attr:  /usr/bin/setfattr
+FILERDEPENDSFLIST:attr: /usr/bin/attr /usr/bin/getfattr /usr/bin/setfattr.attr
+FILERDEPENDS:/usr/bin/attr:attr:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.4) libc.so.6(GLIBC_2.34) libattr.so.1(ATTR_1.2) libattr.so.1(ATTR_1.0) libattr.so.1 libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+FILERDEPENDS:/usr/bin/getfattr:attr:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.33) libc.so.6(GLIBC_2.4) libc.so.6(GLIBC_2.34) libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+FILERDEPENDS:/usr/bin/setfattr.attr:attr:  ld-linux-armhf.so.3(GLIBC_2.4) libc.so.6(GLIBC_2.4) libc.so.6(GLIBC_2.34) libc.so.6 ld-linux-armhf.so.3 rtld(GNU_HASH)
+PKGSIZE:attr: 42165

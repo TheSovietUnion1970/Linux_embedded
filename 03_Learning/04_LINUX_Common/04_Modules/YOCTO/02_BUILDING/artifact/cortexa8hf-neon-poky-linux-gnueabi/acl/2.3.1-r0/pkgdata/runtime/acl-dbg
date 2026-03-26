@@ -1,0 +1,15 @@
+PN: acl
+PV: 2.3.1
+PR: r0
+PKGV: 2.3.1
+PKGR: r0@EXTENDPRAUTO@
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:acl-dbg: ACL allows you to provide different levels of access to files and folders for different users.  This package contains ELF symbols and related sources for debugging purposes.
+SUMMARY:acl-dbg: Utilities for managing POSIX Access Control Lists - Debugging files
+RRECOMMENDS:acl-dbg: glibc-dbg libacl-dbg libattr-dbg
+SECTION:acl-dbg: devel
+PKG:acl-dbg: acl-dbg
+ALLOW_EMPTY:acl-dbg: 1
+FILES:acl-dbg: /usr/lib/debug /usr/lib/debug-static /usr/src/debug
+FILES_INFO:acl-dbg: {"/usr/bin/.debug/chacl": 24252, "/usr/bin/.debug/getfacl": 50152, "/usr/bin/.debug/setfacl": 76640, "/usr/lib/.debug/libacl.so.1.1.2301": 140468, "/usr/lib/acl/ptest/.libs/.debug/libtestlookup.so.0.0.0": 20272}
+PKGSIZE:acl-dbg: 311784

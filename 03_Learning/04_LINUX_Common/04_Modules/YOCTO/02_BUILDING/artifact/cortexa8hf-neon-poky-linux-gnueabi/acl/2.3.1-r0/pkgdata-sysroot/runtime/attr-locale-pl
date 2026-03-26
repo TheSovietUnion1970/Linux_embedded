@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-locale-pl: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains language translation files for the pl locale.
+SUMMARY:attr-locale-pl: Utilities for manipulating filesystem extended attributes - pl translations
+RPROVIDES:attr-locale-pl: attr-locale pl-translation
+RRECOMMENDS:attr-locale-pl: virtual-locale-pl
+SECTION: libs
+PKG:attr-locale-pl: attr-locale-pl
+FILES:attr-locale-pl: /usr/share/locale/pl
+FILES_INFO:attr-locale-pl: {"/usr/share/locale/pl/LC_MESSAGES/attr.mo": 3696}
+PKGSIZE:attr-locale-pl: 3696

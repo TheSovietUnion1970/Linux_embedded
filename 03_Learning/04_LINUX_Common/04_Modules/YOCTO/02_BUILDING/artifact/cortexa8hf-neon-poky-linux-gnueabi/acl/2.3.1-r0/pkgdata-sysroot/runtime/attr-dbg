@@ -1,0 +1,15 @@
+PN: attr
+PV: 2.5.1
+PR: r0
+PKGV: 2.5.1
+PKGR: r0
+LICENSE: LGPL-2.1-or-later & GPL-2.0-or-later
+DESCRIPTION:attr-dbg: Implement the ability for a user to attach name:value pairs to objects within the XFS filesystem.  This package contains ELF symbols and related sources for debugging purposes.
+SUMMARY:attr-dbg: Utilities for manipulating filesystem extended attributes - Debugging files
+RRECOMMENDS:attr-dbg: glibc-dbg libattr-dbg
+SECTION:attr-dbg: devel
+PKG:attr-dbg: attr-dbg
+ALLOW_EMPTY:attr-dbg: 1
+FILES:attr-dbg: /usr/lib/debug /usr/lib/debug-static /usr/src/debug
+FILES_INFO:attr-dbg: {"/usr/bin/.debug/attr": 17800, "/usr/bin/.debug/getfattr": 41144, "/usr/bin/.debug/setfattr.attr": 34008, "/usr/lib/.debug/libattr.so.1.1.2501": 46632}
+PKGSIZE:attr-dbg: 139584

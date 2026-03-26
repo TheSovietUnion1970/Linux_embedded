@@ -1,0 +1,5 @@
+OEOuthashBasic
+14
+SSTATE_PKGSPEC=sstate:alsa-topology-conf:all-poky-linux:1.2.5.1:r0:allarch:10:
+task=package_qa
+drwx                                                                                       .
