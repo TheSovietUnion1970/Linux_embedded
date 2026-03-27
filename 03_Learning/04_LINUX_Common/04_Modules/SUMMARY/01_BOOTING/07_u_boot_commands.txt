@@ -22,3 +22,61 @@ mmc dev 0	-> switch to dev 0 (SD card)
 mmc part	-> show info
 ext4ls mmc 0:1	-> show dir
 ext4load mmc 0:1 ${kernel_addr_r} /boot/vmlinuz-5.15.177
+
+====================
+5. Custom bootcmd
+setenv bootcmd 'mmc dev 0; echo "mmc dev 0 done"; setenv bootargs "console=ttyO0,115200n8 root=/dev/mmcblk0p1 ro rootfstype=ext4 rootwait";echo "=== Loading kernel ==="; ext4load mmc 0:1 ${kernel_addr_r} /boot/vmlinuz-5.15.177; echo "=== Loading dtb ==="; ext4load mmc 0:1 ${fdt_addr_r} /boot/dtbs/5.15.177/am335x-boneblack.dtb; echo "=== Booting kernel ==="; bootz ${kernel_addr_r} - ${fdt_addr_r}'
+
+OR
+
+setenv bootcmd 'mmc dev 0; echo "mmc dev 0 done"; setenv bootargs "console=ttyO0,115200n8 root=/dev/mmcblk0p1 ro rootfstype=ext4 rootwait";echo "=== Loading kernel ==="; ext4load mmc 0:1 ${loadaddr} /boot/vmlinuz-5.15.177; ext4load mmc 0:1 ${ramdisk_addr_r} /boot/initrd.img-5.15.177; echo "=== Loading dtb ==="; ext4load mmc 0:1 ${fdtaddr} /boot/dtbs/5.15.177/am335x-boneblack.dtb; echo "=== Booting kernel ==="; bootz ${loadaddr} ${ramdisk_addr_r} ${fdtaddr}'
+
+THEN: => boot
+
+
+         ===== PRATICE -> create dual rootfs:
+export DISK=/dev/sda
+
+sudo dd if=/dev/zero of=${DISK} bs=1M count=10
+sudo dd if=/home/vinh/MLO of=${DISK} count=2 seek=1 bs=128k
+sudo dd if=/home/vinh/u-boot.img of=${DISK} count=4 seek=1 bs=384k
+
+
+sudo umount ${DISK}* 2>/dev/null || true
+sudo parted ${DISK} --script mklabel msdos
+sudo parted ${DISK} --script mkpart primary ext4 4.2MiB 8GiB
+sudo parted ${DISK} --script mkpart primary ext4 8GiB 100%
+sudo partprobe ${DISK}
+sudo mkfs.ext4 -L rootfsA -O ^metadata_csum,^64bit ${DISK}1
+sudo mkfs.ext4 -L rootfsB -O ^metadata_csum,^64bit ${DISK}2
+
+
+export rootA=rootfsA1
+sudo tar xfvp /home/vinh/build_BBB_custom/debian-11.5-minimal-armhf-2022-10-06/armhf-rootfs-debian-bullseye.tar -C /media/vinh/${rootA}/
+sync
+sudo touch /media/vinh/${rootA}/boot/uEnv.txt
+sudo sh -c "echo 'uname_r=5.15.1' >> /media/vinh/${rootA}/boot/uEnv.txt"
+sudo cp -v /home/vinh/zImage /media/vinh/${rootA}/boot/vmlinuz-5.15.1
+sudo mkdir -p /media/vinh/${rootA}/boot/dtbs/
+sudo cp -v /home/vinh/am335x-boneblack.dtb /media/vinh/${rootA}/boot/dtbs/
+sudo mkdir -p /media/vinh/${rootA}/lib/modules/
+sudo cp -r /home/vinh/lib/modules/5.15.177/ /media/vinh/${rootA}/lib/modules/
+sudo mv -v /media/vinh/${rootA}/lib/modules/5.15.177 /media/vinh/${rootA}/lib/modules/5.15.1
+
+setenv bootcmd 'mmc dev 0; echo "mmc dev 0 done"; setenv bootargs "console=ttyO0,115200n8 root=/dev/mmcblk0p1 ro rootfstype=ext4 rootwait";echo "=== Loading kernel ==="; ext4load mmc 0:1 ${kernel_addr_r} /boot/vmlinuz-5.15.1; echo "=== Loading dtb ==="; ext4load mmc 0:1 ${fdt_addr_r} /boot/dtbs/am335x-boneblack.dtb; echo "=== Booting kernel ==="; bootz ${kernel_addr_r} - ${fdt_addr_r}'
+
+
+export rootB=rootfsB
+sudo tar xfvp /home/vinh/build_BBB_custom/debian-11.5-minimal-armhf-2022-10-06/armhf-rootfs-debian-bullseye.tar -C /media/vinh/${rootB}/
+sync
+sudo touch /media/vinh/${rootB}/boot/uEnv.txt
+sudo sh -c "echo 'uname_r=5.15.2' >> /media/vinh/${rootB}/boot/uEnv.txt"
+sudo cp -v /home/vinh/zImage /media/vinh/${rootB}/boot/vmlinuz-5.15.2
+sudo mkdir -p /media/vinh/${rootB}/boot/dtbs/
+sudo cp -v /home/vinh/am335x-boneblack.dtb /media/vinh/${rootB}/boot/dtbs/
+sudo mkdir -p /media/vinh/${rootB}/lib/modules/
+sudo cp -r /home/vinh/lib/modules/5.15.177/ /media/vinh/${rootB}/lib/modules/
+sudo mv -v /media/vinh/${rootB}/lib/modules/5.15.177 /media/vinh/${rootB}/lib/modules/5.15.2
+
+
+setenv bootcmd 'mmc dev 0; echo "mmc dev 0 done"; setenv bootargs "console=ttyO0,115200n8 root=/dev/mmcblk0p2 ro rootfstype=ext4 rootwait";echo "=== Loading kernel ==="; ext4load mmc 0:2 ${kernel_addr_r} /boot/vmlinuz-5.15.2; echo "=== Loading dtb ==="; ext4load mmc 0:2 ${fdt_addr_r} /boot/dtbs/am335x-boneblack.dtb; echo "=== Booting kernel ==="; bootz ${kernel_addr_r} - ${fdt_addr_r}'

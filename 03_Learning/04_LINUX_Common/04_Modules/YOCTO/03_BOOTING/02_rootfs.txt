@@ -1,5 +1,6 @@
 After raw uboot:
 
+############## 1 PARTITION #####################
 # ======== PRE-PARTITION ===
 // Unmounting old partitions
 sudo umount ${DISK}* 2>/dev/null || true
@@ -17,7 +18,30 @@ sudo mkfs.ext4 -L rootfs -O ^metadata_csum,^64bit ${DISK}1
 sudo mkdir -p /media/rootfs/
 sudo mount ${DISK}1 /media/rootfs/
 
-# ======== INSTALL STUFF ===
+############## 2 PARTITIONs #####################
+# Unmount anything first
+sudo umount ${DISK}* 2>/dev/null || true
+
+# Create partition table
+sudo parted ${DISK} --script mklabel msdos
+
+# Partition 1: rootfsA (~7.8GB)
+sudo parted ${DISK} --script mkpart primary ext4 4.2MiB 8GiB
+
+# Partition 2: rootfsB (takes the rest of the card)
+sudo parted ${DISK} --script mkpart primary ext4 8GiB 100%
+
+# Update partition table
+sudo partprobe ${DISK}
+
+# Format the two rootfs partitions
+echo "Formatting rootfsA..."
+sudo mkfs.ext4 -L rootfsA -O ^metadata_csum,^64bit ${DISK}1
+
+echo "Formatting rootfsB..."
+sudo mkfs.ext4 -L rootfsB -O ^metadata_csum,^64bit ${DISK}2
+
+############## INSTALL STUFF #####################
 // fs
 sudo tar xfvp /home/vinh/build_BBB_custom/debian-11.5-minimal-armhf-2022-10-06/armhf-rootfs-debian-bullseye.tar -C /media/rootfs/
 sync
