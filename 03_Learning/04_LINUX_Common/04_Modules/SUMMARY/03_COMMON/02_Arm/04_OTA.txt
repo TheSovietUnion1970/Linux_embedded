@@ -1,0 +1,5 @@
+Over the air - wirelessly 
+
+2 partitions A and B
+1st update - B is loaded and verified -> if ok, B is active, A becomes inactive (fallback)
+2nd update - A is loaded and verified -> if of, A is active, B becomes inactive (fallback)

@@ -1,0 +1,5 @@
+x86 -> PCI devices -> CPU - scan - boot/runtime
+SoC -> MMIO        -> CPU - X scan		=> need device tree
+
+* device tree - static/boot time
+* SoC is not aware of MMIO -> need device tree
