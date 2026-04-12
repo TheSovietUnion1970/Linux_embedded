@@ -1022,24 +1022,146 @@ err:
 	return -ENOMEM;
 }
 
-static int wl12xx_set_power_on(struct wl1271 *wl)
+// #include <linux/mmc/sdio.h>
+#include <linux/mmc/sdio_func.h>
+// #include <linux/mmc/sdio_ids.h>
+#include <linux/mmc/card.h>
+#include <linux/mmc/host.h>
+
+int V_power_on(struct wl1271 *wl)
+{
+	int ret;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct mmc_card *card = func->card;
+	//printk("V_power_on -> 0x%x 0x%x %x\n", wl->dev->parent, func, card);
+
+	ret = pm_runtime_get_sync(&card->dev);
+	if (ret < 0) {
+		pm_runtime_put_noidle(&card->dev);
+		printk("Failed -> V_power_on\n");
+
+		return ret;
+	}
+
+	sdio_claim_host(func);
+
+	mmc_hw_reset(card->host);
+	sdio_enable_func(func);
+
+	sdio_release_host(func);
+
+	return 0;
+}
+
+int V_power_off(struct wl1271 *wl)
+{
+	int ret;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct mmc_card *card = func->card;
+	//printk("V_power_on -> 0x%x 0x%x %x\n", wl->dev->parent, func, card);
+
+	ret = pm_runtime_get_sync(&card->dev);
+	if (ret < 0) {
+		pm_runtime_put_noidle(&card->dev);
+		printk("Failed -> V_power_on\n");
+
+		return ret;
+	}
+
+	sdio_claim_host(func);
+	sdio_disable_func(func);
+	sdio_release_host(func);
+
+	/* Let runtime PM know the card is powered off */
+	pm_runtime_put(&card->dev);
+
+	return 0;
+}
+
+int V_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed)
+{
+	int ret = 0;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+
+	sdio_claim_host(func);
+
+	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
+	// 	addr, len);
+
+	if (fixed)
+		ret = sdio_writesb(func, addr, &var, len);
+	else
+		ret = sdio_memcpy_toio(func, addr, &var, len);
+	
+
+	sdio_release_host(func);
+
+	return ret;
+}
+
+int V_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p)
 {
 	int ret;
 
+	/* copy partition info */
+	memcpy(&wl->curr_part, p, sizeof(*p));
+
+	ret = V_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
+	if (ret < 0)
+		goto out;
+
+	ret = V_sdio_raw_write(wl, HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
+	if (ret < 0)
+		goto out;
+
+out:
+	return ret;
+}
+
+static int wl12xx_set_power_on(struct wl1271 *wl)
+{
+	int ret;
+	printk("wl12xx_set_power_on\n");
+
 	msleep(WL1271_PRE_POWER_ON_SLEEP);
-	ret = wl1271_power_on(wl);
+	ret = V_power_on(wl);
 	if (ret < 0)
 		goto out;
 	msleep(WL1271_POWER_ON_SLEEP);
-	wl1271_io_reset(wl);
-	wl1271_io_init(wl);
+	// wl1271_io_reset(wl);
+	// wl1271_io_init(wl);
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = V_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
-	/* ELP module wake up */
-	ret = wlcore_fw_wakeup(wl);
+	/* ELP module wake up = Enhanced Low Power */
+	// ret = wlcore_fw_wakeup(wl);
+	V_sdio_raw_write(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
 	if (ret < 0)
 		goto fail;
 
@@ -1047,7 +1169,7 @@ out:
 	return ret;
 
 fail:
-	wl1271_power_off(wl);
+	V_power_off(wl);
 	return ret;
 }
 
@@ -6604,6 +6726,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	else
 		wl->irq_flags |= IRQF_ONESHOT;
 
+	// V_
 	ret = wl12xx_set_power_on(wl);
 	if (ret < 0)
 		goto out_free_nvs;
@@ -6782,19 +6905,20 @@ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 	wl->pdev = pdev;
 	platform_set_drvdata(pdev, wl);
 
-	if (pdev_data->family && pdev_data->family->nvs_name) {
-		nvs_name = pdev_data->family->nvs_name;
-		ret = request_firmware_nowait(THIS_MODULE, FW_ACTION_UEVENT,
-					      nvs_name, &pdev->dev, GFP_KERNEL,
-					      wl, wlcore_nvs_cb);
-		if (ret < 0) {
-			wl1271_error("request_firmware_nowait failed for %s: %d",
-				     nvs_name, ret);
-			complete_all(&wl->nvs_loading_complete);
-		}
-	} else {
-		wlcore_nvs_cb(NULL, wl);
-	}
+	// if (pdev_data->family && pdev_data->family->nvs_name) {
+	// 	nvs_name = pdev_data->family->nvs_name;
+	// 	ret = request_firmware_nowait(THIS_MODULE, FW_ACTION_UEVENT,
+	// 				      nvs_name, &pdev->dev, GFP_KERNEL,
+	// 				      wl, wlcore_nvs_cb);
+	// 	if (ret < 0) {
+	// 		wl1271_error("request_firmware_nowait failed for %s: %d",
+	// 			     nvs_name, ret);
+	// 		complete_all(&wl->nvs_loading_complete);
+	// 	}
+	// } else {
+	// 	wlcore_nvs_cb(NULL, wl);
+	// }
+	wlcore_nvs_cb(NULL, wl);
 
 	wl->dev->driver->pm = &wlcore_pm_ops;
 	pm_runtime_set_autosuspend_delay(wl->dev, 50);

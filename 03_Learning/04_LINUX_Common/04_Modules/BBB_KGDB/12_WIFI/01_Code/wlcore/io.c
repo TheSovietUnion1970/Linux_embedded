@@ -137,6 +137,7 @@ int wlcore_set_partition(struct wl1271 *wl,
 	wl1271_debug(DEBUG_IO, "mem3_start %08X mem3_size %08X",
 		     p->mem3.start, p->mem3.size);
 
+	//ret = V_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
 	ret = wlcore_raw_write32(wl, HW_PART0_START_ADDR, p->mem.start);
 	if (ret < 0)
 		goto out;

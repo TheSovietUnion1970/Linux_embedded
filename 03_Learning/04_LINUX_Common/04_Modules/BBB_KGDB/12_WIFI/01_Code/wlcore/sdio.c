@@ -132,6 +132,8 @@ static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 	struct sdio_func *func = dev_to_sdio_func(glue->dev);
 	struct mmc_card *card = func->card;
 
+	printk("wl12xx_sdio_power_on -> 0x%x 0x%x %x\n", glue->dev, func, card);
+
 	ret = pm_runtime_get_sync(&card->dev);
 	if (ret < 0) {
 		pm_runtime_put_noidle(&card->dev);
