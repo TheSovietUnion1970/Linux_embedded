@@ -1,0 +1,15 @@
+1. Lack of dep
+/home/vinh/Yocto/poky/build-vinh1/tmp/hosttools/ld: pp_ctl.o: in function S_outside_integer': | pp_ctl.c:(.text+0x21b): undefined reference to Perl_sv_2nv_flags'
+  -> DEPENDS += "perl-native"
+  
+2. Old artifacts
+  -> cleanall
+  
+3. seperate components
+  -> instead of creating *.wic
+  -> seperate u-boot, kernel, modules
+  -> debug u-boot
+  
+4. OOM killer -> fail silently
+  -> Add BB_NUM_THREADS
+         PARALLEL_MAKE 

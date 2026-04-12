@@ -1,5 +1,6 @@
 After formatting:
 
+############## RAW #####################
 # === WIPE FIRST 10MB OF DISK ===
 // Wiping the first 10MB of $DISK
 sudo dd if=/dev/zero of=${DISK} bs=1M count=10
@@ -12,3 +13,14 @@ sudo dd if=/home/vinh/MLO of=${DISK} count=2 seek=1 bs=128k
 sudo dd if=/home/vinh/u-boot.img of=${DISK} count=4 seek=1 bs=384k
 
 With these commands above (MLO + uboot), the prompt is shown but ERROR: No partition found (no Linux, rootfs)
+
+############## 1 FAT16 PARTITION #####################
+sudo umount ${DISK}* 2>/dev/null || true
+sudo parted ${DISK} --script mklabel msdos
+
+sudo parted ${DISK} --script mkpart primary fat32 512B 50MB
+sudo partprobe ${DISK}
+
+sudo mkfs.fat -F 16 -a -n "boot" ${DISK}1
+sudo parted ${DISK} --script set 1 boot on
+  -> copy MLO and u-boot.img into partition FAT boot
