@@ -1,0 +1,1 @@
+cmd_/home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl/wl18xx/Module.symvers := sed 's/\.ko$$/\.o/' /home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl/wl18xx/modules.order | scripts/mod/modpost -m   -o /home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl/wl18xx/Module.symvers -e -i Module.symvers   -T -

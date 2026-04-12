@@ -10,3 +10,6 @@ sudo rmmod wlcore
 
 sudo insmod wlc.ko
 sudo insmod wl18.ko
+
+
+setenv bootcmd 'mmc dev 0; echo "mmc dev 0 done"; setenv bootargs "console=ttyS0,115200n8 root=/dev/mmcblk0p1 ro rootfstype=ext4 rootwait";echo "=== Loading kernel ==="; ext4load mmc 0:1 ${kernel_addr_r} /boot/vmlinuz-5.15.177; echo "=== Loading dtb ==="; ext4load mmc 0:1 ${fdt_addr_r} /boot/dtbs/5.15.177/am335x-bonegreen-wireless.dtb; echo "=== Booting kernel ==="; bootz ${kernel_addr_r} - ${fdt_addr_r}'  
