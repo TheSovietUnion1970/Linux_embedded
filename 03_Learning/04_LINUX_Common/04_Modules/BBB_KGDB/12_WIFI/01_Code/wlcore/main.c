@@ -1960,7 +1960,7 @@ static int wl1271_op_start(struct ieee80211_hw *hw)
 {
 	wl1271_debug(DEBUG_MAC80211, "mac80211 start");
 
-	printk("VV_ wl1271_op_start\n");
+	//printk("VV_ wl1271_op_start\n");
 
 	/*
 	 * We have to delay the booting of the hardware because
@@ -2586,9 +2586,10 @@ adjust_cab_queue:
 static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
 {
-	printk("VV_ wl1271_op_add_interface\n");
+	//printk("VV_ wl1271_op_add_interface\n");
 	struct wl1271 *wl = hw->priv;
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	//struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	struct vif_counter_data vif_count;
 	int ret = 0;
 	u8 role_type;
@@ -2866,7 +2867,7 @@ unlock:
 static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
-	printk("VV_ wl1271_op_remove_interface\n");
+	//printk("VV_ wl1271_op_remove_interface\n");
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	struct wl12xx_vif *iter;
@@ -3182,7 +3183,7 @@ static int wl1271_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct ieee80211_conf *conf = &hw->conf;
 	int ret = 0;
 
-	printk("VV_ wl1271_op_config\n");
+	//printk("VV_ wl1271_op_config\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 config psm %s power %d %s"
 		     " changed 0x%x",
@@ -3270,7 +3271,7 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif;
 
-	printk("VV_ wl1271_op_configure_filter\n");
+	//printk("VV_ wl1271_op_configure_filter\n");
 
 	int ret;
 
@@ -3761,7 +3762,7 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 	u8 *ssid = NULL;
 	size_t len = 0;
 
-	printk("VV_ wl1271_op_hw_scan\n");
+	//printk("VV_ wl1271_op_hw_scan\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 hw scan");
 
@@ -4707,7 +4708,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 	int ret;
 
-	printk("VV_ wl1271_op_hw_scan\n");
+	//printk("VV_ wl1271_op_hw_scan\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 bss info role %d changed 0x%x",
 		     wlvif->role_id, (int)changed);
@@ -6608,6 +6609,188 @@ static void wl1271_unregister_hw(struct wl1271 *wl)
 
 }
 
+static const
+struct nla_policy wlcore_vendor_attr_policy[NUM_WLCORE_VENDOR_ATTR] = {
+	[WLCORE_VENDOR_ATTR_FREQ]		= { .type = NLA_U32 },
+	[WLCORE_VENDOR_ATTR_GROUP_ID]		= { .type = NLA_U32 },
+	[WLCORE_VENDOR_ATTR_GROUP_KEY]		= { .type = NLA_BINARY,
+						    .len = WLAN_MAX_KEY_LEN },
+};
+
+static int
+VV_vendor_cmd_smart_config_start(struct wiphy *wiphy,
+				     struct wireless_dev *wdev,
+				     const void *data, int data_len)
+{
+	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
+	struct wl1271 *wl = hw->priv;
+	struct nlattr *tb[NUM_WLCORE_VENDOR_ATTR];
+	int ret;
+
+	wl1271_debug(DEBUG_CMD, "vendor cmd smart config start");
+
+	if (!data)
+		return -EINVAL;
+
+	ret = nla_parse_deprecated(tb, MAX_WLCORE_VENDOR_ATTR, data, data_len,
+				   wlcore_vendor_attr_policy, NULL);
+	if (ret)
+		return ret;
+
+	if (!tb[WLCORE_VENDOR_ATTR_GROUP_ID])
+		return -EINVAL;
+
+	mutex_lock(&wl->mutex);
+
+	if (unlikely(wl->state != WLCORE_STATE_ON)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = pm_runtime_get_sync(wl->dev);
+	if (ret < 0) {
+		pm_runtime_put_noidle(wl->dev);
+		goto out;
+	}
+
+	ret = wlcore_smart_config_start(wl,
+			nla_get_u32(tb[WLCORE_VENDOR_ATTR_GROUP_ID]));
+
+	pm_runtime_mark_last_busy(wl->dev);
+	pm_runtime_put_autosuspend(wl->dev);
+out:
+	mutex_unlock(&wl->mutex);
+
+	return ret;
+}
+
+static int
+VV_vendor_cmd_smart_config_stop(struct wiphy *wiphy,
+				    struct wireless_dev *wdev,
+				    const void *data, int data_len)
+{
+	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
+	struct wl1271 *wl = hw->priv;
+	int ret;
+
+	wl1271_debug(DEBUG_CMD, "testmode cmd smart config stop");
+
+	mutex_lock(&wl->mutex);
+
+	if (unlikely(wl->state != WLCORE_STATE_ON)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = pm_runtime_get_sync(wl->dev);
+	if (ret < 0) {
+		pm_runtime_put_noidle(wl->dev);
+		goto out;
+	}
+
+	ret = wlcore_smart_config_stop(wl);
+
+	pm_runtime_mark_last_busy(wl->dev);
+	pm_runtime_put_autosuspend(wl->dev);
+out:
+	mutex_unlock(&wl->mutex);
+
+	return ret;
+}
+
+static int
+VV_vendor_cmd_smart_config_set_group_key(struct wiphy *wiphy,
+					     struct wireless_dev *wdev,
+					     const void *data, int data_len)
+{
+	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
+	struct wl1271 *wl = hw->priv;
+	struct nlattr *tb[NUM_WLCORE_VENDOR_ATTR];
+	int ret;
+
+	wl1271_debug(DEBUG_CMD, "testmode cmd smart config set group key");
+
+	if (!data)
+		return -EINVAL;
+
+	ret = nla_parse_deprecated(tb, MAX_WLCORE_VENDOR_ATTR, data, data_len,
+				   wlcore_vendor_attr_policy, NULL);
+	if (ret)
+		return ret;
+
+	if (!tb[WLCORE_VENDOR_ATTR_GROUP_ID] ||
+	    !tb[WLCORE_VENDOR_ATTR_GROUP_KEY])
+		return -EINVAL;
+
+	mutex_lock(&wl->mutex);
+
+	if (unlikely(wl->state != WLCORE_STATE_ON)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = pm_runtime_get_sync(wl->dev);
+	if (ret < 0) {
+		pm_runtime_put_noidle(wl->dev);
+		goto out;
+	}
+
+	ret = wlcore_smart_config_set_group_key(wl,
+			nla_get_u32(tb[WLCORE_VENDOR_ATTR_GROUP_ID]),
+			nla_len(tb[WLCORE_VENDOR_ATTR_GROUP_KEY]),
+			nla_data(tb[WLCORE_VENDOR_ATTR_GROUP_KEY]));
+
+	pm_runtime_mark_last_busy(wl->dev);
+	pm_runtime_put_autosuspend(wl->dev);
+out:
+	mutex_unlock(&wl->mutex);
+
+	return ret;
+}
+
+const struct wiphy_vendor_command VV_vendor_commands[] = {
+	{
+		.info = {
+			.vendor_id = TI_OUI,
+			.subcmd = WLCORE_VENDOR_CMD_SMART_CONFIG_START,
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_NETDEV |
+			 WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = VV_vendor_cmd_smart_config_start,
+		.policy = wlcore_vendor_attr_policy,
+	},
+	{
+		.info = {
+			.vendor_id = TI_OUI,
+			.subcmd = WLCORE_VENDOR_CMD_SMART_CONFIG_STOP,
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_NETDEV |
+			 WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = VV_vendor_cmd_smart_config_stop,
+		.policy = wlcore_vendor_attr_policy,
+	},
+	{
+		.info = {
+			.vendor_id = TI_OUI,
+			.subcmd = WLCORE_VENDOR_CMD_SMART_CONFIG_SET_GROUP_KEY,
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_NETDEV |
+			 WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = VV_vendor_cmd_smart_config_set_group_key,
+		.policy = wlcore_vendor_attr_policy,
+	},
+};
+const struct nl80211_vendor_cmd_info VV_vendor_events[] = {
+	{
+		.vendor_id = TI_OUI,
+		.subcmd = WLCORE_VENDOR_EVENT_SC_SYNC,
+	},
+	{
+		.vendor_id = TI_OUI,
+		.subcmd = WLCORE_VENDOR_EVENT_SC_DECODE,
+	},
+};
+
 static int wl1271_init_ieee80211(struct wl1271 *wl)
 {
 	int i;
@@ -6629,21 +6812,21 @@ static int wl1271_init_ieee80211(struct wl1271 *wl)
 	/* FIXME: find a proper value */
 	wl->hw->max_listen_interval = wl->conf.conn.max_listen_interval;
 
-	ieee80211_hw_set(wl->hw, SUPPORT_FAST_XMIT);
-	ieee80211_hw_set(wl->hw, CHANCTX_STA_CSA);
-	ieee80211_hw_set(wl->hw, SUPPORTS_PER_STA_GTK);
-	ieee80211_hw_set(wl->hw, QUEUE_CONTROL);
-	ieee80211_hw_set(wl->hw, TX_AMPDU_SETUP_IN_HW);
-	ieee80211_hw_set(wl->hw, AMPDU_AGGREGATION);
-	ieee80211_hw_set(wl->hw, AP_LINK_PS);
-	ieee80211_hw_set(wl->hw, SPECTRUM_MGMT);
-	ieee80211_hw_set(wl->hw, REPORTS_TX_ACK_STATUS);
-	ieee80211_hw_set(wl->hw, CONNECTION_MONITOR);
-	ieee80211_hw_set(wl->hw, HAS_RATE_CONTROL);
-	ieee80211_hw_set(wl->hw, SUPPORTS_DYNAMIC_PS);
-	ieee80211_hw_set(wl->hw, SIGNAL_DBM);
-	ieee80211_hw_set(wl->hw, SUPPORTS_PS);
-	ieee80211_hw_set(wl->hw, SUPPORTS_TX_FRAG);
+	// ieee80211_hw_set(wl->hw, SUPPORT_FAST_XMIT);
+	// ieee80211_hw_set(wl->hw, CHANCTX_STA_CSA);
+	// ieee80211_hw_set(wl->hw, SUPPORTS_PER_STA_GTK);
+	// ieee80211_hw_set(wl->hw, QUEUE_CONTROL);
+	// ieee80211_hw_set(wl->hw, TX_AMPDU_SETUP_IN_HW);
+	// ieee80211_hw_set(wl->hw, AMPDU_AGGREGATION);
+	// ieee80211_hw_set(wl->hw, AP_LINK_PS);
+	// ieee80211_hw_set(wl->hw, SPECTRUM_MGMT);
+	// ieee80211_hw_set(wl->hw, REPORTS_TX_ACK_STATUS);
+	// ieee80211_hw_set(wl->hw, CONNECTION_MONITOR);
+	// ieee80211_hw_set(wl->hw, HAS_RATE_CONTROL);
+	// ieee80211_hw_set(wl->hw, SUPPORTS_DYNAMIC_PS);
+	// ieee80211_hw_set(wl->hw, SIGNAL_DBM);
+	// ieee80211_hw_set(wl->hw, SUPPORTS_PS);
+	// ieee80211_hw_set(wl->hw, SUPPORTS_TX_FRAG);
 
 	wl->hw->wiphy->cipher_suites = cipher_suites;
 	wl->hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
@@ -6731,7 +6914,7 @@ static int wl1271_init_ieee80211(struct wl1271 *wl)
 	wl->hw->offchannel_tx_hw_queue = wl->hw->queues - 1;
 	wl->hw->max_rates = 1;
 
-	wl->hw->wiphy->reg_notifier = wl1271_reg_notify;
+	//wl->hw->wiphy->reg_notifier = wl1271_reg_notify;
 
 	/* the FW answers probe-requests in AP-mode */
 	wl->hw->wiphy->flags |= WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD;
@@ -6745,7 +6928,11 @@ static int wl1271_init_ieee80211(struct wl1271 *wl)
 	wl->hw->wiphy->n_iface_combinations = wl->n_iface_combinations;
 
 	/* register vendor commands */
-	wlcore_set_vendor_commands(wl->hw->wiphy);
+	// wlcore_set_vendor_commands(wl->hw->wiphy);
+	wl->hw->wiphy->vendor_commands = VV_vendor_commands;
+	wl->hw->wiphy->n_vendor_commands = ARRAY_SIZE(VV_vendor_commands);
+	wl->hw->wiphy->vendor_events = VV_vendor_events;
+	wl->hw->wiphy->n_vendor_events = ARRAY_SIZE(VV_vendor_events);
 
 	SET_IEEE80211_DEV(wl->hw, wl->dev);
 
@@ -6756,6 +6943,131 @@ static int wl1271_init_ieee80211(struct wl1271 *wl)
 
 	return 0;
 }
+
+static int VV_init_ieee80211(struct wl1271 *wl)
+{
+	int i;
+	static const u32 cipher_suites[] = {
+		WLAN_CIPHER_SUITE_WEP40,
+		WLAN_CIPHER_SUITE_WEP104,
+		WLAN_CIPHER_SUITE_TKIP,
+		WLAN_CIPHER_SUITE_CCMP,
+		WL1271_CIPHER_SUITE_GEM,
+	};
+
+	/* The tx descriptor buffer */
+	wl->hw->extra_tx_headroom = sizeof(struct wl1271_tx_hw_descr);
+
+	if (wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE)
+		wl->hw->extra_tx_headroom += WL1271_EXTRA_SPACE_TKIP;
+	wl->hw->max_listen_interval = wl->conf.conn.max_listen_interval;
+
+	wl->hw->wiphy->cipher_suites = cipher_suites;
+	wl->hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
+
+	wl->hw->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
+					 BIT(NL80211_IFTYPE_AP) |
+					 BIT(NL80211_IFTYPE_P2P_DEVICE) |
+					 BIT(NL80211_IFTYPE_P2P_CLIENT) |
+					 BIT(NL80211_IFTYPE_MESH_POINT) |
+					 BIT(NL80211_IFTYPE_P2P_GO);
+
+	wl->hw->wiphy->max_scan_ssids = 1;
+	wl->hw->wiphy->max_sched_scan_ssids = 16;
+	wl->hw->wiphy->max_match_sets = 16;
+	/*
+	 * Maximum length of elements in scanning probe request templates
+	 * should be the maximum length possible for a template, without
+	 * the IEEE80211 header of the template
+	 */
+	wl->hw->wiphy->max_scan_ie_len = WL1271_CMD_TEMPL_MAX_SIZE -
+			sizeof(struct ieee80211_header);
+
+	wl->hw->wiphy->max_sched_scan_reqs = 1;
+	wl->hw->wiphy->max_sched_scan_ie_len = WL1271_CMD_TEMPL_MAX_SIZE -
+		sizeof(struct ieee80211_header);
+
+	wl->hw->wiphy->max_remain_on_channel_duration = 30000;
+
+	wl->hw->wiphy->flags |= WIPHY_FLAG_AP_UAPSD |
+				WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL |
+				WIPHY_FLAG_HAS_CHANNEL_SWITCH |
+				WIPHY_FLAG_IBSS_RSN;
+
+	wl->hw->wiphy->features |= NL80211_FEATURE_AP_SCAN;
+
+	/*
+	* clear channel flags from the previous usage
+	* and restore max_power & max_antenna_gain values.
+	*/
+	for (i = 0; i < ARRAY_SIZE(wl1271_channels); i++) {
+		wl1271_band_2ghz.channels[i].flags = 0;
+		wl1271_band_2ghz.channels[i].max_power = WLCORE_MAX_TXPWR;
+		wl1271_band_2ghz.channels[i].max_antenna_gain = 0;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(wl1271_channels_5ghz); i++) {
+		wl1271_band_5ghz.channels[i].flags = 0;
+		wl1271_band_5ghz.channels[i].max_power = WLCORE_MAX_TXPWR;
+		wl1271_band_5ghz.channels[i].max_antenna_gain = 0;
+	}
+
+	/*
+	 * We keep local copies of the band structs because we need to
+	 * modify them on a per-device basis.
+	 */
+	memcpy(&wl->bands[NL80211_BAND_2GHZ], &wl1271_band_2ghz,
+	       sizeof(wl1271_band_2ghz));
+	memcpy(&wl->bands[NL80211_BAND_2GHZ].ht_cap,
+	       &wl->ht_cap[NL80211_BAND_2GHZ],
+	       sizeof(*wl->ht_cap));
+	memcpy(&wl->bands[NL80211_BAND_5GHZ], &wl1271_band_5ghz,
+	       sizeof(wl1271_band_5ghz));
+	memcpy(&wl->bands[NL80211_BAND_5GHZ].ht_cap,
+	       &wl->ht_cap[NL80211_BAND_5GHZ],
+	       sizeof(*wl->ht_cap));
+
+	wl->hw->wiphy->bands[NL80211_BAND_2GHZ] =
+		&wl->bands[NL80211_BAND_2GHZ];
+	wl->hw->wiphy->bands[NL80211_BAND_5GHZ] =
+		&wl->bands[NL80211_BAND_5GHZ];
+	/*
+	 * allow 4 queues per mac address we support +
+	 * 1 cab queue per mac + one global offchannel Tx queue
+	 */
+	wl->hw->queues = (NUM_TX_QUEUES + 1) * WLCORE_NUM_MAC_ADDRESSES + 1;
+	/* the last queue is the offchannel queue */
+	wl->hw->offchannel_tx_hw_queue = wl->hw->queues - 1;
+	wl->hw->max_rates = 1;
+
+	/* the FW answers probe-requests in AP-mode */
+	wl->hw->wiphy->flags |= WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD;
+	wl->hw->wiphy->probe_resp_offload =
+		NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS |
+		NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS2 |
+		NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P;
+
+	/* allowed interface combinations */
+	wl->hw->wiphy->iface_combinations = wl->iface_combinations;
+	wl->hw->wiphy->n_iface_combinations = wl->n_iface_combinations;
+
+	/* register vendor commands */
+	// wlcore_set_vendor_commands(wl->hw->wiphy);
+	wl->hw->wiphy->vendor_commands = VV_vendor_commands;
+	wl->hw->wiphy->n_vendor_commands = ARRAY_SIZE(VV_vendor_commands);
+	wl->hw->wiphy->vendor_events = VV_vendor_events;
+	wl->hw->wiphy->n_vendor_events = ARRAY_SIZE(VV_vendor_events);
+
+	SET_IEEE80211_DEV(wl->hw, wl->dev);
+
+	wl->hw->sta_data_size = sizeof(struct wl1271_station);
+	wl->hw->vif_data_size = sizeof(struct wl12xx_vif);
+
+	wl->hw->max_rx_aggregation_subframes = wl->conf.ht.rx_ba_win_size;
+
+	return 0;
+}
+
 
 struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 				     u32 mbox_size)
@@ -7132,21 +7444,11 @@ void VV_nvs_cb(const struct firmware *fw, void *context)
 	if (ret < 0)
 		goto out_free_nvs;
 
-	BUG_ON(wl->num_tx_desc > WLCORE_MAX_TX_DESCRIPTORS);
-
-	/* adjust some runtime configuration parameters */
-	wlcore_adjust_conf(wl);
-
-	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!res) {
-		wl1271_error("Could not get IRQ resource");
-		goto out_free_nvs;
-	}
-
-	wl->irq = res->start;
-	wl->irq_flags = res->flags & IRQF_TRIGGER_MASK;
+	wl->irq = 59;
+	wl->irq_flags = 1;
 	wl->if_ops = pdev_data->if_ops;
 
+	printk("wl->irq = %d, wl->irq_flags = %d\n", wl->irq, wl->irq_flags);
 	// VV_
 	ret = wl12xx_set_power_on(wl);
 	if (ret < 0)
@@ -7226,7 +7528,7 @@ void VV_nvs_cb(const struct firmware *fw, void *context)
 	wl->max_channels_5 = 32;
 	wl->ba_rx_session_count_max = 13;
 
-	ret = wl1271_init_ieee80211(wl);
+	ret = VV_init_ieee80211(wl);
 	if (ret)
 		goto out_irq;
 
