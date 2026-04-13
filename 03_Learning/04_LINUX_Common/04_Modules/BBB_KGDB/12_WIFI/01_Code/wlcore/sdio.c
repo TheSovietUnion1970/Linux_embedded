@@ -71,6 +71,8 @@ static int __must_check wl12xx_sdio_raw_read(struct device *child, int addr,
 
 		dev_dbg(child->parent, "sdio read 53 addr 0x%x, %zu bytes\n",
 			addr, len);
+
+		//printk("2nd -> addr: 0x%x\n", addr);
 	}
 
 	sdio_release_host(func);
@@ -342,6 +344,7 @@ static int wl1271_probe(struct sdio_func *func,
 	} else {
 		num_irqs = 1;
 	}
+	printk("%d %d - %d %d - %d\n", res[0].start, res[0].flags, res[1].start, res[1].flags, num_irqs);
 	ret = platform_device_add_resources(glue->core, res, num_irqs);
 	if (ret) {
 		dev_err(glue->dev, "can't add resources\n");

@@ -483,7 +483,7 @@ struct wl1271 {
 	/* minimum FW version required for the driver to work in multi-role */
 	unsigned int min_mr_fw_ver[NUM_FW_VER];
 
-	struct completion nvs_loading_complete;
+	struct completion nvs_VV_complete;
 
 	/* interface combinations supported by the hw */
 	const struct ieee80211_iface_combination *iface_combinations;

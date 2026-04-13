@@ -653,26 +653,28 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 	struct wl1271 *wl = cookie;
 	bool queue_tx_work = true;
 
+	//printk("VV_ wlcore_irq, num = %d, flg = %d\n", irq, wl->flags);
+
 	set_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags);
 
-	/* complete the ELP completion */
-	if (test_bit(WL1271_FLAG_IN_ELP, &wl->flags)) {
-		spin_lock_irqsave(&wl->wl_lock, flags);
-		if (wl->elp_compl)
-			complete(wl->elp_compl);
-		spin_unlock_irqrestore(&wl->wl_lock, flags);
-	}
+	// /* complete the ELP completion */
+	// if (test_bit(WL1271_FLAG_IN_ELP, &wl->flags)) {
+	// 	spin_lock_irqsave(&wl->wl_lock, flags);
+	// 	if (wl->elp_compl)
+	// 		complete(wl->elp_compl);
+	// 	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	// }
 
-	if (test_bit(WL1271_FLAG_SUSPENDED, &wl->flags)) {
-		/* don't enqueue a work right now. mark it as pending */
-		set_bit(WL1271_FLAG_PENDING_WORK, &wl->flags);
-		wl1271_debug(DEBUG_IRQ, "should not enqueue work");
-		spin_lock_irqsave(&wl->wl_lock, flags);
-		disable_irq_nosync(wl->irq);
-		pm_wakeup_event(wl->dev, 0);
-		spin_unlock_irqrestore(&wl->wl_lock, flags);
-		goto out_handled;
-	}
+	// if (test_bit(WL1271_FLAG_SUSPENDED, &wl->flags)) {
+	// 	/* don't enqueue a work right now. mark it as pending */
+	// 	set_bit(WL1271_FLAG_PENDING_WORK, &wl->flags);
+	// 	wl1271_debug(DEBUG_IRQ, "should not enqueue work");
+	// 	spin_lock_irqsave(&wl->wl_lock, flags);
+	// 	disable_irq_nosync(wl->irq);
+	// 	pm_wakeup_event(wl->dev, 0);
+	// 	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	// 	goto out_handled;
+	// }
 
 	/* TX might be handled here, avoid redundant work */
 	set_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
@@ -684,17 +686,17 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 	if (ret)
 		wl12xx_queue_recovery_work(wl);
 
-	/* In case TX was not handled in wlcore_irq_locked(), queue TX work */
+	// /* In case TX was not handled in wlcore_irq_locked(), queue TX work */
 	clear_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
-	if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
-		if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
-			if (!wl1271_tx_total_queue_count(wl))
-				queue_tx_work = false;
-			spin_unlock_irqrestore(&wl->wl_lock, flags);
-		}
-		if (queue_tx_work)
-			ieee80211_queue_work(wl->hw, &wl->tx_work);
-	}
+	// if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
+	// 	if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
+	// 		if (!wl1271_tx_total_queue_count(wl))
+	// 			queue_tx_work = false;
+	// 		spin_unlock_irqrestore(&wl->wl_lock, flags);
+	// 	}
+	// 	if (queue_tx_work)
+	// 		ieee80211_queue_work(wl->hw, &wl->tx_work);
+	// }
 
 	mutex_unlock(&wl->mutex);
 
@@ -996,10 +998,10 @@ out_unlock:
 	mutex_unlock(&wl->mutex);
 }
 
-static int wlcore_fw_wakeup(struct wl1271 *wl)
-{
-	return wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP);
-}
+// static int wlcore_fw_wakeup(struct wl1271 *wl)
+// {
+// 	return wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP);
+// }
 
 static int wl1271_setup(struct wl1271 *wl)
 {
@@ -1028,7 +1030,7 @@ err:
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
 
-int V_power_on(struct wl1271 *wl)
+int VV_power_on(struct wl1271 *wl)
 {
 	int ret;
 	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
@@ -1053,7 +1055,7 @@ int V_power_on(struct wl1271 *wl)
 	return 0;
 }
 
-int V_power_off(struct wl1271 *wl)
+int VV_power_off(struct wl1271 *wl)
 {
 	int ret;
 	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
@@ -1078,90 +1080,26 @@ int V_power_off(struct wl1271 *wl)
 	return 0;
 }
 
-int V_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed)
-{
-	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
-
-	sdio_claim_host(func);
-
-	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-	// 	addr, len);
-
-	if (fixed)
-		ret = sdio_writesb(func, addr, &var, len);
-	else
-		ret = sdio_memcpy_toio(func, addr, &var, len);
-	
-
-	sdio_release_host(func);
-
-	return ret;
-}
-
-int V_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p)
-{
-	int ret;
-
-	/* copy partition info */
-	memcpy(&wl->curr_part, p, sizeof(*p));
-
-	ret = V_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
-	if (ret < 0)
-		goto out;
-
-out:
-	return ret;
-}
-
 static int wl12xx_set_power_on(struct wl1271 *wl)
 {
 	int ret;
 	printk("wl12xx_set_power_on\n");
 
 	msleep(WL1271_PRE_POWER_ON_SLEEP);
-	ret = V_power_on(wl);
+	ret = VV_power_on(wl);
 	if (ret < 0)
 		goto out;
 	msleep(WL1271_POWER_ON_SLEEP);
 	// wl1271_io_reset(wl);
 	// wl1271_io_init(wl);
 
-	ret = V_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
 	/* ELP module wake up = Enhanced Low Power */
 	// ret = wlcore_fw_wakeup(wl);
-	V_sdio_raw_write(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
+	VV_sdio_raw_write(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
 	if (ret < 0)
 		goto fail;
 
@@ -1169,7 +1107,7 @@ out:
 	return ret;
 
 fail:
-	V_power_off(wl);
+	VV_power_off(wl);
 	return ret;
 }
 
@@ -1334,6 +1272,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 			 struct ieee80211_tx_control *control,
 			 struct sk_buff *skb)
 {
+	printk("VV_ wl1271_op_tx\n");
 	struct wl1271 *wl = hw->priv;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_vif *vif = info->control.vif;
@@ -2021,6 +1960,8 @@ static int wl1271_op_start(struct ieee80211_hw *hw)
 {
 	wl1271_debug(DEBUG_MAC80211, "mac80211 start");
 
+	printk("VV_ wl1271_op_start\n");
+
 	/*
 	 * We have to delay the booting of the hardware because
 	 * we need to know the local MAC address before downloading and
@@ -2145,6 +2086,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 
 static void wlcore_op_stop(struct ieee80211_hw *hw)
 {
+	printk("VV_ wlcore_op_stop\n");
 	struct wl1271 *wl = hw->priv;
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 stop");
@@ -2644,11 +2586,14 @@ adjust_cab_queue:
 static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
 {
+	printk("VV_ wl1271_op_add_interface\n");
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	struct vif_counter_data vif_count;
 	int ret = 0;
 	u8 role_type;
+
+	printk("VV_ wl1271_op_add_interface\n");
 
 	if (wl->plt) {
 		wl1271_error("Adding Interface not allowed while in PLT mode");
@@ -2921,6 +2866,7 @@ unlock:
 static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
+	printk("VV_ wl1271_op_remove_interface\n");
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	struct wl12xx_vif *iter;
@@ -3236,6 +3182,8 @@ static int wl1271_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct ieee80211_conf *conf = &hw->conf;
 	int ret = 0;
 
+	printk("VV_ wl1271_op_config\n");
+
 	wl1271_debug(DEBUG_MAC80211, "mac80211 config psm %s power %d %s"
 		     " changed 0x%x",
 		     conf->flags & IEEE80211_CONF_PS ? "on" : "off",
@@ -3321,6 +3269,8 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 	struct wl1271_filter_params *fp = (void *)(unsigned long)multicast;
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif;
+
+	printk("VV_ wl1271_op_configure_filter\n");
 
 	int ret;
 
@@ -3576,6 +3526,8 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
 		key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
 
+	printk("VV_ wlcore_op_set_key\n");
+
 	if (might_change_spare) {
 		/*
 		 * stop the queues and flush to ensure the next packets are
@@ -3808,6 +3760,8 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 	int ret;
 	u8 *ssid = NULL;
 	size_t len = 0;
+
+	printk("VV_ wl1271_op_hw_scan\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 hw scan");
 
@@ -4753,6 +4707,8 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 	int ret;
 
+	printk("VV_ wl1271_op_hw_scan\n");
+
 	wl1271_debug(DEBUG_MAC80211, "mac80211 bss info role %d changed 0x%x",
 		     wlvif->role_id, (int)changed);
 
@@ -4878,6 +4834,8 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 	int channel = ieee80211_frequency_to_channel(
 		ctx->def.chan->center_freq);
 	int ret = -EINVAL;
+
+	printk("VV_ wlcore_op_assign_vif_chanctx\n");
 
 	wl1271_debug(DEBUG_MAC80211,
 		     "mac80211 assign chanctx (role %d) %d (type %d) (radar %d dfs_state %d)",
@@ -5416,6 +5374,8 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	int ret;
+
+	printk("VV_ wl12xx_op_sta_state\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 sta %d state=%d->%d",
 		     sta->aid, old_state, new_state);
@@ -6119,50 +6079,279 @@ static struct ieee80211_supported_band wl1271_band_5ghz = {
 	.n_bitrates = ARRAY_SIZE(wl1271_rates_5ghz),
 };
 
-static const struct ieee80211_ops wl1271_ops = {
-	.start = wl1271_op_start,
+void VV_wl1271_op_remove_interface(struct ieee80211_hw *hw,
+				       struct ieee80211_vif *vif)
+{
+    return;
+}
+
+int VV_wl12xx_op_change_interface(struct ieee80211_hw *hw,
+				      struct ieee80211_vif *vif,
+				      enum nl80211_iftype new_type, bool p2p)
+{
+    return 0;
+}
+
+u64 VV_wl1271_op_prepare_multicast(struct ieee80211_hw *hw,
+				       struct netdev_hw_addr_list *mc_list)
+{
+	return 0;
+}
+
+void VV_wl1271_op_cancel_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+{
+	return;
+}
+
+int VV_wl1271_op_sched_scan_start(struct ieee80211_hw *hw, struct ieee80211_vif *vif, struct cfg80211_sched_scan_request *req, struct ieee80211_scan_ies *ies)
+{
+	return 0;
+}
+
+int VV_wl1271_op_sched_scan_stop(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+{
+	return 0;
+}
+
+/* Stub for .set_frag_threshold */
+static int VV_set_frag_threshold(struct ieee80211_hw *hw, u32 value)
+{
+    return 0;
+}
+
+/* Stub for .set_rts_threshold */
+static int VV_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
+{
+    return 0;
+}
+
+/* Stub for .conf_tx */
+static int VV_conf_tx(struct ieee80211_hw *hw,
+                      struct ieee80211_vif *vif,
+                      u16 queue,
+                      const struct ieee80211_tx_queue_params *params)
+{
+    return 0;
+}
+
+/* Stub for .get_tsf */
+static u64 VV_get_tsf(struct ieee80211_hw *hw,
+                      struct ieee80211_vif *vif)
+{
+    return 0;           // or ULLONG_MAX if you prefer
+}
+
+/* Stub for .get_survey */
+static int VV_get_survey(struct ieee80211_hw *hw, int idx,
+                         struct survey_info *survey)
+{
+    return -ENOENT;     // or 0
+}
+
+/* Stub for .ampdu_action */
+static int VV_ampdu_action(struct ieee80211_hw *hw,
+                           struct ieee80211_vif *vif,
+                           struct ieee80211_ampdu_params *params)
+{
+    return 0;
+}
+
+/* Stub for .tx_frames_pending */
+static bool VV_tx_frames_pending(struct ieee80211_hw *hw)
+{
+    return false;
+}
+
+/* Stub for .set_bitrate_mask */
+static int VV_set_bitrate_mask(struct ieee80211_hw *hw,
+                               struct ieee80211_vif *vif,
+                               const struct cfg80211_bitrate_mask *mask)
+{
+    return 0;
+}
+
+/* Stub for .set_default_unicast_key */
+static void VV_set_default_unicast_key(struct ieee80211_hw *hw,
+                                      struct ieee80211_vif *vif,
+                                      int idx)
+{
+    //return 0;
+}
+
+/* Stub for .channel_switch */
+static void VV_channel_switch(struct ieee80211_hw *hw,
+                              struct ieee80211_vif *vif,
+                              struct ieee80211_channel_switch *ch_switch)
+{
+    /* No-op for stub */
+}
+
+/* Stub for .channel_switch_beacon */
+static void VV_channel_switch_beacon(struct ieee80211_hw *hw,
+                                     struct ieee80211_vif *vif,
+                                     struct cfg80211_chan_def *chandef)
+{
+    /* No-op for stub */
+}
+
+/* Stub for .flush */
+static void VV_flush(struct ieee80211_hw *hw,
+                     struct ieee80211_vif *vif,
+                     u32 queues,
+                     bool drop)
+{
+    /* No-op for stub */
+}
+
+/* Stub for .remain_on_channel */
+static int VV_remain_on_channel(struct ieee80211_hw *hw,
+                                struct ieee80211_vif *vif,
+                                struct ieee80211_channel *chan,
+                                int duration,
+                                enum ieee80211_roc_type type)
+{
+    return 0;
+}
+
+/* Stub for .cancel_remain_on_channel */
+static int VV_cancel_remain_on_channel(struct ieee80211_hw *hw,
+                                       struct ieee80211_vif *vif)
+{
+    return 0;
+}
+
+/* Stub for .add_chanctx */
+static int VV_add_chanctx(struct ieee80211_hw *hw,
+                          struct ieee80211_chanctx_conf *ctx)
+{
+    return 0;
+}
+
+/* Stub for .remove_chanctx */
+static void VV_remove_chanctx(struct ieee80211_hw *hw,
+                              struct ieee80211_chanctx_conf *ctx)
+{
+    /* No-op */
+}
+
+/* Stub for .change_chanctx */
+static void VV_change_chanctx(struct ieee80211_hw *hw,
+                              struct ieee80211_chanctx_conf *ctx,
+                              u32 changed)
+{
+    /* No-op */
+}
+
+/* Stub for .assign_vif_chanctx */
+static int VV_assign_vif_chanctx(struct ieee80211_hw *hw,
+                                 struct ieee80211_vif *vif,
+                                 struct ieee80211_chanctx_conf *ctx)
+{
+    return 0;
+}
+
+/* Stub for .unassign_vif_chanctx */
+static void VV_unassign_vif_chanctx(struct ieee80211_hw *hw,
+                                    struct ieee80211_vif *vif,
+                                    struct ieee80211_chanctx_conf *ctx)
+{
+    /* No-op */
+}
+
+/* Stub for .switch_vif_chanctx */
+static int VV_switch_vif_chanctx(struct ieee80211_hw *hw,
+                                 struct ieee80211_vif_chanctx_switch *vifs,
+                                 int n_vifs,
+                                 enum ieee80211_chanctx_switch_mode mode)
+{
+    return 0;
+}
+
+/* Stub for .sta_rc_update */
+static void VV_sta_rc_update(struct ieee80211_hw *hw,
+                             struct ieee80211_vif *vif,
+                             struct ieee80211_sta *sta,
+                             u32 changed)
+{
+    /* No-op */
+}
+
+/* Stub for .sta_statistics */
+static void VV_sta_statistics(struct ieee80211_hw *hw,
+                              struct ieee80211_vif *vif,
+                              struct ieee80211_sta *sta,
+                              struct station_info *sinfo)
+{
+    /* No-op */
+}
+
+/* Stub for .get_expected_throughput */
+static u32 VV_get_expected_throughput(struct ieee80211_hw *hw,
+                                      struct ieee80211_sta *sta)
+{
+    return 0;
+}
+
+int VV_wl1271_op_start(struct ieee80211_hw *hw)
+{
+	return 0;
+}
+
+static const struct ieee80211_ops wl1271_ops = { 
 	.stop = wlcore_op_stop,
-	.add_interface = wl1271_op_add_interface,
+
+	.add_interface = wl1271_op_add_interface, 
 	.remove_interface = wl1271_op_remove_interface,
-	.change_interface = wl12xx_op_change_interface,
-#ifdef CONFIG_PM
-	.suspend = wl1271_op_suspend,
-	.resume = wl1271_op_resume,
-#endif
+
 	.config = wl1271_op_config,
-	.prepare_multicast = wl1271_op_prepare_multicast,
+
 	.configure_filter = wl1271_op_configure_filter,
 	.tx = wl1271_op_tx,
 	.set_key = wlcore_op_set_key,
 	.hw_scan = wl1271_op_hw_scan,
-	.cancel_hw_scan = wl1271_op_cancel_hw_scan,
-	.sched_scan_start = wl1271_op_sched_scan_start,
-	.sched_scan_stop = wl1271_op_sched_scan_stop,
-	.bss_info_changed = wl1271_op_bss_info_changed,
-	.set_frag_threshold = wl1271_op_set_frag_threshold,
-	.set_rts_threshold = wl1271_op_set_rts_threshold,
-	.conf_tx = wl1271_op_conf_tx,
-	.get_tsf = wl1271_op_get_tsf,
-	.get_survey = wl1271_op_get_survey,
-	.sta_state = wl12xx_op_sta_state,
-	.ampdu_action = wl1271_op_ampdu_action,
-	.tx_frames_pending = wl1271_tx_frames_pending,
-	.set_bitrate_mask = wl12xx_set_bitrate_mask,
-	.set_default_unicast_key = wl1271_op_set_default_key_idx,
-	.channel_switch = wl12xx_op_channel_switch,
-	.channel_switch_beacon = wlcore_op_channel_switch_beacon,
-	.flush = wlcore_op_flush,
-	.remain_on_channel = wlcore_op_remain_on_channel,
-	.cancel_remain_on_channel = wlcore_op_cancel_remain_on_channel,
-	.add_chanctx = wlcore_op_add_chanctx,
-	.remove_chanctx = wlcore_op_remove_chanctx,
-	.change_chanctx = wlcore_op_change_chanctx,
+
+	.bss_info_changed = wl1271_op_bss_info_changed, 
+	.sta_state = wl12xx_op_sta_state, 
 	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx,
-	.unassign_vif_chanctx = wlcore_op_unassign_vif_chanctx,
-	.switch_vif_chanctx = wlcore_op_switch_vif_chanctx,
-	.sta_rc_update = wlcore_op_sta_rc_update,
-	.sta_statistics = wlcore_op_sta_statistics,
-	.get_expected_throughput = wlcore_op_get_expected_throughput,
+
+	/* =====================*/ /* =====================*/ /* =====================*/
+
+// #ifdef CONFIG_PM
+// 	.suspend = wl1271_op_suspend,
+// 	.resume = wl1271_op_resume,
+// #endif
+	.start = VV_wl1271_op_start,
+	.change_interface = VV_wl12xx_op_change_interface,
+	.prepare_multicast = VV_wl1271_op_prepare_multicast,
+	.cancel_hw_scan = VV_wl1271_op_cancel_hw_scan,
+	.sched_scan_start = VV_wl1271_op_sched_scan_start,
+	.sched_scan_stop = VV_wl1271_op_sched_scan_stop,
+
+	.set_frag_threshold = VV_set_frag_threshold,
+    .set_rts_threshold  = VV_set_rts_threshold,
+    .conf_tx            = VV_conf_tx,
+    .get_tsf            = VV_get_tsf,
+    .get_survey         = VV_get_survey,
+
+	.ampdu_action              = VV_ampdu_action,
+    .tx_frames_pending         = VV_tx_frames_pending,
+    .set_bitrate_mask          = VV_set_bitrate_mask,
+    .set_default_unicast_key   = VV_set_default_unicast_key,
+    .channel_switch            = VV_channel_switch,
+    .channel_switch_beacon     = VV_channel_switch_beacon,
+    .flush                     = VV_flush,
+    .remain_on_channel         = VV_remain_on_channel,
+    .cancel_remain_on_channel  = VV_cancel_remain_on_channel,
+    .add_chanctx               = VV_add_chanctx,
+    .remove_chanctx            = VV_remove_chanctx,
+    .change_chanctx            = VV_change_chanctx,
+    .unassign_vif_chanctx      = VV_unassign_vif_chanctx,
+    .switch_vif_chanctx        = VV_switch_vif_chanctx,
+    .sta_rc_update             = VV_sta_rc_update,
+    .sta_statistics            = VV_sta_statistics,
+    .get_expected_throughput   = VV_get_expected_throughput,
+
+
 	CFG80211_TESTMODE_CMD(wl1271_tm_cmd)
 };
 
@@ -6197,6 +6386,7 @@ static void wl12xx_derive_mac_addresses(struct wl1271 *wl, u32 oui, u32 nic)
 	if (nic + WLCORE_NUM_MAC_ADDRESSES - wl->num_mac_addr > 0xffffff)
 		wl1271_warning("NIC part of the MAC address wraps around!");
 
+	printk("wl->num_mac_addr = %d\n", wl->num_mac_addr);
 	for (i = 0; i < wl->num_mac_addr; i++) {
 		wl->addresses[i].addr[0] = (u8)(oui >> 16);
 		wl->addresses[i].addr[1] = (u8)(oui >> 8);
@@ -6226,23 +6416,62 @@ static void wl12xx_derive_mac_addresses(struct wl1271 *wl, u32 oui, u32 nic)
 	wl->hw->wiphy->addresses = wl->addresses;
 }
 
+#include "../wl18xx/reg.h"
+int VV_get_mac(struct wl1271 *wl)
+{
+	u32 mac1, mac2;
+	int ret;
+
+	// ret = wlcore_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	if (ret < 0)
+		goto out;
+
+	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
+	if (ret < 0)
+		goto out;
+
+	// ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
+	if (ret < 0)
+		goto out;
+
+	/* these are the two parts of the BD_ADDR */
+	wl->fuse_oui_addr = ((mac2 & 0xffff) << 8) +
+		((mac1 & 0xff000000) >> 24);
+	wl->fuse_nic_addr = (mac1 & 0xffffff);
+	printk("BD_ADDR: oui addr: 0x%x, nic addr: 0x%x\n", wl->fuse_oui_addr, wl->fuse_nic_addr);
+
+	ret = VV_set_partition(wl, &wl->ptable[PART_DOWN]);
+
+out:
+	return ret;
+}
+
 static int wl12xx_get_hw_info(struct wl1271 *wl)
 {
 	int ret;
 
-	ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
+	printk("wl12xx_get_hw_info\n");
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, sizeof(wl->chip.id), false);
+	printk("wl12xx_get_hw_info 1st -> 0x%x, addr = 0x%x\n", wl->chip.id, wl->rtable[REG_CHIP_ID_B]);
+	// ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
+	// printk("wl12xx_get_hw_info 2nd -> 0x%x\n", wl->chip.id);
 	if (ret < 0)
 		goto out;
 
 	wl->fuse_oui_addr = 0;
 	wl->fuse_nic_addr = 0;
 
-	ret = wl->ops->get_pg_ver(wl, &wl->hw_pg_ver);
-	if (ret < 0)
-		goto out;
+	// ret = wl->ops->get_pg_ver(wl, &wl->hw_pg_ver);
+	// if (ret < 0)
+	// 	goto out;
+	// => wl18xx HW: 183x or 180x, PG 2.2 (ROM 0x11)
 
-	if (wl->ops->get_mac)
-		ret = wl->ops->get_mac(wl);
+	// if (wl->ops->get_mac)
+	// 	ret = wl->ops->get_mac(wl);
+	ret = VV_get_mac(wl);
 
 out:
 	return ret;
@@ -6309,10 +6538,62 @@ static int wl1271_register_hw(struct wl1271 *wl)
 
 	wl->mac80211_registered = true;
 
-	wl1271_debugfs_init(wl);
+	// wl1271_debugfs_init(wl);
 
 	wl1271_notice("loaded");
 
+out:
+	return ret;
+}
+
+static int VV_register_hw(struct wl1271 *wl)
+{
+	int ret;
+	u32 oui_addr = 0, nic_addr = 0;
+	struct platform_device *pdev = wl->pdev;
+	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
+
+	if (wl->mac80211_registered)
+		return 0;
+
+	/* if the MAC address is zeroed in the NVS derive from fuse */
+	if (oui_addr == 0 && nic_addr == 0) {
+		printk("VV_register_hw - 2nd\n");
+		oui_addr = wl->fuse_oui_addr;
+		/* fuse has the BD_ADDR, the WLAN addresses are the next two */
+		nic_addr = wl->fuse_nic_addr + 1;
+	}
+
+	//wl12xx_derive_mac_addresses(wl, oui_addr, nic_addr);
+	int i;
+	for (i = 0; i < 2; i++) {
+		wl->addresses[i].addr[0] = (u8)(oui_addr >> 16);
+		wl->addresses[i].addr[1] = (u8)(oui_addr >> 8);
+		wl->addresses[i].addr[2] = (u8) oui_addr;
+		wl->addresses[i].addr[3] = (u8)(nic_addr >> 16);
+		wl->addresses[i].addr[4] = (u8)(nic_addr >> 8);
+		wl->addresses[i].addr[5] = (u8) nic_addr;
+		nic_addr++;
+	}
+	/*
+	 * turn on the LAA bit in the first address and use it as
+	 * the last address.
+	 */
+	int idx = WLCORE_NUM_MAC_ADDRESSES - 1;
+	memcpy(&wl->addresses[idx], &wl->addresses[0],
+			sizeof(wl->addresses[0]));
+	/* LAA bit */
+	wl->addresses[idx].addr[0] |= BIT(1);
+
+	wl->hw->wiphy->n_addresses = WLCORE_NUM_MAC_ADDRESSES;
+	wl->hw->wiphy->addresses = wl->addresses;
+
+	ret = ieee80211_register_hw(wl->hw);
+	if (ret < 0) {
+		wl1271_error("unable to register mac80211 hw: %d", ret);
+		goto out;
+	}
+	wl->mac80211_registered = true;
 out:
 	return ret;
 }
@@ -6560,7 +6841,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	wl->fw_type = WL12XX_FW_TYPE_NONE;
 	mutex_init(&wl->mutex);
 	mutex_init(&wl->flush_mutex);
-	init_completion(&wl->nvs_loading_complete);
+	init_completion(&wl->nvs_VV_complete);
 
 	order = get_order(aggr_buf_size);
 	wl->aggr_buf = (u8 *)__get_free_pages(GFP_KERNEL, order);
@@ -6661,20 +6942,22 @@ int wlcore_free_hw(struct wl1271 *wl)
 }
 EXPORT_SYMBOL_GPL(wlcore_free_hw);
 
-#ifdef CONFIG_PM
-static const struct wiphy_wowlan_support wlcore_wowlan_support = {
-	.flags = WIPHY_WOWLAN_ANY,
-	.n_patterns = WL1271_MAX_RX_FILTERS,
-	.pattern_min_len = 1,
-	.pattern_max_len = WL1271_RX_FILTER_MAX_PATTERN_SIZE,
-};
-#endif
+// #ifdef CONFIG_PM
+// static const struct wiphy_wowlan_support wlcore_wowlan_support = {
+// 	.flags = WIPHY_WOWLAN_ANY,
+// 	.n_patterns = WL1271_MAX_RX_FILTERS,
+// 	.pattern_min_len = 1,
+// 	.pattern_max_len = WL1271_RX_FILTER_MAX_PATTERN_SIZE,
+// };
+// #endif
 
 static irqreturn_t wlcore_hardirq(int irq, void *cookie)
 {
 	return IRQ_WAKE_THREAD;
 }
 
+#include "../wl18xx/wl18xx.h"
+#define WL18XX_FW_NAME "ti-connectivity/wl18xx-fw-4.bin"
 static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 {
 	struct wl1271 *wl = context;
@@ -6721,16 +7004,12 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	wl->irq_flags = res->flags & IRQF_TRIGGER_MASK;
 	wl->if_ops = pdev_data->if_ops;
 
-	if (wl->irq_flags & (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING))
-		hardirq_fn = wlcore_hardirq;
-	else
-		wl->irq_flags |= IRQF_ONESHOT;
-
-	// V_
+	// VV_
 	ret = wl12xx_set_power_on(wl);
 	if (ret < 0)
 		goto out_free_nvs;
 
+	// VV_
 	ret = wl12xx_get_hw_info(wl);
 	if (ret < 0) {
 		wl1271_error("couldn't get hw info");
@@ -6738,41 +7017,70 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 		goto out_free_nvs;
 	}
 
-	ret = request_threaded_irq(wl->irq, hardirq_fn, wlcore_irq,
-				   wl->irq_flags, pdev->name, wl);
+	ret = request_threaded_irq(wl->irq, wlcore_hardirq, wlcore_irq,
+				   wl->irq_flags, "VV_wifi_handler", wl);
 	if (ret < 0) {
 		wl1271_error("interrupt configuration failed");
 		wl1271_power_off(wl);
 		goto out_free_nvs;
 	}
 
-#ifdef CONFIG_PM
-	device_init_wakeup(wl->dev, true);
+// #ifdef CONFIG_PM
+// 	device_init_wakeup(wl->dev, true);
 
-	ret = enable_irq_wake(wl->irq);
-	if (!ret) {
-		wl->irq_wake_enabled = true;
-		if (pdev_data->pwr_in_suspend)
-			wl->hw->wiphy->wowlan = &wlcore_wowlan_support;
-	}
+// 	ret = enable_irq_wake(wl->irq);
+// 	if (!ret) {
+// 		wl->irq_wake_enabled = true;
+// 		if (pdev_data->pwr_in_suspend)
+// 			wl->hw->wiphy->wowlan = &wlcore_wowlan_support;
+// 	}
 
-	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
-	if (res) {
-		wl->wakeirq = res->start;
-		wl->wakeirq_flags = res->flags & IRQF_TRIGGER_MASK;
-		ret = dev_pm_set_dedicated_wake_irq(wl->dev, wl->wakeirq);
-		if (ret)
-			wl->wakeirq = -ENODEV;
-	} else {
-		wl->wakeirq = -ENODEV;
-	}
-#endif
+// 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+// 	if (res) {
+// 		wl->wakeirq = res->start;
+// 		wl->wakeirq_flags = res->flags & IRQF_TRIGGER_MASK;
+// 		ret = dev_pm_set_dedicated_wake_irq(wl->dev, wl->wakeirq);
+// 		if (ret)
+// 			wl->wakeirq = -ENODEV;
+// 	} else {
+// 		wl->wakeirq = -ENODEV;
+// 	}
+// #endif
 	disable_irq(wl->irq);
 	wl1271_power_off(wl);
 
-	ret = wl->ops->identify_chip(wl);
-	if (ret < 0)
-		goto out_irq;
+	// ret = wl->ops->identify_chip(wl);
+	wl->min_sr_fw_ver[FW_VER_CHIP] = WL18XX_CHIP_VER;
+	wl->min_sr_fw_ver[FW_VER_IF_TYPE] = WL18XX_IFTYPE_VER;
+	wl->min_sr_fw_ver[FW_VER_MAJOR] = WL18XX_MAJOR_VER;
+	wl->min_sr_fw_ver[FW_VER_SUBTYPE] = WL18XX_SUBTYPE_VER;
+	wl->min_sr_fw_ver[FW_VER_MINOR] = WL18XX_MINOR_VER;
+
+	wl->min_mr_fw_ver[FW_VER_CHIP] = WL18XX_CHIP_VER;
+	wl->min_mr_fw_ver[FW_VER_IF_TYPE] = WL18XX_IFTYPE_VER;
+	wl->min_mr_fw_ver[FW_VER_MAJOR] = WL18XX_MAJOR_VER;
+	wl->min_mr_fw_ver[FW_VER_SUBTYPE] = WL18XX_SUBTYPE_VER;
+	wl->min_mr_fw_ver[FW_VER_MINOR] = WL18XX_MINOR_VER;
+
+	wl->sr_fw_name = WL18XX_FW_NAME;
+	/* wl18xx uses the same firmware for PLT */
+	wl->plt_fw_name = WL18XX_FW_NAME;
+	wl->quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
+				WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN |
+				WLCORE_QUIRK_NO_SCHED_SCAN_WHILE_CONN |
+				WLCORE_QUIRK_TX_PAD_LAST_FRAME |
+				WLCORE_QUIRK_REGDOMAIN_CONF |
+				WLCORE_QUIRK_DUAL_PROBE_TMPL;
+	
+	wl->fw_mem_block_size = 272;
+	wl->fwlog_end = 0x40000000;
+
+	wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
+	wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
+	wl->sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
+	wl->sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
+	wl->max_channels_5 = 32;
+	wl->ba_rx_session_count_max = 13;
 
 	ret = wl1271_init_ieee80211(wl);
 	if (ret)
@@ -6782,15 +7090,15 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	if (ret)
 		goto out_irq;
 
-	ret = wlcore_sysfs_init(wl);
-	if (ret)
-		goto out_unreg;
+	// ret = wlcore_sysfs_init(wl);
+	// if (ret)
+	// 	goto out_unreg;
 
 	wl->initialized = true;
 	goto out;
 
-out_unreg:
-	wl1271_unregister_hw(wl);
+// out_unreg:
+// 	wl1271_unregister_hw(wl);
 
 out_irq:
 	if (wl->wakeirq >= 0)
@@ -6803,99 +7111,239 @@ out_free_nvs:
 
 out:
 	release_firmware(fw);
-	complete_all(&wl->nvs_loading_complete);
+	complete_all(&wl->nvs_VV_complete);
 }
 
-static int __maybe_unused wlcore_runtime_suspend(struct device *dev)
+void VV_nvs_cb(const struct firmware *fw, void *context)
 {
-	struct wl1271 *wl = dev_get_drvdata(dev);
-	struct wl12xx_vif *wlvif;
-	int error;
+	struct wl1271 *wl = context;
+	struct platform_device *pdev = wl->pdev;
+	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
+	struct resource *res;
 
-	/* We do not enter elp sleep in PLT mode */
-	if (wl->plt)
-		return 0;
-
-	/* Nothing to do if no ELP mode requested */
-	if (wl->sleep_auth != WL1271_PSM_ELP)
-		return 0;
-
-	wl12xx_for_each_wlvif(wl, wlvif) {
-		if (!test_bit(WLVIF_FLAG_IN_PS, &wlvif->flags) &&
-		    test_bit(WLVIF_FLAG_IN_USE, &wlvif->flags))
-			return -EBUSY;
-	}
-
-	wl1271_debug(DEBUG_PSM, "chip to elp");
-	error = wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_SLEEP);
-	if (error < 0) {
-		wl12xx_queue_recovery_work(wl);
-
-		return error;
-	}
-
-	set_bit(WL1271_FLAG_IN_ELP, &wl->flags);
-
-	return 0;
-}
-
-static int __maybe_unused wlcore_runtime_resume(struct device *dev)
-{
-	struct wl1271 *wl = dev_get_drvdata(dev);
-	DECLARE_COMPLETION_ONSTACK(compl);
-	unsigned long flags;
 	int ret;
-	unsigned long start_time = jiffies;
-	bool recovery = false;
+	//irq_handler_t hardirq_fn = NULL;
+	printk("VV_ -> VV_nvs_cb\n");
 
-	/* Nothing to do if no ELP mode requested */
-	if (!test_bit(WL1271_FLAG_IN_ELP, &wl->flags))
-		return 0;
+	wl->nvs = NULL;
+	wl->nvs_len = 0;
 
-	wl1271_debug(DEBUG_PSM, "waking up chip from elp");
+	ret = wl->ops->setup(wl);
+	if (ret < 0)
+		goto out_free_nvs;
 
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	wl->elp_compl = &compl;
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	BUG_ON(wl->num_tx_desc > WLCORE_MAX_TX_DESCRIPTORS);
 
-	ret = wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP);
+	/* adjust some runtime configuration parameters */
+	wlcore_adjust_conf(wl);
+
+	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+	if (!res) {
+		wl1271_error("Could not get IRQ resource");
+		goto out_free_nvs;
+	}
+
+	wl->irq = res->start;
+	wl->irq_flags = res->flags & IRQF_TRIGGER_MASK;
+	wl->if_ops = pdev_data->if_ops;
+
+	// VV_
+	ret = wl12xx_set_power_on(wl);
+	if (ret < 0)
+		goto out_free_nvs;
+
+	// VV_
+	ret = wl12xx_get_hw_info(wl);
 	if (ret < 0) {
-		recovery = true;
-	} else if (!test_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags)) {
-		ret = wait_for_completion_timeout(&compl,
-			msecs_to_jiffies(WL1271_WAKEUP_TIMEOUT));
-		if (ret == 0) {
-			wl1271_warning("ELP wakeup timeout!");
-			recovery = true;
-		}
+		wl1271_error("couldn't get hw info");
+		wl1271_power_off(wl);
+		goto out_free_nvs;
 	}
 
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	wl->elp_compl = NULL;
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
-	clear_bit(WL1271_FLAG_IN_ELP, &wl->flags);
-
-	if (recovery) {
-		set_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags);
-		wl12xx_queue_recovery_work(wl);
-	} else {
-		wl1271_debug(DEBUG_PSM, "wakeup time: %u ms",
-			     jiffies_to_msecs(jiffies - start_time));
+	ret = request_threaded_irq(wl->irq, wlcore_hardirq, wlcore_irq,
+				   wl->irq_flags, "VV_wifi_handler", wl);
+	if (ret < 0) {
+		wl1271_error("interrupt configuration failed");
+		wl1271_power_off(wl);
+		goto out_free_nvs;
 	}
 
-	return 0;
+// #ifdef CONFIG_PM
+// 	device_init_wakeup(wl->dev, true);
+
+// 	ret = enable_irq_wake(wl->irq);
+// 	if (!ret) {
+// 		wl->irq_wake_enabled = true;
+// 		if (pdev_data->pwr_in_suspend)
+// 			wl->hw->wiphy->wowlan = &wlcore_wowlan_support;
+// 	}
+
+// 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+// 	if (res) {
+// 		wl->wakeirq = res->start;
+// 		wl->wakeirq_flags = res->flags & IRQF_TRIGGER_MASK;
+// 		ret = dev_pm_set_dedicated_wake_irq(wl->dev, wl->wakeirq);
+// 		if (ret)
+// 			wl->wakeirq = -ENODEV;
+// 	} else {
+// 		wl->wakeirq = -ENODEV;
+// 	}
+// #endif
+
+	disable_irq(wl->irq);
+	wl1271_power_off(wl);
+
+	// ret = wl->ops->identify_chip(wl);
+	wl->min_sr_fw_ver[FW_VER_CHIP] = WL18XX_CHIP_VER;
+	wl->min_sr_fw_ver[FW_VER_IF_TYPE] = WL18XX_IFTYPE_VER;
+	wl->min_sr_fw_ver[FW_VER_MAJOR] = WL18XX_MAJOR_VER;
+	wl->min_sr_fw_ver[FW_VER_SUBTYPE] = WL18XX_SUBTYPE_VER;
+	wl->min_sr_fw_ver[FW_VER_MINOR] = WL18XX_MINOR_VER;
+
+	wl->min_mr_fw_ver[FW_VER_CHIP] = WL18XX_CHIP_VER;
+	wl->min_mr_fw_ver[FW_VER_IF_TYPE] = WL18XX_IFTYPE_VER;
+	wl->min_mr_fw_ver[FW_VER_MAJOR] = WL18XX_MAJOR_VER;
+	wl->min_mr_fw_ver[FW_VER_SUBTYPE] = WL18XX_SUBTYPE_VER;
+	wl->min_mr_fw_ver[FW_VER_MINOR] = WL18XX_MINOR_VER;
+
+	wl->sr_fw_name = WL18XX_FW_NAME;
+	/* wl18xx uses the same firmware for PLT */
+	wl->plt_fw_name = WL18XX_FW_NAME;
+	wl->quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
+				WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN |
+				WLCORE_QUIRK_NO_SCHED_SCAN_WHILE_CONN |
+				WLCORE_QUIRK_TX_PAD_LAST_FRAME |
+				WLCORE_QUIRK_REGDOMAIN_CONF |
+				WLCORE_QUIRK_DUAL_PROBE_TMPL;
+	
+	wl->fw_mem_block_size = 272;
+	wl->fwlog_end = 0x40000000;
+
+	wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
+	wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
+	wl->sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
+	wl->sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
+	wl->max_channels_5 = 32;
+	wl->ba_rx_session_count_max = 13;
+
+	ret = wl1271_init_ieee80211(wl);
+	if (ret)
+		goto out_irq;
+
+	ret = VV_register_hw(wl);
+	if (ret)
+		goto out_irq;
+
+	wl->initialized = true;
+	goto out;
+
+out_irq:
+	if (wl->wakeirq >= 0)
+		dev_pm_clear_wake_irq(wl->dev);
+	device_init_wakeup(wl->dev, false);
+	free_irq(wl->irq, wl);
+
+out_free_nvs:
+	kfree(wl->nvs);
+
+out:
+	// release_firmware(fw);
+	complete_all(&wl->nvs_VV_complete);
 }
 
-static const struct dev_pm_ops wlcore_pm_ops = {
-	SET_RUNTIME_PM_OPS(wlcore_runtime_suspend,
-			   wlcore_runtime_resume,
-			   NULL)
-};
+// static int __maybe_unused wlcore_runtime_suspend(struct device *dev)
+// {
+// 	struct wl1271 *wl = dev_get_drvdata(dev);
+// 	struct wl12xx_vif *wlvif;
+// 	int error;
+
+// 	//printk("wlcore_runtime_suspend\n");
+
+// 	/* We do not enter elp sleep in PLT mode */
+// 	if (wl->plt)
+// 		return 0;
+
+// 	/* Nothing to do if no ELP mode requested */
+// 	if (wl->sleep_auth != WL1271_PSM_ELP)
+// 		return 0;
+
+// 	wl12xx_for_each_wlvif(wl, wlvif) {
+// 		if (!test_bit(WLVIF_FLAG_IN_PS, &wlvif->flags) &&
+// 		    test_bit(WLVIF_FLAG_IN_USE, &wlvif->flags))
+// 			return -EBUSY;
+// 	}
+
+// 	wl1271_debug(DEBUG_PSM, "chip to elp");
+// 	error = wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_SLEEP);
+// 	if (error < 0) {
+// 		wl12xx_queue_recovery_work(wl);
+
+// 		return error;
+// 	}
+
+// 	set_bit(WL1271_FLAG_IN_ELP, &wl->flags);
+
+// 	return 0;
+// }
+
+// static int __maybe_unused wlcore_runtime_resume(struct device *dev)
+// {
+// 	struct wl1271 *wl = dev_get_drvdata(dev);
+// 	DECLARE_COMPLETION_ONSTACK(compl);
+// 	unsigned long flags;
+// 	int ret;
+// 	unsigned long start_time = jiffies;
+// 	bool recovery = false;
+// 	//printk("wlcore_runtime_resume\n");
+
+// 	/* Nothing to do if no ELP mode requested */
+// 	if (!test_bit(WL1271_FLAG_IN_ELP, &wl->flags))
+// 		return 0;
+
+// 	wl1271_debug(DEBUG_PSM, "waking up chip from elp");
+
+// 	spin_lock_irqsave(&wl->wl_lock, flags);
+// 	wl->elp_compl = &compl;
+// 	spin_unlock_irqrestore(&wl->wl_lock, flags);
+
+// 	ret = wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP);
+// 	if (ret < 0) {
+// 		recovery = true;
+// 	} else if (!test_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags)) {
+// 		ret = wait_for_completion_timeout(&compl,
+// 			msecs_to_jiffies(WL1271_WAKEUP_TIMEOUT));
+// 		if (ret == 0) {
+// 			wl1271_warning("ELP wakeup timeout!");
+// 			recovery = true;
+// 		}
+// 	}
+
+// 	spin_lock_irqsave(&wl->wl_lock, flags);
+// 	wl->elp_compl = NULL;
+// 	spin_unlock_irqrestore(&wl->wl_lock, flags);
+// 	clear_bit(WL1271_FLAG_IN_ELP, &wl->flags);
+
+// 	if (recovery) {
+// 		set_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags);
+// 		wl12xx_queue_recovery_work(wl);
+// 	} else {
+// 		wl1271_debug(DEBUG_PSM, "wakeup time: %u ms",
+// 			     jiffies_to_msecs(jiffies - start_time));
+// 	}
+
+// 	return 0;
+// }
+
+// static const struct dev_pm_ops wlcore_pm_ops = {
+// 	SET_RUNTIME_PM_OPS(wlcore_runtime_suspend,
+// 			   wlcore_runtime_resume,
+// 			   NULL)
+// };
 
 int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 {
 	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
-	const char *nvs_name;
+	//const char *nvs_name;
 	int ret = 0;
 
 	if (!wl->ops || !wl->ptable || !pdev_data)
@@ -6913,14 +7361,15 @@ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 	// 	if (ret < 0) {
 	// 		wl1271_error("request_firmware_nowait failed for %s: %d",
 	// 			     nvs_name, ret);
-	// 		complete_all(&wl->nvs_loading_complete);
+	// 		complete_all(&wl->nvs_VV_complete);
 	// 	}
 	// } else {
 	// 	wlcore_nvs_cb(NULL, wl);
 	// }
-	wlcore_nvs_cb(NULL, wl);
+	//wlcore_nvs_cb(NULL, wl);
+	VV_nvs_cb(NULL, wl);
 
-	wl->dev->driver->pm = &wlcore_pm_ops;
+	// wl->dev->driver->pm = &wlcore_pm_ops;
 	pm_runtime_set_autosuspend_delay(wl->dev, 50);
 	pm_runtime_use_autosuspend(wl->dev);
 	pm_runtime_enable(wl->dev);
@@ -6942,7 +7391,7 @@ int wlcore_remove(struct platform_device *pdev)
 	wl->dev->driver->pm = NULL;
 
 	if (pdev_data->family && pdev_data->family->nvs_name)
-		wait_for_completion(&wl->nvs_loading_complete);
+		wait_for_completion(&wl->nvs_VV_complete);
 	if (!wl->initialized)
 		return 0;
 
