@@ -1,0 +1,76 @@
+1. Driver Loading & Probe Phase
+wlcore_probe() → main entry point
+wlcore_nvs_cb() → loads NVS (calibration data)
+wl->ops->setup() → chip-specific setup (wl18xx_setup)
+wl12xx_set_power_on() → power on the chip
+wl12xx_get_hw_info() → read CHIP_ID, PG version, fuse MAC
+wl->ops->identify_chip() → detect WL18xx specifics
+wl1271_init_ieee80211() → register mac80211 callbacks (wl1271_ops)
+request_threaded_irq() → register wlcore_hardirq + wlcore_irq
+wl1271_register_hw() → register with mac80211 (ieee80211_register_hw)
+
+2. Interface Addition (mac80211 calls this when interface is brought up) = ip link set wlan0 up
+wl1271_op_add_interface() → wl1271_op_add_interface
+wl12xx_init_vif_data()
+wl12xx_cmd_role_enable() → creates a role (STA or AP)
+If first interface → wl12xx_init_fw() is called here
+
+3. Firmware Boot Sequence (the most important part)
+wl12xx_init_fw() does the real initialization:
+
+wl12xx_chip_wakeup()
+wl12xx_set_power_on()
+Write ELP register (wlcore_fw_wakeup()) → wake from deep sleep
+wlcore_set_partition(PART_BOOT)
+
+wl->ops->boot() → WL18xx specific boot
+wl1271_hw_init() → send all ACX commands (rates, memory, etc.)
+wl12xx_fetch_firmware() → load the correct FW (single-role or multi-role)
+Firmware is downloaded and booted
+wl->state = WLCORE_STATE_ON
+
+Now the chip is fully operational.
+
+4. Normal Operation Phase (after init completes)
+Once WLCORE_STATE_ON, the following functions handle real work:
+Interrupt Path (most frequent)
+
+Hardware raises IRQ
+wlcore_hardirq() (top-half) → quick, returns IRQ_WAKE_THREAD
+wlcore_irq() (threaded bottom-half) ← Main workhorse
+wlcore_fw_status() → read FW status
+wlcore_rx() → process received packets
+wlcore_hw_tx_delayed_compl() / wlcore_hw_tx_immediate_compl()
+wl1271_event_handle() → handle events (scan done, connection loss, etc.)
+Recovery if needed
+
+
+Transmit Path
+
+mac80211 → wl1271_op_tx()
+Queue skb
+Schedule wl1271_tx_work()
+wlcore_tx_work_locked() → send to firmware
+
+Configuration Changes
+
+mac80211 → wl1271_op_bss_info_changed() ← Central config function
+Association / disassociation
+Beacon / probe response updates
+Power save mode
+Rate changes
+ERP / HT / channel changes
+
+
+Station Management (AP mode)
+
+wl12xx_op_sta_state() → add/remove/authorize stations
+
+Scan
+
+wl1271_op_hw_scan() / wl1271_op_cancel_hw_scan()
+
+Power Management / ELP
+
+ELP wakeup is triggered inside wlcore_irq() or before critical commands
+wlcore_fw_wakeup() writes to ELP register
