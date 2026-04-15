@@ -717,6 +717,7 @@ static void wl12xx_vif_count_iter(void *data, u8 *mac,
 				  struct ieee80211_vif *vif)
 {
 	struct vif_counter_data *counter = data;
+	printk("wl12xx_vif_count_iter\n");
 
 	counter->counter++;
 	if (counter->cur_vif == vif)
@@ -1272,7 +1273,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 			 struct ieee80211_tx_control *control,
 			 struct sk_buff *skb)
 {
-	printk("VV_ wl1271_op_tx\n");
+	//printk("VV_ wl1271_op_tx\n");
 	struct wl1271 *wl = hw->priv;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_vif *vif = info->control.vif;
@@ -2256,6 +2257,7 @@ static u8 wl12xx_get_role_type(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 
+	printk("wlvif->bss_type = %d, wlvif->p2p = %d\n\n", wlvif->bss_type, wlvif->p2p);
 	switch (wlvif->bss_type) {
 	case BSS_TYPE_AP_BSS:
 		if (wlvif->p2p)
@@ -2287,6 +2289,8 @@ static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 
 	/* clear everything but the persistent data */
 	memset(wlvif, 0, offsetof(struct wl12xx_vif, persistent));
+
+	printk("ieee80211_vif_type_p2p = %d\n", ieee80211_vif_type_p2p(vif));
 
 	switch (ieee80211_vif_type_p2p(vif)) {
 	case NL80211_IFTYPE_P2P_CLIENT:
@@ -2345,6 +2349,58 @@ static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 		/* TODO: this seems to be used only for STA, check it */
 		wlvif->rate_set = CONF_TX_ENABLED_RATES;
 	}
+
+	wlvif->bitrate_masks[NL80211_BAND_2GHZ] = wl->conf.tx.basic_rate;
+	wlvif->bitrate_masks[NL80211_BAND_5GHZ] = wl->conf.tx.basic_rate_5;
+	wlvif->beacon_int = WL1271_DEFAULT_BEACON_INT;
+
+	/*
+	 * mac80211 configures some values globally, while we treat them
+	 * per-interface. thus, on init, we have to copy them from wl
+	 */
+	wlvif->band = wl->band;
+	wlvif->channel = wl->channel;
+	wlvif->power_level = wl->power_level;
+	wlvif->channel_type = wl->channel_type;
+
+	INIT_WORK(&wlvif->rx_streaming_enable_work,
+		  wl1271_rx_streaming_enable_work);
+	INIT_WORK(&wlvif->rx_streaming_disable_work,
+		  wl1271_rx_streaming_disable_work);
+	INIT_WORK(&wlvif->rc_update_work, wlcore_rc_update_work);
+	INIT_DELAYED_WORK(&wlvif->channel_switch_work,
+			  wlcore_channel_switch_work);
+	INIT_DELAYED_WORK(&wlvif->connection_loss_work,
+			  wlcore_connection_loss_work);
+	INIT_DELAYED_WORK(&wlvif->pending_auth_complete_work,
+			  wlcore_pending_auth_complete_work);
+	INIT_LIST_HEAD(&wlvif->list);
+
+	timer_setup(&wlvif->rx_streaming_timer, wl1271_rx_streaming_timer, 0);
+	return 0;
+}
+
+static int VV_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
+{
+	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	int i;
+
+	/* clear everything but the persistent data */
+	memset(wlvif, 0, offsetof(struct wl12xx_vif, persistent));
+
+	wlvif->role_id = WL12XX_INVALID_ROLE_ID;
+	wlvif->dev_role_id = WL12XX_INVALID_ROLE_ID;
+	wlvif->dev_hlid = WL12XX_INVALID_LINK_ID;
+
+	/* init sta/ibss data */
+	wlvif->sta.hlid = WL12XX_INVALID_LINK_ID;
+	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.basic_rate_idx);
+	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.ap_rate_idx);
+	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.p2p_rate_idx);
+	// wlcore_allocate_klv_template(wl, &wlvif->sta.klv_template_id);
+	wlvif->basic_rate_set = CONF_TX_RATE_MASK_BASIC;
+	wlvif->basic_rate = CONF_TX_RATE_MASK_BASIC;
+	wlvif->rate_set = CONF_TX_RATE_MASK_BASIC;
 
 	wlvif->bitrate_masks[NL80211_BAND_2GHZ] = wl->conf.tx.basic_rate;
 	wlvif->bitrate_masks[NL80211_BAND_5GHZ] = wl->conf.tx.basic_rate_5;
@@ -2583,7 +2639,7 @@ adjust_cab_queue:
 	return 0;
 }
 
-static int wl1271_op_add_interface(struct ieee80211_hw *hw,
+static int VV_op_add_interface(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
 {
 	//printk("VV_ wl1271_op_add_interface\n");
@@ -2592,23 +2648,17 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	struct vif_counter_data vif_count;
 	int ret = 0;
-	u8 role_type;
-
-	printk("VV_ wl1271_op_add_interface\n");
-
-	if (wl->plt) {
-		wl1271_error("Adding Interface not allowed while in PLT mode");
-		return -EBUSY;
-	}
 
 	vif->driver_flags |= IEEE80211_VIF_BEACON_FILTER |
 			     IEEE80211_VIF_SUPPORTS_UAPSD |
 			     IEEE80211_VIF_SUPPORTS_CQM_RSSI;
 
-	wl1271_debug(DEBUG_MAC80211, "mac80211 add interface type %d mac %pM",
-		     ieee80211_vif_type_p2p(vif), vif->addr);
+	// wl12xx_get_vif_count(hw, vif, &vif_count);
+	memset(&vif_count, 0, sizeof(vif_count));
+	vif_count.cur_vif = vif;
 
-	wl12xx_get_vif_count(hw, vif, &vif_count);
+	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
+					    wl12xx_vif_count_iter, &vif_count);
 
 	mutex_lock(&wl->mutex);
 
@@ -2624,16 +2674,16 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	}
 
 
-	ret = wl12xx_init_vif_data(wl, vif);
+	ret = VV_init_vif_data(wl, vif);
 	if (ret < 0)
 		goto out;
 
 	wlvif->wl = wl;
-	role_type = wl12xx_get_role_type(wl, wlvif);
-	if (role_type == WL12XX_INVALID_ROLE_TYPE) {
-		ret = -EINVAL;
-		goto out;
-	}
+
+	// wl12xx_get_role_type
+	vif = wl12xx_wlvif_to_vif(wlvif);
+	wlvif->bss_type = BSS_TYPE_STA_BSS;
+	wlvif->p2p = WL1271_ROLE_STA;
 
 	ret = wlcore_allocate_hw_queue_base(wl, wlvif);
 	if (ret < 0)
@@ -2674,8 +2724,9 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	}
 
 	if (!wlcore_is_p2p_mgmt(wlvif)) {
+		printk("***IF***\n");
 		ret = wl12xx_cmd_role_enable(wl, vif->addr,
-					     role_type, &wlvif->role_id);
+					     WL1271_ROLE_STA, &wlvif->role_id);
 		if (ret < 0)
 			goto out;
 
@@ -2684,6 +2735,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 			goto out;
 
 	} else {
+		printk("***ELSE***\n");
 		ret = wl12xx_cmd_role_enable(wl, vif->addr, WL1271_ROLE_DEVICE,
 					     &wlvif->dev_role_id);
 		if (ret < 0)
@@ -2797,18 +2849,18 @@ deinit:
 	if (wlvif->bss_type == BSS_TYPE_STA_BSS ||
 	    wlvif->bss_type == BSS_TYPE_IBSS) {
 		wlvif->sta.hlid = WL12XX_INVALID_LINK_ID;
-		wl12xx_free_rate_policy(wl, &wlvif->sta.basic_rate_idx);
-		wl12xx_free_rate_policy(wl, &wlvif->sta.ap_rate_idx);
-		wl12xx_free_rate_policy(wl, &wlvif->sta.p2p_rate_idx);
-		wlcore_free_klv_template(wl, &wlvif->sta.klv_template_id);
+		// wl12xx_free_rate_policy(wl, &wlvif->sta.basic_rate_idx);
+		// wl12xx_free_rate_policy(wl, &wlvif->sta.ap_rate_idx);
+		// wl12xx_free_rate_policy(wl, &wlvif->sta.p2p_rate_idx);
+		// wlcore_free_klv_template(wl, &wlvif->sta.klv_template_id);
 	} else {
 		wlvif->ap.bcast_hlid = WL12XX_INVALID_LINK_ID;
 		wlvif->ap.global_hlid = WL12XX_INVALID_LINK_ID;
-		wl12xx_free_rate_policy(wl, &wlvif->ap.mgmt_rate_idx);
-		wl12xx_free_rate_policy(wl, &wlvif->ap.bcast_rate_idx);
-		for (i = 0; i < CONF_TX_MAX_AC_COUNT; i++)
-			wl12xx_free_rate_policy(wl,
-						&wlvif->ap.ucast_rate_idx[i]);
+		// wl12xx_free_rate_policy(wl, &wlvif->ap.mgmt_rate_idx);
+		// wl12xx_free_rate_policy(wl, &wlvif->ap.bcast_rate_idx);
+		// for (i = 0; i < CONF_TX_MAX_AC_COUNT; i++)
+		// 	wl12xx_free_rate_policy(wl,
+		// 				&wlvif->ap.ucast_rate_idx[i]);
 		wl1271_free_ap_keys(wl, wlvif);
 	}
 
@@ -2864,7 +2916,7 @@ unlock:
 	mutex_lock(&wl->mutex);
 }
 
-static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
+static void VV_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
 	//printk("VV_ wl1271_op_remove_interface\n");
@@ -2909,11 +2961,11 @@ static int wl12xx_op_change_interface(struct ieee80211_hw *hw,
 	int ret;
 
 	set_bit(WL1271_FLAG_VIF_CHANGE_IN_PROGRESS, &wl->flags);
-	wl1271_op_remove_interface(hw, vif);
+	VV_op_remove_interface(hw, vif);
 
 	vif->type = new_type;
 	vif->p2p = p2p;
-	ret = wl1271_op_add_interface(hw, vif);
+	ret = VV_op_add_interface(hw, vif);
 
 	clear_bit(WL1271_FLAG_VIF_CHANGE_IN_PROGRESS, &wl->flags);
 	return ret;
@@ -6301,8 +6353,8 @@ int VV_wl1271_op_start(struct ieee80211_hw *hw)
 static const struct ieee80211_ops wl1271_ops = { 
 	.stop = wlcore_op_stop,
 
-	.add_interface = wl1271_op_add_interface, 
-	.remove_interface = wl1271_op_remove_interface,
+	.add_interface = VV_op_add_interface, 
+	.remove_interface = VV_op_remove_interface,
 
 	.config = wl1271_op_config,
 
