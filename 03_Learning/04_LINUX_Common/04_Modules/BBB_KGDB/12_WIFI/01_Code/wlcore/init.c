@@ -269,12 +269,56 @@ static int wl1271_init_sta_beacon_filter(struct wl1271 *wl,
 {
 	int ret;
 
-	ret = wl1271_acx_beacon_filter_table(wl, wlvif);
+	// ret = wl1271_acx_beacon_filter_table(wl, wlvif);
+	struct acx_beacon_filter_ie_table ie_table;
+	int i, idx = 0;
+	bool vendor_spec = false;
+
+	/* configure default beacon pass-through rules */
+	ie_table.role_id = wlvif->role_id;
+	ie_table.num_ie = 0;
+	for (i = 0; i < wl->conf.conn.bcn_filt_ie_count; i++) {
+		struct conf_bcn_filt_rule *r = &(wl->conf.conn.bcn_filt_ie[i]);
+		ie_table.table[idx++] = r->ie;
+		ie_table.table[idx++] = r->rule;
+
+		if (r->ie == WLAN_EID_VENDOR_SPECIFIC) {
+			/* only one vendor specific ie allowed */
+			if (vendor_spec)
+				continue;
+
+			/* for vendor specific rules configure the
+			   additional fields */
+			memcpy(&(ie_table.table[idx]), r->oui,
+			       CONF_BCN_IE_OUI_LEN);
+			idx += CONF_BCN_IE_OUI_LEN;
+			ie_table.table[idx++] = r->type;
+			memcpy(&(ie_table.table[idx]), r->version,
+			       CONF_BCN_IE_VER_LEN);
+			idx += CONF_BCN_IE_VER_LEN;
+			vendor_spec = true;
+		}
+
+		ie_table.num_ie++;
+	}
+	
+	ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_TABLE, &ie_table, sizeof(ie_table), 0);
 	if (ret < 0)
 		return ret;
 
+
 	/* disable beacon filtering until we get the first beacon */
-	ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
+	// ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
+	struct acx_beacon_filter_option beacon_filter;
+	beacon_filter.role_id = wlvif->role_id;
+	beacon_filter.enable = false;
+	/*
+	 * When set to zero, and the filter is enabled, beacons
+	 * without the unicast TIM bit set are dropped.
+	 */
+	beacon_filter.max_num_beacons = 0;
+	
+	ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_OPT, &beacon_filter, sizeof(beacon_filter), 0);
 	if (ret < 0)
 		return ret;
 
@@ -339,16 +383,62 @@ int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	int ret;
 
 	/* PS config */
-	ret = wl12xx_acx_config_ps(wl, wlvif);
+	// ret = wl12xx_acx_config_ps(wl, wlvif);
+	struct wl1271_acx_config_ps config_ps;
+	config_ps.exit_retries = wl->conf.conn.psm_exit_retries;
+	config_ps.enter_retries = wl->conf.conn.psm_entry_retries;
+	config_ps.null_data_rate = cpu_to_le32(wlvif->basic_rate);
+	ret = VV_cmd_send(wl, ACX_CONFIG_PS, &config_ps, sizeof(config_ps), 0);
 	if (ret < 0)
 		return ret;
 
 	/* FM WLAN coexistence */
-	ret = wl1271_acx_fm_coex(wl);
+	// ret = wl1271_acx_fm_coex(wl);
+	struct wl1271_acx_fm_coex acx;
+	acx.enable = wl->conf.fm_coex.enable;
+	acx.swallow_period = wl->conf.fm_coex.swallow_period;
+	acx.n_divider_fref_set_1 = wl->conf.fm_coex.n_divider_fref_set_1;
+	acx.n_divider_fref_set_2 = wl->conf.fm_coex.n_divider_fref_set_2;
+	acx.m_divider_fref_set_1 =
+		cpu_to_le16(wl->conf.fm_coex.m_divider_fref_set_1);
+	acx.m_divider_fref_set_2 =
+		cpu_to_le16(wl->conf.fm_coex.m_divider_fref_set_2);
+	acx.coex_pll_stabilization_time =
+		cpu_to_le32(wl->conf.fm_coex.coex_pll_stabilization_time);
+	acx.ldo_stabilization_time =
+		cpu_to_le16(wl->conf.fm_coex.ldo_stabilization_time);
+	acx.fm_disturbed_band_margin =
+		wl->conf.fm_coex.fm_disturbed_band_margin;
+	acx.swallow_clk_diff = wl->conf.fm_coex.swallow_clk_diff;
+	ret = VV_cmd_send(wl, ACX_FM_COEX_CFG, &acx, sizeof(acx), 0);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_sta_rate_policies(wl, wlvif);
+	// ret = wl1271_acx_sta_rate_policies(wl, wlvif);
+	struct acx_rate_policy acxrp;
+	struct conf_tx_rate_class *c = &wl->conf.tx.sta_rc_conf;
+
+	/* configure one basic rate class */
+	acxrp.rate_policy_idx = cpu_to_le32(wlvif->sta.basic_rate_idx);
+	acxrp.rate_policy.enabled_rates = cpu_to_le32(wlvif->basic_rate);
+	acxrp.rate_policy.short_retry_limit = c->short_retry_limit;
+	acxrp.rate_policy.long_retry_limit = c->long_retry_limit;
+	acxrp.rate_policy.aflags = c->aflags;
+	
+	ret = VV_cmd_send(wl, ACX_FM_COEX_CFG, &acxrp, sizeof(acxrp), 0);
+	if (ret < 0)
+		return ret;
+
+	/* configure one AP supported rate class */
+	acxrp.rate_policy_idx = cpu_to_le32(wlvif->sta.ap_rate_idx);
+
+	/* the AP policy is HW specific */
+	acxrp.rate_policy.enabled_rates =
+		cpu_to_le32(wlcore_hw_sta_get_ap_rate_mask(wl, wlvif));
+	acxrp.rate_policy.short_retry_limit = c->short_retry_limit;
+	acxrp.rate_policy.long_retry_limit = c->long_retry_limit;
+	acxrp.rate_policy.aflags = c->aflags;
+	ret = VV_cmd_send(wl, ACX_FM_COEX_CFG, &acxrp, sizeof(acxrp), 0);
 	if (ret < 0)
 		return ret;
 
@@ -503,27 +593,108 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	int ret;
 
-	ret = wl1271_acx_group_address_tbl(wl, wlvif, true, NULL, 0);
+	/* =============== ***************** ==================*/
+	// ret = wl1271_acx_group_address_tbl(wl, wlvif, true, NULL, 0);
+	struct acx_dot11_grp_addr_tbl acx;
+	/* MAC filtering */
+	acx.role_id = wlvif->role_id;
+	acx.enabled = true;
+	acx.num_groups = 0;
+	memcpy(acx.mac_table, NULL, 0 * ETH_ALEN);
+	ret = VV_cmd_send(wl, DOT11_GROUP_ADDRESS_TBL, &acx, sizeof(acx), 0);
 	if (ret < 0)
 		return ret;
 
+	/* =============== ***************** ==================*/
 	/* Initialize connection monitoring thresholds */
-	ret = wl1271_acx_conn_monit_params(wl, wlvif, false);
+	// ret = wl1271_acx_conn_monit_params(wl, wlvif, false);
+	struct acx_conn_monit_params acx1;
+	u32 threshold = 0xffffffff;
+	u32 timeout = 0xffffffff;
+	acx1.role_id = wlvif->role_id;
+	acx1.synch_fail_thold = cpu_to_le32(threshold);
+	acx1.bss_lose_timeout = cpu_to_le32(timeout);
+	ret = VV_cmd_send(wl, ACX_CONN_MONIT_PARAMS, &acx1, sizeof(acx1), 0);
 	if (ret < 0)
 		return ret;
 
 	/* Beacon filtering */
-	ret = wl1271_init_sta_beacon_filter(wl, wlvif);
+	// ret = wl1271_init_sta_beacon_filter(wl, wlvif);
+	// ret = wl1271_acx_beacon_filter_table(wl, wlvif);
+	struct acx_beacon_filter_ie_table ie_table;
+	int i, idx = 0;
+	bool vendor_spec = false;
+
+	/* configure default beacon pass-through rules */
+	ie_table.role_id = wlvif->role_id;
+	ie_table.num_ie = 0;
+	for (i = 0; i < wl->conf.conn.bcn_filt_ie_count; i++) {
+		struct conf_bcn_filt_rule *r = &(wl->conf.conn.bcn_filt_ie[i]);
+		ie_table.table[idx++] = r->ie;
+		ie_table.table[idx++] = r->rule;
+
+		if (r->ie == WLAN_EID_VENDOR_SPECIFIC) {
+			/* only one vendor specific ie allowed */
+			if (vendor_spec)
+				continue;
+
+			/* for vendor specific rules configure the
+			   additional fields */
+			memcpy(&(ie_table.table[idx]), r->oui,
+			       CONF_BCN_IE_OUI_LEN);
+			idx += CONF_BCN_IE_OUI_LEN;
+			ie_table.table[idx++] = r->type;
+			memcpy(&(ie_table.table[idx]), r->version,
+			       CONF_BCN_IE_VER_LEN);
+			idx += CONF_BCN_IE_VER_LEN;
+			vendor_spec = true;
+		}
+
+		ie_table.num_ie++;
+	}
+	ret = VV_cmd_send(wl, ACX_BEACON_FILTER_TABLE, &ie_table, sizeof(ie_table), 0);
 	if (ret < 0)
 		return ret;
 
+
+	/* disable beacon filtering until we get the first beacon */
+	// ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
+	struct acx_beacon_filter_option beacon_filter;
+	beacon_filter.role_id = wlvif->role_id;
+	beacon_filter.enable = false;
+	/*
+	 * When set to zero, and the filter is enabled, beacons
+	 * without the unicast TIM bit set are dropped.
+	 */
+	beacon_filter.max_num_beacons = 0;
+	ret = VV_cmd_send(wl, ACX_BEACON_FILTER_OPT, &beacon_filter, sizeof(beacon_filter), 0);
+	if (ret < 0)
+		return ret;
+
+	/* =============== ***************** ==================*/
 	/* Beacons and broadcast settings */
-	ret = wl1271_init_beacon_broadcast(wl, wlvif);
+	// ret = wl1271_init_beacon_broadcast(wl, wlvif);
+	struct acx_beacon_broadcast bb;
+	bb.role_id = wlvif->role_id;
+	bb.beacon_rx_timeout = cpu_to_le16(wl->conf.conn.beacon_rx_timeout);
+	bb.broadcast_timeout = cpu_to_le16(wl->conf.conn.broadcast_timeout);
+	bb.rx_broadcast_in_ps = wl->conf.conn.rx_broadcast_in_ps;
+	bb.ps_poll_threshold = wl->conf.conn.ps_poll_threshold;
+	ret = VV_cmd_send(wl, ACX_BCN_DTIM_OPTIONS, &bb, sizeof(bb), 0);
 	if (ret < 0)
 		return ret;
 
+	/* =============== ***************** ==================*/
 	/* Configure rssi/snr averaging weights */
-	ret = wl1271_acx_rssi_snr_avg_weights(wl, wlvif);
+	// ret = wl1271_acx_rssi_snr_avg_weights(wl, wlvif);
+	struct wl1271_acx_rssi_snr_avg_weights acx2;
+	struct conf_roam_trigger_settings *c = &wl->conf.roam_trigger;
+	acx2.role_id = wlvif->role_id;
+	acx2.rssi_beacon = c->avg_weight_rssi_beacon;
+	acx2.rssi_data = c->avg_weight_rssi_data;
+	acx2.snr_beacon = c->avg_weight_snr_beacon;
+	acx2.snr_data = c->avg_weight_snr_data;
+	ret = VV_cmd_send(wl, ACX_RSSI_SNR_WEIGHTS, &acx2, sizeof(acx2), 0);
 	if (ret < 0)
 		return ret;
 
@@ -561,6 +732,7 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	int ret, i;
 
 	/* consider all existing roles before configuring psm. */
+	printk("wl->ap_count = %d, is_ap = %d\n", wl->ap_count, is_ap);
 
 	if (wl->ap_count == 0 && is_ap) { /* first AP */
 		ret = wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
@@ -652,6 +824,125 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	ret = wlcore_hw_init_vif(wl, wlvif);
 	if (ret < 0)
 		return ret;
+
+	return 0;
+}
+
+int VV_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
+{
+	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct conf_tx_ac_category *conf_ac;
+	struct conf_tx_tid *conf_tid;
+	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
+	int ret, i;
+
+	/* consider all existing roles before configuring psm. */
+
+	// if (wl->sta_count == 0 && wl->ap_count == 0 && !is_ap) {
+	// 	u8 sta_auth = wl->conf.conn.sta_sleep_auth;
+	// 	/* Configure for power according to debugfs */
+	// 	if (sta_auth != WL1271_PSM_ILLEGAL)
+	// 		ret = wl1271_acx_sleep_auth(wl, sta_auth);
+	// 	/* Configure for ELP power saving */
+	// 	else
+	// 		ret = wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
+
+	// 	if (ret < 0)
+	// 		return ret;
+	// }
+
+	/* VV_ Mode specific init = PS, FM WLAN coexistence */
+	ret = wl1271_sta_hw_init(wl, wlvif);
+	if (ret < 0)
+		return ret;
+
+	ret = wl12xx_init_sta_role(wl, wlvif);
+	if (ret < 0)
+		return ret;
+
+
+	wl12xx_init_phy_vif_config(wl, wlvif);
+
+	/* Default TID/AC configuration : conf.tx.tid_conf_count */
+	for (i = 0; i < 4; i++) {
+		conf_ac = &wl->conf.tx.ac_conf[i];
+		// ret = wl1271_acx_ac_cfg(wl, wlvif, conf_ac->ac,
+		// 			conf_ac->cw_min, conf_ac->cw_max,
+		// 			conf_ac->aifsn, conf_ac->tx_op_limit);
+		struct acx_ac_cfg acx4;
+		acx4.role_id = wlvif->role_id;
+		acx4.ac = conf_ac->ac;
+		acx4.cw_min = conf_ac->cw_min;
+		acx4.cw_max = cpu_to_le16(conf_ac->cw_max);
+		acx4.aifsn = conf_ac->aifsn;
+		acx4.tx_op_limit = cpu_to_le16(conf_ac->tx_op_limit);
+		ret = VV_cmd_send(wl, ACX_AC_CFG, &acx4, sizeof(acx4), 0);
+		if (ret < 0)
+			return ret;
+
+		conf_tid = &wl->conf.tx.tid_conf[i];
+		// ret = wl1271_acx_tid_cfg(wl, wlvif,
+		// 			 conf_tid->queue_id,
+		// 			 conf_tid->channel_type,
+		// 			 conf_tid->tsid,
+		// 			 conf_tid->ps_scheme,
+		// 			 conf_tid->ack_policy,
+		// 			 conf_tid->apsd_conf[0],
+		// 			 conf_tid->apsd_conf[1]);
+		struct acx_tid_config acx5;
+		acx5.role_id = wlvif->role_id;
+		acx5.queue_id = conf_tid->queue_id;
+		acx5.channel_type = conf_tid->channel_type;
+		acx5.tsid = conf_tid->tsid;
+		acx5.ps_scheme = conf_tid->ps_scheme;
+		acx5.ack_policy = conf_tid->ack_policy;
+		acx5.apsd_conf[0] = cpu_to_le32(conf_tid->apsd_conf[0]);
+		acx5.apsd_conf[1] = cpu_to_le32(conf_tid->apsd_conf[1]);
+		ret = VV_cmd_send(wl, ACX_TID_CFG, &acx5, sizeof(acx5), 0);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* Configure HW encryption */
+	// ret = wl1271_acx_feature_cfg(wl, wlvif);
+	struct acx_feature_config feature;
+	feature.role_id = wlvif->role_id;
+	feature.data_flow_options = 0;
+	feature.options = 0;
+	ret = VV_cmd_send(wl, ACX_FEATURE_CFG, &feature, sizeof(feature), 0);
+	if (ret < 0)
+		return ret;
+
+	/* Mode specific init - post mem init */
+	// if (is_ap)
+	// 	ret = wl1271_ap_hw_init_post_mem(wl, vif);
+	// else
+		// ret = wl1271_sta_hw_init_post_mem(wl, vif);
+	struct wl1271_acx_keep_alive_mode acx6;
+	acx6.role_id = wlvif->role_id;
+	acx6.enabled = false;
+	ret = VV_cmd_send(wl, ACX_KEEP_ALIVE_MODE, &acx6, sizeof(acx6), 0);
+
+	if (ret < 0)
+		return ret;
+
+	/* Configure initiator BA sessions policies */
+	// ret = wl1271_set_ba_policies(wl, wlvif);
+	/* Reset the BA RX indicators */
+	wlvif->ba_allowed = true;
+	wl->ba_rx_session_count = 0;
+	struct wl1271_acx_ba_initiator_policy acx7;
+	acx7.role_id = wlvif->role_id;
+	acx7.tid_bitmap = wl->conf.ht.tx_ba_tid_bitmap;
+	acx7.win_size = wl->conf.ht.tx_ba_win_size;
+	acx7.inactivity_timeout = wl->conf.ht.inactivity_timeout;
+	ret = VV_cmd_send(wl, ACX_BA_SESSION_INIT_POLICY, &acx7, sizeof(acx7), 0);
+	if (ret < 0)
+		return ret;
+
+	// ret = wlcore_hw_init_vif(wl, wlvif);
+	// if (ret < 0)
+	// 	return ret;
 
 	return 0;
 }

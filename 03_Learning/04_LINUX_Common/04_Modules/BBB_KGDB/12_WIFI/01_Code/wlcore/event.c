@@ -230,7 +230,7 @@ void wlcore_event_channel_switch(struct wl1271 *wl,
 
 		if (wlvif->bss_type == BSS_TYPE_STA_BSS) {
 			ieee80211_chswitch_done(vif, success);
-			cancel_delayed_work(&wlvif->channel_switch_work);
+			// cancel_delayed_work(&wlvif->channel_switch_work);
 		} else {
 			set_bit(WLVIF_FLAG_BEACON_DISABLED, &wlvif->flags);
 			ieee80211_csa_finish(vif);
@@ -338,9 +338,9 @@ void wlcore_event_beacon_loss(struct wl1271 *wl, unsigned long roles_bitmap)
 		 * We don't want to delay the connection loss
 		 * indication any more.
 		 */
-		ieee80211_queue_delayed_work(wl->hw,
-					     &wlvif->connection_loss_work,
-					     msecs_to_jiffies(delay));
+		// ieee80211_queue_delayed_work(wl->hw,
+		// 			     &wlvif->connection_loss_work,
+		// 			     msecs_to_jiffies(delay));
 
 		ieee80211_cqm_beacon_loss_notify(vif, GFP_KERNEL);
 	}

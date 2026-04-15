@@ -17,6 +17,10 @@ struct acx_header;
 
 int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 		    size_t res_len);
+int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
+			     size_t len, size_t res_len);
+int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
+				  size_t len, unsigned long valid_rets);
 int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 			   u8 *role_id);
 int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id);

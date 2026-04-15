@@ -24,6 +24,7 @@
 #include "event.h"
 #include "tx.h"
 #include "hw_ops.h"
+#include "../wl18xx/wl18xx.h"
 
 #define WL1271_CMD_FAST_POLL_COUNT       50
 #define WL1271_WAIT_EVENT_FAST_POLL_COUNT 20
@@ -61,7 +62,8 @@ static int __wlcore_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 	WARN_ON(len % 4 != 0);
 	WARN_ON(test_bit(WL1271_FLAG_IN_ELP, &wl->flags));
 
-	ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
+	// ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
 	if (ret < 0)
 		return ret;
 
@@ -69,13 +71,24 @@ static int __wlcore_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 	 * TODO: we just need this because one bit is in a different
 	 * place.  Is there any better way?
 	 */
-	ret = wl->ops->trigger_cmd(wl, wl->cmd_box_addr, buf, len);
-	if (ret < 0)
-		return ret;
+	// ret = wl->ops->trigger_cmd(wl, wl->cmd_box_addr, buf, len);
+	// if (ret < 0)
+	// 	return ret;
+
+	struct wl18xx_priv *priv = wl->priv;
+
+	memcpy(priv->cmd_buf, buf, len);
+	memset(priv->cmd_buf + len, 0, WL18XX_CMD_MAX_SIZE - len);
+
+	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
+	// 		    WL18XX_CMD_MAX_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
+
 
 	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
 
-	ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 	if (ret < 0)
 		return ret;
 
@@ -84,14 +97,8 @@ static int __wlcore_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 			wl1271_error("command complete timeout");
 			return -ETIMEDOUT;
 		}
-
-		poll_count++;
-		if (poll_count < WL1271_CMD_FAST_POLL_COUNT)
-			udelay(10);
-		else
-			msleep(1);
-
-		ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 		if (ret < 0)
 			return ret;
 	}
@@ -100,14 +107,80 @@ static int __wlcore_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 	if (res_len == 0)
 		res_len = sizeof(struct wl1271_cmd_header);
 
-	ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
+	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
 	if (ret < 0)
 		return ret;
 
 	status = le16_to_cpu(cmd->status);
 
-	ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
-			       WL1271_ACX_INTR_CMD_COMPLETE);
+	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
+	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
+				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
+	if (ret < 0)
+		return ret;
+
+	return status;
+}
+
+int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
+			     size_t len, size_t res_len)
+{
+	struct wl1271_cmd_header *cmd;
+	unsigned long timeout;
+	u32 intr;
+	int ret;
+	u16 status;
+	u8 cmd_max[WL18XX_CMD_MAX_SIZE];
+
+	cmd = buf;
+	cmd->id = cpu_to_le16(id);
+	cmd->status = 0;
+
+	// ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
+	if (ret < 0)
+		return ret;
+
+	memcpy(cmd_max, buf, len);
+	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
+
+	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
+	// 		    WL18XX_CMD_MAX_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+
+
+	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
+	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+	if (ret < 0)
+		return ret;
+
+	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
+		if (time_after(jiffies, timeout)) {
+			wl1271_error("command complete timeout");
+			return -ETIMEDOUT;
+		}
+		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* read back the status code of the command */
+	if (res_len == 0)
+		res_len = sizeof(struct wl1271_cmd_header);
+
+	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+	if (ret < 0)
+		return ret;
+	status = le16_to_cpu(cmd->status);
+	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
+	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
+				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
 	if (ret < 0)
 		return ret;
 
@@ -150,6 +223,7 @@ int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 		    size_t res_len)
 {
 	int ret = wlcore_cmd_send_failsafe(wl, id, buf, len, res_len, 0);
+	//int ret = __VV_cmd_send(wl, id, buf, len, res_len);
 
 	if (ret < 0)
 		return ret;
@@ -246,11 +320,12 @@ int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 		ret = -EBUSY;
 		goto out_free;
 	}
-
+	/* get mac addr */
 	memcpy(cmd->mac_address, addr, ETH_ALEN);
+	/* get role type */
 	cmd->role_type = role_type;
 
-	ret = wl1271_cmd_send(wl, CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(wl, CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role enable");
 		goto out_free;
@@ -906,6 +981,26 @@ int wlcore_cmd_configure_failsafe(struct wl1271 *wl, u16 id, void *buf,
 
 	ret = wlcore_cmd_send_failsafe(wl, CMD_CONFIGURE, acx, len, 0,
 				       valid_rets);
+	if (ret < 0) {
+		wl1271_warning("CONFIGURE command NOK");
+		return ret;
+	}
+
+	return ret;
+}
+
+int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
+				  size_t len, unsigned long valid_rets)
+{
+	struct acx_header *acx = buf;
+	int ret;
+
+	acx->id = cpu_to_le16(id);
+
+	/* payload length, does not include any headers */
+	acx->len = cpu_to_le16(len - sizeof(*acx));
+
+	ret = VV_cmd_send(wl, CMD_CONFIGURE, acx, len, valid_rets);
 	if (ret < 0) {
 		wl1271_warning("CONFIGURE command NOK");
 		return ret;

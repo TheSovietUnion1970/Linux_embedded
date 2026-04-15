@@ -221,6 +221,27 @@ int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fix
 	return ret;
 }
 
+int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool fixed)
+{
+	int ret = 0;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+
+	sdio_claim_host(func);
+
+	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
+	// 	addr, len);
+
+	if (fixed)
+		ret = sdio_writesb(func, addr, var, len);
+	else
+		ret = sdio_memcpy_toio(func, addr, var, len);
+	
+
+	sdio_release_host(func);
+
+	return ret;
+}
+
 int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fixed)
 {
 	int ret = 0;

@@ -230,8 +230,10 @@ int wl1271_acx_group_address_tbl(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->num_groups = mc_list_len;
 	memcpy(acx->mac_table, mc_list, mc_list_len * ETH_ALEN);
 
-	ret = wl1271_cmd_configure(wl, DOT11_GROUP_ADDRESS_TBL,
-				   acx, sizeof(*acx));
+	// ret = wl1271_cmd_configure(wl, DOT11_GROUP_ADDRESS_TBL,
+	// 			   acx, sizeof(*acx));
+	ret = VV_cmd_configure(wl, DOT11_GROUP_ADDRESS_TBL,
+				   acx, sizeof(*acx), 0);
 	if (ret < 0) {
 		wl1271_warning("failed to set group addr table: %d", ret);
 		goto out;

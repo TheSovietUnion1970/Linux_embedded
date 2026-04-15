@@ -97,10 +97,10 @@ static void wl1271_tx_ap_update_inconnection_sta(struct wl1271 *wl,
 	 */
 	wlcore_update_inconn_sta(wl, wlvif, NULL, true);
 	wlvif->pending_auth_reply_time = jiffies;
-	cancel_delayed_work(&wlvif->pending_auth_complete_work);
-	ieee80211_queue_delayed_work(wl->hw,
-				&wlvif->pending_auth_complete_work,
-				msecs_to_jiffies(WLCORE_PEND_AUTH_ROC_TIMEOUT));
+	// cancel_delayed_work(&wlvif->pending_auth_complete_work);
+	// ieee80211_queue_delayed_work(wl->hw,
+	// 			&wlvif->pending_auth_complete_work,
+	// 			msecs_to_jiffies(WLCORE_PEND_AUTH_ROC_TIMEOUT));
 }
 
 static void wl1271_tx_regulate_link(struct wl1271 *wl,
@@ -726,12 +726,12 @@ void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids)
 			continue;
 
 		/* enable rx streaming */
-		if (!test_bit(WLVIF_FLAG_RX_STREAMING_STARTED, &wlvif->flags))
-			ieee80211_queue_work(wl->hw,
-					     &wlvif->rx_streaming_enable_work);
+		// if (!test_bit(WLVIF_FLAG_RX_STREAMING_STARTED, &wlvif->flags))
+			// ieee80211_queue_work(wl->hw,
+			// 		     &wlvif->rx_streaming_enable_work);
 
-		mod_timer(&wlvif->rx_streaming_timer,
-			  jiffies + msecs_to_jiffies(timeout));
+		// mod_timer(&wlvif->rx_streaming_timer,
+		// 	  jiffies + msecs_to_jiffies(timeout));
 	}
 }
 
