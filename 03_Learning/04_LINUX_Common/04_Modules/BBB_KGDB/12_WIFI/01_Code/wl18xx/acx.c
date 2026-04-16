@@ -34,8 +34,10 @@ int wl18xx_acx_host_if_cfg_bitmap(struct wl1271 *wl, u32 host_cfg_bitmap,
 	bitmap_conf->extra_mem_blocks = cpu_to_le32(extra_mem_blks);
 	bitmap_conf->length_field_size = cpu_to_le32(len_field_size);
 
-	ret = wl1271_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP,
-				   bitmap_conf, sizeof(*bitmap_conf));
+	// ret = wl1271_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP,
+	// 			   bitmap_conf, sizeof(*bitmap_conf));
+	ret = VV_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP, bitmap_conf, 
+					sizeof(*bitmap_conf), 0);
 	if (ret < 0) {
 		wl1271_warning("wl1271 bitmap config opt failed: %d", ret);
 		goto out;

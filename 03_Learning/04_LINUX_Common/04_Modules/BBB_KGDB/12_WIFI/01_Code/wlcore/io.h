@@ -237,5 +237,6 @@ int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool 
 int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fixed);
 int wlcore_translate_addr(struct wl1271 *wl, int addr);
 int VV_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p);
+void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz);
 
 #endif

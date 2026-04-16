@@ -240,3 +240,150 @@ out_free:
 	kfree(cmd);
 	return ret;
 }
+#include "../wlcore/io.h"
+#define WL18XX_CMD_MAX_SIZE 740
+int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed)
+{
+	int ret = 0;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+
+	sdio_claim_host(func);
+
+	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
+	// 	addr, len);
+
+	if (fixed)
+		ret = sdio_writesb(func, addr, &var, len);
+	else
+		ret = sdio_memcpy_toio(func, addr, &var, len);
+	
+
+	sdio_release_host(func);
+
+	return ret;
+}
+
+int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool fixed)
+{
+	int ret = 0;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+
+	sdio_claim_host(func);
+
+	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
+	// 	addr, len);
+
+	if (fixed)
+		ret = sdio_writesb(func, addr, var, len);
+	else
+		ret = sdio_memcpy_toio(func, addr, var, len);
+	
+
+	sdio_release_host(func);
+
+	return ret;
+}
+
+int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fixed)
+{
+	int ret = 0;
+	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+
+	sdio_claim_host(func);
+
+	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
+	// 	addr, len);
+
+	if (fixed)
+		ret = sdio_readsb(func, var, addr, len);
+	else
+		ret = sdio_memcpy_fromio(func, var, addr, len);
+	
+
+	sdio_release_host(func);
+
+	return ret;
+}
+
+int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
+			     size_t len, size_t res_len)
+{
+	struct wl1271_cmd_header *cmd;
+	unsigned long timeout;
+	u32 intr;
+	int ret;
+	u16 status;
+	u8 cmd_max[WL18XX_CMD_MAX_SIZE];
+
+	cmd = buf;
+	cmd->id = cpu_to_le16(id);
+	cmd->status = 0;
+
+	// ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
+	if (ret < 0)
+		return ret;
+
+	memcpy(cmd_max, buf, len);
+	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
+
+	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
+	// 		    WL18XX_CMD_MAX_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+
+
+	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
+	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+	if (ret < 0)
+		return ret;
+
+	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
+		if (time_after(jiffies, timeout)) {
+			wl1271_error("command complete timeout");
+			return -ETIMEDOUT;
+		}
+		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* read back the status code of the command */
+	if (res_len == 0)
+		res_len = sizeof(struct wl1271_cmd_header);
+
+	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+	if (ret < 0)
+		return ret;
+	status = le16_to_cpu(cmd->status);
+	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
+	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
+				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
+	if (ret < 0)
+		return ret;
+
+	return status;
+}
+
+int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
+				  size_t len, unsigned long valid_rets)
+{
+	struct acx_header *acx = buf;
+	int ret;
+
+	acx->id = cpu_to_le16(id);
+
+	/* payload length, does not include any headers */
+	acx->len = cpu_to_le16(len - sizeof(*acx));
+
+	ret = VV_cmd_send(wl, CMD_CONFIGURE, acx, len, valid_rets);
+	if (ret < 0) {
+		wl1271_warning("CONFIGURE command NOK");
+		return ret;
+	}
+
+	return ret;
+}

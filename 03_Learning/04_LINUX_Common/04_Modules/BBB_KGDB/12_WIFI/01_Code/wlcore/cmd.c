@@ -297,6 +297,43 @@ free_vector:
 }
 EXPORT_SYMBOL_GPL(wlcore_cmd_wait_for_event_or_timeout);
 
+// int VV_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
+// 					 u32 mask, bool *timeout)
+// {
+// 	u32 events_vector;
+// 	u32 event;
+// 	unsigned long timeout_time;
+// 	int ret = 0;
+
+// 	*timeout = false;
+
+// 	timeout_time = jiffies + msecs_to_jiffies(WL1271_EVENT_TIMEOUT);
+
+// 	do {
+// 		if (time_after(jiffies, timeout_time)) {
+// 			*timeout = true;
+// 			break;
+// 		}
+
+// 		/* read from both event fields */
+// 		ret = VV_sdio_raw_read(wl, wl->mbox_ptr[0], &events_vector, sizeof(events_vector), false);
+// 		if (ret < 0)
+// 			break;
+
+// 		event = events_vector & mask;
+
+// 		ret = VV_sdio_raw_read(wl, wl->mbox_ptr[1], &events_vector, sizeof(events_vector), false);
+// 		if (ret < 0)
+// 			break;
+
+// 		event |= events_vector & mask;
+// 	} while (!event);
+
+// 	return ret;
+
+// }
+// EXPORT_SYMBOL_GPL(VV_cmd_wait_for_event_or_timeout);
+
 int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 			   u8 *role_id)
 {
@@ -947,6 +984,27 @@ int wl1271_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
 	acx->len = cpu_to_le16(res_len - sizeof(*acx));
 
 	ret = wl1271_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
+	// ret = VV_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
+	if (ret < 0)
+		wl1271_error("INTERROGATE command failed");
+
+	return ret;
+}
+
+int VV_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
+			   size_t cmd_len, size_t res_len)
+{
+	struct acx_header *acx = buf;
+	int ret;
+
+	wl1271_debug(DEBUG_CMD, "cmd interrogate");
+
+	acx->id = cpu_to_le16(id);
+
+	/* response payload length, does not include any headers */
+	acx->len = cpu_to_le16(res_len - sizeof(*acx));
+
+	ret = VV_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
 	if (ret < 0)
 		wl1271_error("INTERROGATE command failed");
 
@@ -1864,6 +1922,44 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 
 out:
 	kfree(cmd);
+	return ret;
+}
+
+int VV_cmd_regdomain_config_locked(struct wl1271 *wl)
+{
+	struct wl12xx_cmd_regdomain_dfs_config cmd;
+	int ret = 0, i, b, ch_bit_idx;
+	__le32 tmp_ch_bitmap[2] __aligned(sizeof(unsigned long));
+	struct wiphy *wiphy = wl->hw->wiphy;
+	struct ieee80211_supported_band *band;
+	bool timeout = false;
+
+
+	//printk("0, 1 = %x, %x\n", tmp_ch_bitmap[0], tmp_ch_bitmap[1]);
+	// ch[1..11] -> ch_bit_idx[0..10] -> tmp_ch_bitmap[0][1] = [0x7ff, 0]
+	cmd.ch_bit_map1 = tmp_ch_bitmap[0];
+	cmd.ch_bit_map2 = tmp_ch_bitmap[1];
+	cmd.dfs_region = wl->dfs_region;
+	ret = wl1271_cmd_send(wl, CMD_DFS_CHANNEL_CONFIG, &cmd, sizeof(cmd), 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	// VV_
+	ret = wl->ops->wait_for_event(wl,
+				      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
+				      &timeout);
+	if (ret < 0 || timeout) {
+		wl1271_error("reg domain conf %serror",
+			     timeout ? "completion " : "");
+		ret = timeout ? -ETIMEDOUT : ret;
+		return ret;
+	}
+
+	memcpy(wl->reg_ch_conf_last, tmp_ch_bitmap, sizeof(tmp_ch_bitmap));
+	memset(wl->reg_ch_conf_pending, 0, sizeof(wl->reg_ch_conf_pending));
+
+out:
 	return ret;
 }
 

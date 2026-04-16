@@ -21,6 +21,8 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 			     size_t len, size_t res_len);
 int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
 				  size_t len, unsigned long valid_rets);
+int VV_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
+			   size_t cmd_len, size_t res_len);
 int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 			   u8 *role_id);
 int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id);
@@ -82,6 +84,7 @@ int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 void wlcore_set_pending_regdomain_ch(struct wl1271 *wl, u16 channel,
 				     enum nl80211_band band);
 int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl);
+int VV_cmd_regdomain_config_locked(struct wl1271 *wl);
 int wlcore_cmd_generic_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			   u8 feature, u8 enable, u8 value);
 int wl12xx_cmd_config_fwlog(struct wl1271 *wl);
@@ -97,6 +100,7 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid);
 int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
 					 u32 mask, bool *timeout);
+void haha(void);
 u8 wlcore_get_native_channel_type(u8 nl_channel_type);
 
 enum wl1271_commands {

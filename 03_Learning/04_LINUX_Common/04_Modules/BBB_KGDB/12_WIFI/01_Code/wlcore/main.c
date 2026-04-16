@@ -677,6 +677,7 @@ static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
 
 	wl1271_debug(DEBUG_BOOT, "booting firmware %s", fw_name);
 
+	printk("request_firmware - fw_name = '%s', fw_type = %d, fw->size = %d\n", fw_name, fw_type, fw->size);
 	ret = request_firmware(&fw, fw_name, wl->dev);
 
 	if (ret < 0) {
@@ -705,6 +706,39 @@ static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
 	memcpy(wl->fw, fw->data, wl->fw_len);
 	ret = 0;
 	wl->fw_type = fw_type;
+out:
+	release_firmware(fw);
+
+	return ret;
+}
+
+static int VV_fetch_firmware(struct wl1271 *wl, bool plt)
+{
+	const struct firmware *fw;
+	const char *fw_name;
+	enum wl12xx_fw_type fw_type;
+	int ret;
+
+	fw_type = WL12XX_FW_TYPE_NORMAL;
+	fw_name = wl->sr_fw_name;
+
+	if (wl->fw_type == fw_type)
+		return 0;
+
+
+	printk("request_firmware - fw_name = '%s', fw_type = %d, fw->size = %d\n", fw_name, fw_type, fw->size);
+	ret = request_firmware(&fw, fw_name, wl->dev);
+
+	vfree(wl->fw);
+	wl->fw_type = WL12XX_FW_TYPE_NONE;
+	wl->fw_len = fw->size;
+	wl->fw = vmalloc(wl->fw_len);
+
+	memcpy(wl->fw, fw->data, wl->fw_len);
+	ret = 0;
+	wl->fw_type = fw_type;
+
+	// finally get wl->fw, wl->fw_type, wl->fw_len
 out:
 	release_firmware(fw);
 
@@ -1024,10 +1058,12 @@ fail:
 	return ret;
 }
 
+#include "io.h"
 static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 {
 	int ret = 0;
 
+	// VV_
 	ret = wl12xx_set_power_on(wl);
 	if (ret < 0)
 		goto out;
@@ -1043,8 +1079,9 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 	 * Check if the bus supports blocksize alignment and, if it
 	 * doesn't, make sure we don't have the quirk.
 	 */
-	if (!wl1271_set_block_size(wl))
-		wl->quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
+	// if (!wl1271_set_block_size(wl))
+	// 	wl->quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
+	VV_sdio_set_block_size(wl, WL12XX_BUS_BLOCK_SIZE);
 
 	/* TODO: make sure the lower driver has set things up correctly */
 
@@ -1052,7 +1089,9 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 	if (ret < 0)
 		goto out;
 
-	ret = wl12xx_fetch_firmware(wl, plt);
+	// ret = wl12xx_fetch_firmware(wl, plt);
+	// VV_
+	ret = VV_fetch_firmware(wl, plt);
 	if (ret < 0) {
 		kfree(wl->fw_status);
 		kfree(wl->raw_fw_status);
@@ -2080,7 +2119,8 @@ static int wl12xx_init_fw(struct wl1271 *wl)
 		if (ret < 0)
 			goto power_off;
 
-		ret = wl1271_hw_init(wl);
+		// ret = wl1271_hw_init(wl);
+		ret = VV_hw_init(wl);
 		if (ret < 0)
 			goto irq_disable;
 

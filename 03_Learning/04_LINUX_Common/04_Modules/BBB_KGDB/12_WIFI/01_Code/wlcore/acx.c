@@ -1008,8 +1008,10 @@ int wl1271_acx_init_mem_config(struct wl1271 *wl)
 	}
 
 	/* we now ask for the firmware built memory map */
-	ret = wl1271_acx_mem_map(wl, (void *)wl->target_mem_map,
-				 sizeof(struct wl1271_acx_mem_map));
+	// ret = wl1271_acx_mem_map(wl, (void *)wl->target_mem_map,
+	// 			 sizeof(struct wl1271_acx_mem_map));
+	ret = VV_cmd_interrogate(wl, ACX_MEM_MAP, (void *)wl->target_mem_map,
+				     sizeof(struct acx_header), sizeof(struct wl1271_acx_mem_map));
 	if (ret < 0) {
 		wl1271_error("couldn't retrieve firmware memory map");
 		kfree(wl->target_mem_map);

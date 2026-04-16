@@ -13,6 +13,45 @@
 #include "../wlcore/debug.h"
 #include "../wlcore/vendor_cmd.h"
 
+#include <linux/pm_runtime.h>
+#include "../wlcore/io.h"
+int VV_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
+					 u32 mask, bool *timeout)
+{
+	u32 events_vector;
+	u32 event;
+	unsigned long timeout_time;
+	int ret = 0;
+
+	*timeout = false;
+
+	timeout_time = jiffies + msecs_to_jiffies(WL1271_EVENT_TIMEOUT);
+
+	do {
+		if (time_after(jiffies, timeout_time)) {
+			*timeout = true;
+			break;
+		}
+
+		/* read from both event fields */
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->mbox_ptr[0]), &events_vector, sizeof(events_vector), false);
+		if (ret < 0)
+			break;
+
+		event = events_vector & mask;
+
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->mbox_ptr[1]), &events_vector, sizeof(events_vector), false);
+		if (ret < 0)
+			break;
+
+		event |= events_vector & mask;
+	} while (!event);
+
+	return ret;
+
+}
+EXPORT_SYMBOL_GPL(VV_cmd_wait_for_event_or_timeout);
+
 int wl18xx_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event,
 			  bool *timeout)
 {
@@ -31,7 +70,8 @@ int wl18xx_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event,
 		/* event not implemented */
 		return 0;
 	}
-	return wlcore_cmd_wait_for_event_or_timeout(wl, local_event, timeout);
+	// return wlcore_cmd_wait_for_event_or_timeout(wl, local_event, timeout);
+	return VV_cmd_wait_for_event_or_timeout(wl, local_event, timeout);
 }
 
 static const char *wl18xx_radar_type_decode(u8 radar_type)

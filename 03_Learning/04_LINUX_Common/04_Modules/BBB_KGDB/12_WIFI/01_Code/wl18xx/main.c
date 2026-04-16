@@ -1143,6 +1143,12 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 	ret = wl18xx_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
 					    sdio_align_size, extra_mem_blk,
 					    WL18XX_HOST_IF_LEN_SIZE_FIELD);
+	// struct wl18xx_acx_host_config_bitmap bitmap_conf;
+	// bitmap_conf.host_cfg_bitmap = cpu_to_le32(host_cfg_bitmap);
+	// bitmap_conf.host_sdio_block_size = cpu_to_le32(sdio_align_size);
+	// bitmap_conf.extra_mem_blocks = cpu_to_le32(extra_mem_blk);
+	// bitmap_conf.length_field_size = cpu_to_le32(WL18XX_HOST_IF_LEN_SIZE_FIELD);
+	// ret = VV_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP, &bitmap_conf, sizeof(bitmap_conf), 0);
 	if (ret < 0)
 		return ret;
 
@@ -1159,20 +1165,46 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	priv->extra_spare_key_count = 0;
 
 	/* set the default amount of spare blocks in the bitmap */
-	ret = wl18xx_set_host_cfg_bitmap(wl, WL18XX_TX_HW_BLOCK_SPARE);
+	// ret = wl18xx_set_host_cfg_bitmap(wl, WL18XX_TX_HW_BLOCK_SPARE);
+	u32 sdio_align_size = 0;
+	u32 host_cfg_bitmap = HOST_IF_CFG_RX_FIFO_ENABLE |
+			      HOST_IF_CFG_ADD_RX_ALIGNMENT;
+
+	/* Enable Tx SDIO padding */
+	if (wl->quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN) {
+		host_cfg_bitmap |= HOST_IF_CFG_TX_PAD_TO_SDIO_BLK;
+		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
+	}
+
+	/* Enable Rx SDIO padding */
+	if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN) {
+		host_cfg_bitmap |= HOST_IF_CFG_RX_PAD_TO_SDIO_BLK;
+		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
+	}
+
+	//printk("wl->quirks = %d\n", wl->quirks);
+	struct wl18xx_acx_host_config_bitmap bitmap_conf;
+	bitmap_conf.host_cfg_bitmap = cpu_to_le32(host_cfg_bitmap);
+	bitmap_conf.host_sdio_block_size = cpu_to_le32(sdio_align_size);
+	bitmap_conf.extra_mem_blocks = cpu_to_le32(WL18XX_TX_HW_BLOCK_SPARE);
+	bitmap_conf.length_field_size = cpu_to_le32(WL18XX_HOST_IF_LEN_SIZE_FIELD);
+	ret = VV_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP, &bitmap_conf, sizeof(bitmap_conf), 0);
 	if (ret < 0)
 		return ret;
 
 	/* set the dynamic fw traces bitmap */
-	ret = wl18xx_acx_dynamic_fw_traces(wl);
+	// ret = wl18xx_acx_dynamic_fw_traces(wl);
+	struct acx_dynamic_fw_traces_cfg acx;
+	acx.dynamic_fw_traces = cpu_to_le32(wl->dynamic_fw_traces);
+	ret = VV_cmd_configure(wl, ACX_DYNAMIC_TRACES_CFG, &acx, sizeof(acx), 0);
 	if (ret < 0)
 		return ret;
 
-	if (checksum_param) {
-		ret = wl18xx_acx_set_checksum_state(wl);
-		if (ret != 0)
-			return ret;
-	}
+	// if (checksum_param) {
+	// 	ret = wl18xx_acx_set_checksum_state(wl);
+	// 	if (ret != 0)
+	// 		return ret;
+	// }
 
 	return ret;
 }
