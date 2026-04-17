@@ -13,8 +13,10 @@
 #include "wlcore.h"
 
 int wlcore_boot_upload_firmware(struct wl1271 *wl);
-int wlcore_boot_upload_nvs(struct wl1271 *wl);
+int VV_boot_upload_firmware(struct wl1271 *wl);
+//int wlcore_boot_upload_nvs(struct wl1271 *wl);
 int wlcore_boot_run_firmware(struct wl1271 *wl);
+int VV_boot_run_firmware(struct wl1271 *wl);
 
 #define WL1271_NO_SUBBANDS 8
 #define WL1271_NO_POWER_LEVELS 4

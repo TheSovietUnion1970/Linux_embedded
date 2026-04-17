@@ -24,13 +24,15 @@ static int wl1271_boot_set_ecpu_ctrl(struct wl1271 *wl, u32 flag)
 	int ret;
 
 	/* 10.5.0 run the firmware (I) */
-	ret = wlcore_read_reg(wl, REG_ECPU_CONTROL, &cpu_ctrl);
+	// ret = wlcore_read_reg(wl, REG_ECPU_CONTROL, &cpu_ctrl);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* 10.5.1 run the firmware (II) */
 	cpu_ctrl |= flag;
-	ret = wlcore_write_reg(wl, REG_ECPU_CONTROL, cpu_ctrl);
+	// ret = wlcore_write_reg(wl, REG_ECPU_CONTROL, cpu_ctrl);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
 
 out:
 	return ret;
@@ -59,9 +61,9 @@ static int wlcore_boot_parse_fw_ver(struct wl1271 *wl,
 		goto out;
 	}
 
-	ret = wlcore_identify_fw(wl);
-	if (ret < 0)
-		goto out;
+	// ret = wlcore_identify_fw(wl);
+	// if (ret < 0)
+	// 	goto out;
 out:
 	return ret;
 }
@@ -142,6 +144,7 @@ static int wlcore_boot_static_data(struct wl1271 *wl)
 	if (ret < 0)
 		goto out_free;
 
+	// ~ VV_
 	ret = wlcore_boot_parse_fw_ver(wl, static_data);
 	if (ret < 0)
 		goto out_free;
@@ -153,6 +156,7 @@ static int wlcore_boot_static_data(struct wl1271 *wl)
 	ret = wlcore_handle_static_data(wl, static_data);
 	if (ret < 0)
 		goto out_free;
+	// wlcore: PHY firmware version: Rev 8.2.0.0.243
 
 out_free:
 	kfree(static_data);
@@ -199,7 +203,8 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 	while (chunk_num < fw_data_len / CHUNK_SIZE) {
 		/* 10.2 update partition, if needed */
 		addr = dest + (chunk_num + 2) * CHUNK_SIZE;
-		if (addr > partition_limit) {
+		if (addr > partition_limit) { // partition has 2 chunks
+			//printk("UNLUCKY PAR\n");
 			addr = dest + chunk_num * CHUNK_SIZE;
 			partition_limit = chunk_num * CHUNK_SIZE +
 				wl->ptable[PART_DOWN].mem.size;
@@ -215,7 +220,8 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 		memcpy(chunk, p, CHUNK_SIZE);
 		wl1271_debug(DEBUG_BOOT, "uploading fw chunk 0x%p to 0x%x",
 			     p, addr);
-		ret = wlcore_write(wl, addr, chunk, CHUNK_SIZE, false);
+		// ret = wlcore_write(wl, addr, chunk, CHUNK_SIZE, false);
+		ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, addr), chunk, CHUNK_SIZE, false);
 		if (ret < 0)
 			goto out;
 
@@ -228,13 +234,15 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 	memcpy(chunk, p, fw_data_len % CHUNK_SIZE);
 	wl1271_debug(DEBUG_BOOT, "uploading fw last chunk (%zd B) 0x%p to 0x%x",
 		     fw_data_len % CHUNK_SIZE, p, addr);
-	ret = wlcore_write(wl, addr, chunk, fw_data_len % CHUNK_SIZE, false);
+	// ret = wlcore_write(wl, addr, chunk, fw_data_len % CHUNK_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, addr), chunk, fw_data_len % CHUNK_SIZE, false);
 
 out:
 	kfree(chunk);
 	return ret;
 }
 
+// [chunk num] [addr, len, buf] [addr, len, buf] ...
 int wlcore_boot_upload_firmware(struct wl1271 *wl)
 {
 	u32 chunks, addr, len;
@@ -257,8 +265,8 @@ int wlcore_boot_upload_firmware(struct wl1271 *wl)
 			wl1271_info("firmware chunk too long: %u", len);
 			return -EINVAL;
 		}
-		wl1271_debug(DEBUG_BOOT, "chunk %d addr 0x%x len %u",
-			     chunks, addr, len);
+		// printk("chunk %d addr 0x%x len %u",
+		// 	     chunks, addr, len);
 		ret = wl1271_boot_upload_firmware_chunk(wl, fw, len, addr);
 		if (ret != 0)
 			break;
@@ -436,15 +444,18 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	u32 chip_id, intr;
 
 	/* Make sure we have the boot partition */
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	// ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		return ret;
 
+	// VV_
 	ret = wl1271_boot_set_ecpu_ctrl(wl, ECPU_CONTROL_HALT);
 	if (ret < 0)
 		return ret;
 
-	ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &chip_id);
+	// ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &chip_id);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -459,7 +470,8 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	loop = 0;
 	while (loop++ < INIT_LOOP) {
 		udelay(INIT_LOOP_DELAY);
-		ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		// ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
 		if (ret < 0)
 			return ret;
 
@@ -470,8 +482,9 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 		}
 		/* check that ACX_INTR_INIT_COMPLETE is enabled */
 		else if (intr & WL1271_ACX_INTR_INIT_COMPLETE) {
-			ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
-					       WL1271_ACX_INTR_INIT_COMPLETE);
+			// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
+			// 		       WL1271_ACX_INTR_INIT_COMPLETE);
+			VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
 			if (ret < 0)
 				return ret;
 			break;
@@ -485,14 +498,16 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	}
 
 	/* get hardware config command mail box */
-	ret = wlcore_read_reg(wl, REG_COMMAND_MAILBOX_PTR, &wl->cmd_box_addr);
+	// ret = wlcore_read_reg(wl, REG_COMMAND_MAILBOX_PTR, &wl->cmd_box_addr);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_COMMAND_MAILBOX_PTR]), &wl->cmd_box_addr, 4, false);
 	if (ret < 0)
 		return ret;
 
 	wl1271_debug(DEBUG_MAILBOX, "cmd_box_addr 0x%x", wl->cmd_box_addr);
 
 	/* get hardware config event mail box */
-	ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);
+	// ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_EVENT_MAILBOX_PTR]), &wl->mbox_ptr[0], 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -501,6 +516,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	wl1271_debug(DEBUG_MAILBOX, "MBOX ptrs: 0x%x 0x%x",
 		     wl->mbox_ptr[0], wl->mbox_ptr[1]);
 
+	// ~ VV_
 	ret = wlcore_boot_static_data(wl);
 	if (ret < 0) {
 		wl1271_error("error getting static data");
@@ -513,7 +529,13 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	 */
 
 	/* unmask required mbox events  */
-	ret = wl1271_event_unmask(wl);
+	// ret = wl1271_event_unmask(wl);
+	struct acx_event_mask mask;
+	/* high event mask is unused */
+	mask.high_event_mask = cpu_to_le32(0xffffffff);
+	mask.event_mask = cpu_to_le32(~(wl->event_mask));
+	ret = VV_cmd_configure(wl, ACX_EVENT_MBOX_MASK, &mask, 
+					sizeof(mask), 0);
 	if (ret < 0) {
 		wl1271_error("EVENT mask setting failed");
 		return ret;

@@ -722,6 +722,7 @@ static int VV_fetch_firmware(struct wl1271 *wl, bool plt)
 	fw_type = WL12XX_FW_TYPE_NORMAL;
 	fw_name = wl->sr_fw_name;
 
+	// must be here to prevent the second fw request
 	if (wl->fw_type == fw_type)
 		return 0;
 
@@ -2363,7 +2364,7 @@ static int VV_allocate_hw_queue_base(struct wl1271 *wl,
 static int VV_op_add_interface(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
 {
-	//printk("VV_ wl1271_op_add_interface\n");
+	printk("==== VV_ wl1271_op_add_interface ====\n");
 	struct wl1271 *wl = hw->priv;
 	//struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
@@ -2674,7 +2675,7 @@ unlock:
 static void VV_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
-	//printk("VV_ wl1271_op_remove_interface\n");
+	printk("VV_ wl1271_op_remove_interface\n");
 	struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	struct wl12xx_vif *iter;
