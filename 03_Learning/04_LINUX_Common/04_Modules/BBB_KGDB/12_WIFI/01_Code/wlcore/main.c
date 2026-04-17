@@ -644,8 +644,10 @@ static void wl12xx_get_vif_count(struct ieee80211_hw *hw,
 	memset(data, 0, sizeof(*data));
 	data->cur_vif = cur_vif;
 
+	printk("BEFORE counter - renove = %d\n", data->counter);
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
 					    wl12xx_vif_count_iter, data);
+	printk("counter - renove = %d\n", data->counter);
 }
 
 static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
@@ -2379,8 +2381,10 @@ static int VV_op_add_interface(struct ieee80211_hw *hw,
 	memset(&vif_count, 0, sizeof(vif_count));
 	vif_count.cur_vif = vif;
 
+	printk("BEFORE counter - add = %d\n", vif_count.counter);
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
 					    wl12xx_vif_count_iter, &vif_count);
+	printk("counter - add = %d\n", vif_count.counter);
 
 	mutex_lock(&wl->mutex);
 
@@ -2672,6 +2676,95 @@ unlock:
 	mutex_lock(&wl->mutex);
 }
 
+static void __VV_op_remove_interface(struct wl1271 *wl,
+					 struct ieee80211_vif *vif,
+					 bool reset_tx_queues)
+{
+	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	int i, ret;
+	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
+
+	// CRITICAL
+	if (!test_and_clear_bit(WLVIF_FLAG_INITIALIZED, &wlvif->flags))
+		return;
+
+	/* because of hardware recovery, we may get here twice */
+	if (wl->state == WLCORE_STATE_OFF)
+		return;
+
+	wl1271_info("down _VV");
+
+	if (wl->scan.state != WL1271_SCAN_STATE_IDLE &&
+	    wl->scan_wlvif == wlvif) {
+		struct cfg80211_scan_info info = {
+			.aborted = true,
+		};
+		printk("if wl->scan.state != WL1271_SCAN_STATE_IDLE...\n");
+
+		/*
+		 * Rearm the tx watchdog just before idling scan. This
+		 * prevents just-finished scans from triggering the watchdog
+		 */
+		wl12xx_rearm_tx_watchdog_locked(wl);
+
+		wl->scan.state = WL1271_SCAN_STATE_IDLE;
+		memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
+		wl->scan_wlvif = NULL;
+		wl->scan.req = NULL;
+		ieee80211_scan_completed(wl->hw, &info);
+	}
+
+	if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags)) {
+		printk("if!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS\n");
+		/* disable active roles */
+		ret = pm_runtime_get_sync(wl->dev);
+		if (ret < 0) {
+			pm_runtime_put_noidle(wl->dev);
+			goto deinit;
+		}
+
+		if (wlvif->bss_type == BSS_TYPE_STA_BSS ||
+		    wlvif->bss_type == BSS_TYPE_IBSS) {
+			if (wl12xx_dev_role_started(wlvif))
+				wl12xx_stop_dev(wl, wlvif);
+		}
+
+		if (!wlcore_is_p2p_mgmt(wlvif)) {
+			ret = wl12xx_cmd_role_disable(wl, &wlvif->role_id);
+			if (ret < 0) {
+				pm_runtime_put_noidle(wl->dev);
+				goto deinit;
+			}
+		} else {
+			ret = wl12xx_cmd_role_disable(wl, &wlvif->dev_role_id);
+			if (ret < 0) {
+				pm_runtime_put_noidle(wl->dev);
+				goto deinit;
+			}
+		}
+
+		pm_runtime_mark_last_busy(wl->dev);
+		pm_runtime_put_autosuspend(wl->dev);
+	}
+deinit:
+	wl12xx_tx_reset_wlvif(wl, wlvif);
+
+	/* clear all hlids (except system_hlid) */
+	wlvif->dev_hlid = WL12XX_INVALID_LINK_ID;
+	wlvif->sta.hlid = WL12XX_INVALID_LINK_ID;
+
+	dev_kfree_skb(wlvif->probereq);
+	wlvif->probereq = NULL;
+	if (wl->last_wlvif == wlvif)
+		wl->last_wlvif = NULL;
+	list_del(&wlvif->list);
+	memset(wlvif->ap.sta_hlid_map, 0, sizeof(wlvif->ap.sta_hlid_map));
+	wlvif->role_id = WL12XX_INVALID_ROLE_ID;
+	wlvif->dev_role_id = WL12XX_INVALID_ROLE_ID;
+
+	wl->sta_count--;
+}
+
 static void VV_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
@@ -2681,7 +2774,15 @@ static void VV_op_remove_interface(struct ieee80211_hw *hw,
 	struct wl12xx_vif *iter;
 	struct vif_counter_data vif_count;
 
-	wl12xx_get_vif_count(hw, vif, &vif_count);
+	// wl12xx_get_vif_count(hw, vif, &vif_count);
+	memset(&vif_count, 0, sizeof(vif_count));
+	vif_count.cur_vif = vif;
+
+	printk("BEFORE counter - remove = %d\n", vif_count.counter);
+	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
+					    wl12xx_vif_count_iter, &vif_count);
+	printk("counter - remove = %d\n", vif_count.counter);
+
 	mutex_lock(&wl->mutex);
 
 	if (wl->state == WLCORE_STATE_OFF ||
@@ -2696,15 +2797,16 @@ static void VV_op_remove_interface(struct ieee80211_hw *hw,
 		if (iter != wlvif)
 			continue;
 
-		__wl1271_op_remove_interface(wl, vif, true);
+		// __wl1271_op_remove_interface(wl, vif, true);
+		__VV_op_remove_interface(wl, vif, true);
 		break;
 	}
-	WARN_ON(iter != wlvif);
-	if (wl12xx_need_fw_change(wl, vif_count, false)) {
-		wl12xx_force_active_psm(wl);
-		set_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags);
-		wl12xx_queue_recovery_work(wl);
-	}
+	// WARN_ON(iter != wlvif);
+	// if (wl12xx_need_fw_change(wl, vif_count, false)) {
+	// 	wl12xx_force_active_psm(wl);
+	// 	set_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags);
+	// 	wl12xx_queue_recovery_work(wl);
+	// }
 out:
 	mutex_unlock(&wl->mutex);
 }
