@@ -2019,7 +2019,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 		wl->tx_allocated_pkts[i] = 0;
 	}
 
-	wl1271_debugfs_reset(wl);
+	// wl1271_debugfs_reset(wl);
 
 	kfree(wl->raw_fw_status);
 	wl->raw_fw_status = NULL;
