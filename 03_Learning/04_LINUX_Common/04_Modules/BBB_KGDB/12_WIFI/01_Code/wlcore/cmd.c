@@ -2146,7 +2146,10 @@ int wl12xx_croc(struct wl1271 *wl, u8 role_id)
 	if (WARN_ON(!test_bit(role_id, wl->roc_map)))
 		return 0;
 
-	ret = wl12xx_cmd_croc(wl, role_id);
+	//ret = wl12xx_cmd_croc(wl, role_id);
+	struct wl12xx_cmd_croc cmd;
+	cmd.role_id = role_id;
+	ret = VV_cmd_configure(wl, CMD_CANCEL_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
 	if (ret < 0)
 		goto out;
 
@@ -2157,8 +2160,18 @@ int wl12xx_croc(struct wl1271 *wl, u8 role_id)
 	 * recoveries due to just finished ROCs - when Tx hasn't yet had
 	 * a chance to get out.
 	 */
-	if (find_first_bit(wl->roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES)
-		wl12xx_rearm_tx_watchdog_locked(wl);
+	if (find_first_bit(wl->roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES){
+		//wl12xx_rearm_tx_watchdog_locked(wl);
+
+		/* if the watchdog is not armed, don't do anything */
+		if (wl->tx_allocated_blocks != 0){
+			cancel_delayed_work(&wl->tx_watchdog_work);
+			ieee80211_queue_delayed_work(wl->hw, &wl->tx_watchdog_work,
+				msecs_to_jiffies(wl->conf.tx.tx_watchdog_timeout));
+		}
+		// [BUG_LEARN] If removing this if, 'ERROR Tx stuck (in FW) for 5000 ms. Starting recovery'
+
+	}
 out:
 	return ret;
 }
