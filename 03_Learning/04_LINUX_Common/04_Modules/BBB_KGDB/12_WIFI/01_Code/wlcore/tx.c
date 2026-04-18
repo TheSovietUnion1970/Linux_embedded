@@ -469,13 +469,32 @@ void wl1271_handle_tx_low_watermark(struct wl1271 *wl)
 
 	wl12xx_for_each_wlvif(wl, wlvif) {
 		for (i = 0; i < NUM_TX_QUEUES; i++) {
-			if (wlcore_is_queue_stopped_by_reason(wl, wlvif, i,
-					WLCORE_QUEUE_STOP_REASON_WATERMARK) &&
-			    wlvif->tx_queue_count[i] <=
-					WL1271_TX_QUEUE_LOW_WATERMARK)
-				/* firmware buffer has space, restart queues */
-				wlcore_wake_queue(wl, wlvif, i,
-					WLCORE_QUEUE_STOP_REASON_WATERMARK);
+			// VV_
+			if (wlcore_is_queue_stopped_by_reason(wl, wlvif, i, WLCORE_QUEUE_STOP_REASON_WATERMARK) &&
+			    wlvif->tx_queue_count[i] <= WL1271_TX_QUEUE_LOW_WATERMARK)
+				{
+					/* firmware buffer has space, restart queues */
+					//wlcore_wake_queue(wl, wlvif, i, WLCORE_QUEUE_STOP_REASON_WATERMARK);
+
+					unsigned long flags;
+					// int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
+					int mac_queue = wlvif->hw_queue_base;
+					int hwq;
+
+					hwq = mac_queue + 2;
+
+					spin_lock_irqsave(&wl->wl_lock, flags);
+
+					/* queue should not be clear for this reason */
+					WARN_ON_ONCE(!test_and_clear_bit(WLCORE_QUEUE_STOP_REASON_WATERMARK, &wl->queue_stop_reasons[hwq]));
+
+					if (wl->queue_stop_reasons[hwq])
+						spin_unlock_irqrestore(&wl->wl_lock, flags);
+
+					ieee80211_wake_queue(wl->hw, hwq);
+
+					spin_unlock_irqrestore(&wl->wl_lock, flags);
+				}
 		}
 	}
 }
@@ -1030,7 +1049,13 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 		while ((skb = skb_dequeue(&lnk->tx_queue[i]))) {
 			wl1271_debug(DEBUG_TX, "link freeing skb 0x%p", skb);
 
-			if (!wl12xx_is_dummy_packet(wl, skb)) {
+			// if (!wl12xx_is_dummy_packet(wl, skb)) {
+			// 	info = IEEE80211_SKB_CB(skb);
+			// 	info->status.rates[0].idx = -1;
+			// 	info->status.rates[0].count = 0;
+			// 	ieee80211_tx_status_ni(wl->hw, skb);
+			// }
+			if (wl->dummy_packet != skb) {
 				info = IEEE80211_SKB_CB(skb);
 				info->status.rates[0].idx = -1;
 				info->status.rates[0].count = 0;
@@ -1049,6 +1074,7 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 	}
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
+	// VV_ 
 	wl1271_handle_tx_low_watermark(wl);
 }
 
@@ -1062,9 +1088,11 @@ void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
 		    i != wlvif->ap.bcast_hlid && i != wlvif->ap.global_hlid) {
 			/* this calls wl12xx_free_link */
+			// VV_
 			wl1271_free_sta(wl, wlvif, i);
 		} else {
 			u8 hlid = i;
+			// VV_
 			wl12xx_free_link(wl, wlvif, &hlid);
 		}
 	}
@@ -1224,7 +1252,27 @@ void wlcore_wake_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
 		       enum wlcore_queue_stop_reason reason)
 {
 	unsigned long flags;
-	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
+	// int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
+	int mac_queue = wlvif->hw_queue_base;
+	int hwq;
+
+	switch (queue) {
+	case CONF_TX_AC_VO:
+		hwq = mac_queue + 0;
+		break;
+	case CONF_TX_AC_VI:
+		hwq = mac_queue + 1;
+		break;
+	case CONF_TX_AC_BE:
+		hwq = mac_queue + 2;
+		break;
+	case CONF_TX_AC_BK:
+		hwq = mac_queue + 3;
+		break;
+	default:
+		hwq = mac_queue + 2;
+		break;
+	}
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 
@@ -1290,8 +1338,29 @@ bool wlcore_is_queue_stopped_by_reason(struct wl1271 *wl,
 	bool stopped;
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
-	stopped = wlcore_is_queue_stopped_by_reason_locked(wl, wlvif, queue,
-							   reason);
+	//stopped = wlcore_is_queue_stopped_by_reason_locked(wl, wlvif, queue, reason);
+	int mac_queue = wlvif->hw_queue_base;
+	int hwq;
+	switch (queue) {
+	case CONF_TX_AC_VO:
+		hwq = mac_queue + 0;
+		break;
+	case CONF_TX_AC_VI:
+		hwq = mac_queue + 1;
+		break;
+	case CONF_TX_AC_BE:
+		hwq = mac_queue + 2;
+		break;
+	case CONF_TX_AC_BK:
+		hwq = mac_queue + 3;
+		break;
+	default:
+		hwq = mac_queue + 2;
+		break;
+	}
+
+	assert_spin_locked(&wl->wl_lock);
+	stopped = test_bit(reason, &wl->queue_stop_reasons[hwq]);
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
 	return stopped;
@@ -1301,7 +1370,26 @@ bool wlcore_is_queue_stopped_by_reason_locked(struct wl1271 *wl,
 				       struct wl12xx_vif *wlvif, u8 queue,
 				       enum wlcore_queue_stop_reason reason)
 {
-	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
+	// int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
+	int mac_queue = wlvif->hw_queue_base;
+	int hwq;
+	switch (queue) {
+	case CONF_TX_AC_VO:
+		hwq = mac_queue + 0;
+		break;
+	case CONF_TX_AC_VI:
+		hwq = mac_queue + 1;
+		break;
+	case CONF_TX_AC_BE:
+		hwq = mac_queue + 2;
+		break;
+	case CONF_TX_AC_BK:
+		hwq = mac_queue + 3;
+		break;
+	default:
+		hwq = mac_queue + 2;
+		break;
+	}
 
 	assert_spin_locked(&wl->wl_lock);
 	return test_bit(reason, &wl->queue_stop_reasons[hwq]);

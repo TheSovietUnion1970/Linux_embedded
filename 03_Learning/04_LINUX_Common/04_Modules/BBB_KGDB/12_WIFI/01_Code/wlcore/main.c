@@ -834,7 +834,7 @@ static void wlcore_save_freed_pkts_addr(struct wl1271 *wl,
 					u8 hlid, const u8 *addr)
 {
 	struct ieee80211_sta *sta;
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
+	struct ieee80211_vif *vif = container_of((void *)wlvif, struct ieee80211_vif, drv_priv);
 
 	if (WARN_ON(hlid == WL12XX_INVALID_LINK_ID ||
 		    is_zero_ether_addr(addr)))
@@ -842,8 +842,25 @@ static void wlcore_save_freed_pkts_addr(struct wl1271 *wl,
 
 	rcu_read_lock();
 	sta = ieee80211_find_sta(vif, addr);
-	if (sta)
-		wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
+	if (sta){
+		//wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
+
+		struct wl1271_station *wl_sta;
+		u32 sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING;
+
+		wl_sta = (void *)sta->drv_priv;
+		wl_sta->total_freed_pkts = wl->links[hlid].total_freed_pkts;
+
+		/*
+		* increment the initial seq number on recovery to account for
+		* transmitted packets that we haven't yet got in the FW status
+		*/
+		if (wlvif->encryption_type == KEY_GEM)
+			sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING_GEM;
+
+		if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
+			wl_sta->total_freed_pkts += sqn_recovery_padding;
+	}
 	rcu_read_unlock();
 }
 
@@ -2680,7 +2697,7 @@ static void __VV_op_remove_interface(struct wl1271 *wl,
 					 struct ieee80211_vif *vif,
 					 bool reset_tx_queues)
 {
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	int i, ret;
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 
@@ -2705,7 +2722,13 @@ static void __VV_op_remove_interface(struct wl1271 *wl,
 		 * Rearm the tx watchdog just before idling scan. This
 		 * prevents just-finished scans from triggering the watchdog
 		 */
-		wl12xx_rearm_tx_watchdog_locked(wl);
+		// wl12xx_rearm_tx_watchdog_locked(wl);
+		/* if the watchdog is not armed, don't do anything */
+		if (wl->tx_allocated_blocks){
+			cancel_delayed_work(&wl->tx_watchdog_work);
+			ieee80211_queue_delayed_work(wl->hw, &wl->tx_watchdog_work,
+				msecs_to_jiffies(wl->conf.tx.tx_watchdog_timeout));
+		}
 
 		wl->scan.state = WL1271_SCAN_STATE_IDLE;
 		memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
@@ -2723,31 +2746,28 @@ static void __VV_op_remove_interface(struct wl1271 *wl,
 			goto deinit;
 		}
 
-		if (wlvif->bss_type == BSS_TYPE_STA_BSS ||
-		    wlvif->bss_type == BSS_TYPE_IBSS) {
-			if (wl12xx_dev_role_started(wlvif))
-				wl12xx_stop_dev(wl, wlvif);
-		}
+		// if (wlvif->dev_hlid != WL12XX_INVALID_LINK_ID){
+		// 	printk("[RM] - wl12xx_stop_dev\n");
+		// 	wl12xx_stop_dev(wl, wlvif);
+		// }
 
-		if (!wlcore_is_p2p_mgmt(wlvif)) {
-			ret = wl12xx_cmd_role_disable(wl, &wlvif->role_id);
-			if (ret < 0) {
-				pm_runtime_put_noidle(wl->dev);
-				goto deinit;
-			}
-		} else {
-			ret = wl12xx_cmd_role_disable(wl, &wlvif->dev_role_id);
-			if (ret < 0) {
-				pm_runtime_put_noidle(wl->dev);
-				goto deinit;
-			}
+		// type != NL80211_IFTYPE_P2P_DEVICE
+		// ret = wl12xx_cmd_role_disable(wl, &wlvif->role_id);
+		struct wl12xx_cmd_role_disable cmd;
+		cmd.role_id = wlvif->role_id;
+		ret = VV_cmd_send(wl, CMD_ROLE_DISABLE, &cmd, sizeof(cmd), 0);
+		__clear_bit(wlvif->role_id, wl->roles_map);
+		wlvif->role_id = WL12XX_INVALID_ROLE_ID;
+		if (ret < 0) {
+			pm_runtime_put_noidle(wl->dev);
+			goto deinit;
 		}
 
 		pm_runtime_mark_last_busy(wl->dev);
 		pm_runtime_put_autosuspend(wl->dev);
 	}
 deinit:
-	wl12xx_tx_reset_wlvif(wl, wlvif);
+	wl12xx_tx_reset_wlvif(wl, wlvif); // VV_
 
 	/* clear all hlids (except system_hlid) */
 	wlvif->dev_hlid = WL12XX_INVALID_LINK_ID;
@@ -2770,7 +2790,7 @@ static void VV_op_remove_interface(struct ieee80211_hw *hw,
 {
 	printk("VV_ wl1271_op_remove_interface\n");
 	struct wl1271 *wl = hw->priv;
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	struct wl12xx_vif *iter;
 	struct vif_counter_data vif_count;
 
@@ -5052,8 +5072,39 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	 * save the last used PN in the private part of iee80211_sta,
 	 * in case of recovery/suspend
 	 */
-	wlcore_save_freed_pkts_addr(wl, wlvif, hlid, wl->links[hlid].addr);
+	//wlcore_save_freed_pkts_addr(wl, wlvif, hlid, wl->links[hlid].addr);
+	struct ieee80211_sta *sta;
+	struct ieee80211_vif *vif = container_of((void *)wlvif, struct ieee80211_vif, drv_priv);
 
+	if (WARN_ON(hlid == WL12XX_INVALID_LINK_ID ||
+		    is_zero_ether_addr(wl->links[hlid].addr)))
+		return;
+
+	rcu_read_lock();
+	sta = ieee80211_find_sta(vif, wl->links[hlid].addr);
+	if (sta){
+		//wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
+
+		struct wl1271_station *wl_sta;
+		u32 sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING;
+
+		wl_sta = (void *)sta->drv_priv;
+		wl_sta->total_freed_pkts = wl->links[hlid].total_freed_pkts;
+
+		/*
+		* increment the initial seq number on recovery to account for
+		* transmitted packets that we haven't yet got in the FW status
+		*/
+		if (wlvif->encryption_type == KEY_GEM)
+			sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING_GEM;
+
+		if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
+			wl_sta->total_freed_pkts += sqn_recovery_padding;
+	}
+	rcu_read_unlock();
+	/* <==*/
+
+	// VV_
 	wl12xx_free_link(wl, wlvif, &hlid);
 	wl->active_sta_count--;
 
@@ -5061,8 +5112,17 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	 * rearm the tx watchdog when the last STA is freed - give the FW a
 	 * chance to return STA-buffered packets before complaining.
 	 */
-	if (wl->active_sta_count == 0)
-		wl12xx_rearm_tx_watchdog_locked(wl);
+	if (wl->active_sta_count == 0){
+		//wl12xx_rearm_tx_watchdog_locked(wl);
+
+		/* if the watchdog is not armed, don't do anything */
+		if (wl->tx_allocated_blocks != 0)
+		{
+			cancel_delayed_work(&wl->tx_watchdog_work);
+			ieee80211_queue_delayed_work(wl->hw, &wl->tx_watchdog_work,
+				msecs_to_jiffies(wl->conf.tx.tx_watchdog_timeout));
+		}
+	}
 }
 
 static int wl12xx_sta_add(struct wl1271 *wl,
@@ -6185,8 +6245,8 @@ int VV_wl1271_op_start(struct ieee80211_hw *hw)
 static const struct ieee80211_ops wl1271_ops = { 
 	.stop = wlcore_op_stop,
 
-	.add_interface = VV_op_add_interface, 
-	.remove_interface = VV_op_remove_interface,
+	.add_interface = VV_op_add_interface, // VV_ 
+	.remove_interface = VV_op_remove_interface, // VV_
 
 	.config = wl1271_op_config,
 

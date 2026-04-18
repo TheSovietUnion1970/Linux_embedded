@@ -481,6 +481,7 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	 * At this point op_tx() will not add more packets to the queues. We
 	 * can purge them.
 	 */
+	// VV_ 
 	wl1271_tx_reset_link_queues(wl, *hlid);
 	wl->links[*hlid].wlvif = NULL;
 
