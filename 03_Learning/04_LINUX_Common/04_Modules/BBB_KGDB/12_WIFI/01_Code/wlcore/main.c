@@ -1259,11 +1259,18 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 		return;
 	}
 
-	wlvif = wl12xx_vif_to_data(vif);
+	wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	mapping = skb_get_queue_mapping(skb);
 	q = wl1271_tx_get_queue(mapping);
 
-	hlid = wl12xx_tx_get_hlid(wl, wlvif, skb, control->sta);
+	//hlid = wl12xx_tx_get_hlid(wl, wlvif, skb, control->sta);
+	// struct ieee80211_tx_info *control;
+	// control = IEEE80211_SKB_CB(skb);
+	if (info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
+		wl1271_debug(DEBUG_TX, "tx offchannel");
+		hlid = wlvif->dev_hlid;
+	}
+	else hlid = wlvif->sta.hlid;
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 
@@ -1298,7 +1305,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 					WLCORE_QUEUE_STOP_REASON_WATERMARK)) {
 		wl1271_debug(DEBUG_TX, "op_tx: stopping queues for q %d", q);
 		wlcore_stop_queue_locked(wl, wlvif, q,
-					 WLCORE_QUEUE_STOP_REASON_WATERMARK);
+					 WLCORE_QUEUE_STOP_REASON_WATERMARK); 
 	}
 
 	/*
@@ -6260,7 +6267,7 @@ static const struct ieee80211_ops wl1271_ops = {
 	.config = wl1271_op_config, // VV_
 
 	.configure_filter = wl1271_op_configure_filter, // VV_
-	.tx = wl1271_op_tx,
+	.tx = wl1271_op_tx, // ~ VV_
 	.set_key = wlcore_op_set_key,
 	.hw_scan = wl1271_op_hw_scan,
 
