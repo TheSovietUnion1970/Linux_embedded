@@ -3245,8 +3245,10 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 	}
 
 	wl12xx_for_each_wlvif(wl, wlvif) {
-		if (wlcore_is_p2p_mgmt(wlvif))
-			continue;
+		// if (wlcore_is_p2p_mgmt(wlvif))
+		// 	continue;
+		if (container_of((void *)wlvif, struct ieee80211_vif, drv_priv)->type == NL80211_IFTYPE_P2P_DEVICE)
+		  continue;
 
 		if (wlvif->bss_type != BSS_TYPE_AP_BSS) {
 			if (*total & FIF_ALLMULTI)
@@ -3260,21 +3262,6 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 							fp->mc_list_length);
 			if (ret < 0)
 				goto out_sleep;
-		}
-
-		/*
-		 * If interface in AP mode and created with allmulticast then disable
-		 * the firmware filters so that all multicast packets are passed
-		 * This is mandatory for MDNS based discovery protocols 
-		 */
-		if (wlvif->bss_type == BSS_TYPE_AP_BSS) {
-			if (*total & FIF_ALLMULTI) {
-				ret = wl1271_acx_group_address_tbl(wl, wlvif,
-							false,
-							NULL, 0);
-				if (ret < 0)
-					goto out_sleep;
-			}
 		}
 	}
 
@@ -6272,7 +6259,7 @@ static const struct ieee80211_ops wl1271_ops = {
 
 	.config = wl1271_op_config, // VV_
 
-	.configure_filter = wl1271_op_configure_filter,
+	.configure_filter = wl1271_op_configure_filter, // VV_
 	.tx = wl1271_op_tx,
 	.set_key = wlcore_op_set_key,
 	.hw_scan = wl1271_op_hw_scan,
