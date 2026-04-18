@@ -3107,11 +3107,18 @@ static int wl12xx_config_vif(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 {
 	int ret;
 
-	if (wlcore_is_p2p_mgmt(wlvif))
+	// if (wlcore_is_p2p_mgmt(wlvif))
+	// 	return 0;
+
+	if (container_of((void *)wlvif, struct ieee80211_vif, drv_priv)->type == NL80211_IFTYPE_P2P_DEVICE)
 		return 0;
 
 	if (conf->power_level != wlvif->power_level) {
-		ret = wl1271_acx_tx_power(wl, wlvif, conf->power_level);
+		//ret = wl1271_acx_tx_power(wl, wlvif, conf->power_level);
+		struct acx_current_tx_power acx;
+		acx.role_id = wlvif->role_id;
+		acx.current_tx_power = conf->power_level * 10;
+		ret = VV_cmd_configure(wl, DOT11_CUR_TX_PWR, &acx, sizeof(acx), 0);
 		if (ret < 0)
 			return ret;
 
@@ -3128,7 +3135,7 @@ static int wl1271_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct ieee80211_conf *conf = &hw->conf;
 	int ret = 0;
 
-	//printk("VV_ wl1271_op_config\n");
+	printk("VV_ wl1271_op_config\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 config psm %s power %d %s"
 		     " changed 0x%x",
@@ -3153,7 +3160,7 @@ static int wl1271_op_config(struct ieee80211_hw *hw, u32 changed)
 
 	/* configure each interface */
 	wl12xx_for_each_wlvif(wl, wlvif) {
-		ret = wl12xx_config_vif(wl, wlvif, conf, changed);
+		ret = wl12xx_config_vif(wl, wlvif, conf, changed); // VV_
 		if (ret < 0)
 			goto out_sleep;
 	}
@@ -6263,7 +6270,7 @@ static const struct ieee80211_ops wl1271_ops = {
 	.add_interface = VV_op_add_interface, // VV_ 
 	.remove_interface = VV_op_remove_interface, // VV_
 
-	.config = wl1271_op_config,
+	.config = wl1271_op_config, // VV_
 
 	.configure_filter = wl1271_op_configure_filter,
 	.tx = wl1271_op_tx,
