@@ -1111,7 +1111,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 	/* only reset the queues if something bad happened */
 	if (wl1271_tx_total_queue_count(wl) != 0) {
 		for (i = 0; i < wl->num_links; i++)
-			wl1271_tx_reset_link_queues(wl, i);
+			wl1271_tx_reset_link_queues(wl, i); //VV_
 
 		for (i = 0; i < NUM_TX_QUEUES; i++)
 			wl->tx_queue_count[i] = 0;
@@ -1122,7 +1122,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 	 * function is called from a context other than interface removal.
 	 * This call will always wake the TX queues.
 	 */
-	wl1271_handle_tx_low_watermark(wl);
+	wl1271_handle_tx_low_watermark(wl); // VV_
 
 	for (i = 0; i < wl->num_tx_desc; i++) {
 		if (wl->tx_frames[i] == NULL)
@@ -1132,7 +1132,8 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 		wl1271_free_tx_id(wl, i);
 		wl1271_debug(DEBUG_TX, "freeing skb 0x%p", skb);
 
-		if (!wl12xx_is_dummy_packet(wl, skb)) {
+		//if (!wl12xx_is_dummy_packet(wl, skb)) {
+		if (wl->dummy_packet != skb) {
 			/*
 			 * Remove private headers before passing the skb to
 			 * mac80211

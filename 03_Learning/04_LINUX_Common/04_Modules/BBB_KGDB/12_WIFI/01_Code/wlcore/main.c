@@ -1955,7 +1955,8 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	if (wl->state == WLCORE_STATE_OFF) {
 		if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS,
 					&wl->flags))
-			wlcore_enable_interrupts(wl);
+			//wlcore_enable_interrupts(wl);
+			enable_irq(wl->irq);
 
 		return;
 	}
@@ -1970,14 +1971,26 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 * Use the nosync variant to disable interrupts, so the mutex could be
 	 * held while doing so without deadlocking.
 	 */
-	wlcore_disable_interrupts_nosync(wl);
+	//wlcore_disable_interrupts_nosync(wl);
+	disable_irq_nosync(wl->irq);
 
 	mutex_unlock(&wl->mutex);
 
-	wlcore_synchronize_interrupts(wl);
+	//wlcore_synchronize_interrupts(wl);
+	synchronize_irq(wl->irq);
+
 	if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
 		cancel_work_sync(&wl->recovery_work);
-	wl1271_flush_deferred_work(wl);
+
+	// wl1271_flush_deferred_work(wl);
+	struct sk_buff *skb;
+	/* Pass all received frames to the network stack */
+	while ((skb = skb_dequeue(&wl->deferred_rx_queue)))
+		ieee80211_rx_ni(wl->hw, skb);
+	/* Return sent skbs to the network stack */
+	while ((skb = skb_dequeue(&wl->deferred_tx_queue)))
+		ieee80211_tx_status_ni(wl->hw, skb);
+
 	cancel_delayed_work_sync(&wl->scan_complete_work);
 	cancel_work_sync(&wl->netstack_work);
 	cancel_work_sync(&wl->tx_work);
@@ -1985,16 +1998,18 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 
 	/* let's notify MAC80211 about the remaining pending TX frames */
 	mutex_lock(&wl->mutex);
-	wl12xx_tx_reset(wl);
+	wl12xx_tx_reset(wl); // ~VV_
 
-	wl1271_power_off(wl);
+	//wl1271_power_off(wl);
+	VV_power_off(wl);
 	/*
 	 * In case a recovery was scheduled, interrupts were disabled to avoid
 	 * an interrupt storm. Now that the power is down, it is safe to
 	 * re-enable interrupts to balance the disable depth
 	 */
 	if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
-		wlcore_enable_interrupts(wl);
+		//wlcore_enable_interrupts(wl);
+		enable_irq(wl->irq);
 
 	wl->band = NL80211_BAND_2GHZ;
 
@@ -2065,7 +2080,7 @@ static void wlcore_op_stop(struct ieee80211_hw *hw)
 
 	mutex_lock(&wl->mutex);
 
-	wlcore_op_stop_locked(wl);
+	wlcore_op_stop_locked(wl); // ~VV_
 
 	mutex_unlock(&wl->mutex);
 }
@@ -6243,7 +6258,7 @@ int VV_wl1271_op_start(struct ieee80211_hw *hw)
 }
 
 static const struct ieee80211_ops wl1271_ops = { 
-	.stop = wlcore_op_stop,
+	.stop = wlcore_op_stop, // VV_
 
 	.add_interface = VV_op_add_interface, // VV_ 
 	.remove_interface = VV_op_remove_interface, // VV_
