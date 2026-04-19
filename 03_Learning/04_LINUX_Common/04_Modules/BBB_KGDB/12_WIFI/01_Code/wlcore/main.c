@@ -4072,10 +4072,11 @@ static int wl1271_bss_erp_info_changed(struct wl1271 *wl,
 				       struct ieee80211_bss_conf *bss_conf,
 				       u32 changed)
 {
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	int ret = 0;
 
 	if (changed & BSS_CHANGED_ERP_SLOT) {
+		printk("BSS_CHANGED_ERP_SLOT\n");
 		if (bss_conf->use_short_slot)
 			ret = wl1271_acx_slot(wl, wlvif, SLOT_TIME_SHORT);
 		else
@@ -4087,6 +4088,7 @@ static int wl1271_bss_erp_info_changed(struct wl1271 *wl,
 	}
 
 	if (changed & BSS_CHANGED_ERP_PREAMBLE) {
+		printk("BSS_CHANGED_ERP_PREAMBLE\n");
 		if (bss_conf->use_short_preamble)
 			wl1271_acx_set_preamble(wl, wlvif, ACX_PREAMBLE_SHORT);
 		else
@@ -4094,6 +4096,7 @@ static int wl1271_bss_erp_info_changed(struct wl1271 *wl,
 	}
 
 	if (changed & BSS_CHANGED_ERP_CTS_PROT) {
+		printk("BSS_CHANGED_ERP_CTS_PROT\n");
 		if (bss_conf->use_cts_prot)
 			ret = wl1271_acx_cts_protect(wl, wlvif,
 						     CTSPROTECT_ENABLE);
@@ -4129,18 +4132,38 @@ static int wlcore_set_beacon_template(struct wl1271 *wl,
 
 	wl1271_debug(DEBUG_MASTER, "beacon updated");
 
-	ret = wl1271_ssid_set(wlvif, beacon, ieoffset);
-	if (ret < 0) {
-		dev_kfree_skb(beacon);
-		goto out;
-	}
-	min_rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
+	// ret = wl1271_ssid_set(wlvif, beacon, ieoffset);
+	// if (ret < 0) {
+	// 	dev_kfree_skb(beacon);
+	// 	goto out;
+	// }
+	u8 ssid_len;
+	const u8 *ptr = cfg80211_find_ie(WLAN_EID_SSID, beacon->data + ieoffset,
+					 beacon->len - ieoffset);
+	ssid_len = ptr[1];
+	wlvif->ssid_len = ssid_len;
+	memcpy(wlvif->ssid, ptr+2, ssid_len);
+	
+
+
+	min_rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set); // VV_
 	tmpl_id = is_ap ? CMD_TEMPL_AP_BEACON :
 		CMD_TEMPL_BEACON;
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id, tmpl_id,
-				      beacon->data,
-				      beacon->len, 0,
-				      min_rate);
+	// ret = wl1271_cmd_template_set(wl, wlvif->role_id, tmpl_id,
+	// 			      beacon->data,
+	// 			      beacon->len, 0,
+	// 			      min_rate);
+	struct wl1271_cmd_template_set cmd;
+	beacon->len = min_t(size_t, beacon->len, WL1271_CMD_TEMPL_MAX_SIZE);
+	/* during initialization wlvif is NULL */
+	cmd.role_id = wlvif->role_id;
+	cmd.len = cpu_to_le16(beacon->len);
+	cmd.template_type = tmpl_id;
+	cmd.enabled_rates = cpu_to_le32(min_rate);
+	cmd.short_retry_limit = wl->conf.tx.tmpl_short_retry_limit;
+	cmd.long_retry_limit = wl->conf.tx.tmpl_long_retry_limit;
+	cmd.index = 0;
+	ret = VV_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
 	if (ret < 0) {
 		dev_kfree_skb(beacon);
 		goto out;
@@ -4160,7 +4183,7 @@ static int wlcore_set_beacon_template(struct wl1271 *wl,
 		goto end_bcn;
 
 	/* remove TIM ie from probe response */
-	wl12xx_remove_ie(beacon, WLAN_EID_TIM, ieoffset);
+	wl12xx_remove_ie(beacon, WLAN_EID_TIM, ieoffset); // VV_
 
 	/*
 	 * remove p2p ie from probe response.
@@ -4171,22 +4194,34 @@ static int wlcore_set_beacon_template(struct wl1271 *wl,
 	 * requests that didn't include it).
 	 */
 	wl12xx_remove_vendor_ie(beacon, WLAN_OUI_WFA,
-				WLAN_OUI_TYPE_WFA_P2P, ieoffset);
+				WLAN_OUI_TYPE_WFA_P2P, ieoffset); // VV_
 
 	hdr = (struct ieee80211_hdr *) beacon->data;
 	hdr->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
 					 IEEE80211_STYPE_PROBE_RESP);
-	if (is_ap)
-		ret = wl1271_ap_set_probe_resp_tmpl_legacy(wl, vif,
-							   beacon->data,
-							   beacon->len,
-							   min_rate);
-	else
-		ret = wl1271_cmd_template_set(wl, wlvif->role_id,
-					      CMD_TEMPL_PROBE_RESPONSE,
-					      beacon->data,
-					      beacon->len, 0,
-					      min_rate);
+	// if (is_ap)
+	// 	ret = wl1271_ap_set_probe_resp_tmpl_legacy(wl, vif,
+	// 						   beacon->data,
+	// 						   beacon->len,
+	// 						   min_rate);
+	// else
+		// ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+		// 			      CMD_TEMPL_PROBE_RESPONSE,
+		// 			      beacon->data,
+		// 			      beacon->len, 0,
+		// 			      min_rate);
+	//struct wl1271_cmd_template_set cmd;
+	beacon->len = min_t(size_t, beacon->len, WL1271_CMD_TEMPL_MAX_SIZE);
+	/* during initialization wlvif is NULL */
+	cmd.role_id = wlvif->role_id;
+	cmd.len = cpu_to_le16(beacon->len);
+	cmd.template_type = CMD_TEMPL_PROBE_RESPONSE;
+	cmd.enabled_rates = cpu_to_le32(min_rate);
+	cmd.short_retry_limit = wl->conf.tx.tmpl_short_retry_limit;
+	cmd.long_retry_limit = wl->conf.tx.tmpl_long_retry_limit;
+	cmd.index = 0;
+	ret = VV_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
+
 end_bcn:
 	dev_kfree_skb(beacon);
 	if (ret < 0)
@@ -4196,12 +4231,13 @@ out:
 	return ret;
 }
 
+#include "../wl18xx/cmd.h"
 static int wl1271_bss_beacon_info_changed(struct wl1271 *wl,
 					  struct ieee80211_vif *vif,
 					  struct ieee80211_bss_conf *bss_conf,
 					  u32 changed)
 {
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 	int ret = 0;
 
@@ -4212,20 +4248,23 @@ static int wl1271_bss_beacon_info_changed(struct wl1271 *wl,
 		wlvif->beacon_int = bss_conf->beacon_int;
 	}
 
-	if ((changed & BSS_CHANGED_AP_PROBE_RESP) && is_ap) {
-		u32 rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
+	// if ((changed & BSS_CHANGED_AP_PROBE_RESP) && is_ap) {
+	// 	u32 rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
 
-		wl1271_ap_set_probe_resp_tmpl(wl, rate, vif);
-	}
+	// 	wl1271_ap_set_probe_resp_tmpl(wl, rate, vif);
+	// }
 
 	if (changed & BSS_CHANGED_BEACON) {
-		ret = wlcore_set_beacon_template(wl, vif, is_ap);
+		ret = wlcore_set_beacon_template(wl, vif, is_ap); // VV_
 		if (ret < 0)
 			goto out;
 
 		if (test_and_clear_bit(WLVIF_FLAG_BEACON_DISABLED,
 				       &wlvif->flags)) {
-			ret = wlcore_hw_dfs_master_restart(wl, wlvif);
+			//ret = wlcore_hw_dfs_master_restart(wl, wlvif);
+			struct wl18xx_cmd_dfs_master_restart cmd;
+			cmd.role_id = wlvif->role_id;
+			ret = VV_cmd_send(wl, CMD_DFS_MASTER_RESTART, &cmd, sizeof(cmd), 0);
 			if (ret < 0)
 				goto out;
 		}
@@ -4414,7 +4453,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 					struct ieee80211_bss_conf *bss_conf,
 					u32 changed)
 {
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 	bool do_join = false;
 	bool is_ibss = (wlvif->bss_type == BSS_TYPE_IBSS);
 	bool ibss_joined = false;
@@ -4425,11 +4464,14 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 	struct ieee80211_sta_ht_cap sta_ht_cap;
 
 	if (is_ibss) {
+		printk("[STA_] - is_ibss");
+		// VV_
 		ret = wl1271_bss_beacon_info_changed(wl, vif, bss_conf,
 						     changed);
 		if (ret < 0)
 			goto out;
 	}
+	printk("[STA_] - changed = %d, ibss_joined = %d\n", changed, ibss_joined);
 
 	if (changed & BSS_CHANGED_IBSS) {
 		if (bss_conf->ibss_joined) {
@@ -4441,19 +4483,19 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 		}
 	}
 
-	if ((changed & BSS_CHANGED_BEACON_INT) && ibss_joined)
-		do_join = true;
+	// if ((changed & BSS_CHANGED_BEACON_INT) && ibss_joined)
+	// 	do_join = true;
 
-	/* Need to update the SSID (for filtering etc) */
-	if ((changed & BSS_CHANGED_BEACON) && ibss_joined)
-		do_join = true;
+	// /* Need to update the SSID (for filtering etc) */
+	// if ((changed & BSS_CHANGED_BEACON) && ibss_joined)
+	// 	do_join = true;
 
-	if ((changed & BSS_CHANGED_BEACON_ENABLED) && ibss_joined) {
-		wl1271_debug(DEBUG_ADHOC, "ad-hoc beaconing: %s",
-			     bss_conf->enable_beacon ? "enabled" : "disabled");
+	// if ((changed & BSS_CHANGED_BEACON_ENABLED) && ibss_joined) {
+	// 	wl1271_debug(DEBUG_ADHOC, "ad-hoc beaconing: %s",
+	// 		     bss_conf->enable_beacon ? "enabled" : "disabled");
 
-		do_join = true;
-	}
+	// 	do_join = true;
+	// }
 
 	if (changed & BSS_CHANGED_IDLE && !is_ibss)
 		wl1271_sta_handle_idle(wl, wlvif, bss_conf->idle);
@@ -4657,6 +4699,274 @@ out:
 	return;
 }
 
+static void VV_bss_info_changed_sta(struct wl1271 *wl,
+					struct ieee80211_vif *vif,
+					struct ieee80211_bss_conf *bss_conf,
+					u32 changed)
+{
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
+	bool do_join = false;
+	bool is_ibss = (wlvif->bss_type == BSS_TYPE_IBSS);
+	bool ibss_joined = false;
+	u32 sta_rate_set = 0;
+	int ret;
+	struct ieee80211_sta *sta;
+	bool sta_exists = false;
+	struct ieee80211_sta_ht_cap sta_ht_cap;
+
+	if (changed & BSS_CHANGED_IDLE && !is_ibss){
+		printk("changed & BSS_CHANGED_IDLE && !is_ibss\n");
+		wl1271_sta_handle_idle(wl, wlvif, bss_conf->idle); // VV_
+	}
+
+	if (changed & BSS_CHANGED_CQM) {
+		printk("changed & BSS_CHANGED_CQM\n");
+		bool enable = false;
+		if (bss_conf->cqm_rssi_thold)
+			enable = true;
+		// ret = wl1271_acx_rssi_snr_trigger(wl, wlvif, enable,
+		// 				  bss_conf->cqm_rssi_thold,
+		// 				  bss_conf->cqm_rssi_hyst);
+		wlvif->last_rssi_event = -1;
+		struct wl1271_acx_rssi_snr_trigger acx;
+		acx.role_id = wlvif->role_id;
+		acx.pacing = cpu_to_le16(wl->conf.roam_trigger.trigger_pacing);
+		acx.metric = WL1271_ACX_TRIG_METRIC_RSSI_BEACON;
+		acx.type = WL1271_ACX_TRIG_TYPE_EDGE;
+		if (enable)
+			acx.enable = WL1271_ACX_TRIG_ENABLE;
+		else
+			acx.enable = WL1271_ACX_TRIG_DISABLE;
+
+		acx.index = WL1271_ACX_TRIG_IDX_RSSI;
+		acx.dir = WL1271_ACX_TRIG_DIR_BIDIR;
+		acx.threshold = cpu_to_le16(bss_conf->cqm_rssi_thold);
+		acx.hysteresis = bss_conf->cqm_rssi_hyst;
+		ret = VV_cmd_configure(wl, ACX_RSSI_SNR_TRIGGER, &acx, sizeof(acx), 0);
+		if (ret < 0)
+			goto out;
+		wlvif->rssi_thold = bss_conf->cqm_rssi_thold;
+	}
+
+	if (changed & (BSS_CHANGED_BSSID | BSS_CHANGED_HT |
+		       BSS_CHANGED_ASSOC)) {
+		printk("changed & (BSS_CHANGED_BSSID | BSS_CHANGED_HT |\n");
+		rcu_read_lock();
+		sta = ieee80211_find_sta(vif, bss_conf->bssid);
+		if (sta) {
+			u8 *rx_mask = sta->ht_cap.mcs.rx_mask;
+
+			/* save the supp_rates of the ap */
+			sta_rate_set = sta->supp_rates[wlvif->band];
+			if (sta->ht_cap.ht_supported)
+				sta_rate_set |=
+					(rx_mask[0] << HW_HT_RATES_OFFSET) |
+					(rx_mask[1] << HW_MIMO_RATES_OFFSET);
+			sta_ht_cap = sta->ht_cap;
+			sta_exists = true;
+		}
+
+		rcu_read_unlock();
+	}
+
+	if (changed & BSS_CHANGED_BSSID) {
+		printk("changed & BSS_CHANGED_BSSID\n");
+		if (!is_zero_ether_addr(bss_conf->bssid)) {
+			ret = wlcore_set_bssid(wl, wlvif, bss_conf,
+					       sta_rate_set);
+			if (ret < 0)
+				goto out;
+
+			/* Need to update the BSSID (for filtering etc) */
+			do_join = true;
+		} else {
+			ret = wlcore_clear_bssid(wl, wlvif);
+			if (ret < 0)
+				goto out;
+		}
+	}
+
+	if ((changed & BSS_CHANGED_BEACON_INFO) && bss_conf->dtim_period) {
+		printk("changed & BSS_CHANGED_BEACON_INFO) && bss_conf->dtim_period\n");
+		/* enable beacon filtering */
+		//ret = wl1271_acx_beacon_filter_opt(wl, wlvif, true);
+		struct acx_beacon_filter_option beacon_filter;
+		beacon_filter.role_id = wlvif->role_id;
+		beacon_filter.enable = true;
+		/*
+		* When set to zero, and the filter is enabled, beacons
+		* without the unicast TIM bit set are dropped.
+		*/
+		beacon_filter.max_num_beacons = 0;
+		ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_OPT, &beacon_filter, sizeof(beacon_filter), 0);
+		if (ret < 0)
+			goto out;
+	}
+
+	// ret = wl1271_bss_erp_info_changed(wl, vif, bss_conf, changed);
+	// if (ret < 0)
+	// 	goto out;
+	// struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
+	// int ret = 0;
+	if (changed & BSS_CHANGED_ERP_SLOT) {
+		printk("BSS_CHANGED_ERP_SLOT\n");
+		struct acx_slot slot;
+		if (bss_conf->use_short_slot){
+			// ret = wl1271_acx_slot(wl, wlvif, SLOT_TIME_SHORT);
+			slot.role_id = wlvif->role_id;
+			slot.wone_index = STATION_WONE_INDEX;
+			slot.slot_time = SLOT_TIME_SHORT;
+			ret = VV_cmd_configure(wl, ACX_SLOT, &slot, sizeof(slot), 0);
+		}
+		else
+			//ret = wl1271_acx_slot(wl, wlvif, SLOT_TIME_LONG);
+			slot.role_id = wlvif->role_id;
+			slot.wone_index = STATION_WONE_INDEX;
+			slot.slot_time = SLOT_TIME_LONG;
+			ret = VV_cmd_configure(wl, ACX_SLOT, &slot, sizeof(slot), 0);
+		if (ret < 0) {
+			wl1271_warning("Set slot time failed %d", ret);
+			goto out;
+		}
+	}
+
+	if (changed & BSS_CHANGED_ERP_PREAMBLE) {
+		printk("BSS_CHANGED_ERP_PREAMBLE\n");
+		struct acx_preamble acx;
+		if (bss_conf->use_short_preamble){
+			// wl1271_acx_set_preamble(wl, wlvif, ACX_PREAMBLE_SHORT);
+			acx.role_id = wlvif->role_id;
+			acx.preamble = ACX_PREAMBLE_SHORT;			
+			ret = VV_cmd_configure(wl, ACX_PREAMBLE_TYPE, &acx, sizeof(acx), 0);
+		}
+		else{
+			// wl1271_acx_set_preamble(wl, wlvif, ACX_PREAMBLE_LONG);
+			acx.role_id = wlvif->role_id;
+			acx.preamble = ACX_PREAMBLE_LONG;			
+			ret = VV_cmd_configure(wl, ACX_PREAMBLE_TYPE, &acx, sizeof(acx), 0);
+		}
+	}
+
+	if (changed & BSS_CHANGED_ERP_CTS_PROT) {
+		printk("BSS_CHANGED_ERP_CTS_PROT\n");
+		struct acx_ctsprotect acx;
+		if (bss_conf->use_cts_prot){
+			// ret = wl1271_acx_cts_protect(wl, wlvif,
+			// 			     CTSPROTECT_ENABLE);
+			acx.role_id = wlvif->role_id;
+			acx.ctsprotect = CTSPROTECT_ENABLE;
+			ret = VV_cmd_configure(wl, ACX_CTS_PROTECTION, &acx, sizeof(acx), 0);
+		}
+		else{
+		// 	ret = wl1271_acx_cts_protect(wl, wlvif,
+		// 				     CTSPROTECT_DISABLE);
+			acx.role_id = wlvif->role_id;
+			acx.ctsprotect = CTSPROTECT_DISABLE;
+			ret = VV_cmd_configure(wl, ACX_CTS_PROTECTION, &acx, sizeof(acx), 0);
+		}
+		if (ret < 0) {
+			wl1271_warning("Set ctsprotect failed %d", ret);
+			goto out;
+		}
+	}
+
+	if (do_join) {
+		printk("[STA1] - do_join\n");
+		//ret = wlcore_join(wl, wlvif);
+		/* clear encryption type */
+		wlvif->encryption_type = KEY_NONE;
+		ret = wl12xx_cmd_role_start_sta(wl, wlvif); // ~VV_
+		if (ret < 0) {
+			wl1271_warning("cmd join failed %d", ret);
+			goto out;
+		}
+	}
+
+	if (changed & BSS_CHANGED_ASSOC) {
+		if (bss_conf->assoc) {
+			printk("[STA1] - changed & BSS_CHANGED_ASSOC -if\n");
+			ret = wlcore_set_assoc(wl, wlvif, bss_conf,
+					       sta_rate_set);
+			if (ret < 0)
+				goto out;
+
+			if (test_bit(WLVIF_FLAG_STA_AUTHORIZED, &wlvif->flags))
+				wl12xx_set_authorized(wl, wlvif);
+		} else {
+			printk("[STA1] - changed & BSS_CHANGED_ASSOC - rlse\n");
+			wlcore_unset_assoc(wl, wlvif);
+		}
+	}
+
+	/* Handle new association with HT. Do this after join. */
+	if (sta_exists) {
+		bool enabled =
+			bss_conf->chandef.width != NL80211_CHAN_WIDTH_20_NOHT;
+
+		ret = wlcore_hw_set_peer_cap(wl,
+					     &sta_ht_cap,
+					     enabled,
+					     wlvif->rate_set,
+					     wlvif->sta.hlid);
+		if (ret < 0) {
+			wl1271_warning("Set ht cap failed %d", ret);
+			goto out;
+
+		}
+
+		if (enabled) {
+			printk("[STA1] - sta_exists - enable\n");
+			ret = wl1271_acx_set_ht_information(wl, wlvif,
+						bss_conf->ht_operation_mode);
+			if (ret < 0) {
+				wl1271_warning("Set ht information failed %d",
+					       ret);
+				goto out;
+			}
+		}
+	}
+
+	/* Handle arp filtering. Done after join. */
+	if ((changed & BSS_CHANGED_ARP_FILTER) ||
+	    (!is_ibss && (changed & BSS_CHANGED_QOS))) {
+		
+		__be32 addr = bss_conf->arp_addr_list[0];
+		wlvif->sta.qos = bss_conf->qos;
+		WARN_ON(wlvif->bss_type != BSS_TYPE_STA_BSS);
+
+		if (bss_conf->arp_addr_cnt == 1 && bss_conf->assoc) {
+			printk("[STA1] - changed & BSS_CHANGED_ARP_FILTER if\n");
+			wlvif->ip_addr = addr;
+			/*
+			 * The template should have been configured only upon
+			 * association. however, it seems that the correct ip
+			 * isn't being set (when sending), so we have to
+			 * reconfigure the template upon every ip change.
+			 */
+			ret = wl1271_cmd_build_arp_rsp(wl, wlvif);
+			if (ret < 0) {
+				wl1271_warning("build arp rsp failed: %d", ret);
+				goto out;
+			}
+
+			ret = wl1271_acx_arp_ip_filter(wl, wlvif,
+				(ACX_ARP_FILTER_ARP_FILTERING |
+				 ACX_ARP_FILTER_AUTO_ARP),
+				addr);
+		} else {
+			printk("[STA1] - changed & BSS_CHANGED_ARP_FILTER - else\n");
+			wlvif->ip_addr = 0;
+			ret = wl1271_acx_arp_ip_filter(wl, wlvif, 0, addr);
+		}
+
+		if (ret < 0)
+			goto out;
+	}
+
+out:
+	return;
+}
+
 static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif,
 				       struct ieee80211_bss_conf *bss_conf,
@@ -4667,7 +4977,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 	int ret;
 
-	//printk("VV_ wl1271_op_hw_scan\n");
+	//printk("VV_ wl1271_op_bss_info_changed\n");
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 bss info role %d changed 0x%x",
 		     wlvif->role_id, (int)changed);
@@ -4681,7 +4991,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (is_ap && (changed & BSS_CHANGED_BEACON_ENABLED) &&
 	    !bss_conf->enable_beacon)
-		wl1271_tx_flush(wl);
+		wl1271_tx_flush(wl); // VV_
 
 	mutex_lock(&wl->mutex);
 
@@ -4700,17 +5010,24 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 	if ((changed & BSS_CHANGED_TXPOWER) &&
 	    bss_conf->txpower != wlvif->power_level) {
 
-		ret = wl1271_acx_tx_power(wl, wlvif, bss_conf->txpower);
+		// ret = wl1271_acx_tx_power(wl, wlvif, bss_conf->txpower);
+		struct acx_current_tx_power acx;
+		acx.role_id = wlvif->role_id;
+		acx.current_tx_power = bss_conf->txpower * 10;
+		ret = VV_cmd_configure(wl, DOT11_CUR_TX_PWR, &acx, sizeof(acx), 0);
 		if (ret < 0)
 			goto out;
 
 		wlvif->power_level = bss_conf->txpower;
 	}
 
-	if (is_ap)
-		wl1271_bss_info_changed_ap(wl, vif, bss_conf, changed);
-	else
-		wl1271_bss_info_changed_sta(wl, vif, bss_conf, changed);
+	// if (is_ap)
+	// 	wl1271_bss_info_changed_ap(wl, vif, bss_conf, changed);
+	// else
+	// 	wl1271_bss_info_changed_sta(wl, vif, bss_conf, changed);
+
+	//wl1271_bss_info_changed_sta(wl, vif, bss_conf, changed);
+	VV_bss_info_changed_sta(wl, vif, bss_conf, changed);
 
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
@@ -6349,7 +6666,7 @@ static const struct ieee80211_ops wl1271_ops = {
     .get_expected_throughput   = VV_get_expected_throughput,
 
 
-	CFG80211_TESTMODE_CMD(wl1271_tm_cmd)
+	//CFG80211_TESTMODE_CMD(wl1271_tm_cmd)
 };
 
 

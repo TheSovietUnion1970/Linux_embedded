@@ -187,6 +187,10 @@ unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
 }
 EXPORT_SYMBOL(wlcore_calc_packet_alignment);
 
+#define WL18XX_TX_HW_EXTRA_BLOCK_SPARE  2
+#define WL18XX_TX_HW_BLOCK_SPARE        1
+#define WL18XX_TX_HW_BLOCK_SIZE         268
+#include "../wl18xx/wl18xx.h"
 static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      struct sk_buff *skb, u32 extra, u32 buf_offset,
 			      u8 hlid, bool is_gem)
@@ -200,20 +204,38 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (buf_offset + total_len > wl->aggr_buf_size)
 		return -EAGAIN;
 
-	spare_blocks = wlcore_hw_get_spare_blocks(wl, is_gem);
+	//spare_blocks = wlcore_hw_get_spare_blocks(wl, is_gem);
+	// -> wl18xx_get_spare_blocks
+	struct wl18xx_priv *priv = wl->priv;
+	spare_blocks = WL18XX_TX_HW_BLOCK_SPARE;
+	/* If we have keys requiring extra spare, indulge them */
+	if (priv->extra_spare_key_count)
+		spare_blocks = WL18XX_TX_HW_EXTRA_BLOCK_SPARE;
 
 	/* allocate free identifier for the packet */
-	id = wl1271_alloc_tx_id(wl, skb);
+	//id = wl1271_alloc_tx_id(wl, skb);
+	int id_tmp;
+	id_tmp = find_first_zero_bit(wl->tx_frames_map, wl->num_tx_desc);
+	if (id_tmp >= wl->num_tx_desc){
+		printk("VV_ wl1271_alloc_tx_id error\n");
+	}
+	__set_bit(id_tmp, wl->tx_frames_map);
+	wl->tx_frames[id_tmp] = skb;
+	wl->tx_frames_cnt++;
+	id = id_tmp;
 	if (id < 0)
 		return id;
 
-	total_blocks = wlcore_hw_calc_tx_blocks(wl, total_len, spare_blocks);
+	//total_blocks = wlcore_hw_calc_tx_blocks(wl, total_len, spare_blocks);
+	u32 blk_size = WL18XX_TX_HW_BLOCK_SIZE;
+	total_blocks = (total_len + blk_size - 1) / blk_size + spare_blocks;
 
 	if (total_blocks <= wl->tx_blocks_available) {
 		desc = skb_push(skb, total_len - skb->len);
 
-		wlcore_hw_set_tx_desc_blocks(wl, desc, total_blocks,
-					     spare_blocks);
+		// wlcore_hw_set_tx_desc_blocks(wl, desc, total_blocks,
+		// 			     spare_blocks);
+		desc->wl18xx_mem.total_mem_blocks = total_blocks;
 
 		desc->id = id;
 
@@ -227,9 +249,16 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		 */
 		if (wl->tx_allocated_blocks == total_blocks ||
 		    test_and_clear_bit(WL1271_FLAG_REINIT_TX_WDOG, &wl->flags))
-			wl12xx_rearm_tx_watchdog_locked(wl);
+			//wl12xx_rearm_tx_watchdog_locked(wl);
 
-		ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
+			/* if the watchdog is not armed, don't do anything */
+			if (wl->tx_allocated_blocks != 0){
+				cancel_delayed_work(&wl->tx_watchdog_work);
+				ieee80211_queue_delayed_work(wl->hw, &wl->tx_watchdog_work,
+					msecs_to_jiffies(wl->conf.tx.tx_watchdog_timeout));
+			}
+
+		ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb)); // VV_
 		wl->tx_allocated_pkts[ac]++;
 
 		if (test_bit(hlid, wl->links_map))
@@ -241,12 +270,20 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			     "tx_allocate: size: %d, blocks: %d, id: %d",
 			     total_len, total_blocks, id);
 	} else {
-		wl1271_free_tx_id(wl, id);
+		//wl1271_free_tx_id(wl, id);
+		if (__test_and_clear_bit(id, wl->tx_frames_map)) {
+			if (unlikely(wl->tx_frames_cnt == wl->num_tx_desc))
+				clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
+
+			wl->tx_frames[id] = NULL;
+			wl->tx_frames_cnt--;
+		}
 	}
 
 	return ret;
 }
 
+#define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
 static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			       struct sk_buff *skb, u32 extra,
 			       struct ieee80211_tx_info *control, u8 hlid)
@@ -276,14 +313,16 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	hosttime = (ktime_get_boottime_ns() >> 10);
 	desc->start_time = cpu_to_le32(hosttime - wl->time_offset);
 
-	is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	// is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	is_dummy = (wl->dummy_packet == skb);
+
 	if (is_dummy || !wlvif || wlvif->bss_type != BSS_TYPE_AP_BSS)
 		desc->life_time = cpu_to_le16(TX_HW_MGMT_PKT_LIFETIME_TU);
 	else
 		desc->life_time = cpu_to_le16(TX_HW_AP_MODE_PKT_LIFETIME_TU);
 
 	/* queue */
-	ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
+	ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb)); // VV_
 	desc->tid = skb->priority;
 
 	if (is_dummy) {
@@ -352,8 +391,29 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	desc->tx_attr = cpu_to_le16(tx_attr);
 
-	wlcore_hw_set_tx_desc_csum(wl, desc, skb);
-	wlcore_hw_set_tx_desc_data_len(wl, desc, skb);
+	//wlcore_hw_set_tx_desc_csum(wl, desc, skb);
+	u32 ip_hdr_offset;
+	struct iphdr *ip_hdr;
+
+	ip_hdr_offset = skb_network_header(skb) - skb_mac_header(skb);
+	// if (WARN_ON(ip_hdr_offset >= (1<<7))) {
+	// 	desc->wl18xx_checksum_data = 0;
+	// 	return;
+	// }
+	desc->wl18xx_checksum_data = ip_hdr_offset << 1;
+
+	/* FW is interested only in the LSB of the protocol  TCP=0 UDP=1 */
+	ip_hdr = (void *)skb_network_header(skb);
+	desc->wl18xx_checksum_data |= (ip_hdr->protocol & 0x01);
+
+
+	//wlcore_hw_set_tx_desc_data_len(wl, desc, skb);
+	desc->length = cpu_to_le16(skb->len);
+	/* if only the last frame is to be padded, we unset this bit on Tx */
+	if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME)
+		desc->wl18xx_mem.ctrl = WL18XX_TX_CTRL_NOT_PADDED;
+	else
+		desc->wl18xx_mem.ctrl = 0;
 }
 
 /* caller must hold wl->mutex */
@@ -379,7 +439,7 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	info = IEEE80211_SKB_CB(skb);
 
-	is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	is_dummy = (wl->dummy_packet == skb);
 
 	if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
 	    info->control.hw_key &&
@@ -395,7 +455,14 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			 (cipher == WLAN_CIPHER_SUITE_WEP104);
 
 		if (WARN_ON(is_wep && wlvif && wlvif->default_key != idx)) {
-			ret = wl1271_set_default_wep_key(wl, wlvif, idx);
+			//ret = wl1271_set_default_wep_key(wl, wlvif, idx);
+			struct wl1271_cmd_set_keys cmd;
+			cmd.hlid = wlvif->sta.hlid;
+			cmd.key_id = idx;
+			cmd.lid_key_type = WEP_DEFAULT_LID_TYPE;
+			cmd.key_action = cpu_to_le16(KEY_SET_ID);
+			cmd.key_type = KEY_WEP;		
+			ret = VV_cmd_send(wl, CMD_SET_KEYS, &cmd, sizeof(cmd), 0);
 			if (ret < 0)
 				return ret;
 			wlvif->default_key = idx;
@@ -404,17 +471,19 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		is_gem = (cipher == WL1271_CIPHER_SUITE_GEM);
 	}
 
+	// VV_
 	ret = wl1271_tx_allocate(wl, wlvif, skb, extra, buf_offset, hlid,
 				 is_gem);
 	if (ret < 0)
 		return ret;
 
+	// VV_
 	wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid);
 
-	if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
-		wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
-		wl1271_tx_regulate_link(wl, wlvif, hlid);
-	}
+	// if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
+	// 	wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
+	// 	wl1271_tx_regulate_link(wl, wlvif, hlid);
+	// }
 
 	/*
 	 * The length of each packet is stored in terms of
@@ -424,7 +493,12 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 * In special cases, we want to align to a specific block size
 	 * (eg. for wl128x with SDIO we align to 256).
 	 */
-	total_len = wlcore_calc_packet_alignment(wl, skb->len);
+	//total_len = wlcore_calc_packet_alignment(wl, skb->len);
+	if ((wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) ||
+	    !(wl->quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN))
+		total_len = ALIGN(skb->len, WL1271_TX_ALIGN_TO);
+	else
+		total_len = ALIGN(skb->len, WL12XX_BUS_BLOCK_SIZE);
 
 	memcpy(wl->aggr_buf + buf_offset, skb->data, skb->len);
 	memset(wl->aggr_buf + buf_offset + skb->len, 0, total_len - skb->len);
@@ -563,6 +637,25 @@ static struct sk_buff *wlcore_lnk_dequeue_high_prio(struct wl1271 *wl,
 	return wlcore_lnk_dequeue(wl, lnk, ac);
 }
 
+static struct sk_buff *VV_lnk_dequeue_high_prio(struct wl1271 *wl,
+						    u8 hlid, u8 ac,
+						    u8 *low_prio_hlid)
+{
+	struct wl1271_link *lnk = &wl->links[hlid];
+
+	if (!wlcore_hw_lnk_high_prio(wl, hlid, lnk)) { // ~VV_
+		if (*low_prio_hlid == WL12XX_INVALID_LINK_ID &&
+		    !skb_queue_empty(&lnk->tx_queue[ac]) &&
+		    wlcore_hw_lnk_low_prio(wl, hlid, lnk)) // ~VV_
+			/* we found the first non-empty low priority queue */
+			*low_prio_hlid = hlid;
+
+		return NULL;
+	}
+
+	return wlcore_lnk_dequeue(wl, lnk, ac); // ~VV_
+}
+
 static struct sk_buff *wlcore_vif_dequeue_high_prio(struct wl1271 *wl,
 						    struct wl12xx_vif *wlvif,
 						    u8 ac, u8 *hlid,
@@ -582,7 +675,8 @@ static struct sk_buff *wlcore_vif_dequeue_high_prio(struct wl1271 *wl,
 		if (!test_bit(h, wlvif->links_map))
 			continue;
 
-		skb = wlcore_lnk_dequeue_high_prio(wl, h, ac,
+		// VV_
+		skb = VV_lnk_dequeue_high_prio(wl, h, ac,
 						   low_prio_hlid);
 		if (!skb)
 			continue;
@@ -606,7 +700,18 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 	int ac;
 	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
 
-	ac = wlcore_select_ac(wl);
+	//ac = wlcore_select_ac(wl);
+	int i, q = -1, ac_tmp;
+	u32 min_pkts = 0xffffffff;
+	for (i = 0; i < NUM_TX_QUEUES; i++) {
+		ac_tmp = wl1271_tx_get_queue(i); // VV_
+		if (wl->tx_queue_count[ac_tmp] &&
+		    wl->tx_allocated_pkts[ac_tmp] < min_pkts) {
+			q = ac_tmp;
+			min_pkts = wl->tx_allocated_pkts[q];
+		}
+	}
+	ac = q;
 	if (ac < 0)
 		goto out;
 
@@ -616,6 +721,7 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 			if (!wlvif->tx_queue_count[ac])
 				continue;
 
+			// VV_
 			skb = wlcore_vif_dequeue_high_prio(wl, wlvif, ac, hlid,
 							   &low_prio_hlid);
 			if (!skb)
@@ -628,7 +734,9 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 
 	/* dequeue from the system HLID before the restarting wlvif list */
 	if (!skb) {
-		skb = wlcore_lnk_dequeue_high_prio(wl, wl->system_hlid,
+		// skb = wlcore_lnk_dequeue_high_prio(wl, wl->system_hlid,
+		// 				   ac, &low_prio_hlid);
+		skb = VV_lnk_dequeue_high_prio(wl, wl->system_hlid,
 						   ac, &low_prio_hlid);
 		if (skb) {
 			*hlid = wl->system_hlid;
@@ -643,6 +751,7 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 			if (!wlvif->tx_queue_count[ac])
 				goto next;
 
+			// VV_
 			skb = wlcore_vif_dequeue_high_prio(wl, wlvif, ac, hlid,
 							   &low_prio_hlid);
 			if (skb) {
@@ -659,7 +768,7 @@ next:
 	/* no high priority skbs found - but maybe a low priority one? */
 	if (!skb && low_prio_hlid != WL12XX_INVALID_LINK_ID) {
 		struct wl1271_link *lnk = &wl->links[low_prio_hlid];
-		skb = wlcore_lnk_dequeue(wl, lnk, ac);
+		skb = wlcore_lnk_dequeue(wl, lnk, ac); // VV_
 
 		WARN_ON(!skb); /* we checked this before */
 		*hlid = low_prio_hlid;
@@ -678,7 +787,7 @@ out:
 
 		skb = wl->dummy_packet;
 		*hlid = wl->system_hlid;
-		q = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
+		q = wl1271_tx_get_queue(skb_get_queue_mapping(skb)); // VV_
 		spin_lock_irqsave(&wl->wl_lock, flags);
 		WARN_ON_ONCE(wl->tx_queue_count[q] <= 0);
 		wl->tx_queue_count[q]--;
@@ -692,9 +801,10 @@ static void wl1271_skb_queue_head(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				  struct sk_buff *skb, u8 hlid)
 {
 	unsigned long flags;
-	int q = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
+	int q = wl1271_tx_get_queue(skb_get_queue_mapping(skb)); // VV_
 
-	if (wl12xx_is_dummy_packet(wl, skb)) {
+	//if (wl12xx_is_dummy_packet(wl, skb)) {
+	if (wl->dummy_packet == skb) {
 		set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags);
 	} else {
 		skb_queue_head(&wl->links[hlid].tx_queue[q], skb);
@@ -779,17 +889,22 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		return 0;
 
-	while ((skb = wl1271_skb_dequeue(wl, &hlid))) {
+	while ((skb = wl1271_skb_dequeue(wl, &hlid))) { // ~VV_
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 		bool has_data = false;
 
 		wlvif = NULL;
-		if (!wl12xx_is_dummy_packet(wl, skb))
-			wlvif = wl12xx_vif_to_data(info->control.vif);
+		//if (!wl12xx_is_dummy_packet(wl, skb))
+		if (wl->dummy_packet != skb)
+			wlvif = (struct wl12xx_vif *)info->control.vif->drv_priv;
 		else
 			hlid = wl->system_hlid;
 
-		has_data = wlvif && wl1271_tx_is_data_present(skb);
+		//has_data = wlvif && wl1271_tx_is_data_present(skb);
+		struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)(skb->data);
+		has_data = wlvif && ieee80211_is_data_present(hdr->frame_control);
+
+		// VV_
 		ret = wl1271_prepare_tx_frame(wl, wlvif, skb, buf_offset,
 					      hlid);
 		if (ret == -EAGAIN) {
@@ -797,12 +912,25 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 			 * Aggregation buffer is full.
 			 * Flush buffer and try again.
 			 */
-			wl1271_skb_queue_head(wl, wlvif, skb, hlid);
+			wl1271_skb_queue_head(wl, wlvif, skb, hlid); // VV_
 
-			buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset,
-							    last_len);
-			bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA,
-					     wl->aggr_buf, buf_offset, true);
+			// buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset,
+			// 				    last_len);
+			if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) {
+				struct wl1271_tx_hw_descr *last_desc;
+
+				/* get the last TX HW descriptor written to the aggr buf */
+				last_desc = (struct wl1271_tx_hw_descr *)(wl->aggr_buf +
+									buf_offset - last_len);
+
+				/* the last frame is padded up to an SDIO block */
+				last_desc->wl18xx_mem.ctrl &= ~WL18XX_TX_CTRL_NOT_PADDED;
+				buf_offset = ALIGN(buf_offset, WL12XX_BUS_BLOCK_SIZE);
+			}
+
+			// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA,
+			// 		     wl->aggr_buf, buf_offset, true);
+			ret = VV_sdio_raw_write1(wl, wl->rtable[REG_SLV_MEM_DATA], wl->aggr_buf, buf_offset, true);
 			if (bus_ret < 0)
 				goto out;
 
@@ -814,12 +942,13 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 			 * Firmware buffer is full.
 			 * Queue back last skb, and stop aggregating.
 			 */
-			wl1271_skb_queue_head(wl, wlvif, skb, hlid);
+			wl1271_skb_queue_head(wl, wlvif, skb, hlid); // VV_
 			/* No work left, avoid scheduling redundant tx work */
 			set_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
 			goto out_ack;
 		} else if (ret < 0) {
-			if (wl12xx_is_dummy_packet(wl, skb))
+			//if (wl12xx_is_dummy_packet(wl, skb))
+			if (wl->dummy_packet == skb)
 				/*
 				 * fw still expects dummy packet,
 				 * so re-enqueue it
@@ -840,9 +969,22 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 
 out_ack:
 	if (buf_offset) {
-		buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len);
-		bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
-					     buf_offset, true);
+		// buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len);
+		if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) {
+			struct wl1271_tx_hw_descr *last_desc;
+
+			/* get the last TX HW descriptor written to the aggr buf */
+			last_desc = (struct wl1271_tx_hw_descr *)(wl->aggr_buf +
+								buf_offset - last_len);
+
+			/* the last frame is padded up to an SDIO block */
+			last_desc->wl18xx_mem.ctrl &= ~WL18XX_TX_CTRL_NOT_PADDED;
+			buf_offset = ALIGN(buf_offset, WL12XX_BUS_BLOCK_SIZE);
+		}
+
+		// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
+		// 			     buf_offset, true);
+		ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), wl->aggr_buf, buf_offset, true);
 		if (bus_ret < 0)
 			goto out;
 
@@ -854,15 +996,17 @@ out_ack:
 		 * required for older hardware revisions
 		 */
 		if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-			bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
-					     wl->tx_packets_count);
+			// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
+			// 		     wl->tx_packets_count);
+			bus_ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL12XX_HOST_WR_ACCESS),
+					     wl->tx_packets_count, 4, false);
 			if (bus_ret < 0)
 				goto out;
 		}
 
-		wl1271_handle_tx_low_watermark(wl);
+		wl1271_handle_tx_low_watermark(wl); // VV_
 	}
-	wl12xx_rearm_rx_streaming(wl, active_hlids);
+	wl12xx_rearm_rx_streaming(wl, active_hlids); // VV_
 
 out:
 	return bus_ret;
@@ -880,10 +1024,19 @@ void wl1271_tx_work(struct work_struct *work)
 		goto out;
 	}
 
-	ret = wlcore_tx_work_locked(wl);
+	ret = wlcore_tx_work_locked(wl); // VV_
 	if (ret < 0) {
 		pm_runtime_put_noidle(wl->dev);
-		wl12xx_queue_recovery_work(wl);
+		//wl12xx_queue_recovery_work(wl);
+		/* Avoid a recursive recovery */
+		if (wl->state == WLCORE_STATE_ON) {
+			WARN_ON(!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY,
+					&wl->flags));
+
+			wl->state = WLCORE_STATE_RESTARTING;
+			set_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags);
+			ieee80211_queue_work(wl->hw, &wl->recovery_work);
+		}
 		goto out;
 	}
 
@@ -1177,17 +1330,17 @@ void wl1271_tx_flush(struct wl1271 *wl)
 		goto out;
 	}
 
-	wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH);
+	wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH); // VV_
 
 	while (!time_after(jiffies, timeout)) {
 		wl1271_debug(DEBUG_MAC80211, "flushing tx buffer: %d %d",
 			     wl->tx_frames_cnt,
-			     wl1271_tx_total_queue_count(wl));
+			     wl1271_tx_total_queue_count(wl)); // VV_
 
 		/* force Tx and give the driver some time to flush data */
 		mutex_unlock(&wl->mutex);
-		if (wl1271_tx_total_queue_count(wl))
-			wl1271_tx_work(&wl->tx_work);
+		if (wl1271_tx_total_queue_count(wl)) // VV_
+			wl1271_tx_work(&wl->tx_work); // VV_
 		msleep(20);
 		mutex_lock(&wl->mutex);
 
@@ -1205,10 +1358,10 @@ void wl1271_tx_flush(struct wl1271 *wl)
 
 	/* forcibly flush all Tx buffers on our queues */
 	for (i = 0; i < wl->num_links; i++)
-		wl1271_tx_reset_link_queues(wl, i);
+		wl1271_tx_reset_link_queues(wl, i); // VV_
 
 out_wake:
-	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH);
+	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH); // VV_
 	mutex_unlock(&wl->mutex);
 out:
 	mutex_unlock(&wl->flush_mutex);
