@@ -21,7 +21,7 @@
 #include "hw_ops.h"
 
 #define WL18XX_CMD_MAX_SIZE 740
-int VV_cmd_send1(struct wl1271 *wl, u16 id, void *buf,
+int wl1271_cmd_send11(struct wl1271 *wl, u16 id, void *buf,
 			     size_t len, size_t res_len)
 {
 	struct wl1271_cmd_header *cmd;

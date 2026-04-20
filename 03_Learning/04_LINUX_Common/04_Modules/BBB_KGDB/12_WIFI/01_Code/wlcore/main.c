@@ -755,6 +755,7 @@ out:
 
 void wl12xx_queue_recovery_work(struct wl1271 *wl)
 {
+	printk("wl12xx_queue_recovery_work\n");
 	/* Avoid a recursive recovery */
 	if (wl->state == WLCORE_STATE_ON) {
 		WARN_ON(!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY,
@@ -2844,8 +2845,8 @@ static void VV_op_remove_interface(struct ieee80211_hw *hw,
 		if (iter != wlvif)
 			continue;
 
-		__wl1271_op_remove_interface(wl, vif, true);
-		//__VV_op_remove_interface(wl, vif, true);
+		//__wl1271_op_remove_interface(wl, vif, true);
+		__VV_op_remove_interface(wl, vif, true);
 		break;
 	}
 	// WARN_ON(iter != wlvif);
@@ -6847,7 +6848,7 @@ static const struct ieee80211_ops wl1271_ops = {
 	.set_key = wlcore_op_set_key,
 	.hw_scan = wl1271_op_hw_scan,
 
-	.bss_info_changed = wl1271_op_bss_info_changed, 
+	.bss_info_changed = wl1271_op_bss_info_changed, // VV_
 	.sta_state = wl12xx_op_sta_state, // VV_
 	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, // VV_
 
