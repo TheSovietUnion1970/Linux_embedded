@@ -305,7 +305,7 @@ int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fix
 	return ret;
 }
 
-int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
+int wl1271_cmd_send1(struct wl1271 *wl, u16 id, void *buf,
 			     size_t len, size_t res_len)
 {
 	struct wl1271_cmd_header *cmd;
@@ -379,7 +379,7 @@ int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
 	/* payload length, does not include any headers */
 	acx->len = cpu_to_le16(len - sizeof(*acx));
 
-	ret = VV_cmd_send(wl, CMD_CONFIGURE, acx, len, valid_rets);
+	ret = wl1271_cmd_send1(wl, CMD_CONFIGURE, acx, len, valid_rets);
 	if (ret < 0) {
 		wl1271_warning("CONFIGURE command NOK");
 		return ret;

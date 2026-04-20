@@ -80,7 +80,7 @@ int wl18xx_cmd_set_cac(struct wl1271 *wl, struct wl12xx_vif *wlvif, bool start);
 int wl18xx_cmd_radar_detection_debug(struct wl1271 *wl, u8 channel);
 int wl18xx_cmd_dfs_master_restart(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 
-int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
+int wl1271_cmd_send1(struct wl1271 *wl, u16 id, void *buf,
 			     size_t len, size_t res_len);
 
 int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,

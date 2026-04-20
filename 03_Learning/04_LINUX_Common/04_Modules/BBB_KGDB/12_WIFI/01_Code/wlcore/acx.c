@@ -1149,33 +1149,48 @@ int wl1271_acx_bet_enable(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 int wl1271_acx_arp_ip_filter(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			     u8 enable, __be32 address)
 {
-	struct wl1271_acx_arp_filter *acx;
+// 	struct wl1271_acx_arp_filter *acx;
+// 	int ret;
+
+// 	wl1271_debug(DEBUG_ACX, "acx arp ip filter, enable: %d", enable);
+
+// 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
+// 	if (!acx) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	acx->role_id = wlvif->role_id;
+// 	acx->version = ACX_IPV4_VERSION;
+// 	acx->enable = enable;
+
+// 	if (enable)
+// 		memcpy(acx->address, &address, ACX_IPV4_ADDR_SIZE);
+
+// 	ret = wl1271_cmd_configure(wl, ACX_ARP_IP_FILTER,
+// 				   acx, sizeof(*acx));
+// 	if (ret < 0) {
+// 		wl1271_warning("failed to set arp ip filter: %d", ret);
+// 		goto out;
+// 	}
+
+// out:
+// 	kfree(acx);
+// 	return ret;
+
+	struct wl1271_acx_arp_filter acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx arp ip filter, enable: %d", enable);
 
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	acx->role_id = wlvif->role_id;
-	acx->version = ACX_IPV4_VERSION;
-	acx->enable = enable;
+	acx.role_id = wlvif->role_id;
+	acx.version = ACX_IPV4_VERSION;
+	acx.enable = enable;
 
 	if (enable)
-		memcpy(acx->address, &address, ACX_IPV4_ADDR_SIZE);
+		memcpy(acx.address, &address, ACX_IPV4_ADDR_SIZE);
 
-	ret = wl1271_cmd_configure(wl, ACX_ARP_IP_FILTER,
-				   acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("failed to set arp ip filter: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
+	ret = VV_cmd_configure(wl, ACX_ARP_IP_FILTER,
+				   &acx, sizeof(acx), 0);
 	return ret;
 }
 

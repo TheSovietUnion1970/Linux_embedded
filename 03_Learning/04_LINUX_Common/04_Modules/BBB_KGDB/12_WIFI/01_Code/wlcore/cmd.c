@@ -124,68 +124,68 @@ static int __wlcore_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 	return status;
 }
 
-int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf,
-			     size_t len, size_t res_len)
-{
-	struct wl1271_cmd_header *cmd;
-	unsigned long timeout;
-	u32 intr;
-	int ret;
-	u16 status;
-	u8 cmd_max[WL18XX_CMD_MAX_SIZE];
+// int wl1271_cmd_send1(struct wl1271 *wl, u16 id, void *buf,
+// 			     size_t len, size_t res_len)
+// {
+// 	struct wl1271_cmd_header *cmd;
+// 	unsigned long timeout;
+// 	u32 intr;
+// 	int ret;
+// 	u16 status;
+// 	u8 cmd_max[WL18XX_CMD_MAX_SIZE];
 
-	cmd = buf;
-	cmd->id = cpu_to_le16(id);
-	cmd->status = 0;
+// 	cmd = buf;
+// 	cmd->id = cpu_to_le16(id);
+// 	cmd->status = 0;
 
-	// ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
-	if (ret < 0)
-		return ret;
+// 	// ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
+// 	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
+// 	if (ret < 0)
+// 		return ret;
 
-	memcpy(cmd_max, buf, len);
-	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
+// 	memcpy(cmd_max, buf, len);
+// 	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
 
-	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
-	// 		    WL18XX_CMD_MAX_SIZE, false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+// 	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
+// 	// 		    WL18XX_CMD_MAX_SIZE, false);
+// 	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
 
 
-	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
-	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
-	if (ret < 0)
-		return ret;
+// 	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
+// 	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+// 	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+// 	if (ret < 0)
+// 		return ret;
 
-	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
-		if (time_after(jiffies, timeout)) {
-			wl1271_error("command complete timeout");
-			return -ETIMEDOUT;
-		}
-		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
-		if (ret < 0)
-			return ret;
-	}
+// 	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
+// 		if (time_after(jiffies, timeout)) {
+// 			wl1271_error("command complete timeout");
+// 			return -ETIMEDOUT;
+// 		}
+// 		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+// 		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+// 		if (ret < 0)
+// 			return ret;
+// 	}
 
-	/* read back the status code of the command */
-	if (res_len == 0)
-		res_len = sizeof(struct wl1271_cmd_header);
+// 	/* read back the status code of the command */
+// 	if (res_len == 0)
+// 		res_len = sizeof(struct wl1271_cmd_header);
 
-	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
-	if (ret < 0)
-		return ret;
-	status = le16_to_cpu(cmd->status);
-	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
-	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
-				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
-	if (ret < 0)
-		return ret;
+// 	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
+// 	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+// 	if (ret < 0)
+// 		return ret;
+// 	status = le16_to_cpu(cmd->status);
+// 	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
+// 	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
+// 	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
+// 				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
+// 	if (ret < 0)
+// 		return ret;
 
-	return status;
-}
+// 	return status;
+// }
 
 /*
  * send command to fw and return cmd status on success
@@ -230,6 +230,18 @@ int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(wl1271_cmd_send);
+
+int wl1271_cmd_send1(struct wl1271 *wl, u16 id, void *buf, size_t len,
+		    size_t res_len)
+{
+	int ret = wlcore_cmd_send_failsafe(wl, id, buf, len, res_len, 0);
+	//int ret = __VV_cmd_send(wl, id, buf, len, res_len);
+
+	if (ret < 0)
+		return ret;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(wl1271_cmd_send1);
 
 /*
  * Poll the mailbox event field until any of the bits in the mask is set or a
@@ -362,7 +374,7 @@ int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 	/* get role type */
 	cmd->role_type = role_type;
 
-	ret = VV_cmd_send(wl, CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
+	ret = wl1271_cmd_send1(wl, CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role enable");
 		goto out_free;
@@ -738,7 +750,7 @@ int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	cmd.disc_type = DISCONNECT_IMMEDIATE;
 	cmd.reason = cpu_to_le16(WLAN_REASON_UNSPECIFIED);
 
-	ret = VV_cmd_send(wl, CMD_ROLE_STOP, &cmd, sizeof(cmd), 0);
+	ret = wl1271_cmd_send1(wl, CMD_ROLE_STOP, &cmd, sizeof(cmd), 0);
 
 	wl12xx_free_link(wl, wlvif, &wlvif->sta.hlid);
 	return ret;
@@ -1001,7 +1013,7 @@ int wl1271_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
 	acx->len = cpu_to_le16(res_len - sizeof(*acx));
 
 	ret = wl1271_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
-	// ret = VV_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
+	// ret = wl1271_cmd_send1(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
 	if (ret < 0)
 		wl1271_error("INTERROGATE command failed");
 
@@ -1021,7 +1033,7 @@ int VV_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
 	/* response payload length, does not include any headers */
 	acx->len = cpu_to_le16(res_len - sizeof(*acx));
 
-	ret = VV_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
+	ret = wl1271_cmd_send1(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
 	if (ret < 0)
 		wl1271_error("INTERROGATE command failed");
 
@@ -1075,7 +1087,7 @@ int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
 	/* payload length, does not include any headers */
 	acx->len = cpu_to_le16(len - sizeof(*acx));
 
-	ret = VV_cmd_send(wl, CMD_CONFIGURE, acx, len, valid_rets);
+	ret = wl1271_cmd_send1(wl, CMD_CONFIGURE, acx, len, valid_rets);
 	if (ret < 0) {
 		wl1271_warning("CONFIGURE command NOK");
 		return ret;
@@ -1490,7 +1502,10 @@ int wl1271_cmd_build_arp_rsp(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	memcpy(hdr->addr2, vif->addr, ETH_ALEN);
 	eth_broadcast_addr(hdr->addr3);
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_ARP_RSP,
+	// ret = wl1271_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_ARP_RSP,
+	// 			      skb->data, skb->len, 0,
+	// 			      wlvif->basic_rate);
+	ret = VV_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_ARP_RSP,
 				      skb->data, skb->len, 0,
 				      wlvif->basic_rate);
 out:

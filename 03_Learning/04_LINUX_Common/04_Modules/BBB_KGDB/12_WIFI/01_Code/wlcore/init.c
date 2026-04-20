@@ -20,6 +20,70 @@
 #include "io.h"
 #include "hw_ops.h"
 
+#define WL18XX_CMD_MAX_SIZE 740
+int VV_cmd_send1(struct wl1271 *wl, u16 id, void *buf,
+			     size_t len, size_t res_len)
+{
+	struct wl1271_cmd_header *cmd;
+	unsigned long timeout;
+	u32 intr;
+	int ret;
+	u16 status;
+	u8 cmd_max[WL18XX_CMD_MAX_SIZE];
+
+	cmd = buf;
+	cmd->id = cpu_to_le16(id);
+	cmd->status = 0;
+
+	// ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
+	if (ret < 0)
+		return ret;
+
+	memcpy(cmd_max, buf, len);
+	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
+
+	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
+	// 		    WL18XX_CMD_MAX_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+
+
+	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
+	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+	if (ret < 0)
+		return ret;
+
+	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
+		if (time_after(jiffies, timeout)) {
+			wl1271_error("command complete timeout");
+			return -ETIMEDOUT;
+		}
+		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* read back the status code of the command */
+	if (res_len == 0)
+		res_len = sizeof(struct wl1271_cmd_header);
+
+	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+	if (ret < 0)
+		return ret;
+	status = le16_to_cpu(cmd->status);
+	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
+	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
+				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
+	if (ret < 0)
+		return ret;
+
+	return status;
+}
+
 int VV_cmd_template_set(struct wl1271 *wl, u8 role_id,
 			    u16 template_id, void *buf, size_t buf_len,
 			    int index, u32 rates)
@@ -41,8 +105,49 @@ int VV_cmd_template_set(struct wl1271 *wl, u8 role_id,
 	if (buf)
 		memcpy(cmd.template_data, buf, buf_len);
 
-	ret = VV_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
+	//ret = wl1271_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
+	ret = wl1271_cmd_send1(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
+	printk("[TEMPLATE] - ret = %d\n",ret);
 	return ret;
+
+// 	struct wl1271_cmd_template_set *cmd;
+// 	int ret = 0;
+
+// 	wl1271_debug(DEBUG_CMD, "cmd template_set %d (role %d)",
+// 		     template_id, role_id);
+
+// 	WARN_ON(buf_len > WL1271_CMD_TEMPL_MAX_SIZE);
+// 	buf_len = min_t(size_t, buf_len, WL1271_CMD_TEMPL_MAX_SIZE);
+
+// 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+// 	if (!cmd) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	/* during initialization wlvif is NULL */
+// 	cmd->role_id = role_id;
+// 	cmd->len = cpu_to_le16(buf_len);
+// 	cmd->template_type = template_id;
+// 	cmd->enabled_rates = cpu_to_le32(rates);
+// 	cmd->short_retry_limit = wl->conf.tx.tmpl_short_retry_limit;
+// 	cmd->long_retry_limit = wl->conf.tx.tmpl_long_retry_limit;
+// 	cmd->index = index;
+
+// 	if (buf)
+// 		memcpy(cmd->template_data, buf, buf_len);
+
+// 	ret = wl1271_cmd_send(wl, CMD_SET_TEMPLATE, cmd, sizeof(*cmd), 0);
+// 	if (ret < 0) {
+// 		wl1271_warning("cmd set_template failed: %d", ret);
+// 		goto out_free;
+// 	}
+
+// out_free:
+// 	kfree(cmd);
+
+// out:
+// 	return ret;
 }
 
 int wl1271_init_templates_config(struct wl1271 *wl)
@@ -396,12 +501,12 @@ static int wl12xx_init_phy_vif_config(struct wl1271 *wl,
 {
 	int ret;
 
-	// ret = wl1271_acx_slot(wl, wlvif, DEFAULT_SLOT_TIME);
+	//ret = wl1271_acx_slot(wl, wlvif, DEFAULT_SLOT_TIME);
 	struct acx_slot slot;
 	slot.role_id = wlvif->role_id;
 	slot.wone_index = STATION_WONE_INDEX;
 	slot.slot_time = DEFAULT_SLOT_TIME;
-	ret = VV_cmd_send(wl, ACX_SLOT, &slot, sizeof(slot), 0);
+	ret = VV_cmd_configure(wl, ACX_SLOT, &slot, sizeof(slot), 0);
 	if (ret < 0)
 		return ret;
 
@@ -410,11 +515,11 @@ static int wl12xx_init_phy_vif_config(struct wl1271 *wl,
 	rx_timeout.role_id = wlvif->role_id;
 	rx_timeout.ps_poll_timeout = cpu_to_le16(wl->conf.rx.ps_poll_timeout);
 	rx_timeout.upsd_timeout = cpu_to_le16(wl->conf.rx.upsd_timeout);
-	ret = VV_cmd_send(wl, ACX_SERVICE_PERIOD_TIMEOUT, &rx_timeout, sizeof(rx_timeout), 0);
+	ret = VV_cmd_configure(wl, ACX_SERVICE_PERIOD_TIMEOUT, &rx_timeout, sizeof(rx_timeout), 0);
 	if (ret < 0)
 		return ret;
 
-	// ret = wl1271_acx_rts_threshold(wl, wlvif, wl->hw->wiphy->rts_threshold);
+	//ret = wl1271_acx_rts_threshold(wl, wlvif, wl->hw->wiphy->rts_threshold);
 	struct acx_rts_threshold rts;
 	/*
 	 * If the RTS threshold is not configured or out of range, use the
@@ -424,7 +529,7 @@ static int wl12xx_init_phy_vif_config(struct wl1271 *wl,
 	if (rts.threshold > IEEE80211_MAX_RTS_THRESHOLD)
 		rts.threshold = wl->conf.rx.rts_threshold;
 	rts.role_id = wlvif->role_id;
-	ret = VV_cmd_send(wl, DOT11_RTS_THRESHOLD, &rts, sizeof(rts), 0);
+	ret = VV_cmd_configure(wl, DOT11_RTS_THRESHOLD, &rts, sizeof(rts), 0);
 	if (ret < 0)
 		return ret;
 
@@ -563,17 +668,17 @@ int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	int ret;
 
 	/* PS config */
-	// ret = wl12xx_acx_config_ps(wl, wlvif);
+	//ret = wl12xx_acx_config_ps(wl, wlvif);
 	struct wl1271_acx_config_ps config_ps;
 	config_ps.exit_retries = wl->conf.conn.psm_exit_retries;
 	config_ps.enter_retries = wl->conf.conn.psm_entry_retries;
 	config_ps.null_data_rate = cpu_to_le32(wlvif->basic_rate);
-	ret = VV_cmd_send(wl, ACX_CONFIG_PS, &config_ps, sizeof(config_ps), 0);
+	ret = VV_cmd_configure(wl, ACX_CONFIG_PS, &config_ps, sizeof(config_ps), 0);
 	if (ret < 0)
 		return ret;
 
 	/* FM WLAN coexistence */
-	// ret = wl1271_acx_fm_coex(wl);
+	//ret = wl1271_acx_fm_coex(wl);
 	struct wl1271_acx_fm_coex acx;
 	acx.enable = wl->conf.fm_coex.enable;
 	acx.swallow_period = wl->conf.fm_coex.swallow_period;
@@ -590,11 +695,11 @@ int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx.fm_disturbed_band_margin =
 		wl->conf.fm_coex.fm_disturbed_band_margin;
 	acx.swallow_clk_diff = wl->conf.fm_coex.swallow_clk_diff;
-	ret = VV_cmd_send(wl, ACX_FM_COEX_CFG, &acx, sizeof(acx), 0);
+	ret = VV_cmd_configure(wl, ACX_FM_COEX_CFG, &acx, sizeof(acx), 0);
 	if (ret < 0)
 		return ret;
 
-	// ret = wl1271_acx_sta_rate_policies(wl, wlvif);
+	ret = wl1271_acx_sta_rate_policies(wl, wlvif);
 	struct acx_rate_policy acxrp;
 	struct conf_tx_rate_class *c = &wl->conf.tx.sta_rc_conf;
 
@@ -605,7 +710,7 @@ int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acxrp.rate_policy.long_retry_limit = c->long_retry_limit;
 	acxrp.rate_policy.aflags = c->aflags;
 	
-	ret = VV_cmd_send(wl, ACX_FM_COEX_CFG, &acxrp, sizeof(acxrp), 0);
+	ret = VV_cmd_configure(wl, ACX_FM_COEX_CFG, &acxrp, sizeof(acxrp), 0);
 	if (ret < 0)
 		return ret;
 
@@ -618,7 +723,7 @@ int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acxrp.rate_policy.short_retry_limit = c->short_retry_limit;
 	acxrp.rate_policy.long_retry_limit = c->long_retry_limit;
 	acxrp.rate_policy.aflags = c->aflags;
-	ret = VV_cmd_send(wl, ACX_FM_COEX_CFG, &acxrp, sizeof(acxrp), 0);
+	ret = VV_cmd_configure(wl, ACX_FM_COEX_CFG, &acxrp, sizeof(acxrp), 0);
 	if (ret < 0)
 		return ret;
 
@@ -774,14 +879,14 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	int ret;
 
 	/* =============== ***************** ==================*/
-	// ret = wl1271_acx_group_address_tbl(wl, wlvif, true, NULL, 0);
+	//ret = wl1271_acx_group_address_tbl(wl, wlvif, true, NULL, 0);
 	struct acx_dot11_grp_addr_tbl acx;
 	/* MAC filtering */
 	acx.role_id = wlvif->role_id;
 	acx.enabled = true;
 	acx.num_groups = 0;
 	memcpy(acx.mac_table, NULL, 0 * ETH_ALEN);
-	ret = VV_cmd_send(wl, DOT11_GROUP_ADDRESS_TBL, &acx, sizeof(acx), 0);
+	ret = VV_cmd_configure(wl, DOT11_GROUP_ADDRESS_TBL, &acx, sizeof(acx), 0);
 	if (ret < 0)
 		return ret;
 
@@ -794,7 +899,7 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx1.role_id = wlvif->role_id;
 	acx1.synch_fail_thold = cpu_to_le32(threshold);
 	acx1.bss_lose_timeout = cpu_to_le32(timeout);
-	ret = VV_cmd_send(wl, ACX_CONN_MONIT_PARAMS, &acx1, sizeof(acx1), 0);
+	ret = VV_cmd_configure(wl, ACX_CONN_MONIT_PARAMS, &acx1, sizeof(acx1), 0);
 	if (ret < 0)
 		return ret;
 
@@ -832,13 +937,13 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 		ie_table.num_ie++;
 	}
-	ret = VV_cmd_send(wl, ACX_BEACON_FILTER_TABLE, &ie_table, sizeof(ie_table), 0);
+	ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_TABLE, &ie_table, sizeof(ie_table), 0);
 	if (ret < 0)
 		return ret;
 
 
 	/* disable beacon filtering until we get the first beacon */
-	// ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
+	//ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
 	struct acx_beacon_filter_option beacon_filter;
 	beacon_filter.role_id = wlvif->role_id;
 	beacon_filter.enable = false;
@@ -847,26 +952,26 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	 * without the unicast TIM bit set are dropped.
 	 */
 	beacon_filter.max_num_beacons = 0;
-	ret = VV_cmd_send(wl, ACX_BEACON_FILTER_OPT, &beacon_filter, sizeof(beacon_filter), 0);
+	ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_OPT, &beacon_filter, sizeof(beacon_filter), 0);
 	if (ret < 0)
 		return ret;
 
 	/* =============== ***************** ==================*/
 	/* Beacons and broadcast settings */
-	// ret = wl1271_init_beacon_broadcast(wl, wlvif);
+	//ret = wl1271_init_beacon_broadcast(wl, wlvif);
 	struct acx_beacon_broadcast bb;
 	bb.role_id = wlvif->role_id;
 	bb.beacon_rx_timeout = cpu_to_le16(wl->conf.conn.beacon_rx_timeout);
 	bb.broadcast_timeout = cpu_to_le16(wl->conf.conn.broadcast_timeout);
 	bb.rx_broadcast_in_ps = wl->conf.conn.rx_broadcast_in_ps;
 	bb.ps_poll_threshold = wl->conf.conn.ps_poll_threshold;
-	ret = VV_cmd_send(wl, ACX_BCN_DTIM_OPTIONS, &bb, sizeof(bb), 0);
+	ret = VV_cmd_configure(wl, ACX_BCN_DTIM_OPTIONS, &bb, sizeof(bb), 0);
 	if (ret < 0)
 		return ret;
 
 	/* =============== ***************** ==================*/
 	/* Configure rssi/snr averaging weights */
-	// ret = wl1271_acx_rssi_snr_avg_weights(wl, wlvif);
+	//ret = wl1271_acx_rssi_snr_avg_weights(wl, wlvif);
 	struct wl1271_acx_rssi_snr_avg_weights acx2;
 	struct conf_roam_trigger_settings *c = &wl->conf.roam_trigger;
 	acx2.role_id = wlvif->role_id;
@@ -874,7 +979,7 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx2.rssi_data = c->avg_weight_rssi_data;
 	acx2.snr_beacon = c->avg_weight_snr_beacon;
 	acx2.snr_data = c->avg_weight_snr_data;
-	ret = VV_cmd_send(wl, ACX_RSSI_SNR_WEIGHTS, &acx2, sizeof(acx2), 0);
+	ret = VV_cmd_configure(wl, ACX_RSSI_SNR_WEIGHTS, &acx2, sizeof(acx2), 0);
 	if (ret < 0)
 		return ret;
 
@@ -1058,7 +1163,7 @@ int VV_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 		acx4.cw_max = cpu_to_le16(conf_ac->cw_max);
 		acx4.aifsn = conf_ac->aifsn;
 		acx4.tx_op_limit = cpu_to_le16(conf_ac->tx_op_limit);
-		ret = VV_cmd_send(wl, ACX_AC_CFG, &acx4, sizeof(acx4), 0);
+		ret = VV_cmd_configure(wl, ACX_AC_CFG, &acx4, sizeof(acx4), 0);
 		if (ret < 0)
 			return ret;
 
@@ -1080,7 +1185,7 @@ int VV_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 		acx5.ack_policy = conf_tid->ack_policy;
 		acx5.apsd_conf[0] = cpu_to_le32(conf_tid->apsd_conf[0]);
 		acx5.apsd_conf[1] = cpu_to_le32(conf_tid->apsd_conf[1]);
-		ret = VV_cmd_send(wl, ACX_TID_CFG, &acx5, sizeof(acx5), 0);
+		ret = VV_cmd_configure(wl, ACX_TID_CFG, &acx5, sizeof(acx5), 0);
 		if (ret < 0)
 			return ret;
 	}
@@ -1091,7 +1196,7 @@ int VV_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	feature.role_id = wlvif->role_id;
 	feature.data_flow_options = 0;
 	feature.options = 0;
-	ret = VV_cmd_send(wl, ACX_FEATURE_CFG, &feature, sizeof(feature), 0);
+	ret = VV_cmd_configure(wl, ACX_FEATURE_CFG, &feature, sizeof(feature), 0);
 	if (ret < 0)
 		return ret;
 
@@ -1103,7 +1208,7 @@ int VV_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	struct wl1271_acx_keep_alive_mode acx6;
 	acx6.role_id = wlvif->role_id;
 	acx6.enabled = false;
-	ret = VV_cmd_send(wl, ACX_KEEP_ALIVE_MODE, &acx6, sizeof(acx6), 0);
+	ret = VV_cmd_configure(wl, ACX_KEEP_ALIVE_MODE, &acx6, sizeof(acx6), 0);
 
 	if (ret < 0)
 		return ret;
@@ -1118,7 +1223,7 @@ int VV_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	acx7.tid_bitmap = wl->conf.ht.tx_ba_tid_bitmap;
 	acx7.win_size = wl->conf.ht.tx_ba_win_size;
 	acx7.inactivity_timeout = wl->conf.ht.inactivity_timeout;
-	ret = VV_cmd_send(wl, ACX_BA_SESSION_INIT_POLICY, &acx7, sizeof(acx7), 0);
+	ret = VV_cmd_configure(wl, ACX_BA_SESSION_INIT_POLICY, &acx7, sizeof(acx7), 0);
 	if (ret < 0)
 		return ret;
 
@@ -1479,10 +1584,10 @@ int VV_hw_init(struct wl1271 *wl)
 	cmd1.channel = 1;
 	cmd_rx = CMD_ENABLE_RX;
 	cmd_tx = CMD_ENABLE_TX;
-	ret = VV_cmd_send(wl, cmd_rx, &cmd1, sizeof(cmd1), 0);
+	ret = wl1271_cmd_send1(wl, cmd_rx, &cmd1, sizeof(cmd1), 0);
 	if (ret < 0)
 		goto out_free_memmap;
-	ret = VV_cmd_send(wl, cmd_tx, &cmd1, sizeof(cmd1), 0);
+	ret = wl1271_cmd_send1(wl, cmd_tx, &cmd1, sizeof(cmd1), 0);
 	if (ret < 0)
 		goto out_free_memmap;
 

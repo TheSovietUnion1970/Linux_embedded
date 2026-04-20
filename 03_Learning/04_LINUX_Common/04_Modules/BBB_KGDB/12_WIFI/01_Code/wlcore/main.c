@@ -2779,10 +2779,10 @@ static void __VV_op_remove_interface(struct wl1271 *wl,
 		// }
 
 		// type != NL80211_IFTYPE_P2P_DEVICE
-		// ret = wl12xx_cmd_role_disable(wl, &wlvif->role_id);
+		//ret = wl12xx_cmd_role_disable(wl, &wlvif->role_id);
 		struct wl12xx_cmd_role_disable cmd;
 		cmd.role_id = wlvif->role_id;
-		ret = VV_cmd_send(wl, CMD_ROLE_DISABLE, &cmd, sizeof(cmd), 0);
+		ret = wl1271_cmd_send1(wl, CMD_ROLE_DISABLE, &cmd, sizeof(cmd), 0);
 		__clear_bit(wlvif->role_id, wl->roles_map);
 		wlvif->role_id = WL12XX_INVALID_ROLE_ID;
 		if (ret < 0) {
@@ -2844,8 +2844,8 @@ static void VV_op_remove_interface(struct ieee80211_hw *hw,
 		if (iter != wlvif)
 			continue;
 
-		// __wl1271_op_remove_interface(wl, vif, true);
-		__VV_op_remove_interface(wl, vif, true);
+		__wl1271_op_remove_interface(wl, vif, true);
+		//__VV_op_remove_interface(wl, vif, true);
 		break;
 	}
 	// WARN_ON(iter != wlvif);
@@ -3212,7 +3212,7 @@ static int wlcore_unset_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		// wl12xx_cmd_stop_channel_switch(wl, wlvif);
 		struct wl12xx_cmd_stop_channel_switch cmd;
 		cmd.role_id = wlvif->role_id;
-		ret = VV_cmd_send(wl, CMD_STOP_CHANNEL_SWICTH, &cmd, sizeof(cmd), 0);
+		ret = wl1271_cmd_send1(wl, CMD_STOP_CHANNEL_SWICTH, &cmd, sizeof(cmd), 0);
 		ieee80211_chswitch_done(vif, false);
 		// cancel_delayed_work(&wlvif->channel_switch_work);
 	}
@@ -4306,7 +4306,7 @@ static int wlcore_set_beacon_template(struct wl1271 *wl,
 	cmd.short_retry_limit = wl->conf.tx.tmpl_short_retry_limit;
 	cmd.long_retry_limit = wl->conf.tx.tmpl_long_retry_limit;
 	cmd.index = 0;
-	ret = VV_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
+	ret = wl1271_cmd_send1(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
 	if (ret < 0) {
 		dev_kfree_skb(beacon);
 		goto out;
@@ -4363,7 +4363,7 @@ static int wlcore_set_beacon_template(struct wl1271 *wl,
 	cmd.short_retry_limit = wl->conf.tx.tmpl_short_retry_limit;
 	cmd.long_retry_limit = wl->conf.tx.tmpl_long_retry_limit;
 	cmd.index = 0;
-	ret = VV_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
+	ret = wl1271_cmd_send1(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
 
 end_bcn:
 	dev_kfree_skb(beacon);
@@ -4407,7 +4407,7 @@ static int wl1271_bss_beacon_info_changed(struct wl1271 *wl,
 			//ret = wlcore_hw_dfs_master_restart(wl, wlvif);
 			struct wl18xx_cmd_dfs_master_restart cmd;
 			cmd.role_id = wlvif->role_id;
-			ret = VV_cmd_send(wl, CMD_DFS_MASTER_RESTART, &cmd, sizeof(cmd), 0);
+			ret = wl1271_cmd_send1(wl, CMD_DFS_MASTER_RESTART, &cmd, sizeof(cmd), 0);
 			if (ret < 0)
 				goto out;
 		}
@@ -5164,12 +5164,14 @@ static void VV_bss_info_changed_sta(struct wl1271 *wl,
 			 * isn't being set (when sending), so we have to
 			 * reconfigure the template upon every ip change.
 			 */
+			// VV_
 			ret = wl1271_cmd_build_arp_rsp(wl, wlvif);
 			if (ret < 0) {
 				wl1271_warning("build arp rsp failed: %d", ret);
 				goto out;
 			}
 
+			// VV_
 			ret = wl1271_acx_arp_ip_filter(wl, wlvif,
 				(ACX_ARP_FILTER_ARP_FILTERING |
 				 ACX_ARP_FILTER_AUTO_ARP),
@@ -5177,7 +5179,7 @@ static void VV_bss_info_changed_sta(struct wl1271 *wl,
 		} else {
 			//printk("[STA1] - changed & BSS_CHANGED_ARP_FILTER - else\n");
 			wlvif->ip_addr = 0;
-			ret = wl1271_acx_arp_ip_filter(wl, wlvif, 0, addr);
+			ret = wl1271_acx_arp_ip_filter(wl, wlvif, 0, addr); // VV_
 		}
 
 		if (ret < 0)
@@ -5917,7 +5919,7 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 				break;
 			}
 			
-			ret = VV_cmd_send(wl, CMD_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
+			ret = wl1271_cmd_send1(wl, CMD_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
 
 			__set_bit(wlvif->role_id, wl->roc_map);
 		}
