@@ -4568,6 +4568,58 @@ static int wlcore_set_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	return 0;
 }
 
+static int VV_set_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+			    struct ieee80211_bss_conf *bss_conf,
+			    u32 sta_rate_set)
+{
+	u32 rates;
+	int ret;
+
+	wl1271_debug(DEBUG_MAC80211,
+	     "changed_bssid: %pM, aid: %d, bcn_int: %d, brates: 0x%x sta_rate_set: 0x%x",
+	     bss_conf->bssid, bss_conf->aid,
+	     bss_conf->beacon_int,
+	     bss_conf->basic_rates, sta_rate_set);
+
+	wlvif->beacon_int = bss_conf->beacon_int;
+	rates = bss_conf->basic_rates;
+	wlvif->basic_rate_set =
+		wl1271_tx_enabled_rates_get(wl, rates,
+					    wlvif->band); // VV_
+	wlvif->basic_rate =
+		wl1271_tx_min_rate_get(wl,
+				       wlvif->basic_rate_set); //
+
+	if (sta_rate_set)
+		wlvif->rate_set =
+			wl1271_tx_enabled_rates_get(wl,
+						sta_rate_set,
+						wlvif->band); // VV_
+
+	/* we only support sched_scan while not connected */
+	if (wl->sched_vif == wlvif)
+		wl->ops->sched_scan_stop(wl, wlvif);
+
+	ret = wl1271_acx_sta_rate_policies(wl, wlvif); // VV_
+	if (ret < 0)
+		return ret;
+
+	ret = wl12xx_cmd_build_null_data(wl, wlvif); // VV_
+	if (ret < 0)
+		return ret;
+
+	// VV_
+	ret = wl1271_build_qos_null_data(wl, container_of((void *)wlvif, struct ieee80211_vif, drv_priv));
+	if (ret < 0)
+		return ret;
+
+	wlcore_set_ssid(wl, wlvif); // ~VV_
+
+	set_bit(WLVIF_FLAG_IN_USE, &wlvif->flags);
+
+	return 0;
+}
+
 static int wlcore_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	int ret;
@@ -4590,6 +4642,30 @@ static int wlcore_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	clear_bit(WLVIF_FLAG_IN_USE, &wlvif->flags);
 	return 0;
 }
+
+static int VV_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+{
+	int ret;
+
+	/* revert back to minimum rates for the current band */
+	wl1271_set_band_rate(wl, wlvif); // VV_
+	wlvif->basic_rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
+
+	ret = wl1271_acx_sta_rate_policies(wl, wlvif); // VV_
+	if (ret < 0)
+		return ret;
+
+	if (wlvif->bss_type == BSS_TYPE_STA_BSS &&
+	    test_bit(WLVIF_FLAG_IN_USE, &wlvif->flags)) {
+		ret = wl12xx_cmd_role_stop_sta(wl, wlvif); // VV_
+		if (ret < 0)
+			return ret;
+	}
+
+	clear_bit(WLVIF_FLAG_IN_USE, &wlvif->flags);
+	return 0;
+}
+
 /* STA/IBSS mode changes */
 static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 					struct ieee80211_vif *vif,
@@ -4915,15 +4991,15 @@ static void VV_bss_info_changed_sta(struct wl1271 *wl,
 	if (changed & BSS_CHANGED_BSSID) {
 		//printk("changed & BSS_CHANGED_BSSID\n");
 		if (!is_zero_ether_addr(bss_conf->bssid)) {
-			ret = wlcore_set_bssid(wl, wlvif, bss_conf,
-					       sta_rate_set);
+			ret = VV_set_bssid(wl, wlvif, bss_conf,
+					       sta_rate_set); // VV_
 			if (ret < 0)
 				goto out;
 
 			/* Need to update the BSSID (for filtering etc) */
 			do_join = true;
 		} else {
-			ret = wlcore_clear_bssid(wl, wlvif);
+			ret = VV_clear_bssid(wl, wlvif); // VV_
 			if (ret < 0)
 				goto out;
 		}

@@ -695,36 +695,52 @@ out:
 /* use this function to stop ibss as well */
 int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
-	struct wl12xx_cmd_role_stop *cmd;
+// 	struct wl12xx_cmd_role_stop *cmd;
+// 	int ret;
+
+// 	if (WARN_ON(wlvif->sta.hlid == WL12XX_INVALID_LINK_ID))
+// 		return -EINVAL;
+
+// 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+// 	if (!cmd) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	wl1271_debug(DEBUG_CMD, "cmd role stop sta %d", wlvif->role_id);
+
+// 	cmd->role_id = wlvif->role_id;
+// 	cmd->disc_type = DISCONNECT_IMMEDIATE;
+// 	cmd->reason = cpu_to_le16(WLAN_REASON_UNSPECIFIED);
+
+// 	ret = wl1271_cmd_send(wl, CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
+// 	if (ret < 0) {
+// 		wl1271_error("failed to initiate cmd role stop sta");
+// 		goto out_free;
+// 	}
+
+// 	wl12xx_free_link(wl, wlvif, &wlvif->sta.hlid);
+
+// out_free:
+// 	kfree(cmd);
+
+// out:
+// 	return ret;
+
+	struct wl12xx_cmd_role_stop cmd;
 	int ret;
 
 	if (WARN_ON(wlvif->sta.hlid == WL12XX_INVALID_LINK_ID))
 		return -EINVAL;
 
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
 
-	wl1271_debug(DEBUG_CMD, "cmd role stop sta %d", wlvif->role_id);
+	cmd.role_id = wlvif->role_id;
+	cmd.disc_type = DISCONNECT_IMMEDIATE;
+	cmd.reason = cpu_to_le16(WLAN_REASON_UNSPECIFIED);
 
-	cmd->role_id = wlvif->role_id;
-	cmd->disc_type = DISCONNECT_IMMEDIATE;
-	cmd->reason = cpu_to_le16(WLAN_REASON_UNSPECIFIED);
-
-	ret = wl1271_cmd_send(wl, CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role stop sta");
-		goto out_free;
-	}
+	ret = VV_cmd_send(wl, CMD_ROLE_STOP, &cmd, sizeof(cmd), 0);
 
 	wl12xx_free_link(wl, wlvif, &wlvif->sta.hlid);
-
-out_free:
-	kfree(cmd);
-
-out:
 	return ret;
 }
 
@@ -1206,7 +1222,7 @@ out_free:
 out:
 	return ret;
 }
-
+#include "init.h"
 int wl12xx_cmd_build_null_data(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	struct sk_buff *skb = NULL;
@@ -1220,7 +1236,7 @@ int wl12xx_cmd_build_null_data(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		ptr = NULL;
 	} else {
 		skb = ieee80211_nullfunc_get(wl->hw,
-					     wl12xx_wlvif_to_vif(wlvif),
+					     container_of((void *)wlvif, struct ieee80211_vif, drv_priv),
 					     false);
 		if (!skb)
 			goto out;
@@ -1228,7 +1244,10 @@ int wl12xx_cmd_build_null_data(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		ptr = skb->data;
 	}
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	// ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	// 			      CMD_TEMPL_NULL_DATA, ptr, size, 0,
+	// 			      wlvif->basic_rate);
+	ret = VV_cmd_template_set(wl, wlvif->role_id,
 				      CMD_TEMPL_NULL_DATA, ptr, size, 0,
 				      wlvif->basic_rate);
 
@@ -1240,7 +1259,6 @@ out:
 	return ret;
 
 }
-#include "init.h"
 int wl12xx_cmd_build_klv_null_data(struct wl1271 *wl,
 				   struct wl12xx_vif *wlvif)
 {
@@ -1498,7 +1516,7 @@ int wl1271_build_qos_null_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 	/* FIXME: not sure what priority to use here */
 	template.qos_ctrl = cpu_to_le16(0);
 
-	return wl1271_cmd_template_set(wl, wlvif->role_id,
+	return VV_cmd_template_set(wl, wlvif->role_id,
 				       CMD_TEMPL_QOS_NULL_DATA, &template,
 				       sizeof(template), 0,
 				       wlvif->basic_rate);
