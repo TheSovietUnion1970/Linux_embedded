@@ -25,4 +25,8 @@ int wl1271_init_ap_rates(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl1271_ap_init_templates(struct wl1271 *wl, struct ieee80211_vif *vif);
 int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 
+int VV_cmd_template_set(struct wl1271 *wl, u8 role_id,
+			    u16 template_id, void *buf, size_t buf_len,
+			    int index, u32 rates);
+
 #endif

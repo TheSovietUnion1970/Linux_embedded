@@ -723,71 +723,112 @@ int wl1271_acx_statistics(struct wl1271 *wl, void *stats)
 
 int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
-	struct acx_rate_policy *acx;
+// 	struct acx_rate_policy *acx;
+// 	struct conf_tx_rate_class *c = &wl->conf.tx.sta_rc_conf;
+// 	int ret = 0;
+
+// 	wl1271_debug(DEBUG_ACX, "acx rate policies");
+
+// 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
+
+// 	if (!acx) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	wl1271_debug(DEBUG_ACX, "basic_rate: 0x%x, full_rate: 0x%x",
+// 		wlvif->basic_rate, wlvif->rate_set);
+
+// 	/* configure one basic rate class */
+// 	acx->rate_policy_idx = cpu_to_le32(wlvif->sta.basic_rate_idx);
+// 	acx->rate_policy.enabled_rates = cpu_to_le32(wlvif->basic_rate);
+// 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
+// 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
+// 	acx->rate_policy.aflags = c->aflags;
+
+// 	ret = wl1271_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
+// 	if (ret < 0) {
+// 		wl1271_warning("Setting of rate policies failed: %d", ret);
+// 		goto out;
+// 	}
+
+// 	/* configure one AP supported rate class */
+// 	acx->rate_policy_idx = cpu_to_le32(wlvif->sta.ap_rate_idx);
+
+// 	/* the AP policy is HW specific */
+// 	acx->rate_policy.enabled_rates =
+// 		cpu_to_le32(wlcore_hw_sta_get_ap_rate_mask(wl, wlvif));
+// 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
+// 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
+// 	acx->rate_policy.aflags = c->aflags;
+
+// 	ret = wl1271_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
+// 	if (ret < 0) {
+// 		wl1271_warning("Setting of rate policies failed: %d", ret);
+// 		goto out;
+// 	}
+
+// 	/*
+// 	 * configure one rate class for basic p2p operations.
+// 	 * (p2p packets should always go out with OFDM rates, even
+// 	 * if we are currently connected to 11b AP)
+// 	 */
+// 	acx->rate_policy_idx = cpu_to_le32(wlvif->sta.p2p_rate_idx);
+// 	acx->rate_policy.enabled_rates =
+// 				cpu_to_le32(CONF_TX_RATE_MASK_BASIC_P2P);
+// 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
+// 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
+// 	acx->rate_policy.aflags = c->aflags;
+
+// 	ret = wl1271_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
+// 	if (ret < 0) {
+// 		wl1271_warning("Setting of rate policies failed: %d", ret);
+// 		goto out;
+// 	}
+
+// out:
+// 	kfree(acx);
+// 	return ret;
+
+
+	struct acx_rate_policy acx;
 	struct conf_tx_rate_class *c = &wl->conf.tx.sta_rc_conf;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx rate policies");
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	wl1271_debug(DEBUG_ACX, "basic_rate: 0x%x, full_rate: 0x%x",
-		wlvif->basic_rate, wlvif->rate_set);
-
 	/* configure one basic rate class */
-	acx->rate_policy_idx = cpu_to_le32(wlvif->sta.basic_rate_idx);
-	acx->rate_policy.enabled_rates = cpu_to_le32(wlvif->basic_rate);
-	acx->rate_policy.short_retry_limit = c->short_retry_limit;
-	acx->rate_policy.long_retry_limit = c->long_retry_limit;
-	acx->rate_policy.aflags = c->aflags;
+	acx.rate_policy_idx = cpu_to_le32(wlvif->sta.basic_rate_idx);
+	acx.rate_policy.enabled_rates = cpu_to_le32(wlvif->basic_rate);
+	acx.rate_policy.short_retry_limit = c->short_retry_limit;
+	acx.rate_policy.long_retry_limit = c->long_retry_limit;
+	acx.rate_policy.aflags = c->aflags;
 
-	ret = wl1271_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("Setting of rate policies failed: %d", ret);
-		goto out;
-	}
+	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, &acx, sizeof(acx), 0);
 
 	/* configure one AP supported rate class */
-	acx->rate_policy_idx = cpu_to_le32(wlvif->sta.ap_rate_idx);
+	acx.rate_policy_idx = cpu_to_le32(wlvif->sta.ap_rate_idx);
 
 	/* the AP policy is HW specific */
-	acx->rate_policy.enabled_rates =
+	acx.rate_policy.enabled_rates =
 		cpu_to_le32(wlcore_hw_sta_get_ap_rate_mask(wl, wlvif));
-	acx->rate_policy.short_retry_limit = c->short_retry_limit;
-	acx->rate_policy.long_retry_limit = c->long_retry_limit;
-	acx->rate_policy.aflags = c->aflags;
+	acx.rate_policy.short_retry_limit = c->short_retry_limit;
+	acx.rate_policy.long_retry_limit = c->long_retry_limit;
+	acx.rate_policy.aflags = c->aflags;
 
-	ret = wl1271_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("Setting of rate policies failed: %d", ret);
-		goto out;
-	}
+	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, &acx, sizeof(acx), 0);
 
 	/*
 	 * configure one rate class for basic p2p operations.
 	 * (p2p packets should always go out with OFDM rates, even
 	 * if we are currently connected to 11b AP)
 	 */
-	acx->rate_policy_idx = cpu_to_le32(wlvif->sta.p2p_rate_idx);
-	acx->rate_policy.enabled_rates =
+	acx.rate_policy_idx = cpu_to_le32(wlvif->sta.p2p_rate_idx);
+	acx.rate_policy.enabled_rates =
 				cpu_to_le32(CONF_TX_RATE_MASK_BASIC_P2P);
-	acx->rate_policy.short_retry_limit = c->short_retry_limit;
-	acx->rate_policy.long_retry_limit = c->long_retry_limit;
-	acx->rate_policy.aflags = c->aflags;
+	acx.rate_policy.short_retry_limit = c->short_retry_limit;
+	acx.rate_policy.long_retry_limit = c->long_retry_limit;
+	acx.rate_policy.aflags = c->aflags;
 
-	ret = wl1271_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("Setting of rate policies failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
+	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, &acx, sizeof(acx), 0);
 	return ret;
 }
 
@@ -1062,33 +1103,47 @@ out:
 int wl1271_acx_bet_enable(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			  bool enable)
 {
-	struct wl1271_acx_bet_enable *acx = NULL;
+// 	struct wl1271_acx_bet_enable *acx = NULL;
+// 	int ret = 0;
+
+// 	wl1271_debug(DEBUG_ACX, "acx bet enable");
+
+// 	if (enable && wl->conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
+// 		goto out;
+
+// 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
+// 	if (!acx) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	acx->role_id = wlvif->role_id;
+// 	acx->enable = enable ? CONF_BET_MODE_ENABLE : CONF_BET_MODE_DISABLE;
+// 	acx->max_consecutive = wl->conf.conn.bet_max_consecutive;
+
+// 	ret = wl1271_cmd_configure(wl, ACX_BET_ENABLE, acx, sizeof(*acx));
+// 	if (ret < 0) {
+// 		wl1271_warning("acx bet enable failed: %d", ret);
+// 		goto out;
+// 	}
+
+// out:
+// 	kfree(acx);
+// 	return ret;
+
+	struct wl1271_acx_bet_enable acx;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx bet enable");
+	if (enable && wl->conf.conn.bet_enable != CONF_BET_MODE_DISABLE)
+	{
+		acx.role_id = wlvif->role_id;
+		acx.enable = enable ? CONF_BET_MODE_ENABLE : CONF_BET_MODE_DISABLE;
+		acx.max_consecutive = wl->conf.conn.bet_max_consecutive;
 
-	if (enable && wl->conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
-		goto out;
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
+		ret = VV_cmd_configure(wl, ACX_BET_ENABLE, &acx, sizeof(acx), 0);
 	}
-
-	acx->role_id = wlvif->role_id;
-	acx->enable = enable ? CONF_BET_MODE_ENABLE : CONF_BET_MODE_DISABLE;
-	acx->max_consecutive = wl->conf.conn.bet_max_consecutive;
-
-	ret = wl1271_cmd_configure(wl, ACX_BET_ENABLE, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("acx bet enable failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
 	return ret;
+
 }
 
 int wl1271_acx_arp_ip_filter(struct wl1271 *wl, struct wl12xx_vif *wlvif,

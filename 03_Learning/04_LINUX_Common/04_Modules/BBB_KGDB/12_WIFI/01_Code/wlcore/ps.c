@@ -24,15 +24,25 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		wl1271_debug(DEBUG_PSM, "entering psm (mode=%d,timeout=%u)",
 			     mode, timeout);
 
-		ret = wl1271_acx_wake_up_conditions(wl, wlvif,
-					    wl->conf.conn.wake_up_event,
-					    wl->conf.conn.listen_interval);
+		// ret = wl1271_acx_wake_up_conditions(wl, wlvif,
+		// 			    wl->conf.conn.wake_up_event,
+		// 			    wl->conf.conn.listen_interval);
+		struct acx_wake_up_condition wake_up;
+		wake_up.role_id = wlvif->role_id;
+		wake_up.wake_up_event = wl->conf.conn.wake_up_event;
+		wake_up.listen_interval = wl->conf.conn.listen_interval;
+		ret = VV_cmd_configure(wl, ACX_WAKE_UP_CONDITIONS, &wake_up, sizeof(wake_up), 0);
 		if (ret < 0) {
 			wl1271_error("couldn't set wake up conditions");
 			return ret;
 		}
 
-		ret = wl1271_cmd_ps_mode(wl, wlvif, mode, timeout);
+		// ret = wl1271_cmd_ps_mode(wl, wlvif, mode, timeout);
+		struct wl1271_cmd_ps_params ps_params;
+		ps_params.role_id = wlvif->role_id;
+		ps_params.ps_mode = mode;
+		ps_params.auto_ps_timeout = timeout;		
+		ret = VV_cmd_configure(wl, CMD_SET_PS_MODE, &ps_params, sizeof(ps_params), 0);
 		if (ret < 0)
 			return ret;
 
@@ -44,7 +54,7 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		 */
 		if ((wlvif->band == NL80211_BAND_2GHZ) &&
 		    (wlvif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
-			ret = wl1271_acx_bet_enable(wl, wlvif, true);
+			ret = wl1271_acx_bet_enable(wl, wlvif, true); // VV_
 			if (ret < 0)
 				return ret;
 		}
@@ -55,12 +65,19 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		/* disable beacon early termination */
 		if ((wlvif->band == NL80211_BAND_2GHZ) &&
 		    (wlvif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
-			ret = wl1271_acx_bet_enable(wl, wlvif, false);
+			ret = wl1271_acx_bet_enable(wl, wlvif, false); // VV_
 			if (ret < 0)
 				return ret;
 		}
 
-		ret = wl1271_cmd_ps_mode(wl, wlvif, mode, 0);
+		// ret = wl1271_cmd_ps_mode(wl, wlvif, mode, 0);
+		//struct wl1271_cmd_ps_params ps_params;
+		ps_params.role_id = wlvif->role_id;
+		ps_params.ps_mode = mode;
+		ps_params.auto_ps_timeout = 0;		
+		ret = VV_cmd_configure(wl, CMD_SET_PS_MODE, &ps_params, sizeof(ps_params), 0);
+		if (ret < 0)
+			return ret;
 		if (ret < 0)
 			return ret;
 

@@ -1240,11 +1240,11 @@ out:
 	return ret;
 
 }
-
+#include "init.h"
 int wl12xx_cmd_build_klv_null_data(struct wl1271 *wl,
 				   struct wl12xx_vif *wlvif)
 {
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
+	struct ieee80211_vif *vif = container_of((void *)wlvif, struct ieee80211_vif, drv_priv);
 	struct sk_buff *skb = NULL;
 	int ret = -ENOMEM;
 
@@ -1252,7 +1252,11 @@ int wl12xx_cmd_build_klv_null_data(struct wl1271 *wl,
 	if (!skb)
 		goto out;
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_KLV,
+	// ret = wl1271_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_KLV,
+	// 			      skb->data, skb->len,
+	// 			      wlvif->sta.klv_template_id,
+	// 			      wlvif->basic_rate);
+	ret = VV_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_KLV,
 				      skb->data, skb->len,
 				      wlvif->sta.klv_template_id,
 				      wlvif->basic_rate);
@@ -1277,7 +1281,10 @@ int wl1271_cmd_build_ps_poll(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (!skb)
 		goto out;
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	// ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	// 			      CMD_TEMPL_PS_POLL, skb->data,
+	// 			      skb->len, 0, wlvif->basic_rate_set);
+	ret = VV_cmd_template_set(wl, wlvif->role_id,
 				      CMD_TEMPL_PS_POLL, skb->data,
 				      skb->len, 0, wlvif->basic_rate_set);
 
@@ -1319,12 +1326,20 @@ int wl12xx_cmd_build_probe_req(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 	rate = wl1271_tx_min_rate_get(wl, wlvif->bitrate_masks[band]);
+	// if (band == NL80211_BAND_2GHZ)
+	// 	ret = wl1271_cmd_template_set(wl, role_id,
+	// 				      template_id_2_4,
+	// 				      skb->data, skb->len, 0, rate);
+	// else
+	// 	ret = wl1271_cmd_template_set(wl, role_id,
+	// 				      template_id_5,
+	// 				      skb->data, skb->len, 0, rate);
 	if (band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(wl, role_id,
+		ret = VV_cmd_template_set(wl, role_id,
 					      template_id_2_4,
 					      skb->data, skb->len, 0, rate);
 	else
-		ret = wl1271_cmd_template_set(wl, role_id,
+		ret = VV_cmd_template_set(wl, role_id,
 					      template_id_5,
 					      skb->data, skb->len, 0, rate);
 
@@ -1350,12 +1365,20 @@ struct sk_buff *wl1271_cmd_build_ap_probe_req(struct wl1271 *wl,
 	wl1271_debug(DEBUG_SCAN, "set ap probe request template");
 
 	rate = wl1271_tx_min_rate_get(wl, wlvif->bitrate_masks[wlvif->band]);
+	// if (wlvif->band == NL80211_BAND_2GHZ)
+	// 	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	// 				      CMD_TEMPL_CFG_PROBE_REQ_2_4,
+	// 				      skb->data, skb->len, 0, rate);
+	// else
+	// 	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	// 				      CMD_TEMPL_CFG_PROBE_REQ_5,
+	// 				      skb->data, skb->len, 0, rate);
 	if (wlvif->band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+		ret = VV_cmd_template_set(wl, wlvif->role_id,
 					      CMD_TEMPL_CFG_PROBE_REQ_2_4,
 					      skb->data, skb->len, 0, rate);
 	else
-		ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+		ret = VV_cmd_template_set(wl, wlvif->role_id,
 					      CMD_TEMPL_CFG_PROBE_REQ_5,
 					      skb->data, skb->len, 0, rate);
 
