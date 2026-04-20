@@ -3602,11 +3602,56 @@ static int wl1271_set_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		ret = wl1271_cmd_set_sta_key(wl, wlvif, action,
 					     id, key_type, key_size,
 					     key, addr, tx_seq_32,
-					     tx_seq_16);
+					     tx_seq_16); // VV_
 		if (ret < 0)
 			return ret;
 
 	}
+
+	return 0;
+}
+
+static int VV_set_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+		       u16 action, u8 id, u8 key_type,
+		       u8 key_size, const u8 *key, u32 tx_seq_32,
+		       u16 tx_seq_16, struct ieee80211_sta *sta,
+		       bool is_pairwise)
+{
+	int ret;
+	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
+
+
+		const u8 *addr;
+		static const u8 bcast_addr[ETH_ALEN] = {
+			0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+		};
+
+		addr = sta ? sta->addr : bcast_addr;
+
+		if (is_zero_ether_addr(addr)) {
+			/* We dont support TX only encryption */
+			return -EOPNOTSUPP;
+		}
+
+		/* The wl1271 does not allow to remove unicast keys - they
+		   will be cleared automatically on next CMD_JOIN. Ignore the
+		   request silently, as we dont want the mac80211 to emit
+		   an error message. */
+		if (action == KEY_REMOVE && !is_broadcast_ether_addr(addr))
+			return 0;
+
+		/* don't remove key if hlid was already deleted */
+		if (action == KEY_REMOVE &&
+		    wlvif->sta.hlid == WL12XX_INVALID_LINK_ID)
+			return 0;
+
+		ret = wl1271_cmd_set_sta_key(wl, wlvif, action,
+					     id, key_type, key_size,
+					     key, addr, tx_seq_32,
+					     tx_seq_16); // VV_
+		if (ret < 0)
+			return ret;
+
 
 	return 0;
 }
@@ -3629,8 +3674,8 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		 * stop the queues and flush to ensure the next packets are
 		 * in sync with FW spare block accounting
 		 */
-		wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
-		wl1271_tx_flush(wl);
+		wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK); // VV_
+		wl1271_tx_flush(wl); // ~VV_
 	}
 
 	mutex_lock(&wl->mutex);
@@ -3646,6 +3691,7 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		goto out_wake_queues;
 	}
 
+	// VV_
 	ret = wlcore_hw_set_key(wl, cmd, vif, sta, key_conf);
 
 	pm_runtime_mark_last_busy(wl->dev);
@@ -3733,10 +3779,10 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 
 	switch (cmd) {
 	case SET_KEY:
-		ret = wl1271_set_key(wl, wlvif, KEY_ADD_OR_REPLACE,
+		ret = VV_set_key(wl, wlvif, KEY_ADD_OR_REPLACE,
 				 key_conf->keyidx, key_type,
 				 key_conf->keylen, key_conf->key,
-				 tx_seq_32, tx_seq_16, sta, is_pairwise);
+				 tx_seq_32, tx_seq_16, sta, is_pairwise); // VV_
 		if (ret < 0) {
 			wl1271_error("Could not add or replace key");
 			return ret;
@@ -3750,7 +3796,7 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		    (sta || key_type == KEY_WEP) &&
 		    wlvif->encryption_type != key_type) {
 			wlvif->encryption_type = key_type;
-			ret = wl1271_cmd_build_arp_rsp(wl, wlvif);
+			ret = wl1271_cmd_build_arp_rsp(wl, wlvif); // VV_
 			if (ret < 0) {
 				wl1271_warning("build arp rsp failed: %d", ret);
 				return ret;
@@ -3759,10 +3805,11 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		break;
 
 	case DISABLE_KEY:
-		ret = wl1271_set_key(wl, wlvif, KEY_REMOVE,
+		// wl1271_set_key
+		ret = VV_set_key(wl, wlvif, KEY_REMOVE,
 				     key_conf->keyidx, key_type,
 				     key_conf->keylen, key_conf->key,
-				     0, 0, sta, is_pairwise);
+				     0, 0, sta, is_pairwise); // VV_
 		if (ret < 0) {
 			wl1271_error("Could not remove key");
 			return ret;
@@ -6845,7 +6892,7 @@ static const struct ieee80211_ops wl1271_ops = {
 
 	.configure_filter = wl1271_op_configure_filter, // VV_
 	.tx = wl1271_op_tx, // ~ VV_
-	.set_key = wlcore_op_set_key,
+	.set_key = wlcore_op_set_key, // ~VV_
 	.hw_scan = wl1271_op_hw_scan,
 
 	.bss_info_changed = wl1271_op_bss_info_changed, // VV_

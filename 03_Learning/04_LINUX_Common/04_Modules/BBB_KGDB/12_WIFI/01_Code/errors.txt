@@ -1,0 +1,3 @@
+1. Now showing 'BARS'
+2. After running sudo nmcli connection down "NGOC VY 1" , can not tun ./test1.sh successfully -> must run ./run1.sh again 
+     -> nmcli device wifi list not showing anything

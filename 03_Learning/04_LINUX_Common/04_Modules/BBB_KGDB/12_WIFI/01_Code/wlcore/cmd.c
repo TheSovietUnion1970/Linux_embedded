@@ -29,6 +29,8 @@
 #define WL1271_CMD_FAST_POLL_COUNT       50
 #define WL1271_WAIT_EVENT_FAST_POLL_COUNT 20
 
+#include "cmd.h"
+
 /*
  * send command to firmware
  *
@@ -224,8 +226,8 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
 	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
 				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
-	if (ret < 0)
-		return ret;
+	if (status < 0)
+		return status;
 
 	return status;
 }
@@ -1538,32 +1540,45 @@ int wl1271_build_qos_null_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 
 int wl12xx_cmd_set_default_wep_key(struct wl1271 *wl, u8 id, u8 hlid)
 {
-	struct wl1271_cmd_set_keys *cmd;
+// 	struct wl1271_cmd_set_keys *cmd;
+// 	int ret = 0;
+
+// 	wl1271_debug(DEBUG_CMD, "cmd set_default_wep_key %d", id);
+
+// 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+// 	if (!cmd) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	cmd->hlid = hlid;
+// 	cmd->key_id = id;
+// 	cmd->lid_key_type = WEP_DEFAULT_LID_TYPE;
+// 	cmd->key_action = cpu_to_le16(KEY_SET_ID);
+// 	cmd->key_type = KEY_WEP;
+
+// 	ret = wl1271_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
+// 	if (ret < 0) {
+// 		wl1271_warning("cmd set_default_wep_key failed: %d", ret);
+// 		goto out;
+// 	}
+
+// out:
+// 	kfree(cmd);
+
+// 	return ret;
+
+
+	struct wl1271_cmd_set_keys cmd;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_CMD, "cmd set_default_wep_key %d", id);
+	cmd.hlid = hlid;
+	cmd.key_id = id;
+	cmd.lid_key_type = WEP_DEFAULT_LID_TYPE;
+	cmd.key_action = cpu_to_le16(KEY_SET_ID);
+	cmd.key_type = KEY_WEP;
 
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	cmd->hlid = hlid;
-	cmd->key_id = id;
-	cmd->lid_key_type = WEP_DEFAULT_LID_TYPE;
-	cmd->key_action = cpu_to_le16(KEY_SET_ID);
-	cmd->key_type = KEY_WEP;
-
-	ret = wl1271_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_warning("cmd set_default_wep_key failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(cmd);
-
+	ret = wl1271_cmd_send1(wl, CMD_SET_KEYS, &cmd, sizeof(cmd), 0);
 	return ret;
 }
 
@@ -1572,36 +1587,86 @@ int wl1271_cmd_set_sta_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		       u8 key_size, const u8 *key, const u8 *addr,
 		       u32 tx_seq_32, u16 tx_seq_16)
 {
-	struct wl1271_cmd_set_keys *cmd;
-	int ret = 0;
+// 	struct wl1271_cmd_set_keys *cmd;
+// 	int ret = 0;
 
-	/* hlid might have already been deleted */
-	if (wlvif->sta.hlid == WL12XX_INVALID_LINK_ID)
-		return 0;
+// 	/* hlid might have already been deleted */
+// 	if (wlvif->sta.hlid == WL12XX_INVALID_LINK_ID)
+// 		return 0;
 
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
+// 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+// 	if (!cmd) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
 
-	cmd->hlid = wlvif->sta.hlid;
+// 	cmd->hlid = wlvif->sta.hlid;
+
+// 	if (key_type == KEY_WEP)
+// 		cmd->lid_key_type = WEP_DEFAULT_LID_TYPE;
+// 	else if (is_broadcast_ether_addr(addr))
+// 		cmd->lid_key_type = BROADCAST_LID_TYPE;
+// 	else
+// 		cmd->lid_key_type = UNICAST_LID_TYPE;
+
+// 	cmd->key_action = cpu_to_le16(action);
+// 	cmd->key_size = key_size;
+// 	cmd->key_type = key_type;
+
+// 	cmd->ac_seq_num16[0] = cpu_to_le16(tx_seq_16);
+// 	cmd->ac_seq_num32[0] = cpu_to_le32(tx_seq_32);
+
+// 	cmd->key_id = id;
+
+// 	if (key_type == KEY_TKIP) {
+// 		/*
+// 		 * We get the key in the following form:
+// 		 * TKIP (16 bytes) - TX MIC (8 bytes) - RX MIC (8 bytes)
+// 		 * but the target is expecting:
+// 		 * TKIP - RX MIC - TX MIC
+// 		 */
+// 		memcpy(cmd->key, key, 16);
+// 		memcpy(cmd->key + 16, key + 24, 8);
+// 		memcpy(cmd->key + 24, key + 16, 8);
+
+// 	} else {
+// 		memcpy(cmd->key, key, key_size);
+// 	}
+
+// 	wl1271_dump(DEBUG_CRYPT, "TARGET KEY: ", cmd, sizeof(*cmd));
+
+// 	ret = wl1271_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
+// 	if (ret < 0) {
+// 		wl1271_warning("could not set keys");
+// 		goto out;
+// 	}
+
+// out:
+// 	kfree(cmd);
+
+// 	return ret;
+
+
+	struct wl1271_cmd_set_keys cmd;
+	int ret;
+	
+	cmd.hlid = wlvif->sta.hlid;
 
 	if (key_type == KEY_WEP)
-		cmd->lid_key_type = WEP_DEFAULT_LID_TYPE;
+		cmd.lid_key_type = WEP_DEFAULT_LID_TYPE;
 	else if (is_broadcast_ether_addr(addr))
-		cmd->lid_key_type = BROADCAST_LID_TYPE;
+		cmd.lid_key_type = BROADCAST_LID_TYPE;
 	else
-		cmd->lid_key_type = UNICAST_LID_TYPE;
+		cmd.lid_key_type = UNICAST_LID_TYPE;
 
-	cmd->key_action = cpu_to_le16(action);
-	cmd->key_size = key_size;
-	cmd->key_type = key_type;
+	cmd.key_action = cpu_to_le16(action);
+	cmd.key_size = key_size;
+	cmd.key_type = key_type;
 
-	cmd->ac_seq_num16[0] = cpu_to_le16(tx_seq_16);
-	cmd->ac_seq_num32[0] = cpu_to_le32(tx_seq_32);
+	cmd.ac_seq_num16[0] = cpu_to_le16(tx_seq_16);
+	cmd.ac_seq_num32[0] = cpu_to_le32(tx_seq_32);
 
-	cmd->key_id = id;
+	cmd.key_id = id;
 
 	if (key_type == KEY_TKIP) {
 		/*
@@ -1610,25 +1675,15 @@ int wl1271_cmd_set_sta_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		 * but the target is expecting:
 		 * TKIP - RX MIC - TX MIC
 		 */
-		memcpy(cmd->key, key, 16);
-		memcpy(cmd->key + 16, key + 24, 8);
-		memcpy(cmd->key + 24, key + 16, 8);
+		memcpy(cmd.key, key, 16);
+		memcpy(cmd.key + 16, key + 24, 8);
+		memcpy(cmd.key + 24, key + 16, 8);
 
 	} else {
-		memcpy(cmd->key, key, key_size);
+		memcpy(cmd.key, key, key_size);
 	}
-
-	wl1271_dump(DEBUG_CRYPT, "TARGET KEY: ", cmd, sizeof(*cmd));
-
-	ret = wl1271_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_warning("could not set keys");
-		goto out;
-	}
-
-out:
-	kfree(cmd);
-
+	
+	ret = VV_cmd_send(wl, CMD_SET_KEYS, &cmd, sizeof(cmd), 0);
 	return ret;
 }
 

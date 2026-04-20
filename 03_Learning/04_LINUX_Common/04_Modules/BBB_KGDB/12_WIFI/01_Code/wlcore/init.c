@@ -107,7 +107,7 @@ int VV_cmd_template_set(struct wl1271 *wl, u8 role_id,
 
 	//ret = wl1271_cmd_send(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
 	ret = wl1271_cmd_send1(wl, CMD_SET_TEMPLATE, &cmd, sizeof(cmd), 0);
-	printk("[TEMPLATE] - ret = %d\n",ret);
+	//printk("[TEMPLATE] - ret = %d\n",ret);
 	return ret;
 
 // 	struct wl1271_cmd_template_set *cmd;

@@ -33,11 +33,12 @@ static int wl1271_set_default_wep_key(struct wl1271 *wl,
 	int ret;
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 
-	if (is_ap)
-		ret = wl12xx_cmd_set_default_wep_key(wl, id,
-						     wlvif->ap.bcast_hlid);
-	else
-		ret = wl12xx_cmd_set_default_wep_key(wl, id, wlvif->sta.hlid);
+	// if (is_ap)
+	// 	ret = wl12xx_cmd_set_default_wep_key(wl, id,
+	// 					     wlvif->ap.bcast_hlid);
+	// else
+	// 	ret = wl12xx_cmd_set_default_wep_key(wl, id, wlvif->sta.hlid);
+	ret = wl12xx_cmd_set_default_wep_key(wl, id, wlvif->sta.hlid); // VV_
 
 	if (ret < 0)
 		return ret;
@@ -187,6 +188,7 @@ unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
 }
 EXPORT_SYMBOL(wlcore_calc_packet_alignment);
 
+#define WL18XX_TX_HW_BLOCK_SIZE         268
 static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      struct sk_buff *skb, u32 extra, u32 buf_offset,
 			      u8 hlid, bool is_gem)
@@ -201,19 +203,23 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		return -EAGAIN;
 
 	spare_blocks = wlcore_hw_get_spare_blocks(wl, is_gem);
+	// -> wl18xx_get_spare_blocks VV_
 
 	/* allocate free identifier for the packet */
-	id = wl1271_alloc_tx_id(wl, skb);
+	id = wl1271_alloc_tx_id(wl, skb); // VV_
 	if (id < 0)
 		return id;
 
-	total_blocks = wlcore_hw_calc_tx_blocks(wl, total_len, spare_blocks);
+	//total_blocks = wlcore_hw_calc_tx_blocks(wl, total_len, spare_blocks);
+	u32 blk_size = WL18XX_TX_HW_BLOCK_SIZE;
+	total_blocks = (total_len + blk_size - 1) / blk_size + spare_blocks;
 
 	if (total_blocks <= wl->tx_blocks_available) {
 		desc = skb_push(skb, total_len - skb->len);
 
-		wlcore_hw_set_tx_desc_blocks(wl, desc, total_blocks,
-					     spare_blocks);
+		// wlcore_hw_set_tx_desc_blocks(wl, desc, total_blocks,
+		// 			     spare_blocks);
+		desc->wl18xx_mem.total_mem_blocks = total_blocks;
 
 		desc->id = id;
 
@@ -227,9 +233,9 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		 */
 		if (wl->tx_allocated_blocks == total_blocks ||
 		    test_and_clear_bit(WL1271_FLAG_REINIT_TX_WDOG, &wl->flags))
-			wl12xx_rearm_tx_watchdog_locked(wl);
+			wl12xx_rearm_tx_watchdog_locked(wl); // VV_
 
-		ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
+		ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb)); // VV_
 		wl->tx_allocated_pkts[ac]++;
 
 		if (test_bit(hlid, wl->links_map))
@@ -241,7 +247,7 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			     "tx_allocate: size: %d, blocks: %d, id: %d",
 			     total_len, total_blocks, id);
 	} else {
-		wl1271_free_tx_id(wl, id);
+		wl1271_free_tx_id(wl, id); // VV_
 	}
 
 	return ret;
@@ -276,14 +282,15 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	hosttime = (ktime_get_boottime_ns() >> 10);
 	desc->start_time = cpu_to_le32(hosttime - wl->time_offset);
 
-	is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	//is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	is_dummy = (wl->dummy_packet == skb);
 	if (is_dummy || !wlvif || wlvif->bss_type != BSS_TYPE_AP_BSS)
 		desc->life_time = cpu_to_le16(TX_HW_MGMT_PKT_LIFETIME_TU);
 	else
 		desc->life_time = cpu_to_le16(TX_HW_AP_MODE_PKT_LIFETIME_TU);
 
 	/* queue */
-	ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
+	ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb)); // VV_
 	desc->tid = skb->priority;
 
 	if (is_dummy) {
@@ -352,8 +359,8 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	desc->tx_attr = cpu_to_le16(tx_attr);
 
-	wlcore_hw_set_tx_desc_csum(wl, desc, skb);
-	wlcore_hw_set_tx_desc_data_len(wl, desc, skb);
+	wlcore_hw_set_tx_desc_csum(wl, desc, skb); // VV_ -> wl18xx_set_tx_desc_csum
+	wlcore_hw_set_tx_desc_data_len(wl, desc, skb); // VV_ -> wl18xx_set_tx_desc_data_len
 }
 
 /* caller must hold wl->mutex */
@@ -379,7 +386,7 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	info = IEEE80211_SKB_CB(skb);
 
-	is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	is_dummy = (wl->dummy_packet == skb);
 
 	if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
 	    info->control.hw_key &&
@@ -395,7 +402,7 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			 (cipher == WLAN_CIPHER_SUITE_WEP104);
 
 		if (WARN_ON(is_wep && wlvif && wlvif->default_key != idx)) {
-			ret = wl1271_set_default_wep_key(wl, wlvif, idx);
+			ret = wl1271_set_default_wep_key(wl, wlvif, idx); // VV_
 			if (ret < 0)
 				return ret;
 			wlvif->default_key = idx;
@@ -405,16 +412,16 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 	ret = wl1271_tx_allocate(wl, wlvif, skb, extra, buf_offset, hlid,
-				 is_gem);
+				 is_gem); // VV_
 	if (ret < 0)
 		return ret;
 
-	wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid);
+	wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid); // ~VV_
 
-	if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
-		wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
-		wl1271_tx_regulate_link(wl, wlvif, hlid);
-	}
+	// if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
+	// 	wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
+	// 	wl1271_tx_regulate_link(wl, wlvif, hlid);
+	// }
 
 	/*
 	 * The length of each packet is stored in terms of
@@ -424,7 +431,7 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 * In special cases, we want to align to a specific block size
 	 * (eg. for wl128x with SDIO we align to 256).
 	 */
-	total_len = wlcore_calc_packet_alignment(wl, skb->len);
+	total_len = wlcore_calc_packet_alignment(wl, skb->len); // VV_
 
 	memcpy(wl->aggr_buf + buf_offset, skb->data, skb->len);
 	memset(wl->aggr_buf + buf_offset + skb->len, 0, total_len - skb->len);
@@ -606,7 +613,7 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 	int ac;
 	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
 
-	ac = wlcore_select_ac(wl);
+	ac = wlcore_select_ac(wl); // ~VV_
 	if (ac < 0)
 		goto out;
 
@@ -779,19 +786,20 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		return 0;
 
-	while ((skb = wl1271_skb_dequeue(wl, &hlid))) {
+	while ((skb = wl1271_skb_dequeue(wl, &hlid))) { // VV_
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 		bool has_data = false;
 
 		wlvif = NULL;
-		if (!wl12xx_is_dummy_packet(wl, skb))
-			wlvif = wl12xx_vif_to_data(info->control.vif);
+		//if (!wl12xx_is_dummy_packet(wl, skb))
+		if (wl->dummy_packet != skb)
+			wlvif = (struct wl12xx_vif *)info->control.vif->drv_priv;
 		else
 			hlid = wl->system_hlid;
 
 		has_data = wlvif && wl1271_tx_is_data_present(skb);
 		ret = wl1271_prepare_tx_frame(wl, wlvif, skb, buf_offset,
-					      hlid);
+					      hlid); // VV_
 		if (ret == -EAGAIN) {
 			/*
 			 * Aggregation buffer is full.
@@ -801,8 +809,10 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 
 			buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset,
 							    last_len);
-			bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA,
-					     wl->aggr_buf, buf_offset, true);
+			// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA,
+			// 		     wl->aggr_buf, buf_offset, true);
+			bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]),
+							wl->aggr_buf, buf_offset, true);
 			if (bus_ret < 0)
 				goto out;
 
@@ -824,7 +834,7 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 				 * fw still expects dummy packet,
 				 * so re-enqueue it
 				 */
-				wl1271_skb_queue_head(wl, wlvif, skb, hlid);
+				wl1271_skb_queue_head(wl, wlvif, skb, hlid); // VV_
 			else
 				ieee80211_free_txskb(wl->hw, skb);
 			goto out_ack;
@@ -840,9 +850,11 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 
 out_ack:
 	if (buf_offset) {
-		buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len);
-		bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
-					     buf_offset, true);
+		buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len); // VV_
+		// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
+		// 			     buf_offset, true);
+		bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]),
+						wl->aggr_buf, buf_offset, true);
 		if (bus_ret < 0)
 			goto out;
 
@@ -854,15 +866,17 @@ out_ack:
 		 * required for older hardware revisions
 		 */
 		if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-			bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
-					     wl->tx_packets_count);
+			// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
+			// 		     wl->tx_packets_count);
+			bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, WL12XX_HOST_WR_ACCESS),
+					     wl->tx_packets_count, sizeof(wl->tx_packets_count), false);
 			if (bus_ret < 0)
 				goto out;
 		}
 
-		wl1271_handle_tx_low_watermark(wl);
+		wl1271_handle_tx_low_watermark(wl); // VV_
 	}
-	wl12xx_rearm_rx_streaming(wl, active_hlids);
+	wl12xx_rearm_rx_streaming(wl, active_hlids); // VV_
 
 out:
 	return bus_ret;
@@ -880,10 +894,10 @@ void wl1271_tx_work(struct work_struct *work)
 		goto out;
 	}
 
-	ret = wlcore_tx_work_locked(wl);
+	ret = wlcore_tx_work_locked(wl); // ~VV_
 	if (ret < 0) {
 		pm_runtime_put_noidle(wl->dev);
-		wl12xx_queue_recovery_work(wl);
+		wl12xx_queue_recovery_work(wl); // VV_
 		goto out;
 	}
 
@@ -1172,12 +1186,12 @@ void wl1271_tx_flush(struct wl1271 *wl)
 	mutex_lock(&wl->flush_mutex);
 
 	mutex_lock(&wl->mutex);
-	if (wl->tx_frames_cnt == 0 && wl1271_tx_total_queue_count(wl) == 0) {
+	if (wl->tx_frames_cnt == 0 && wl1271_tx_total_queue_count(wl) == 0) { // VV_
 		mutex_unlock(&wl->mutex);
 		goto out;
 	}
 
-	wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH);
+	wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH); // VV_
 
 	while (!time_after(jiffies, timeout)) {
 		wl1271_debug(DEBUG_MAC80211, "flushing tx buffer: %d %d",
@@ -1187,7 +1201,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 		/* force Tx and give the driver some time to flush data */
 		mutex_unlock(&wl->mutex);
 		if (wl1271_tx_total_queue_count(wl))
-			wl1271_tx_work(&wl->tx_work);
+			wl1271_tx_work(&wl->tx_work); // ~VV_
 		msleep(20);
 		mutex_lock(&wl->mutex);
 
@@ -1205,10 +1219,10 @@ void wl1271_tx_flush(struct wl1271 *wl)
 
 	/* forcibly flush all Tx buffers on our queues */
 	for (i = 0; i < wl->num_links; i++)
-		wl1271_tx_reset_link_queues(wl, i);
+		wl1271_tx_reset_link_queues(wl, i); // VV_
 
 out_wake:
-	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH);
+	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH); // VV_
 	mutex_unlock(&wl->mutex);
 out:
 	mutex_unlock(&wl->flush_mutex);

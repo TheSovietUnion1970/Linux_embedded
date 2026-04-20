@@ -1642,7 +1642,7 @@ static int wl18xx_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 	special_enc = key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
 		      key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
 
-	ret = wlcore_set_key(wl, cmd, vif, sta, key_conf);
+	ret = wlcore_set_key(wl, cmd, vif, sta, key_conf); // VV_
 	if (ret < 0)
 		goto out;
 
@@ -1669,6 +1669,7 @@ static int wl18xx_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		goto out;
 
 	/* key is now set, change the spare blocks */
+	// VV_
 	if (priv->extra_spare_key_count)
 		ret = wl18xx_set_host_cfg_bitmap(wl,
 					WL18XX_TX_HW_EXTRA_BLOCK_SPARE);
