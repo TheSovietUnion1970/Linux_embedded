@@ -100,6 +100,12 @@ int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
 					 u32 mask, bool *timeout);
 u8 wlcore_get_native_channel_type(u8 nl_channel_type);
 
+/* Vinh custom */
+int wl12xx_rocV(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
+	       enum nl80211_band band, u8 channel);
+int wl12xx_crocV(struct wl1271 *wl, u8 role_id);
+int wl12xx_set_authorizedV(struct wl1271 *wl, struct wl12xx_vif *wlvif);
+
 enum wl1271_commands {
 	CMD_INTERROGATE	= 1, /* use this to read information elements */
 	CMD_CONFIGURE	= 2, /* use this to write information elements */

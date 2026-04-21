@@ -4734,32 +4734,40 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 				   enum ieee80211_sta_state new_state)
 {
 	struct wl1271_station *wl_sta;
-	bool is_ap = wlvif->bss_type == BSS_TYPE_AP_BSS;
 	bool is_sta = wlvif->bss_type == BSS_TYPE_STA_BSS;
 	int ret;
 
+	printk("id = %d, band = %d, ch = %d\n", wlvif->role_id, wlvif->band, wlvif->channel);
+
 	wl_sta = (struct wl1271_station *)sta->drv_priv;
 
+	// STEP UP	: 6 -> 4 -> 1 -> 5 = NOTEXIST -> NONE -> AUTH -> ASSOC -> AUTHORIZED
+	// STEP DOWN: 2 -> 3 -> 5	   = AUTHORIZED -> ASSOC -> AUTH -> NOTEXIST
 	/* Authorize station */
 	if (is_sta &&
 	    new_state == IEEE80211_STA_AUTHORIZED) {
+		printk("STATE - 1\n");
 		set_bit(WLVIF_FLAG_STA_AUTHORIZED, &wlvif->flags);
-		ret = wl12xx_set_authorized(wl, wlvif); // VV_ -> Association completed.
+		ret = wl12xx_set_authorizedV(wl, wlvif); // VV_ -> Association completed.
 		if (ret)
 			return ret;
 	}
 
+	// WHEN deauthenticating = down with WIFI
 	if (is_sta &&
 	    old_state == IEEE80211_STA_AUTHORIZED &&
 	    new_state == IEEE80211_STA_ASSOC) {
+		printk("STATE - 2\n");
 		clear_bit(WLVIF_FLAG_STA_AUTHORIZED, &wlvif->flags);
 		clear_bit(WLVIF_FLAG_STA_STATE_SENT, &wlvif->flags);
 	}
 
+	// the next step with down with WIFI
 	/* save seq number on disassoc (suspend) */
 	if (is_sta &&
 	    old_state == IEEE80211_STA_ASSOC &&
 	    new_state == IEEE80211_STA_AUTH) {
+		printk("STATE - 3\n");
 		wlcore_save_freed_pkts(wl, wlvif, wlvif->sta.hlid, sta);
 		wlvif->total_freed_pkts = 0;
 	}
@@ -4768,42 +4776,30 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 	if (is_sta &&
 	    old_state == IEEE80211_STA_AUTH &&
 	    new_state == IEEE80211_STA_ASSOC) {
+		printk("STATE - 4\n");
 		wlvif->total_freed_pkts = wl_sta->total_freed_pkts;
 	}
 
 	/* clear ROCs on failure or authorization */
+	// WHEN FULLY connected or disconnected -> ancel any pending "Remain On Channel"
 	if (is_sta &&
 	    (new_state == IEEE80211_STA_AUTHORIZED ||
 	     new_state == IEEE80211_STA_NOTEXIST)) {
+		printk("STATE - 5\n");
 		if (test_bit(wlvif->role_id, wl->roc_map))
-			wl12xx_croc(wl, wlvif->role_id); // VV_
+			wl12xx_crocV(wl, wlvif->role_id); // VV_
 	}
 
+	// WHEN not fully connected -> REMAIN on CHANNEL
 	if (is_sta &&
 	    old_state == IEEE80211_STA_NOTEXIST &&
 	    new_state == IEEE80211_STA_NONE) {
+		printk("STATE - 6\n");
 		if (find_first_bit(wl->roc_map,
 				   WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES) {
 			WARN_ON(wlvif->role_id == WL12XX_INVALID_ROLE_ID);
-			wl12xx_roc(wl, wlvif, wlvif->role_id,
-				   wlvif->band, wlvif->channel);
-
-			
-			struct wl12xx_cmd_roc cmd;	
-			cmd.role_id = wlvif->role_id;
-			cmd.channel = wlvif->channel;
-			switch (wlvif->band) {
-			case NL80211_BAND_2GHZ:
-				cmd.band = WLCORE_BAND_2_4GHZ;
-				break;
-			case NL80211_BAND_5GHZ:
-				cmd.band = WLCORE_BAND_5GHZ;
-				break;
-			}
-			
-			ret = VV_cmd_send(wl, CMD_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
-
-			__set_bit(wlvif->role_id, wl->roc_map);
+			wl12xx_rocV(wl, wlvif, wlvif->role_id,
+				   wlvif->band, wlvif->channel); // VV_
 		}
 	}
 	return 0;
@@ -4835,7 +4831,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	ret = wl12xx_update_sta_state(wl, wlvif, sta, old_state, new_state);
+	ret = wl12xx_update_sta_state(wl, wlvif, sta, old_state, new_state); // VV_
 
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
@@ -5881,7 +5877,7 @@ static const struct ieee80211_ops wl1271_ops = {
 	.hw_scan = wl1271_op_hw_scan,
 
 	.bss_info_changed = wl1271_op_bss_info_changed, 
-	.sta_state = wl12xx_op_sta_state, 
+	.sta_state = wl12xx_op_sta_state, // VV_
 	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, 
 
 // 	/* =====================*/ /* =====================*/ /* =====================*/

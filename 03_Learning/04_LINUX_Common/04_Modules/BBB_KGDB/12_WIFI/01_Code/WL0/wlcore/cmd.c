@@ -2026,8 +2026,12 @@ int wl12xx_roc(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
 {
 	int ret = 0;
 
-	if (WARN_ON(test_bit(role_id, wl->roc_map)))
+	if (WARN_ON(test_bit(role_id, wl->roc_map))){
+		printk("WARN_ONNNNN\n");
 		return 0;
+	}
+
+	printk("sz = %d\n", sizeof(wl->roc_map));
 
 	ret = wl12xx_cmd_roc(wl, wlvif, role_id, band, channel);
 	if (ret < 0)
@@ -2192,3 +2196,95 @@ out_free:
 	return ret;
 }
 EXPORT_SYMBOL_GPL(wlcore_cmd_generic_cfg);
+
+
+/* Vinh custom */
+int wl12xx_rocV(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
+	       enum nl80211_band band, u8 channel)
+{
+	int ret = 0;
+
+	if (test_bit(role_id, wl->roc_map)){
+		printk("ALREADY - wl12xx_rocV\n");
+		return 0;
+	}
+
+	//ret = wl12xx_cmd_roc(wl, wlvif, role_id, band, channel);
+    struct wl12xx_cmd_roc cmd;
+	cmd.role_id = role_id;
+	cmd.channel = channel;
+	switch (band) {
+	case NL80211_BAND_2GHZ:
+		cmd.band = WLCORE_BAND_2_4GHZ;
+		break;
+	case NL80211_BAND_5GHZ:
+		cmd.band = WLCORE_BAND_5GHZ;
+		break;
+    }
+    ret = VV_cmd_send(wl, CMD_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
+	if (ret < 0)
+		goto out;
+
+	__set_bit(role_id, wl->roc_map);
+out:
+	return ret;
+}
+
+int wl12xx_crocV(struct wl1271 *wl, u8 role_id)
+{
+	int ret = 0;
+
+	if ((!test_bit(role_id, wl->roc_map))){
+        printk("ALREADY - wl12xx_crocV\n");
+        return 0;
+    }
+
+	//ret = wl12xx_cmd_croc(wl, role_id);
+    struct wl12xx_cmd_croc cmd;
+    cmd.role_id = role_id;
+	ret = VV_cmd_send(wl, CMD_CANCEL_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
+	if (ret < 0)
+		goto out;
+
+	__clear_bit(role_id, wl->roc_map);
+
+	/*
+	 * Rearm the tx watchdog when removing the last ROC. This prevents
+	 * recoveries due to just finished ROCs - when Tx hasn't yet had
+	 * a chance to get out.
+	 */
+	if (find_first_bit(wl->roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES)
+		wl12xx_rearm_tx_watchdog_locked(wl);
+out:
+	return ret;
+}
+
+int wl12xx_set_authorizedV(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+{
+	int ret;
+
+	if (WARN_ON(wlvif->bss_type != BSS_TYPE_STA_BSS))
+		return -EINVAL;
+
+	// Make sure that before authorized, association is set
+	if (!test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags)){
+		return 0;
+	}
+
+	if (test_and_set_bit(WLVIF_FLAG_STA_STATE_SENT, &wlvif->flags))
+		return 0;
+
+	//ret = wl12xx_cmd_set_peer_state(wl, wlvif, wlvif->sta.hlid);
+	struct wl12xx_cmd_set_peer_state cmd;
+	cmd.hlid = wlvif->sta.hlid;
+	cmd.state = WL1271_CMD_STA_STATE_CONNECTED;
+	/* wmm param is valid only for station role */
+	if (wlvif->bss_type == BSS_TYPE_STA_BSS)
+		cmd.wmm = wlvif->wmm_enabled;
+	ret = VV_cmd_configure(wl, CMD_SET_PEER_STATE, &cmd, sizeof(cmd));
+	if (ret < 0)
+		return ret;
+
+	wl1271_info("Association completed.");
+	return 0;
+}
