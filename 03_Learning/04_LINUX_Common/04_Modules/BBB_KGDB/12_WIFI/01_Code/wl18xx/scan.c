@@ -28,7 +28,7 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			    struct cfg80211_scan_request *req)
 {
 	struct wl18xx_cmd_scan_params *cmd;
-	struct wlcore_scan_channels *cmd_channels = NULL;
+	struct wlcore_scan_channels cmd_channels;
 	int ret;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
@@ -38,10 +38,11 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 	/* scan on the dev role if the regular one is not started */
-	if (wlcore_is_p2p_mgmt(wlvif))
-		cmd->role_id = wlvif->dev_role_id;
-	else
-		cmd->role_id = wlvif->role_id;
+	// if (wlcore_is_p2p_mgmt(wlvif))
+	// 	cmd->role_id = wlvif->dev_role_id;
+	// else
+	// 	cmd->role_id = wlvif->role_id;
+	cmd->role_id = wlvif->role_id;
 
 	if (WARN_ON(cmd->role_id == WL12XX_INVALID_ROLE_ID)) {
 		ret = -EINVAL;
@@ -67,16 +68,10 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	/* configure channels */
 	WARN_ON(req->n_ssids > 1);
 
-	cmd_channels = kzalloc(sizeof(*cmd_channels), GFP_KERNEL);
-	if (!cmd_channels) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	wlcore_set_scan_chan_params(wl, cmd_channels, req->channels,
+	wlcore_set_scan_chan_params(wl, &cmd_channels, req->channels,
 				    req->n_channels, req->n_ssids,
-				    SCAN_TYPE_SEARCH);
-	wl18xx_adjust_channels(cmd, cmd_channels);
+				    SCAN_TYPE_SEARCH); // VV_
+	wl18xx_adjust_channels(cmd, &cmd_channels); //VV_
 
 	/*
 	 * all the cycles params (except total cycles) should
@@ -105,7 +100,7 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				 req->ie_len,
 				 NULL,
 				 0,
-				 false);
+				 false); // VV_
 		if (ret < 0) {
 			wl1271_error("2.4GHz PROBE request template failed");
 			goto out;
@@ -122,7 +117,7 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				 req->ie_len,
 				 NULL,
 				 0,
-				 false);
+				 false); // VV_
 		if (ret < 0) {
 			wl1271_error("5GHz PROBE request template failed");
 			goto out;
@@ -131,14 +126,13 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	wl1271_dump(DEBUG_SCAN, "SCAN: ", cmd, sizeof(*cmd));
 
-	ret = wl1271_cmd_send(wl, CMD_SCAN, cmd, sizeof(*cmd), 0);
+	ret = wl1271_cmd_send1(wl, CMD_SCAN, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("SCAN failed");
 		goto out;
 	}
 
 out:
-	kfree(cmd_channels);
 	kfree(cmd);
 	return ret;
 }

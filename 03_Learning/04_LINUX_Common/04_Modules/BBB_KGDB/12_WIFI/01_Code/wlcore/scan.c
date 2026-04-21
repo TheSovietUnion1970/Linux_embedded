@@ -140,35 +140,21 @@ wlcore_scan_get_channels(struct wl1271 *wl,
 	u32 dwell_time_passive, dwell_time_dfs;
 
 	/* configure dwell times according to scan type */
-	if (scan_type == SCAN_TYPE_SEARCH) {
-		struct conf_scan_settings *c = &wl->conf.scan;
-		bool active_vif_exists = !!wlcore_count_started_vifs(wl);
+	//if (scan_type == SCAN_TYPE_SEARCH) 
+	//printk("wlcore_scan_get_channels - IF\n");
+	struct conf_scan_settings *c = &wl->conf.scan;
+	bool active_vif_exists = !!wlcore_count_started_vifs(wl);
 
-		min_dwell_time_active = active_vif_exists ?
-			c->min_dwell_time_active :
-			c->min_dwell_time_active_long;
-		max_dwell_time_active = active_vif_exists ?
-			c->max_dwell_time_active :
-			c->max_dwell_time_active_long;
-		dwell_time_passive = c->dwell_time_passive;
-		dwell_time_dfs = c->dwell_time_dfs;
-	} else {
-		struct conf_sched_scan_settings *c = &wl->conf.sched_scan;
-		u32 delta_per_probe;
+	min_dwell_time_active = active_vif_exists ?
+		c->min_dwell_time_active :
+		c->min_dwell_time_active_long;
+	max_dwell_time_active = active_vif_exists ?
+		c->max_dwell_time_active :
+		c->max_dwell_time_active_long;
+	dwell_time_passive = c->dwell_time_passive;
+	dwell_time_dfs = c->dwell_time_dfs;
 
-		if (band == NL80211_BAND_5GHZ)
-			delta_per_probe = c->dwell_time_delta_per_probe_5;
-		else
-			delta_per_probe = c->dwell_time_delta_per_probe;
-
-		min_dwell_time_active = c->base_dwell_time +
-			 n_ssids * c->num_probe_reqs * delta_per_probe;
-
-		max_dwell_time_active = min_dwell_time_active +
-					c->max_dwell_time_delta;
-		dwell_time_passive = c->dwell_time_passive;
-		dwell_time_dfs = c->dwell_time_dfs;
-	}
+	
 	min_dwell_time_active = DIV_ROUND_UP(min_dwell_time_active, 1000);
 	max_dwell_time_active = DIV_ROUND_UP(max_dwell_time_active, 1000);
 	dwell_time_passive = DIV_ROUND_UP(dwell_time_passive, 1000);
@@ -317,11 +303,16 @@ wlcore_set_scan_chan_params(struct wl1271 *wl,
 
 	cfg->passive_active = n_pactive_ch;
 
-	wl1271_debug(DEBUG_SCAN, "    2.4GHz: active %d passive %d",
+	// wl1271_debug(DEBUG_SCAN, "    2.4GHz: active %d passive %d",
+	// 	     cfg->active[0], cfg->passive[0]);
+	// wl1271_debug(DEBUG_SCAN, "    5GHz: active %d passive %d",
+	// 	     cfg->active[1], cfg->passive[1]);
+	// wl1271_debug(DEBUG_SCAN, "    DFS: %d", cfg->dfs);
+	wl1271_info("    2.4GHz: active %d passive %d",
 		     cfg->active[0], cfg->passive[0]);
-	wl1271_debug(DEBUG_SCAN, "    5GHz: active %d passive %d",
+	wl1271_info("    5GHz: active %d passive %d",
 		     cfg->active[1], cfg->passive[1]);
-	wl1271_debug(DEBUG_SCAN, "    DFS: %d", cfg->dfs);
+	wl1271_info("    DFS: %d", cfg->dfs);
 
 	return  cfg->passive[0] || cfg->active[0] ||
 		cfg->passive[1] || cfg->active[1] || cfg->dfs ||
@@ -333,7 +324,7 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 		const u8 *ssid, size_t ssid_len,
 		struct cfg80211_scan_request *req)
 {
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+	struct wl12xx_vif *wlvif = (struct wl12xx_vif *)vif->drv_priv;
 
 	/*
 	 * cfg80211 should guarantee that we don't get more channels
@@ -362,7 +353,7 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	ieee80211_queue_delayed_work(wl->hw, &wl->scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
 
-	wl->ops->scan_start(wl, wlvif, req);
+	wl->ops->scan_start(wl, wlvif, req); // wl18xx_scan_start //VV_
 
 	return 0;
 }

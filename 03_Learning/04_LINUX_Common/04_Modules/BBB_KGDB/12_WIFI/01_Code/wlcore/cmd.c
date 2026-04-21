@@ -1330,7 +1330,7 @@ int wl12xx_cmd_build_probe_req(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			       const u8 *ie0, size_t ie0_len, const u8 *ie1,
 			       size_t ie1_len, bool sched_scan)
 {
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
+	struct ieee80211_vif *vif = container_of((void *)wlvif, struct ieee80211_vif, drv_priv);
 	struct sk_buff *skb;
 	int ret;
 	u32 rate;

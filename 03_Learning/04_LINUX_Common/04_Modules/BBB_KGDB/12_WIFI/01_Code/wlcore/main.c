@@ -3946,7 +3946,7 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 		goto out_sleep;
 	}
 
-	ret = wlcore_scan(hw->priv, vif, ssid, len, req);
+	ret = wlcore_scan(hw->priv, vif, ssid, len, req); // ~VV_
 out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
@@ -6893,7 +6893,7 @@ static const struct ieee80211_ops wl1271_ops = {
 	.configure_filter = wl1271_op_configure_filter, // VV_
 	.tx = wl1271_op_tx, // ~ VV_
 	.set_key = wlcore_op_set_key, // ~VV_
-	.hw_scan = wl1271_op_hw_scan,
+	.hw_scan = wl1271_op_hw_scan, // ~VV_
 
 	.bss_info_changed = wl1271_op_bss_info_changed, // VV_
 	.sta_state = wl12xx_op_sta_state, // VV_
