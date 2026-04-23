@@ -184,6 +184,7 @@ wlcore_hw_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 	if (!wl->ops->set_key)
 		BUG_ON(1);
 
+	// ret = wlcore_set_key(wl, cmd, vif, sta, key_conf);
 	return wl->ops->set_key(wl, cmd, vif, sta, key_conf);
 }
 

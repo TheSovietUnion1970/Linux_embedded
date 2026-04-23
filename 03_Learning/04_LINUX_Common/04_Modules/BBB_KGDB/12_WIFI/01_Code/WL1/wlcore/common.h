@@ -146,3 +146,10 @@
         // -> cpy cmd_channels->active|passive|dtfs -> cmd
         // -> wl12xx_cmd_build_probe_req - 2 + 5 GHz
         // <- CMD_SCAN
+
+// wl1271_set_key:
+    // ret = wl1271_cmd_set_sta_key(wl, wlvif, action,
+    // 			     id, key_type, key_size,
+    // 			     key, addr, tx_seq_32,
+    // 			     tx_seq_16);
+        // CMD_SET_KEYS <-

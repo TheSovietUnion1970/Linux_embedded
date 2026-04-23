@@ -1550,8 +1550,8 @@ static int wl18xx_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 	wl1271_debug(DEBUG_CRYPT, "extra spare keys before: %d",
 		     priv->extra_spare_key_count);
 
-	special_enc = key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
-		      key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
+	// special_enc = key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
+	// 	      key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
 
 	ret = wlcore_set_key(wl, cmd, vif, sta, key_conf);
 	if (ret < 0)
@@ -1561,31 +1561,33 @@ static int wl18xx_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 	 * when adding the first or removing the last GEM/TKIP key,
 	 * we have to adjust the number of spare blocks.
 	 */
-	if (special_enc) {
-		if (cmd == SET_KEY) {
-			/* first key */
-			change_spare = (priv->extra_spare_key_count == 0);
-			priv->extra_spare_key_count++;
-		} else if (cmd == DISABLE_KEY) {
-			/* last key */
-			change_spare = (priv->extra_spare_key_count == 1);
-			priv->extra_spare_key_count--;
-		}
-	}
+	// if (special_enc) {
+	// 	if (cmd == SET_KEY) {
+	// 		/* first key */
+	// 		change_spare = (priv->extra_spare_key_count == 0);
+	// 		priv->extra_spare_key_count++;
+	// 	} else if (cmd == DISABLE_KEY) {
+	// 		/* last key */
+	// 		change_spare = (priv->extra_spare_key_count == 1);
+	// 		priv->extra_spare_key_count--;
+	// 	}
+	// }
 
+	printk("BEFORE wl18xx_set_host_cfg_bitmap\n");
 	wl1271_debug(DEBUG_CRYPT, "extra spare keys after: %d",
 		     priv->extra_spare_key_count);
 
 	if (!change_spare)
 		goto out;
 
-	/* key is now set, change the spare blocks */
-	if (priv->extra_spare_key_count)
-		ret = wl18xx_set_host_cfg_bitmap(wl,
-					WL18XX_TX_HW_EXTRA_BLOCK_SPARE);
-	else
-		ret = wl18xx_set_host_cfg_bitmap(wl,
-					WL18XX_TX_HW_BLOCK_SPARE);
+	// printk("wl18xx_set_host_cfg_bitmap\n");
+	// /* key is now set, change the spare blocks */
+	// if (priv->extra_spare_key_count)
+	// 	ret = wl18xx_set_host_cfg_bitmap(wl,
+	// 				WL18XX_TX_HW_EXTRA_BLOCK_SPARE);
+	// else
+	// 	ret = wl18xx_set_host_cfg_bitmap(wl,
+	// 				WL18XX_TX_HW_BLOCK_SPARE);
 
 out:
 	return ret;

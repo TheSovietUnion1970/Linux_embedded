@@ -3550,18 +3550,19 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 {
 	struct wl1271 *wl = hw->priv;
 	int ret;
-	bool might_change_spare =
-		key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
-		key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
+	// bool might_change_spare =
+	// 	key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
+	// 	key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
 
-	if (might_change_spare) {
-		/*
-		 * stop the queues and flush to ensure the next packets are
-		 * in sync with FW spare block accounting
-		 */
-		wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
-		wl1271_tx_flush(wl);
-	}
+	// if (might_change_spare) {
+	// 	printk("might_change_spare\n");
+	// 	/*
+	// 	 * stop the queues and flush to ensure the next packets are
+	// 	 * in sync with FW spare block accounting
+	// 	 */
+	// 	wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
+	// 	wl1271_tx_flush(wl);
+	// }
 
 	mutex_lock(&wl->mutex);
 
@@ -3576,14 +3577,15 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		goto out_wake_queues;
 	}
 
-	ret = wlcore_hw_set_key(wl, cmd, vif, sta, key_conf);
+	//ret = wlcore_hw_set_key(wl, cmd, vif, sta, key_conf);
+	ret = wlcore_set_key(wl, cmd, vif, sta, key_conf);
 
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 
 out_wake_queues:
-	if (might_change_spare)
-		wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
+	// if (might_change_spare)
+	// 	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
 
 	mutex_unlock(&wl->mutex);
 
@@ -3611,15 +3613,16 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		     key_conf->keylen, key_conf->flags);
 	wl1271_dump(DEBUG_CRYPT, "KEY: ", key_conf->key, key_conf->keylen);
 
-	if (wlvif->bss_type == BSS_TYPE_AP_BSS)
-		if (sta) {
-			struct wl1271_station *wl_sta = (void *)sta->drv_priv;
-			hlid = wl_sta->hlid;
-		} else {
-			hlid = wlvif->ap.bcast_hlid;
-		}
-	else
-		hlid = wlvif->sta.hlid;
+	// if (wlvif->bss_type == BSS_TYPE_AP_BSS)
+	// 	if (sta) {
+	// 		struct wl1271_station *wl_sta = (void *)sta->drv_priv;
+	// 		hlid = wl_sta->hlid;
+	// 	} else {
+	// 		hlid = wlvif->ap.bcast_hlid;
+	// 	}
+	// else
+	// 	hlid = wlvif->sta.hlid;
+	hlid = wlvif->sta.hlid;
 
 	if (hlid != WL12XX_INVALID_LINK_ID) {
 		u64 tx_seq = wl->links[hlid].total_freed_pkts;
@@ -3627,29 +3630,34 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		tx_seq_16 = WL1271_TX_SECURITY_LO16(tx_seq);
 	}
 
-	switch (key_conf->cipher) {
-	case WLAN_CIPHER_SUITE_WEP40:
-	case WLAN_CIPHER_SUITE_WEP104:
-		key_type = KEY_WEP;
+	//printk("wlvif->sta.hlid = %d\n", wlvif->sta.hlid);
 
-		key_conf->hw_key_idx = key_conf->keyidx;
-		break;
-	case WLAN_CIPHER_SUITE_TKIP:
-		key_type = KEY_TKIP;
-		key_conf->hw_key_idx = key_conf->keyidx;
-		break;
-	case WLAN_CIPHER_SUITE_CCMP:
-		key_type = KEY_AES;
-		key_conf->flags |= IEEE80211_KEY_FLAG_PUT_IV_SPACE;
-		break;
-	case WL1271_CIPHER_SUITE_GEM:
-		key_type = KEY_GEM;
-		break;
-	default:
-		wl1271_error("Unknown key algo 0x%x", key_conf->cipher);
+	// printk("key_conf->cipher = %d\n", key_conf->cipher);
+	// switch (key_conf->cipher) {
+	// case WLAN_CIPHER_SUITE_WEP40:
+	// case WLAN_CIPHER_SUITE_WEP104:
+	// 	key_type = KEY_WEP;
 
-		return -EOPNOTSUPP;
-	}
+	// 	key_conf->hw_key_idx = key_conf->keyidx;
+	// 	break;
+	// case WLAN_CIPHER_SUITE_TKIP:
+	// 	key_type = KEY_TKIP;
+	// 	key_conf->hw_key_idx = key_conf->keyidx;
+	// 	break;
+	// case WLAN_CIPHER_SUITE_CCMP:
+	// 	key_type = KEY_AES;
+	// 	key_conf->flags |= IEEE80211_KEY_FLAG_PUT_IV_SPACE;
+	// 	break;
+	// case WL1271_CIPHER_SUITE_GEM:
+	// 	key_type = KEY_GEM;
+	// 	break;
+	// default:
+	// 	wl1271_error("Unknown key algo 0x%x", key_conf->cipher);
+
+	// 	return -EOPNOTSUPP;
+	// }
+	key_type = KEY_AES;
+	key_conf->flags |= IEEE80211_KEY_FLAG_PUT_IV_SPACE;
 
 	is_pairwise = key_conf->flags & IEEE80211_KEY_FLAG_PAIRWISE;
 
@@ -5808,7 +5816,7 @@ static const struct ieee80211_ops wl1271_ops = {
 
 	.configure_filter = wl1271_op_configure_filter, // VV_
 	.tx = wl1271_op_tx, 
-	.set_key = wlcore_op_set_key, 
+	.set_key = wlcore_op_set_key, // VV_
 	.hw_scan = wl1271_op_hw_scan, // VV_
 
 	.bss_info_changed = wl1271_op_bss_info_changed, // VV_
