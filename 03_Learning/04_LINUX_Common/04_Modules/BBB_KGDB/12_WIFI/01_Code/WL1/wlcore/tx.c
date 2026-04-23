@@ -166,8 +166,8 @@ u8 wl12xx_tx_get_hlid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 {
 	struct ieee80211_tx_info *control;
 
-	if (wlvif->bss_type == BSS_TYPE_AP_BSS)
-		return wl12xx_tx_get_hlid_ap(wl, wlvif, skb, sta);
+	// if (wlvif->bss_type == BSS_TYPE_AP_BSS)
+	// 	return wl12xx_tx_get_hlid_ap(wl, wlvif, skb, sta);
 
 	control = IEEE80211_SKB_CB(skb);
 	if (control->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
@@ -183,12 +183,22 @@ unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
 {
 	if ((wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) ||
 	    !(wl->quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN))
-		return ALIGN(packet_length, WL1271_TX_ALIGN_TO);
-	else
-		return ALIGN(packet_length, WL12XX_BUS_BLOCK_SIZE);
+		{
+			printk("wlcore_calc_packet_alignment - IF\n");
+			return ALIGN(packet_length, WL1271_TX_ALIGN_TO);
+		}
+	else{
+		printk("wlcore_calc_packet_alignment - ELSE\n");
+			return ALIGN(packet_length, WL12XX_BUS_BLOCK_SIZE);
+	}
 }
 EXPORT_SYMBOL(wlcore_calc_packet_alignment);
 
+#define WL18XX_TX_HW_BLOCK_SPARE        1
+/* for special cases - namely, TKIP and GEM */
+#define WL18XX_TX_HW_EXTRA_BLOCK_SPARE  2
+#define WL18XX_TX_HW_BLOCK_SIZE         268
+#include "../wl18xx/wl18xx.h"
 static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      struct sk_buff *skb, u32 extra, u32 buf_offset,
 			      u8 hlid, bool is_gem)
@@ -202,20 +212,36 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (buf_offset + total_len > wl->aggr_buf_size)
 		return -EAGAIN;
 
-	spare_blocks = wlcore_hw_get_spare_blocks(wl, is_gem);
+	// spare_blocks = wlcore_hw_get_spare_blocks(wl, is_gem);
+	struct wl18xx_priv *priv = wl->priv;
+	/* If we have keys requiring extra spare, indulge them */
+	spare_blocks = WL18XX_TX_HW_BLOCK_SPARE;
+
 
 	/* allocate free identifier for the packet */
-	id = wl1271_alloc_tx_id(wl, skb);
+	// id = wl1271_alloc_tx_id(wl, skb);
+	//int id;
+	id = find_first_zero_bit(wl->tx_frames_map, wl->num_tx_desc);
+	if (id >= wl->num_tx_desc)
+		return -EBUSY;
+
+	__set_bit(id, wl->tx_frames_map);
+	wl->tx_frames[id] = skb;
+	wl->tx_frames_cnt++;
 	if (id < 0)
 		return id;
 
-	total_blocks = wlcore_hw_calc_tx_blocks(wl, total_len, spare_blocks);
+	// total_blocks = wlcore_hw_calc_tx_blocks(wl, total_len, spare_blocks);
+	u32 blk_size = WL18XX_TX_HW_BLOCK_SIZE;
+	total_blocks = (total_len + blk_size - 1) / blk_size + spare_blocks;
 
 	if (total_blocks <= wl->tx_blocks_available) {
-		desc = skb_push(skb, total_len - skb->len);
+		// Adds the TX descriptor at the front of the skb
+		desc = skb_push(skb, total_len - skb->len); // len = sizeof(struct wl1271_tx_hw_descr) + extra
 
-		wlcore_hw_set_tx_desc_blocks(wl, desc, total_blocks,
-					     spare_blocks);
+		// wlcore_hw_set_tx_desc_blocks(wl, desc, total_blocks,
+		// 			     spare_blocks);
+		desc->wl18xx_mem.total_mem_blocks = total_blocks;
 
 		desc->id = id;
 
@@ -243,12 +269,21 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			     "tx_allocate: size: %d, blocks: %d, id: %d",
 			     total_len, total_blocks, id);
 	} else {
-		wl1271_free_tx_id(wl, id);
+		//wl1271_free_tx_id(wl, id);
+		if (__test_and_clear_bit(id, wl->tx_frames_map)) {
+			if (unlikely(wl->tx_frames_cnt == wl->num_tx_desc))
+				clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
+
+			wl->tx_frames[id] = NULL;
+			wl->tx_frames_cnt--;
+		}
 	}
 
 	return ret;
 }
 
+/* Indicates this TX HW frame is not padded to SDIO block size */
+#define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
 static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			       struct sk_buff *skb, u32 extra,
 			       struct ieee80211_tx_info *control, u8 hlid)
@@ -263,16 +298,17 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	bool is_dummy;
 
 	desc = (struct wl1271_tx_hw_descr *) skb->data;
-	frame_start = (u8 *)(desc + 1);
+	frame_start = (u8 *)(desc + 1); // frame_start points to the actual 802.11 frame.
 	hdr = (struct ieee80211_hdr *)(frame_start + extra);
 	frame_control = hdr->frame_control;
 
-	/* relocate space for security header */
-	if (extra) {
-		int hdrlen = ieee80211_hdrlen(frame_control);
-		memmove(frame_start, hdr, hdrlen);
-		skb_set_network_header(skb, skb_network_offset(skb) + extra);
-	}
+	// printk("[CHECK] - extra = %d\n", extra);
+	// /* relocate space for security header */
+	// if (extra) {
+	// 	int hdrlen = ieee80211_hdrlen(frame_control);
+	// 	memmove(frame_start, hdr, hdrlen);
+	// 	skb_set_network_header(skb, skb_network_offset(skb) + extra);
+	// }
 
 	/* configure packet life time */
 	hosttime = (ktime_get_boottime_ns() >> 10);
@@ -288,62 +324,33 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
 	desc->tid = skb->priority;
 
-	if (is_dummy) {
-		/*
-		 * FW expects the dummy packet to have an invalid session id -
-		 * any session id that is different than the one set in the join
-		 */
-		tx_attr = (SESSION_COUNTER_INVALID <<
-			   TX_HW_ATTR_OFST_SESSION_COUNTER) &
-			   TX_HW_ATTR_SESSION_COUNTER;
+	u8 session_id = wl->session_ids[hlid];
 
-		tx_attr |= TX_HW_ATTR_TX_DUMMY_REQ;
-	} else if (wlvif) {
-		u8 session_id = wl->session_ids[hlid];
+	if ((wl->quirks & WLCORE_QUIRK_AP_ZERO_SESSION_ID) &&
+		(wlvif->bss_type == BSS_TYPE_AP_BSS))
+		session_id = 0;
 
-		if ((wl->quirks & WLCORE_QUIRK_AP_ZERO_SESSION_ID) &&
-		    (wlvif->bss_type == BSS_TYPE_AP_BSS))
-			session_id = 0;
-
-		/* configure the tx attributes */
-		tx_attr = session_id << TX_HW_ATTR_OFST_SESSION_COUNTER;
-	}
+	/* configure the tx attributes */
+	tx_attr = session_id << TX_HW_ATTR_OFST_SESSION_COUNTER;
 
 	desc->hlid = hlid;
-	if (is_dummy || !wlvif)
-		rate_idx = 0;
-	else if (wlvif->bss_type != BSS_TYPE_AP_BSS) {
-		/*
-		 * if the packets are data packets
-		 * send them with AP rate policies (EAPOLs are an exception),
-		 * otherwise use default basic rates
-		 */
-		if (skb->protocol == cpu_to_be16(ETH_P_PAE))
-			// rate_idx = wlvif->sta.basic_rate_idx;
-			rate_idx = STA_BASIC_RATE_IDX;
-		else if (control->flags & IEEE80211_TX_CTL_NO_CCK_RATE)
-			// rate_idx = wlvif->sta.p2p_rate_idx;
-			rate_idx = STA_P2P_RATE_IDX;
-		else if (ieee80211_is_data(frame_control))
-			// rate_idx = wlvif->sta.ap_rate_idx;
-			rate_idx = STA_AP_RATE_IDX;
-		else
-			// rate_idx = wlvif->sta.basic_rate_idx;
-			rate_idx = STA_BASIC_RATE_IDX;
-	} else {
-		if (hlid == wlvif->ap.global_hlid)
-			rate_idx = wlvif->ap.mgmt_rate_idx;
-		else if (hlid == wlvif->ap.bcast_hlid ||
-			 skb->protocol == cpu_to_be16(ETH_P_PAE) ||
-			 !ieee80211_is_data(frame_control))
-			/*
-			 * send non-data, bcast and EAPOLs using the
-			 * min basic rate
-			 */
-			rate_idx = wlvif->ap.bcast_rate_idx;
-		else
-			rate_idx = wlvif->ap.ucast_rate_idx[ac];
-	}
+	/*
+		* if the packets are data packets
+		* send them with AP rate policies (EAPOLs are an exception),
+		* otherwise use default basic rates
+		*/
+	if (skb->protocol == cpu_to_be16(ETH_P_PAE))
+		// rate_idx = wlvif->sta.basic_rate_idx;
+		rate_idx = STA_BASIC_RATE_IDX;
+	else if (control->flags & IEEE80211_TX_CTL_NO_CCK_RATE)
+		// rate_idx = wlvif->sta.p2p_rate_idx;
+		rate_idx = STA_P2P_RATE_IDX;
+	else if (ieee80211_is_data(frame_control))
+		// rate_idx = wlvif->sta.ap_rate_idx;
+		rate_idx = STA_AP_RATE_IDX;
+	else
+		// rate_idx = wlvif->sta.basic_rate_idx;
+		rate_idx = STA_BASIC_RATE_IDX;
 
 	tx_attr |= rate_idx << TX_HW_ATTR_OFST_RATE_POLICY;
 
@@ -358,8 +365,17 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	desc->tx_attr = cpu_to_le16(tx_attr);
 
-	wlcore_hw_set_tx_desc_csum(wl, desc, skb);
-	wlcore_hw_set_tx_desc_data_len(wl, desc, skb);
+	//wlcore_hw_set_tx_desc_csum(wl, desc, skb);
+	desc->wl18xx_checksum_data = 0;
+
+	//wlcore_hw_set_tx_desc_data_len(wl, desc, skb);
+	desc->length = cpu_to_le16(skb->len);
+
+	/* if only the last frame is to be padded, we unset this bit on Tx */
+	if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME)
+		desc->wl18xx_mem.ctrl = WL18XX_TX_CTRL_NOT_PADDED;
+	else
+		desc->wl18xx_mem.ctrl = 0;
 }
 
 /* caller must hold wl->mutex */
@@ -370,7 +386,7 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	u32 extra = 0;
 	int ret = 0;
 	u32 total_len;
-	bool is_dummy;
+	// bool is_dummy;
 	bool is_gem = false;
 
 	if (!skb) {
@@ -385,30 +401,27 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	info = IEEE80211_SKB_CB(skb);
 
-	is_dummy = wl12xx_is_dummy_packet(wl, skb);
+	// is_dummy = wl12xx_is_dummy_packet(wl, skb);
 
-	if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
-	    info->control.hw_key &&
-	    info->control.hw_key->cipher == WLAN_CIPHER_SUITE_TKIP)
-		extra = WL1271_EXTRA_SPACE_TKIP;
+	// if (info->control.hw_key) {
+	// 	//printk("info->control.hw_key\n");
+	// 	bool is_wep;
+	// 	u8 idx = info->control.hw_key->hw_key_idx;
+	// 	u32 cipher = info->control.hw_key->cipher;
 
-	if (info->control.hw_key) {
-		bool is_wep;
-		u8 idx = info->control.hw_key->hw_key_idx;
-		u32 cipher = info->control.hw_key->cipher;
+	// 	is_wep = (cipher == WLAN_CIPHER_SUITE_WEP40) ||
+	// 		 (cipher == WLAN_CIPHER_SUITE_WEP104);
 
-		is_wep = (cipher == WLAN_CIPHER_SUITE_WEP40) ||
-			 (cipher == WLAN_CIPHER_SUITE_WEP104);
+	// 	if (WARN_ON(is_wep && wlvif && wlvif->default_key != idx)) {
+	// 		//ret = wl1271_set_default_wep_key(wl, wlvif, idx);
+	// 		ret = wl12xx_cmd_set_default_wep_key(wl, idx, wlvif->sta.hlid);
+	// 		if (ret < 0)
+	// 			return ret;
+	// 		wlvif->default_key = idx;
+	// 	}
 
-		if (WARN_ON(is_wep && wlvif && wlvif->default_key != idx)) {
-			ret = wl1271_set_default_wep_key(wl, wlvif, idx);
-			if (ret < 0)
-				return ret;
-			wlvif->default_key = idx;
-		}
-
-		is_gem = (cipher == WL1271_CIPHER_SUITE_GEM);
-	}
+	// 	is_gem = (cipher == WL1271_CIPHER_SUITE_GEM);
+	// }
 
 	ret = wl1271_tx_allocate(wl, wlvif, skb, extra, buf_offset, hlid,
 				 is_gem);
@@ -417,10 +430,10 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid);
 
-	if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
-		wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
-		wl1271_tx_regulate_link(wl, wlvif, hlid);
-	}
+	// if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
+	// 	wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
+	// 	wl1271_tx_regulate_link(wl, wlvif, hlid);
+	// }
 
 	/*
 	 * The length of each packet is stored in terms of
@@ -430,14 +443,15 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 * In special cases, we want to align to a specific block size
 	 * (eg. for wl128x with SDIO we align to 256).
 	 */
-	total_len = wlcore_calc_packet_alignment(wl, skb->len);
+	//total_len = wlcore_calc_packet_alignment(wl, skb->len);
+	total_len = ALIGN(skb->len, WL1271_TX_ALIGN_TO);
 
 	memcpy(wl->aggr_buf + buf_offset, skb->data, skb->len);
 	memset(wl->aggr_buf + buf_offset + skb->len, 0, total_len - skb->len);
 
-	/* Revert side effects in the dummy packet skb, so it can be reused */
-	if (is_dummy)
-		skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
+	// /* Revert side effects in the dummy packet skb, so it can be reused */
+	// if (is_dummy)
+	// 	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
 
 	return total_len;
 }
@@ -753,6 +767,8 @@ void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids)
  * within prepare_tx_frame code but there's nothing we should do about those
  * as well.
  */
+/* Indicates this TX HW frame is not padded to SDIO block size */
+#define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
 int wlcore_tx_work_locked(struct wl1271 *wl)
 {
 	struct wl12xx_vif *wlvif;
@@ -829,9 +845,24 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 
 out_ack:
 	if (buf_offset) {
-		buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len);
-		bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
-					     buf_offset, true);
+		// buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len);
+		if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) {
+			struct wl1271_tx_hw_descr *last_desc;
+
+			/* get the last TX HW descriptor written to the aggr buf */
+			last_desc = (struct wl1271_tx_hw_descr *)(wl->aggr_buf +
+								buf_offset - last_len);
+
+			/* the last frame is padded up to an SDIO block */
+			last_desc->wl18xx_mem.ctrl &= ~WL18XX_TX_CTRL_NOT_PADDED;
+			buf_offset = ALIGN(buf_offset, WL12XX_BUS_BLOCK_SIZE);
+		}
+
+
+		// REG_SLV_MEM_DATA → the address in the firmware’s memory where TX data should be written.
+		// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
+		// 			     buf_offset, true);
+		bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), wl->aggr_buf, buf_offset, true);
 		if (bus_ret < 0)
 			goto out;
 
@@ -843,14 +874,16 @@ out_ack:
 		 * required for older hardware revisions
 		 */
 		if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-			bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
-					     wl->tx_packets_count);
+			// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
+			// 		     wl->tx_packets_count);
+			bus_ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL12XX_HOST_WR_ACCESS), wl->tx_packets_count, 4, false);
 			if (bus_ret < 0)
 				goto out;
 		}
 
 		wl1271_handle_tx_low_watermark(wl);
 	}
+	// Feature that improves bidirectional throughput
 	wl12xx_rearm_rx_streaming(wl, active_hlids);
 
 out:
@@ -1208,7 +1241,7 @@ void wlcore_stop_queue_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      u8 queue, enum wlcore_queue_stop_reason reason)
 {
 	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
-	bool stopped = !!wl->queue_stop_reasons[hwq];
+	bool stopped = !!wl->queue_stop_reasons[hwq]; // equal to 0 -> true
 
 	/* queue should not be stopped for this reason */
 	WARN_ON_ONCE(test_and_set_bit(reason, &wl->queue_stop_reasons[hwq]));

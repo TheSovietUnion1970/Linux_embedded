@@ -153,3 +153,21 @@
     // 			     key, addr, tx_seq_32,
     // 			     tx_seq_16);
         // CMD_SET_KEYS <-
+
+// 	ret = wl1271_tx_allocate(wl, wlvif, skb, extra, buf_offset, hlid,is_gem);
+    // wl->tx_blocks_available -= total_blocks;
+    // wl->tx_allocated_blocks += total_blocks;
+    // Adds the TX descriptor at the front of the skb (sizeof(struct wl1271_tx_hw_descr) + extra;)
+
+// wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid);
+    // Fill in wl1271_tx_hw_descr *desc:
+
+// ret = wl1271_prepare_tx_frame(wl, wlvif, skb, buf_offset, hlid);
+    // wl1271_tx_allocate + wl1271_tx_fill_hdr
+    // update wl->aggr_buf
+
+// wlcore_tx_work_locked:
+    // = wl1271_prepare_tx_frame
+    // write wl->aggr_buf -> REG_SLV_MEM_DATA = the address in the firmware’s memory where TX data should be written.
+
+// wl->tx_work = wl1271_tx_work = wlcore_tx_work_locked
