@@ -73,10 +73,11 @@ static int wl18xx_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		goto out;
 	}
 
+	printk("[SCAN] - n_channels = %d, n_ssids = %d\n",  req->n_channels, req->n_ssids);
 	wlcore_set_scan_chan_params(wl, cmd_channels, req->channels,
 				    req->n_channels, req->n_ssids,
 				    SCAN_TYPE_SEARCH);
-	wl18xx_adjust_channels(cmd, cmd_channels);
+	wl18xx_adjust_channels(cmd, cmd_channels); // cpy cmd_channels->active|passive|dtfs -> cmd
 
 	/*
 	 * all the cycles params (except total cycles) should

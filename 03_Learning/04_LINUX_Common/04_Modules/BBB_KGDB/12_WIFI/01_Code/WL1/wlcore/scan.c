@@ -31,7 +31,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	dwork = to_delayed_work(work);
 	wl = container_of(dwork, struct wl1271, scan_complete_work);
 
-	wl1271_debug(DEBUG_SCAN, "Scanning complete");
+	wl1271_info("Scanning complete");
 
 	mutex_lock(&wl->mutex);
 
@@ -140,40 +140,48 @@ wlcore_scan_get_channels(struct wl1271 *wl,
 	u32 min_dwell_time_active, max_dwell_time_active;
 	u32 dwell_time_passive, dwell_time_dfs;
 
-	/* configure dwell times according to scan type */
-	if (scan_type == SCAN_TYPE_SEARCH) {
-		struct conf_scan_settings *c = &wl->conf.scan;
-		bool active_vif_exists = !!wlcore_count_started_vifs(wl);
+	// /* configure dwell times according to scan type */
+	// if (scan_type == SCAN_TYPE_SEARCH) {
+	// 	struct conf_scan_settings *c = &wl->conf.scan;
+	// 	bool active_vif_exists = !!wlcore_count_started_vifs(wl);
 
-		min_dwell_time_active = active_vif_exists ?
-			c->min_dwell_time_active :
-			c->min_dwell_time_active_long;
-		max_dwell_time_active = active_vif_exists ?
-			c->max_dwell_time_active :
-			c->max_dwell_time_active_long;
-		dwell_time_passive = c->dwell_time_passive;
-		dwell_time_dfs = c->dwell_time_dfs;
-	} else {
-		struct conf_sched_scan_settings *c = &wl->conf.sched_scan;
-		u32 delta_per_probe;
+	// 	min_dwell_time_active = active_vif_exists ?
+	// 		c->min_dwell_time_active :
+	// 		c->min_dwell_time_active_long;
+	// 	max_dwell_time_active = active_vif_exists ?
+	// 		c->max_dwell_time_active :
+	// 		c->max_dwell_time_active_long;
+	// 	dwell_time_passive = c->dwell_time_passive;
+	// 	dwell_time_dfs = c->dwell_time_dfs;
+	// } else {
+	// 	struct conf_sched_scan_settings *c = &wl->conf.sched_scan;
+	// 	u32 delta_per_probe;
 
-		if (band == NL80211_BAND_5GHZ)
-			delta_per_probe = c->dwell_time_delta_per_probe_5;
-		else
-			delta_per_probe = c->dwell_time_delta_per_probe;
+	// 	if (band == NL80211_BAND_5GHZ)
+	// 		delta_per_probe = c->dwell_time_delta_per_probe_5;
+	// 	else
+	// 		delta_per_probe = c->dwell_time_delta_per_probe;
 
-		min_dwell_time_active = c->base_dwell_time +
-			 n_ssids * c->num_probe_reqs * delta_per_probe;
+	// 	min_dwell_time_active = c->base_dwell_time +
+	// 		 n_ssids * c->num_probe_reqs * delta_per_probe;
 
-		max_dwell_time_active = min_dwell_time_active +
-					c->max_dwell_time_delta;
-		dwell_time_passive = c->dwell_time_passive;
-		dwell_time_dfs = c->dwell_time_dfs;
-	}
-	min_dwell_time_active = DIV_ROUND_UP(min_dwell_time_active, 1000);
-	max_dwell_time_active = DIV_ROUND_UP(max_dwell_time_active, 1000);
-	dwell_time_passive = DIV_ROUND_UP(dwell_time_passive, 1000);
-	dwell_time_dfs = DIV_ROUND_UP(dwell_time_dfs, 1000);
+	// 	max_dwell_time_active = min_dwell_time_active +
+	// 				c->max_dwell_time_delta;
+	// 	dwell_time_passive = c->dwell_time_passive;
+	// 	dwell_time_dfs = c->dwell_time_dfs;
+	// }
+	// min_dwell_time_active = DIV_ROUND_UP(min_dwell_time_active, 1000);
+	// max_dwell_time_active = DIV_ROUND_UP(max_dwell_time_active, 1000);
+	// dwell_time_passive = DIV_ROUND_UP(dwell_time_passive, 1000);
+	// dwell_time_dfs = DIV_ROUND_UP(dwell_time_dfs, 1000);
+
+	// [TODO]
+	min_dwell_time_active = 25;
+	max_dwell_time_active = 50;
+	dwell_time_passive = 100;
+	dwell_time_dfs = 150;
+
+	//printk("i start = %d, j start = %d\n", i, start);
 
 	for (i = 0, j = start;
 	     i < n_channels && j < max_channels;
@@ -225,6 +233,15 @@ wlcore_scan_get_channels(struct wl1271 *wl,
 					     *n_pactive_ch);
 			}
 
+			// channels.flags
+			// channels.passive_duration
+			// channels.min_duration
+			// channels.max_duration
+			// channels.tx_power_att
+			// channels.channel
+
+			// -> 3 types: active, passive, DFS
+
 			wl1271_debug(DEBUG_SCAN, "freq %d, ch. %d, flags 0x%x, power %d, min/max_dwell %d/%d%s%s",
 				     req_channels[i]->center_freq,
 				     req_channels[i]->hw_value,
@@ -239,6 +256,7 @@ wlcore_scan_get_channels(struct wl1271 *wl,
 			j++;
 		}
 	}
+	//printk("i end = %d, j end = %d\n", i, j);
 
 	return j - start;
 }
@@ -363,7 +381,7 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	ieee80211_queue_delayed_work(wl->hw, &wl->scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
 
-	wl->ops->scan_start(wl, wlvif, req);
+	wl->ops->scan_start(wl, wlvif, req); // wl18xx_scan_send
 
 	return 0;
 }

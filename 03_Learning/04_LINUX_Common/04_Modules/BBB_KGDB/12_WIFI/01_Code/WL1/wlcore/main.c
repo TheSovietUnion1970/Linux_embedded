@@ -215,6 +215,7 @@ void wl12xx_rearm_tx_watchdog_locked(struct wl1271 *wl)
 {
 	/* if the watchdog is not armed, don't do anything */
 	// If there are no blocks currently allocated for TX -> no need to transmit
+	//printk("wl->tx_allocated_blocks = %d\n", wl->tx_allocated_blocks);
 	if (wl->tx_allocated_blocks == 0)
 		return;
 
@@ -261,7 +262,7 @@ out:
 
 static void wl12xx_tx_watchdog_work(struct work_struct *work)
 {
-	//printk("[WORK] - wl12xx_tx_watchdog_work\n");
+	printk("[WORK] - wl12xx_tx_watchdog_work\n");
 	struct delayed_work *dwork;
 	struct wl1271 *wl;
 
@@ -1202,7 +1203,7 @@ out:
 static int wl12xx_set_power_on(struct wl1271 *wl)
 {
 	int ret;
-	printk("wl12xx_set_power_on\n");
+	//printk("wl12xx_set_power_on\n");
 
 	msleep(WL1271_PRE_POWER_ON_SLEEP);
 	ret = V_power_on(wl);
@@ -2400,7 +2401,7 @@ static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.p2p_rate_idx);
 	// wlcore_allocate_klv_template(wl, &wlvif->sta.klv_template_id);
 	wlvif->basic_rate_set = CONF_TX_RATE_MASK_BASIC;
-	printk("[init basic_rate_set] = %d\n", wlvif->basic_rate_set);
+	//printk("[init basic_rate_set] = %d\n", wlvif->basic_rate_set);
 	wlvif->basic_rate = CONF_TX_RATE_MASK_BASIC;
 	wlvif->rate_set = CONF_TX_RATE_MASK_BASIC;
 
@@ -2671,7 +2672,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-
+	printk("[ADD IF] - wl1271_op_add_interface, wl = 0x%x\n", wl);
 	ret = wl12xx_init_vif_data(wl, vif);
 	if (ret < 0)
 		goto out;
@@ -3263,6 +3264,7 @@ static int wl1271_op_config(struct ieee80211_hw *hw, u32 changed)
 
 	/* configure each interface */
 	wl12xx_for_each_wlvif(wl, wlvif) {
+		printk("[OP CFG] - wl12xx_config_vif called, wlvif->p2p = %d\n", wlvif->p2p);
 		ret = wl12xx_config_vif(wl, wlvif, conf, changed);
 		if (ret < 0)
 			goto out_sleep;
@@ -3769,7 +3771,7 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 		ret = -EBUSY;
 		goto out_sleep;
 	}
-
+	printk("[HW SCAN] - ssid len = %d\n", len);
 	ret = wlcore_scan(hw->priv, vif, ssid, len, req);
 out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
@@ -4486,7 +4488,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 
 	if (ctx->radar_enabled &&
 	    ctx->def.chan->dfs_state == NL80211_DFS_USABLE) {
-		wl1271_debug(DEBUG_MAC80211, "Start radar detection");
+		wl1271_info("Start radar detection");
 		wlcore_hw_set_cac(wl, wlvif, true);
 		wlvif->radar_enabled = true;
 	}
@@ -5802,16 +5804,16 @@ static const struct ieee80211_ops wl1271_ops = {
 	.add_interface = wl1271_op_add_interface, 
 	.remove_interface = wl1271_op_remove_interface,
 
-	.config = wl1271_op_config, 
+	.config = wl1271_op_config, // VV_
 
-	.configure_filter = wl1271_op_configure_filter, 
+	.configure_filter = wl1271_op_configure_filter, // VV_
 	.tx = wl1271_op_tx, 
 	.set_key = wlcore_op_set_key, 
-	.hw_scan = wl1271_op_hw_scan,
+	.hw_scan = wl1271_op_hw_scan, // VV_
 
 	.bss_info_changed = wl1271_op_bss_info_changed, // VV_
 	.sta_state = wl12xx_op_sta_state, // VV_
-	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, 
+	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, // VV_
 
 // 	/* =====================*/ /* =====================*/ /* =====================*/
 

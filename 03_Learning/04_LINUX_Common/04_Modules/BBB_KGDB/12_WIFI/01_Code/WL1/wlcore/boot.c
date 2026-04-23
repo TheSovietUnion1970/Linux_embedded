@@ -490,7 +490,8 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 		return ret;
 
 	// wl1271_debug(DEBUG_MAILBOX, "cmd_box_addr 0x%x", wl->cmd_box_addr);
-	wl1271_info("cmd_box_addr 0x%x", wl->cmd_box_addr);
+	//wl1271_info("cmd_box_addr 0x%x", wl->cmd_box_addr);
+	printk("[ADD IF] - cmd_box_addr 0x%x", wl->cmd_box_addr);
 
 	/* get hardware config event mail box */
 	ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);

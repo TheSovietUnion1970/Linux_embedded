@@ -113,3 +113,36 @@
 // wl1271_acx_arp_ip_filter(wl, wlvif,(ACX_ARP_FILTER_ARP_FILTERING |ACX_ARP_FILTER_AUTO_ARP),addr);
     // -> Its main job is to configure the firmware to automatically reply to ARP requests from the Access Point (or network) without waking up the host CPU every time.
     // major power-saving feature.
+
+// wlcore_hw_set_cac(wl, wlvif, true); // wl18xx_cmd_set_cac -> Channel Availability Check
+    // When connecting to a 5 GHz AP
+
+// wl1271_acx_group_address_tbl(wl, wlvif, fp->enabled,fp->mc_list,fp->mc_list_length);
+    // If FIF_ALLMULTI is set → Disable filtering (accept all multicast).
+    // Otherwise → Send the list of allowed multicast addresses (mc_list) to the firmware using wl1271_acx_group_address_tbl().
+
+// wlcore_set_scan_chan_params(wl, cmd_channels, req->channels,
+// 			    req->n_channels, req->n_ssids,
+// 			    SCAN_TYPE_SEARCH);
+	// return  cfg->passive[0] || cfg->active[0] ||         -> 2GHz
+	// 	cfg->passive[1] || cfg->active[1] || cfg->dfs ||    -> 5GHz
+	// 	cfg->passive[2] || cfg->active[2];                  -> not supported
+
+// ret = wl12xx_cmd_build_probe_req(wl, wlvif,
+//             cmd->role_id, band,
+//             req->ssids ? req->ssids[0].ssid : NULL,
+//             req->ssids ? req->ssids[0].ssid_len : 0,
+//             req->ie,
+//             req->ie_len,
+//             NULL,
+//             0,
+//             false);
+    // This function creates a Probe Request frame (a packet that says “Is anyone there?”) and uploads it to the firmware as a template.
+
+// wlcore_scan:
+    // delayed work: scan_complete_work
+    
+    // wl->ops->scan_start(wl, wlvif, req) = wl18xx_scan_send
+        // -> cpy cmd_channels->active|passive|dtfs -> cmd
+        // -> wl12xx_cmd_build_probe_req - 2 + 5 GHz
+        // <- CMD_SCAN
