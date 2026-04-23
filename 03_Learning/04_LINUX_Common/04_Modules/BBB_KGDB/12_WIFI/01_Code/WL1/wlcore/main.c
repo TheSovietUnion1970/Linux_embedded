@@ -1400,6 +1400,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	int q, mapping;
 	u8 hlid;
 
+	// Drop packet
 	if (!vif) {
 		wl1271_debug(DEBUG_TX, "DROP skb with no vif");
 		ieee80211_free_txskb(hw, skb);
@@ -1414,6 +1415,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 
+	// Drop packet
 	/*
 	 * drop the packet if the link is invalid or the queue is stopped
 	 * for any reason but watermark. Watermark is a "soft"-stop so we
@@ -1429,6 +1431,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 		goto out;
 	}
 
+	// Put the packet into the per-link, per-queue list and update counters.
 	wl1271_debug(DEBUG_TX, "queue skb hlid %d q %d len %d",
 		     hlid, q, skb->len);
 	skb_queue_tail(&wl->links[hlid].tx_queue[q], skb);
@@ -1452,7 +1455,8 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	 * The chip specific setup must run before the first TX packet -
 	 * before that, the tx_work will not be initialized!
 	 */
-
+	// If the TX work is not already busy or pending, schedule wl->tx_work (which eventually calls wlcore_tx_work_locked()
+	// -> This is what triggers the actual transmission.
 	if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags) &&
 	    !test_bit(WL1271_FLAG_TX_PENDING, &wl->flags))
 		ieee80211_queue_work(wl->hw, &wl->tx_work);
@@ -5815,7 +5819,7 @@ static const struct ieee80211_ops wl1271_ops = {
 	.config = wl1271_op_config, // VV_
 
 	.configure_filter = wl1271_op_configure_filter, // VV_
-	.tx = wl1271_op_tx, 
+	.tx = wl1271_op_tx, // VV_
 	.set_key = wlcore_op_set_key, // VV_
 	.hw_scan = wl1271_op_hw_scan, // VV_
 

@@ -171,3 +171,5 @@
     // write wl->aggr_buf -> REG_SLV_MEM_DATA = the address in the firmware’s memory where TX data should be written.
 
 // wl->tx_work = wl1271_tx_work = wlcore_tx_work_locked
+// wl1271_op_tx -> called whenver there is a packet about to transmit.
+    // Decide drop or transmit
