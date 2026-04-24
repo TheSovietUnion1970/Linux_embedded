@@ -820,12 +820,14 @@ static int wl18xx_boot_soft_reset(struct wl1271 *wl)
 	int ret;
 
 	/* disable Rx/Tx */
-	ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
+	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
-	ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
+	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -840,7 +842,8 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 		goto out;
 
 	/* Continue the ELP wake up sequence */
-	ret = wlcore_write32(wl, WL18XX_WELP_ARM_COMMAND, WELP_ARM_COMMAND_VAL);
+	//ret = wlcore_write32(wl, WL18XX_WELP_ARM_COMMAND, WELP_ARM_COMMAND_VAL);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -851,7 +854,8 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 		goto out;
 
 	/* Disable interrupts */
-	ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, WL1271_ACX_INTR_ALL);
+	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, WL1271_ACX_INTR_ALL);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -875,7 +879,8 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		goto out;
 
 	/* TODO: check if this is all needed */
-	ret = wlcore_write32(wl, WL18XX_EEPROMLESS_IND, WL18XX_EEPROMLESS_IND);
+	//ret = wlcore_write32(wl, WL18XX_EEPROMLESS_IND, WL18XX_EEPROMLESS_IND);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -903,20 +908,23 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		goto out;
 
 	/* disable FDSP clock */
-	ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
-			     MEM_FDSP_CLK_120_DISABLE);
+	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
+	// 		     MEM_FDSP_CLK_120_DISABLE);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* set ATPG clock toward FDSP Code RAM rather than its own clock */
-	ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
-			     MEM_FDSP_CODERAM_FUNC_CLK_SEL);
+	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
+	// 		     MEM_FDSP_CODERAM_FUNC_CLK_SEL);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* re-enable FDSP clock */
-	ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
-			     MEM_FDSP_CLK_120_ENABLE);
+	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
+	// 		     MEM_FDSP_CLK_120_ENABLE);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -960,8 +968,9 @@ static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_write(wl, WL18XX_PHY_INIT_MEM_ADDR, params,
-			   sizeof(*params), false);
+	// ret = wlcore_write(wl, WL18XX_PHY_INIT_MEM_ADDR, params,
+	// 		   sizeof(*params), false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
 
 out:
 	kfree(params);
@@ -976,14 +985,16 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 	event_mask = WL18XX_ACX_EVENTS_VECTOR;
 	intr_mask = WL18XX_INTR_MASK;
 
-	ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, event_mask);
+	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, event_mask);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wlcore_enable_interrupts(wl);
 
-	ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK,
-			       WL1271_ACX_INTR_ALL & ~intr_mask);
+	// ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK,
+	// 		       WL1271_ACX_INTR_ALL & ~intr_mask);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
 
@@ -1055,14 +1066,16 @@ static int wl18xx_trigger_cmd(struct wl1271 *wl, int cmd_box_addr,
 	memcpy(priv->cmd_buf, buf, len);
 	memset(priv->cmd_buf + len, 0, WL18XX_CMD_MAX_SIZE - len);
 
-	return wlcore_write(wl, cmd_box_addr, priv->cmd_buf,
-			    WL18XX_CMD_MAX_SIZE, false);
+	// return wlcore_write(wl, cmd_box_addr, priv->cmd_buf,
+	// 		    WL18XX_CMD_MAX_SIZE, false);
+	return VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
 }
 
 static int wl18xx_ack_event(struct wl1271 *wl)
 {
-	return wlcore_write_reg(wl, REG_INTERRUPT_TRIG,
-				WL18XX_INTR_TRIG_EVENT_ACK);
+	// return wlcore_write_reg(wl, REG_INTERRUPT_TRIG,
+	// 			WL18XX_INTR_TRIG_EVENT_ACK);
+	return VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
 static u32 wl18xx_calc_tx_blocks(struct wl1271 *wl, u32 len, u32 spare_blks)
@@ -1470,7 +1483,8 @@ static int wl18xx_plt_init(struct wl1271 *wl)
 		return -EINVAL;
 	}
 
-	ret = wlcore_write32(wl, WL18XX_SCR_PAD8, WL18XX_SCR_PAD8_PLT);
+	//ret = wlcore_write32(wl, WL18XX_SCR_PAD8, WL18XX_SCR_PAD8_PLT);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_SCR_PAD8), WL18XX_SCR_PAD8_PLT, 4, false);
 	if (ret < 0)
 		return ret;
 
