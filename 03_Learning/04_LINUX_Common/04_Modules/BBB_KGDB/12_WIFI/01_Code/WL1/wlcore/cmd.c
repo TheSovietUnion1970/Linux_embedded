@@ -2164,6 +2164,7 @@ int wl12xx_stop_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		goto out;
 
 	if (!wlcore_is_p2p_mgmt(wlvif)) {
+		printk("wl12xx_cmd_role_disable called\n");
 		ret = wl12xx_cmd_role_disable(wl, &wlvif->dev_role_id);
 		if (ret < 0)
 			goto out;

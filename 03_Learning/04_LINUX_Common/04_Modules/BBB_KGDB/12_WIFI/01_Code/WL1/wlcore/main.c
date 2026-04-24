@@ -792,11 +792,15 @@ static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
 			fw_name = wl->sr_fw_name;
 		}
 	}
+	// fw_type = WL12XX_FW_TYPE_NORMAL;
+	// fw_name = wl->sr_fw_name;
 
-	if (wl->fw_type == fw_type)
+	if (wl->fw_type == fw_type){
+		printk("SAME fw_type\n");
 		return 0;
+	}
 
-	wl1271_debug(DEBUG_BOOT, "booting firmware %s", fw_name);
+	wl1271_info("booting firmware '%s', fw_type = %d", fw_name, fw_type);
 
 	ret = request_firmware(&fw, fw_name, wl->dev);
 
@@ -941,7 +945,7 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 		    wl->chip.fw_ver_str);
 
 	/* change partitions momentarily so we can read the FW pc */
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		return;
 
@@ -956,7 +960,7 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 	wl1271_info("pc: 0x%x, hint_sts: 0x%08x count: %d",
 				pc, hint_sts, ++wl->recovery_count);
 
-	wlcore_set_partition(wl, &wl->ptable[PART_WORK]);
+	VV_set_partition(wl, &wl->ptable[PART_WORK]);
 }
 
 
@@ -1168,49 +1172,6 @@ int V_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixe
 	return ret;
 }
 
-int V_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p)
-{
-	int ret;
-
-	/* copy partition info */
-	memcpy(&wl->curr_part, p, sizeof(*p));
-
-	ret = V_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = V_sdio_raw_write(wl, HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
-	if (ret < 0)
-		goto out;
-
-out:
-	return ret;
-}
-
 static int wl12xx_set_power_on(struct wl1271 *wl)
 {
 	int ret;
@@ -1224,7 +1185,7 @@ static int wl12xx_set_power_on(struct wl1271 *wl)
 	// wl1271_io_reset(wl);
 	// wl1271_io_init(wl);
 
-	ret = V_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
@@ -1263,6 +1224,7 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 	 */
 	if (!wl1271_set_block_size(wl))
 		wl->quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
+	// -> wl1271_sdio_set_block_size
 
 	/* TODO: make sure the lower driver has set things up correctly */
 
@@ -1270,7 +1232,7 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 	if (ret < 0)
 		goto out;
 
-	ret = wl12xx_fetch_firmware(wl, plt);
+	ret = wl12xx_fetch_firmware(wl, plt); // VV_
 	if (ret < 0) {
 		kfree(wl->fw_status);
 		kfree(wl->raw_fw_status);
@@ -2831,7 +2793,7 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 
 		if (wlvif->bss_type == BSS_TYPE_STA_BSS ||
 		    wlvif->bss_type == BSS_TYPE_IBSS) {
-			if (wl12xx_dev_role_started(wlvif))
+			if (wl12xx_dev_role_started(wlvif)) // wlvif->dev_hlid != WL12XX_INVALID_LINK_ID
 				wl12xx_stop_dev(wl, wlvif);
 		}
 
@@ -4579,7 +4541,7 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	if (sta)
 		wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
 	rcu_read_unlock();
-	
+
 
 	wl12xx_free_link(wl, wlvif, &hlid);
 	wl->active_sta_count--;
@@ -5835,10 +5797,10 @@ int VV_op_resume(struct ieee80211_hw *hw){
 }
 
 static const struct ieee80211_ops wl1271_ops = {
-	.stop = wlcore_op_stop,
+	.stop = wlcore_op_stop, // VV_
 
 	.add_interface = wl1271_op_add_interface, 
-	.remove_interface = wl1271_op_remove_interface,
+	.remove_interface = wl1271_op_remove_interface, // ~VV_
 
 	.config = wl1271_op_config, // VV_
 

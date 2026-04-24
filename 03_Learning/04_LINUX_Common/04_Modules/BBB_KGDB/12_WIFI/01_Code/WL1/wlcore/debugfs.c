@@ -1092,7 +1092,7 @@ static ssize_t dev_mem_read(struct file *file,
 
 	/* store current partition and switch partition */
 	memcpy(&old_part, &wl->curr_part, sizeof(old_part));
-	ret = wlcore_set_partition(wl, &part);
+	ret = VV_set_partition(wl, &part);
 	if (ret < 0)
 		goto part_err;
 
@@ -1102,7 +1102,7 @@ static ssize_t dev_mem_read(struct file *file,
 
 read_err:
 	/* recover partition */
-	ret = wlcore_set_partition(wl, &old_part);
+	ret = VV_set_partition(wl, &old_part);
 	if (ret < 0)
 		goto part_err;
 
@@ -1174,7 +1174,7 @@ static ssize_t dev_mem_write(struct file *file, const char __user *user_buf,
 
 	/* store current partition and switch partition */
 	memcpy(&old_part, &wl->curr_part, sizeof(old_part));
-	ret = wlcore_set_partition(wl, &part);
+	ret = VV_set_partition(wl, &part);
 	if (ret < 0)
 		goto part_err;
 
@@ -1184,7 +1184,7 @@ static ssize_t dev_mem_write(struct file *file, const char __user *user_buf,
 
 write_err:
 	/* recover partition */
-	ret = wlcore_set_partition(wl, &old_part);
+	ret = VV_set_partition(wl, &old_part);
 	if (ret < 0)
 		goto part_err;
 

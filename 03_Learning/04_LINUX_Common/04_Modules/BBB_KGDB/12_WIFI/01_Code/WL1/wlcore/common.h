@@ -187,3 +187,18 @@
     // __wl1271_op_remove_interface
     // wlcore_op_stop_locked = wlcore_op_stop
     // ieee80211_restart_hw + ieee80211_wake_queues
+
+// wl1271_op_remove_interface = __wl1271_op_remove_interface:
+    // wl12xx_cmd_role_disable
+
+// wl12xx_chip_wakeup:
+    // wl12xx_set_power_on
+    // wl1271_sdio_set_block_size
+    // wl1271_setup
+        // alloc(wl->fw_status);
+        // alloc(wl->raw_fw_status);
+        // alloc(wl->tx_res_if);
+    // wl12xx_fetch_firmware:
+        // wl->fw_type
+        // wl->fw_len 
+        // wl->fw 

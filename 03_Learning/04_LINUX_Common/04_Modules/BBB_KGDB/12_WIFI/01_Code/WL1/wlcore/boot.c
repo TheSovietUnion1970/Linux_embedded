@@ -188,7 +188,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 
 	memcpy(&partition, &wl->ptable[PART_DOWN], sizeof(partition));
 	partition.mem.start = dest;
-	ret = wlcore_set_partition(wl, &partition);
+	ret = VV_set_partition(wl, &partition);
 	if (ret < 0)
 		goto out;
 
@@ -204,7 +204,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 			partition_limit = chunk_num * CHUNK_SIZE +
 				wl->ptable[PART_DOWN].mem.size;
 			partition.mem.start = addr;
-			ret = wlcore_set_partition(wl, &partition);
+			ret = VV_set_partition(wl, &partition);
 			if (ret < 0)
 				goto out;
 		}
@@ -408,7 +408,7 @@ int wlcore_boot_upload_nvs(struct wl1271 *wl)
 	nvs_len -= nvs_ptr - (u8 *)wl->nvs;
 
 	/* Now we must set the partition correctly */
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_WORK]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_WORK]);
 	if (ret < 0)
 		return ret;
 
@@ -436,7 +436,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	u32 chip_id, intr;
 
 	/* Make sure we have the boot partition */
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		return ret;
 
@@ -522,7 +522,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	}
 
 	/* set the working partition to its "running" mode offset */
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_WORK]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_WORK]);
 
 	/* firmware startup completed */
 	return ret;
