@@ -712,7 +712,7 @@ static int wl18xx_set_clk(struct wl1271 *wl)
 	u16 clk_freq;
 	int ret;
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -846,7 +846,7 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 
 	udelay(500);
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
@@ -870,7 +870,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	BUILD_BUG_ON(sizeof(struct wl18xx_mac_and_phy_params) >
 		WL18XX_PHY_INIT_MEM_SIZE);
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
@@ -896,7 +896,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	 * its own clock.
 	 */
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
@@ -921,7 +921,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	ret = irq_get_trigger_type(wl->irq);
 	if ((ret == IRQ_TYPE_LEVEL_LOW) || (ret == IRQ_TYPE_EDGE_FALLING)) {
 		wl1271_info("using inverted interrupt logic: %d", ret);
-		ret = wlcore_set_partition(wl,
+		ret = VV_set_partition(wl,
 					   &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
 		if (ret < 0)
 			goto out;
@@ -935,7 +935,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		if (ret < 0)
 			goto out;
 
-		ret = wlcore_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
+		ret = VV_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
 	}
 
 out:
@@ -954,7 +954,7 @@ static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
@@ -1345,7 +1345,7 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	s8 rom = 0, metal = 0, pg_ver = 0, rdl_ver = 0, package_type = 0;
 	int ret;
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -1381,7 +1381,7 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	if (ver)
 		*ver = pg_ver;
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
 
 out:
 	return ret;
@@ -1477,7 +1477,7 @@ static int wl18xx_get_mac(struct wl1271 *wl)
 	u32 mac1, mac2;
 	int ret;
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -1504,7 +1504,7 @@ static int wl18xx_get_mac(struct wl1271 *wl)
 		wl1271_warning("MAC address from fuse not available, using random locally administered addresses.");
 	}
 
-	ret = wlcore_set_partition(wl, &wl->ptable[PART_DOWN]);
+	ret = VV_set_partition(wl, &wl->ptable[PART_DOWN]);
 
 out:
 	return ret;
