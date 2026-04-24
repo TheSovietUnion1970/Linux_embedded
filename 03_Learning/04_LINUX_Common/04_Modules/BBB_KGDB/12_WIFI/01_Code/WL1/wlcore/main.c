@@ -1023,14 +1023,25 @@ static void wl1271_recovery_work(struct work_struct *work)
 
 		if (wlvif->bss_type == BSS_TYPE_STA_BSS &&
 		    test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags)) {
-			wlcore_save_freed_pkts_addr(wl, wlvif, wlvif->sta.hlid,
-						    vif->bss_conf.bssid);
+			// wlcore_save_freed_pkts_addr(wl, wlvif, wlvif->sta.hlid,
+			// 			    vif->bss_conf.bssid);
+			struct ieee80211_sta *sta;
+			if (WARN_ON(wlvif->sta.hlid == WL12XX_INVALID_LINK_ID ||
+					is_zero_ether_addr(vif->bss_conf.bssid)))
+				return;
+
+			rcu_read_lock();
+			sta = ieee80211_find_sta(vif, vif->bss_conf.bssid);
+			if (sta)
+				wlcore_save_freed_pkts(wl, wlvif, wlvif->sta.hlid, sta);
+			rcu_read_unlock();
+
 		}
 
 		__wl1271_op_remove_interface(wl, vif, false);
 	}
 
-	wlcore_op_stop_locked(wl);
+	wlcore_op_stop_locked(wl); // = wlcore_op_stop
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 
@@ -2876,21 +2887,21 @@ deinit:
 	    !test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags))
 		goto unlock;
 
-	if (wl->ap_count == 0 && is_ap) {
-		/* mask ap events */
-		wl->event_mask &= ~wl->ap_event_mask;
-		wl1271_event_unmask(wl);
-	}
+	// if (wl->ap_count == 0 && is_ap) {
+	// 	/* mask ap events */
+	// 	wl->event_mask &= ~wl->ap_event_mask;
+	// 	wl1271_event_unmask(wl);
+	// }
 
-	if (wl->ap_count == 0 && is_ap && wl->sta_count) {
-		u8 sta_auth = wl->conf.conn.sta_sleep_auth;
-		/* Configure for power according to debugfs */
-		if (sta_auth != WL1271_PSM_ILLEGAL)
-			wl1271_acx_sleep_auth(wl, sta_auth);
-		/* Configure for ELP power saving */
-		else
-			wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
-	}
+	// if (wl->ap_count == 0 && is_ap && wl->sta_count) {
+	// 	u8 sta_auth = wl->conf.conn.sta_sleep_auth;
+	// 	/* Configure for power according to debugfs */
+	// 	if (sta_auth != WL1271_PSM_ILLEGAL)
+	// 		wl1271_acx_sleep_auth(wl, sta_auth);
+	// 	/* Configure for ELP power saving */
+	// 	else
+	// 		wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
+	// }
 
 unlock:
 	mutex_unlock(&wl->mutex);
@@ -4555,7 +4566,20 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	 * save the last used PN in the private part of iee80211_sta,
 	 * in case of recovery/suspend
 	 */
-	wlcore_save_freed_pkts_addr(wl, wlvif, hlid, wl->links[hlid].addr);
+	//wlcore_save_freed_pkts_addr(wl, wlvif, hlid, wl->links[hlid].addr);
+	struct ieee80211_sta *sta;
+	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
+
+	if (WARN_ON(hlid == WL12XX_INVALID_LINK_ID ||
+		    is_zero_ether_addr(wl->links[hlid].addr)))
+		return;
+
+	rcu_read_lock();
+	sta = ieee80211_find_sta(vif, wl->links[hlid].addr);
+	if (sta)
+		wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
+	rcu_read_unlock();
+	
 
 	wl12xx_free_link(wl, wlvif, &hlid);
 	wl->active_sta_count--;

@@ -171,5 +171,19 @@
     // write wl->aggr_buf -> REG_SLV_MEM_DATA = the address in the firmware’s memory where TX data should be written.
 
 // wl->tx_work = wl1271_tx_work = wlcore_tx_work_locked
+
 // wl1271_op_tx -> called whenver there is a packet about to transmit.
     // Decide drop or transmit
+
+// wl12xx_tx_reset -> ieee80211_tx_status_ni = pass TX status to stack
+
+// wlcore_op_stop = wlcore_op_stop_locked:
+    // disable_irq_nosync + synchronize_irq
+    // wl1271_flush_deferred_work -> flush RX + TX status to stack
+    // wl12xx_tx_reset + wl1271_power_off
+
+// wl->recovery_work = wl1271_recovery_work
+    // disable_irq_nosync + ieee80211_stop_queues
+    // __wl1271_op_remove_interface
+    // wlcore_op_stop_locked = wlcore_op_stop
+    // ieee80211_restart_hw + ieee80211_wake_queues
