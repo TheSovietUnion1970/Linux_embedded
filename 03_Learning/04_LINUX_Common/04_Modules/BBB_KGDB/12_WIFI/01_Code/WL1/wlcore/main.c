@@ -949,11 +949,13 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 	if (ret < 0)
 		return;
 
-	ret = wlcore_read_reg(wl, REG_PC_ON_RECOVERY, &pc);
+	//ret = wlcore_read_reg(wl, REG_PC_ON_RECOVERY, &pc);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_PC_ON_RECOVERY]), &pc, 4, false);
 	if (ret < 0)
 		return;
 
-	ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &hint_sts);
+	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &hint_sts);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &hint_sts, 4, false);
 	if (ret < 0)
 		return;
 
@@ -5933,7 +5935,8 @@ static int wl12xx_get_hw_info(struct wl1271 *wl)
 {
 	int ret;
 
-	ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
+	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, 4, false);
 	if (ret < 0)
 		goto out;
 

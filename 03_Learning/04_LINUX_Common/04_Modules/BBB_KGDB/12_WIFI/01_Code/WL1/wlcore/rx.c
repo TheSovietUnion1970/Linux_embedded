@@ -243,8 +243,9 @@ int wlcore_rx(struct wl1271 *wl, struct wl_fw_status *status)
 		if (ret < 0)
 			goto out;
 
-		ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
-				       buf_size, true);
+		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
+		// 		       buf_size, true);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), (u32*)wl->aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 
@@ -284,8 +285,9 @@ int wlcore_rx(struct wl1271 *wl, struct wl_fw_status *status)
 	 * for older hardware revisions
 	 */
 	if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-		ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
-				     wl->rx_counter);
+		// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
+		// 		     wl->rx_counter);
+		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL12XX_REG_RX_DRIVER_COUNTER), wl->rx_counter, 4, false);
 		if (ret < 0)
 			goto out;
 	}

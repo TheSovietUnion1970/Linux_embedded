@@ -806,8 +806,9 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 
 			buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset,
 							    last_len);
-			bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA,
-					     wl->aggr_buf, buf_offset, true);
+			// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA,
+			// 		     wl->aggr_buf, buf_offset, true);
+			bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), wl->aggr_buf, buf_offset, true);
 			if (bus_ret < 0)
 				goto out;
 
