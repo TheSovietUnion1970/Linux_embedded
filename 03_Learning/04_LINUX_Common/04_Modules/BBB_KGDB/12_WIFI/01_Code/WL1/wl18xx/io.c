@@ -19,14 +19,16 @@ int wl18xx_top_reg_write(struct wl1271 *wl, int addr, u16 val)
 		return -EINVAL;
 
 	if ((addr % 4) == 0) {
-		ret = wlcore_read32(wl, addr, &tmp);
+		//ret = wlcore_read32(wl, addr, &tmp);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff0000) | val;
 		ret = wlcore_write32(wl, addr, tmp);
 	} else {
-		ret = wlcore_read32(wl, addr - 2, &tmp);
+		//ret = wlcore_read32(wl, addr - 2, &tmp);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr - 2), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
@@ -48,11 +50,13 @@ int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
 
 	if ((addr % 4) == 0) {
 		/* address is 4-bytes aligned */
-		ret = wlcore_read32(wl, addr, &val);
+		//ret = wlcore_read32(wl, addr, &val);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = val & 0xffff;
 	} else {
-		ret = wlcore_read32(wl, addr - 2, &val);
+		//ret = wlcore_read32(wl, addr - 2, &val);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr - 2), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = (val & 0xffff0000) >> 16;
 	}

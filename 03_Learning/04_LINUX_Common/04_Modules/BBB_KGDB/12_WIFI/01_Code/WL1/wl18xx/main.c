@@ -879,13 +879,15 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &tmp);
+	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &tmp);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wl1271_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
 
-	ret = wlcore_read32(wl, WL18XX_SCR_PAD2, &tmp);
+	//ret = wlcore_read32(wl, WL18XX_SCR_PAD2, &tmp);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_SCR_PAD2), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1349,13 +1351,15 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
+	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
 	package_type = (fuse >> WL18XX_PACKAGE_TYPE_OFFSET) & 1;
 
-	ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_1_3, &fuse);
+	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_1_3, &fuse);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1369,7 +1373,8 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 		metal = (fuse & WL18XX_NEW_METAL_VER_MASK) >>
 			WL18XX_NEW_METAL_VER_OFFSET;
 
-	ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
+	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1481,11 +1486,13 @@ static int wl18xx_get_mac(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
+	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
+	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
 	if (ret < 0)
 		goto out;
 
