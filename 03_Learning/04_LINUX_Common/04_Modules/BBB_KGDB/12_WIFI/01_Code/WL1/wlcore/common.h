@@ -202,3 +202,117 @@
         // wl->fw_type
         // wl->fw_len 
         // wl->fw 
+
+// wl18xx_set_clk:
+    // configures the internal clock/PLL system of the wl18xx WiFi chip.
+
+// wl18xx_pre_boot:
+    // wl18xx_set_clk
+    // ELP wake up sequence
+    // => [PART_BOOT]
+    // Disable interrupts
+    // disable Rx/Tx + auto calibration on start
+
+// wl18xx_pre_upload: it prepares the hardware before the actual firmware binary is loaded into the chip.
+    // => [PART_BOOT]
+    // => [PART_PHY_INIT]
+
+// ->boot = wl18xx_boot:
+    // wl18xx_pre_boot
+    // wl18xx_pre_upload
+    // wlcore_boot_upload_firmware
+    // wl18xx_set_mac_and_phy
+    // wlcore_boot_run_firmware
+    // wl18xx_enable_interrupts
+
+// wl1271_hw_init:
+    // ->hw_init = wl18xx_hw_init
+        // wl18xx_set_host_cfg_bitmap -> set the default amount of spare blocks in the bitmap
+        // wl18xx_acx_dynamic_fw_traces -> set the dynamic fw traces bitmap
+
+    // wl1271_init_templates_config:
+        // Init templates with role_id = WL12XX_INVALID_ROLE_ID
+
+    // wl12xx_acx_mem_cfg:
+        // internal memory allocation of the firmware.
+        // too few RX blocks → packet loss under high load.
+        // too few TX blocks → TX stalls, high latency, or watchdog triggers.
+
+    // wl12xx_init_fwlog:
+        // Initializes Firmware Logging / Tracing.
+
+    // wlcore_cmd_regdomain_config_locked
+        // Regulatory Domain (country code, allowed channels, max TX power, etc.).
+
+    // wl1271_init_pta:
+        // Initializes PTA (Packet Traffic Arbitration) — the coexistence mechanism between WiFi and Bluetooth.
+
+    // wl1271_acx_init_mem_config:
+        // Configures internal memory allocation (how many blocks for RX, TX, stations, etc.).
+
+    // wl12xx_init_rx_config:
+        // Configures general RX (receive) parameters (filters, thresholds, etc.).
+
+    // wl1271_acx_dco_itrim_params:
+        // Configures DCO ITrim (Digitally Controlled Oscillator trimming).
+        // Fine-tunes the internal clock for better stability and performance.
+
+    // wl1271_acx_tx_config_options:
+        // Configures how the firmware signals TX completion back to the driver (interrupt behavior).
+
+    // wl1271_acx_init_rx_interrupt:
+        // Configures RX interrupt pacing — how often the firmware should interrupt the host when receiving packets.
+
+    // wl1271_init_energy_detection:
+        // Configures Energy Detection (Clear Channel Assessment).
+        // Helps the chip detect when the channel is busy before transmitting.
+
+    // wl1271_acx_frag_threshold:
+        // Sets the Fragmentation Threshold.
+        // Packets larger than this size will be fragmented. Usually 2346 bytes (almost never fragmented in modern networks).
+
+    // wl1271_cmd_data_path:
+        // Enables the data path in the firmware.
+        // Before this command, the firmware only handles management frames. After this, it can send/receive real data traffic.
+
+    // ret = wl1271_acx_pm_config(wl);:
+        // Configures Power Management settings (beacon filtering, power save parameters, etc.).:
+
+    // wl12xx_acx_set_rate_mgmt_params:
+        // Configures Rate Management parameters (how the firmware chooses TX rates, retry limits, etc.).
+
+    // wl12xx_acx_config_hangover:
+        // Configures the Hangover mechanism — a firmware feature that helps recover from TX stalls or bad channel conditions.
+
+// wl1271_sta_hw_init:
+    // wl12xx_acx_config_ps
+        // Configures Power Save (PS) parameters for this station: Beacon filtering + PS-Poll behavior
+        // -> battery life and power efficiency.
+
+    // wl1271_acx_fm_coex:
+        // Configures coexistence with FM radio (if the board has an FM receiver).
+        // This is part of the broader coexistence management (WiFi + Bluetooth + FM).
+
+    // wl1271_acx_sta_rate_policies:
+        // Configures the Rate Policies for this STA connection.
+
+// wl12xx_init_fw:
+    // wl12xx_chip_wakeup
+    // ->boot = wl18xx_boot
+    // wl1271_hw_init
+
+// wl1271_init_vif_specific:
+    // Power Save configuration
+    // STA role initialization
+    // QoS / TID / AC configuration
+    // Hardware encryption setup
+    // Post-memory mode-specific init
+    // BA session policies
+    // Final HW vif setup
+
+// wl1271_op_add_interface:
+    // wl12xx_init_fw
+    // wl12xx_cmd_role_enable
+
+    // wl1271_init_vif_specific                 -> p2p
+    // wl1271_sta_hw_init -> specific to STA    -> sta

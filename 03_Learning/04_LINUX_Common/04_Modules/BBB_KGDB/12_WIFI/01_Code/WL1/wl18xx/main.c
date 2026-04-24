@@ -859,7 +859,16 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_boot_soft_reset(wl);
+	//ret = wl18xx_boot_soft_reset(wl);
+	/* disable Rx/Tx */
+	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_ENABLE), 0x0, 4, false);
+	if (ret < 0)
+		goto out;
+
+	/* disable auto calibration on start*/
+	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -1183,11 +1192,11 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	if (ret < 0)
 		return ret;
 
-	if (checksum_param) {
-		ret = wl18xx_acx_set_checksum_state(wl);
-		if (ret != 0)
-			return ret;
-	}
+	// if (checksum_param) {
+	// 	ret = wl18xx_acx_set_checksum_state(wl);
+	// 	if (ret != 0)
+	// 		return ret;
+	// }
 
 	return ret;
 }

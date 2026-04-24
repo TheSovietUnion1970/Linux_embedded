@@ -776,24 +776,24 @@ static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
 	enum wl12xx_fw_type fw_type;
 	int ret;
 
-	if (plt) {
-		fw_type = WL12XX_FW_TYPE_PLT;
-		fw_name = wl->plt_fw_name;
-	} else {
-		/*
-		 * we can't call wl12xx_get_vif_count() here because
-		 * wl->mutex is taken, so use the cached last_vif_count value
-		 */
-		if (wl->last_vif_count > 1 && wl->mr_fw_name) {
-			fw_type = WL12XX_FW_TYPE_MULTI;
-			fw_name = wl->mr_fw_name;
-		} else {
-			fw_type = WL12XX_FW_TYPE_NORMAL;
-			fw_name = wl->sr_fw_name;
-		}
-	}
-	// fw_type = WL12XX_FW_TYPE_NORMAL;
-	// fw_name = wl->sr_fw_name;
+	// if (plt) {
+	// 	fw_type = WL12XX_FW_TYPE_PLT;
+	// 	fw_name = wl->plt_fw_name;
+	// } else {
+	// 	/*
+	// 	 * we can't call wl12xx_get_vif_count() here because
+	// 	 * wl->mutex is taken, so use the cached last_vif_count value
+	// 	 */
+	// 	if (wl->last_vif_count > 1 && wl->mr_fw_name) {
+	// 		fw_type = WL12XX_FW_TYPE_MULTI;
+	// 		fw_name = wl->mr_fw_name;
+	// 	} else {
+	// 		fw_type = WL12XX_FW_TYPE_NORMAL;
+	// 		fw_name = wl->sr_fw_name;
+	// 	}
+	// }
+	fw_type = WL12XX_FW_TYPE_NORMAL;
+	fw_name = wl->sr_fw_name;
 
 	if (wl->fw_type == fw_type){
 		printk("SAME fw_type\n");
@@ -2417,7 +2417,7 @@ static int wl12xx_init_fw(struct wl1271 *wl)
 
 	while (retries) {
 		retries--;
-		ret = wl12xx_chip_wakeup(wl, false);
+		ret = wl12xx_chip_wakeup(wl, false); // VV_
 		if (ret < 0)
 			goto power_off;
 
@@ -5801,7 +5801,7 @@ int VV_op_resume(struct ieee80211_hw *hw){
 static const struct ieee80211_ops wl1271_ops = {
 	.stop = wlcore_op_stop, // VV_
 
-	.add_interface = wl1271_op_add_interface, 
+	.add_interface = wl1271_op_add_interface, // ~VV_
 	.remove_interface = wl1271_op_remove_interface, // ~VV_
 
 	.config = wl1271_op_config, // VV_

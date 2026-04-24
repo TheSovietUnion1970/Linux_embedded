@@ -561,49 +561,25 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	int ret, i;
 
 	/* consider all existing roles before configuring psm. */
-
-	if (wl->ap_count == 0 && is_ap) { /* first AP */
+	u8 sta_auth = wl->conf.conn.sta_sleep_auth;
+	/* Configure for power according to debugfs */
+	if (sta_auth != WL1271_PSM_ILLEGAL)
+		ret = wl1271_acx_sleep_auth(wl, sta_auth);
+	/* Configure for ELP power saving */
+	else
 		ret = wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
-		if (ret < 0)
-			return ret;
 
-		/* unmask ap events */
-		wl->event_mask |= wl->ap_event_mask;
-		ret = wl1271_event_unmask(wl);
-		if (ret < 0)
-			return ret;
-	/* first STA, no APs */
-	} else if (wl->sta_count == 0 && wl->ap_count == 0 && !is_ap) {
-		u8 sta_auth = wl->conf.conn.sta_sleep_auth;
-		/* Configure for power according to debugfs */
-		if (sta_auth != WL1271_PSM_ILLEGAL)
-			ret = wl1271_acx_sleep_auth(wl, sta_auth);
-		/* Configure for ELP power saving */
-		else
-			ret = wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
-
-		if (ret < 0)
-			return ret;
-	}
+	if (ret < 0)
+		return ret;
 
 	/* Mode specific init */
-	if (is_ap) {
-		ret = wl1271_ap_hw_init(wl, wlvif);
-		if (ret < 0)
-			return ret;
+	ret = wl1271_sta_hw_init(wl, wlvif);
+	if (ret < 0)
+		return ret;
 
-		ret = wl12xx_init_ap_role(wl, wlvif);
-		if (ret < 0)
-			return ret;
-	} else {
-		ret = wl1271_sta_hw_init(wl, wlvif);
-		if (ret < 0)
-			return ret;
-
-		ret = wl12xx_init_sta_role(wl, wlvif);
-		if (ret < 0)
-			return ret;
-	}
+	ret = wl12xx_init_sta_role(wl, wlvif);
+	if (ret < 0)
+		return ret;
 
 	wl12xx_init_phy_vif_config(wl, wlvif);
 
