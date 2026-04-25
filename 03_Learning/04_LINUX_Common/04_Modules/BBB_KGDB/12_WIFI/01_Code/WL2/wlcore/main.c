@@ -2573,7 +2573,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	printk("[ADD IF] - wl1271_op_add_interface, vif = 0x%x\n", vif);
+	printk("[ADD IF] - wl1271_op_add_interface, vif = 0x%x, drv = 0x%x\n", vif, vif->drv_priv);
 	ret = wl12xx_init_vif_data(wl, vif);
 	if (ret < 0)
 		goto out;
