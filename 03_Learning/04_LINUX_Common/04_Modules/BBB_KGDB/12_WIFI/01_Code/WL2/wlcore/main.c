@@ -32,6 +32,7 @@
 #include "common.h"
 struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
 u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
+int VV_tx_queue_count[NUM_TX_QUEUES];
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -1382,21 +1383,9 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	//skb_queue_tail(&wl->links[hlid].tx_queue[q], skb);
 	skb_queue_tail(&VV_tx_queue[hlid][q], skb);
 
-	wl->tx_queue_count[q]++;
-	wlvif->tx_queue_count[q]++;
-
-	/*
-	 * The workqueue is slow to process the tx_queue and we need stop
-	 * the queue here, otherwise the queue will get too long.
-	 */
-	if (wlvif->tx_queue_count[q] >= WL1271_TX_QUEUE_HIGH_WATERMARK &&
-	    !wlcore_is_queue_stopped_by_reason_locked(wl, wlvif, q,
-					WLCORE_QUEUE_STOP_REASON_WATERMARK)) {
-		wl1271_debug(DEBUG_TX, "op_tx: stopping queues for q %d", q);
-		printk("TOO many QUEUEs\n");
-		wlcore_stop_queue_locked(wl, wlvif, q,
-					 WLCORE_QUEUE_STOP_REASON_WATERMARK);
-	}
+	//wl->tx_queue_count[q]++;
+	VV_tx_queue_count[q]++;
+	//wlvif->tx_queue_count[q]++;
 
 	/*
 	 * The chip specific setup must run before the first TX packet -
@@ -1425,7 +1414,8 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl)
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 	set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags);
-	wl->tx_queue_count[q]++;
+	//wl->tx_queue_count[q]++;
+	VV_tx_queue_count[q]++;
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
 	/* The FW is low on RX memory blocks, so send the dummy packet asap */

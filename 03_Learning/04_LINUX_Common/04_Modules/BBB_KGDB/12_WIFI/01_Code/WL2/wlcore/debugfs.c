@@ -474,10 +474,10 @@ static ssize_t driver_state_read(struct file *file, char __user *user_buf,
 	DRIVER_STATE_PRINT_INT(tx_allocated_pkts[3]);
 	DRIVER_STATE_PRINT_INT(tx_frames_cnt);
 	DRIVER_STATE_PRINT_LHEX(tx_frames_map[0]);
-	DRIVER_STATE_PRINT_INT(tx_queue_count[0]);
-	DRIVER_STATE_PRINT_INT(tx_queue_count[1]);
-	DRIVER_STATE_PRINT_INT(tx_queue_count[2]);
-	DRIVER_STATE_PRINT_INT(tx_queue_count[3]);
+	// DRIVER_STATE_PRINT_INT(tx_queue_count[0]);
+	// DRIVER_STATE_PRINT_INT(tx_queue_count[1]);
+	// DRIVER_STATE_PRINT_INT(tx_queue_count[2]);
+	// DRIVER_STATE_PRINT_INT(tx_queue_count[3]);
 	DRIVER_STATE_PRINT_INT(tx_packets_count);
 	DRIVER_STATE_PRINT_INT(tx_results_count);
 	DRIVER_STATE_PRINT_LHEX(flags);
@@ -585,10 +585,10 @@ static ssize_t vifs_state_read(struct file *file, char __user *user_buf,
 			VIF_STATE_PRINT_INT(ap.ucast_rate_idx[3]);
 		}
 		VIF_STATE_PRINT_INT(last_tx_hlid);
-		VIF_STATE_PRINT_INT(tx_queue_count[0]);
-		VIF_STATE_PRINT_INT(tx_queue_count[1]);
-		VIF_STATE_PRINT_INT(tx_queue_count[2]);
-		VIF_STATE_PRINT_INT(tx_queue_count[3]);
+		// VIF_STATE_PRINT_INT(tx_queue_count[0]);
+		// VIF_STATE_PRINT_INT(tx_queue_count[1]);
+		// VIF_STATE_PRINT_INT(tx_queue_count[2]);
+		// VIF_STATE_PRINT_INT(tx_queue_count[3]);
 		VIF_STATE_PRINT_LHEX(links_map[0]);
 		VIF_STATE_PRINT_NSTR(ssid, wlvif->ssid_len);
 		VIF_STATE_PRINT_INT(band);

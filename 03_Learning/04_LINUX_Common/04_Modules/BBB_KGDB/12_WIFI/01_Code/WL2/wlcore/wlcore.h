@@ -258,7 +258,7 @@ struct wl1271 {
 	s64 time_offset;
 
 	/* Frames scheduled for transmission, not handled yet */
-	int tx_queue_count[NUM_TX_QUEUES];
+	//int tx_queue_count[NUM_TX_QUEUES];
 	unsigned long queue_stop_reasons[
 				NUM_TX_QUEUES * WLCORE_NUM_MAC_ADDRESSES];
 

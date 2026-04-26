@@ -382,7 +382,7 @@ struct wl12xx_vif {
 	int last_tx_hlid;
 
 	/* counters of packets per AC, across all links in the vif */
-	int tx_queue_count[NUM_TX_QUEUES];
+	//int tx_queue_count[NUM_TX_QUEUES];
 
 	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
 

@@ -493,8 +493,9 @@ void wl1271_handle_tx_low_watermark(struct wl1271 *wl)
 
 	wl12xx_for_each_wlvif(wl, wlvif) {
 		for (i = 0; i < NUM_TX_QUEUES; i++) {
-			if (VV_stopped_by_reason(wl, i, WLCORE_QUEUE_STOP_REASON_WATERMARK) &&
-			    wlvif->tx_queue_count[i] <= WL1271_TX_QUEUE_LOW_WATERMARK){
+			if (VV_stopped_by_reason(wl, i, WLCORE_QUEUE_STOP_REASON_WATERMARK)) 
+			    //&& wlvif->tx_queue_count[i] <= WL1271_TX_QUEUE_LOW_WATERMARK)
+				{
 					/* firmware buffer has space, restart queues */
 					VV_wake_queue(wl, wlvif, i,
 						WLCORE_QUEUE_STOP_REASON_WATERMARK);
@@ -518,7 +519,8 @@ static int wlcore_select_ac(struct wl1271 *wl)
 	 */
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		ac = wl1271_tx_get_queue(i);
-		if (wl->tx_queue_count[ac] &&
+		//if (wl->tx_queue_count[ac] &&
+		if (VV_tx_queue_count[ac] &&
 		    wl->tx_allocated_pkts[ac] < min_pkts) {
 			q = ac;
 			min_pkts = wl->tx_allocated_pkts[q];
@@ -537,8 +539,9 @@ static struct sk_buff *wlcore_lnk_dequeue(struct wl1271 *wl, u8 hlid, u8 q)
 	skb = skb_dequeue(&VV_tx_queue[hlid][q]);
 	if (skb) {
 		spin_lock_irqsave(&wl->wl_lock, flags);
-		WARN_ON_ONCE(wl->tx_queue_count[q] <= 0);
-		wl->tx_queue_count[q]--;
+		//WARN_ON_ONCE(wl->tx_queue_count[q] <= 0);
+		//wl->tx_queue_count[q]--;
+		VV_tx_queue_count[q]--;
 		spin_unlock_irqrestore(&wl->wl_lock, flags);
 	}
 
@@ -677,128 +680,6 @@ static struct sk_buff *wlcore_vif_dequeue_high_prio(struct wl1271 *wl,
 	return skb;
 }
 
-static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
-{
-	unsigned long flags;
-	struct wl12xx_vif *wlvif = NULL;
-	struct sk_buff *skb = NULL;
-	int ac;
-	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
-
-	// Find ac has data (the least allocated blks and V0>VI>...)
-	ac = wlcore_select_ac(wl);
-	if (ac < 0){
-		//printk("FAILED - ac\n");
-		return skb;
-	}
-
-	// /* continue from last wlvif (round robin) */
-	// if (wlvif) {
-	// 	wl12xx_for_each_wlvif_continue(wl, wlvif) {
-
-	// 		if (!wlvif->tx_queue_count[ac])
-	// 			continue;
-
-	// 		skb = wlcore_vif_dequeue_high_prio(wl, wlvif, ac, hlid,
-	// 						   &low_prio_hlid);
-	// 		//printk("dequeue - wlvif: 0x%x, hlid: %d\n", wlvif, *hlid);
-	// 		if (!skb)
-	// 			continue;
-
-	// 		wl->last_wlvif = wlvif;
-	// 		break;
-	// 	}
-	// }
-	// printk("skb = 0x%x\n", skb);
-
-	// /* dequeue from the system HLID before the restarting wlvif list */
-	// if (!skb) {
-	// 	skb = wlcore_lnk_dequeue_high_prio(wl, wl->system_hlid,
-	// 					   ac, &low_prio_hlid);
-
-	// 	printk("skb = 0x%x\n", skb);
-	// 	if (skb) {
-	// 		*hlid = wl->system_hlid;
-	// 		wl->last_wlvif = NULL;
-	// 	}
-	// }
-
-	/* Do a new pass over the wlvif list. But no need to continue
-	 * after last_wlvif. The previous pass should have found it. */
-	if (!skb) {
-// 		wl12xx_for_each_wlvif(wl, wlvif) {
-// 			if (!wlvif->tx_queue_count[ac])
-// 				goto next;
-
-// 			// skb = wlcore_vif_dequeue_high_prio(wl, wlvif, ac, hlid,
-// 			// 				   &low_prio_hlid);
-// 			// printk("dequeue - wlvif: 0x%x, hlid: %d\n", wlvif, *hlid);
-
-// 			// [TOTO] - assume skb is always VALID
-// 			skb = wlcore_lnk_dequeue_high_prio(wl, HW_LINK_ID, ac,
-// 								&low_prio_hlid);
-// 			wlvif->last_tx_hlid = HW_LINK_ID;
-// 			*hlid = wlvif->last_tx_hlid;
-
-
-// 			if (skb) {
-// 				wl->last_wlvif = wlvif;
-// 				break;
-// 			}
-
-// next:
-// 			if (wlvif == wl->last_wlvif)
-// 				break;
-// 		}
-
-		printk("[0] - wlvif = 0x%x\n", wlvif);
-		wl12xx_for_each_wlvif(wl, wlvif) {
-			//printk("[1] - START LOOP\n");
-			if (!wlvif->tx_queue_count[ac]) {
-				//printk("[1] - IF\n");
-			}
-			else {
-				// [TOTO] - assume skb is always VALID
-				skb = wlcore_lnk_dequeue_high_prio(wl, HW_LINK_ID, ac,
-									&low_prio_hlid);
-				wlvif->last_tx_hlid = HW_LINK_ID;
-				*hlid = wlvif->last_tx_hlid;
-
-				//printk("[1] - ELSE, skb = 0x%x\n", skb);
-				if (skb) {
-					//wl->last_wlvif = wlvif;
-					break;
-				}
-			}
-		}
-		
-
-	}
-
-	//printk("3rd low_prio_hlid = %d\n", low_prio_hlid);
-	printk("[2] - skb = 0x%x, wlvif = 0x%x, low_prio_hlid = %x\n", skb, wlvif, low_prio_hlid);
-
-	/* no high priority skbs found - but maybe a low priority one? */
-	if (!skb && low_prio_hlid != WL12XX_INVALID_LINK_ID) {
-		//printk("[3] - IFFF\n");
-		struct wl1271_link *lnk = &wl->links[low_prio_hlid];
-		skb = wlcore_lnk_dequeue(wl, hlid, ac);
-
-		WARN_ON(!skb); /* we checked this before */
-		*hlid = low_prio_hlid;
-
-		//printk("0x%x vs 0x%x\n", lnk->wlvif, wlvif);
-
-		// /* ensure proper round robin in the vif/link levels */
-		// wl->last_wlvif = lnk->wlvif;
-		// if (lnk->wlvif)
-		// 	lnk->wlvif->last_tx_hlid = low_prio_hlid;
-
-	}
-
-	return skb;
-}
-
 static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 {
 	unsigned long flags;
@@ -820,21 +701,16 @@ static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 		printk("[0] - wlvif = 0x%x\n", wlvif);
 		wl12xx_for_each_wlvif(wl, wlvif) {
 			//printk("[1] - START LOOP\n");
-			if (!wlvif->tx_queue_count[ac]) {
-				printk("[1] - IF\n");
-			}
-			else {
-				// [TOTO] - assume skb is always VALID
-				skb = wlcore_lnk_dequeue_high_prio(wl, HW_LINK_ID, ac,
-									&low_prio_hlid);
-				wlvif->last_tx_hlid = HW_LINK_ID;
-				*hlid = wlvif->last_tx_hlid;
+			// [TOTO] - assume skb is always VALID
+			skb = wlcore_lnk_dequeue_high_prio(wl, HW_LINK_ID, ac,
+								&low_prio_hlid);
+			wlvif->last_tx_hlid = HW_LINK_ID;
+			*hlid = wlvif->last_tx_hlid;
 
-				printk("[1] - ELSE, skb = 0x%x\n", skb);
-				if (skb) {
-					//wl->last_wlvif = wlvif;
-					break;
-				}
+			printk("[1] - ELSE, skb = 0x%x\n", skb);
+			if (skb) {
+				//wl->last_wlvif = wlvif;
+				break;
 			}
 		}
 	}
@@ -872,9 +748,10 @@ static void wl1271_skb_queue_head(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
-	wl->tx_queue_count[q]++;
-	if (wlvif)
-		wlvif->tx_queue_count[q]++;
+	//wl->tx_queue_count[q]++;
+	VV_tx_queue_count[q]++;
+	// if (wlvif)
+	// 	wlvif->tx_queue_count[q]++;
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 }
 
@@ -1215,7 +1092,8 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		wl->tx_queue_count[i] -= total[i];
+		//wl->tx_queue_count[i] -= total[i];
+		VV_tx_queue_count[i] -= total[i];
 	}
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
@@ -1241,8 +1119,8 @@ void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	wlvif->last_tx_hlid = 0;
 
-	for (i = 0; i < NUM_TX_QUEUES; i++)
-		wlvif->tx_queue_count[i] = 0;
+	// for (i = 0; i < NUM_TX_QUEUES; i++)
+	// 	wlvif->tx_queue_count[i] = 0;
 }
 /* caller must hold wl->mutex and TX must be stopped */
 void wl12xx_tx_reset(struct wl1271 *wl)
@@ -1257,7 +1135,8 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 			wl1271_tx_reset_link_queues(wl, i);
 
 		for (i = 0; i < NUM_TX_QUEUES; i++)
-			wl->tx_queue_count[i] = 0;
+			//wl->tx_queue_count[i] = 0;
+			VV_tx_queue_count[i] = 0;
 	}
 
 	/*
