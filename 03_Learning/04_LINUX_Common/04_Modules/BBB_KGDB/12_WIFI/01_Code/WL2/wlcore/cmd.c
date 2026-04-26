@@ -464,7 +464,8 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	__clear_bit(*hlid, wlvif->links_map);
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
-	wl->links[*hlid].allocated_pkts = 0;
+	// wl->links[*hlid].allocated_pkts = 0;
+	VV_allocated_pkts[*hlid] = 0;
 	wl->links[*hlid].prev_freed_pkts = 0;
 	wl->links[*hlid].ba_bitmap = 0;
 	eth_zero_addr(wl->links[*hlid].addr);

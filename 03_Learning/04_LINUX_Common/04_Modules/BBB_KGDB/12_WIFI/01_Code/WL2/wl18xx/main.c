@@ -1679,64 +1679,64 @@ static int wl18xx_set_peer_cap(struct wl1271 *wl,
 				       rate_set, hlid);
 }
 
-static bool wl18xx_lnk_high_prio(struct wl1271 *wl, u8 hlid,
-				 struct wl1271_link *lnk)
-{
-	u8 thold;
-	struct wl18xx_fw_status_priv *status_priv =
-		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
-	unsigned long suspend_bitmap;
+// static bool wl18xx_lnk_high_prio(struct wl1271 *wl, u8 hlid,
+// 				 struct wl1271_link *lnk)
+// {
+// 	u8 thold;
+// 	struct wl18xx_fw_status_priv *status_priv =
+// 		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
+// 	unsigned long suspend_bitmap;
 
-	/* if we don't have the link map yet, assume they all low prio */
-	if (!status_priv)
-		return false;
+// 	/* if we don't have the link map yet, assume they all low prio */
+// 	if (!status_priv)
+// 		return false;
 
-	// Data here is read from wl18xx_convert_fw_status (Interrupt)
-	/* suspended links are never high priority */
-	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
-	printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
-	if (test_bit(hlid, &suspend_bitmap))
-		return false;
+// 	// Data here is read from wl18xx_convert_fw_status (Interrupt)
+// 	/* suspended links are never high priority */
+// 	//suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
+// 	printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
+// 	if (test_bit(hlid, &suspend_bitmap))
+// 		return false;
 
-	/* the priority thresholds are taken from FW */
-	if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-	    !test_bit(hlid, &wl->ap_fw_ps_map))
-		thold = status_priv->tx_fast_link_prio_threshold;
-	else
-		thold = status_priv->tx_slow_link_prio_threshold;
-	printk("H - %d - %d <- %d, %d\n", thold, lnk->allocated_pkts,
-								status_priv->tx_fast_link_prio_threshold,
-								status_priv->tx_slow_link_prio_threshold);
-	return lnk->allocated_pkts < thold;
-}
+// 	/* the priority thresholds are taken from FW */
+// 	if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
+// 	    !test_bit(hlid, &wl->ap_fw_ps_map))
+// 		thold = status_priv->tx_fast_link_prio_threshold;
+// 	else
+// 		thold = status_priv->tx_slow_link_prio_threshold;
+// 	// printk("H - %d - %d <- %d, %d\n", thold, lnk->allocated_pkts,
+// 	// 							status_priv->tx_fast_link_prio_threshold,
+// 	// 							status_priv->tx_slow_link_prio_threshold);
+// 	return lnk->allocated_pkts < thold;
+// }
 
-static bool wl18xx_lnk_low_prio(struct wl1271 *wl, u8 hlid,
-				struct wl1271_link *lnk)
-{
-	u8 thold;
-	struct wl18xx_fw_status_priv *status_priv =
-		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
-	unsigned long suspend_bitmap;
+// static bool wl18xx_lnk_low_prio(struct wl1271 *wl, u8 hlid,
+// 				struct wl1271_link *lnk)
+// {
+// 	u8 thold;
+// 	struct wl18xx_fw_status_priv *status_priv =
+// 		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
+// 	unsigned long suspend_bitmap;
 
-	/* if we don't have the link map yet, assume they all low prio */
-	if (!status_priv)
-		return true;
+// 	/* if we don't have the link map yet, assume they all low prio */
+// 	if (!status_priv)
+// 		return true;
 
-	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
-	printk("L - suspend_bitmap = 0x%x\n", suspend_bitmap);
-	if (test_bit(hlid, &suspend_bitmap))
-		thold = status_priv->tx_suspend_threshold;
-	else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-		 !test_bit(hlid, &wl->ap_fw_ps_map))
-		thold = status_priv->tx_fast_stop_threshold;
-	else
-		thold = status_priv->tx_slow_stop_threshold;
-	printk("L - %d - %d <- %d, %d, %d\n", thold, lnk->allocated_pkts,
-							    status_priv->tx_suspend_threshold, 
-								status_priv->tx_fast_stop_threshold,
-								status_priv->tx_slow_stop_threshold);
-	return lnk->allocated_pkts < thold;
-}
+// 	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
+// 	//printk("L - suspend_bitmap = 0x%x\n", suspend_bitmap);
+// 	if (test_bit(hlid, &suspend_bitmap))
+// 		thold = status_priv->tx_suspend_threshold;
+// 	else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
+// 		 !test_bit(hlid, &wl->ap_fw_ps_map))
+// 		thold = status_priv->tx_fast_stop_threshold;
+// 	else
+// 		thold = status_priv->tx_slow_stop_threshold;
+// 	// printk("L - %d - %d <- %d, %d, %d\n", thold, lnk->allocated_pkts,
+// 	// 						    status_priv->tx_suspend_threshold, 
+// 	// 							status_priv->tx_fast_stop_threshold,
+// 	// 							status_priv->tx_slow_stop_threshold);
+// 	return lnk->allocated_pkts < thold;
+// }
 
 static u32 wl18xx_convert_hwaddr(struct wl1271 *wl, u32 hwaddr)
 {
@@ -1782,8 +1782,8 @@ static struct wlcore_ops wl18xx_ops = {
 	.sta_rc_update	= wl18xx_sta_rc_update,
 	.set_peer_cap	= wl18xx_set_peer_cap,
 	.convert_hwaddr = wl18xx_convert_hwaddr,
-	.lnk_high_prio	= wl18xx_lnk_high_prio,
-	.lnk_low_prio	= wl18xx_lnk_low_prio,
+	// .lnk_high_prio	= wl18xx_lnk_high_prio,
+	// .lnk_low_prio	= wl18xx_lnk_low_prio,
 	.smart_config_start = wl18xx_cmd_smart_config_start,
 	.smart_config_stop  = wl18xx_cmd_smart_config_stop,
 	.smart_config_set_group_key = wl18xx_cmd_smart_config_set_group_key,

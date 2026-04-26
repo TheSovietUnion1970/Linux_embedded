@@ -30,6 +30,8 @@
 #include "sysfs.h"
 
 #include "common.h"
+struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
+u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -395,8 +397,10 @@ static void wl12xx_irq_update_links_status(struct wl1271 *wl,
 	}
 
 	for_each_set_bit(hlid, wlvif->ap.sta_hlid_map, wl->num_links)
+		// wl12xx_irq_ps_regulate_link(wl, wlvif, hlid,
+		// 			    wl->links[hlid].allocated_pkts);
 		wl12xx_irq_ps_regulate_link(wl, wlvif, hlid,
-					    wl->links[hlid].allocated_pkts);
+					    VV_allocated_pkts[hlid]);
 }
 
 static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
@@ -445,7 +449,8 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 		if (diff == 0)
 			continue;
 
-		lnk->allocated_pkts -= diff;
+		//lnk->allocated_pkts -= diff;
+		VV_allocated_pkts[i] -= diff;
 		lnk->prev_freed_pkts = status->counters.tx_lnk_free_pkts[i];
 
 		/* accumulate the prev_freed_pkts counter */
@@ -1374,7 +1379,8 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	// Put the packet into the per-link, per-queue list and update counters.
 	wl1271_debug(DEBUG_TX, "queue skb hlid %d q %d len %d",
 		     hlid, q, skb->len);
-	skb_queue_tail(&wl->links[hlid].tx_queue[q], skb);
+	//skb_queue_tail(&wl->links[hlid].tx_queue[q], skb);
+	skb_queue_tail(&VV_tx_queue[hlid][q], skb);
 
 	wl->tx_queue_count[q]++;
 	wlvif->tx_queue_count[q]++;
@@ -2089,7 +2095,8 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	wl->active_link_count = 0;
 
 	/* The system link is always allocated */
-	wl->links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
+	//wl->links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
+	VV_allocated_pkts[WL12XX_SYSTEM_HLID] = 0;
 	wl->links[WL12XX_SYSTEM_HLID].prev_freed_pkts = 0;
 	__set_bit(WL12XX_SYSTEM_HLID, wl->links_map);
 
@@ -2749,8 +2756,8 @@ deinit:
 
 	dev_kfree_skb(wlvif->probereq);
 	wlvif->probereq = NULL;
-	if (wl->last_wlvif == wlvif)
-		wl->last_wlvif = NULL;
+	// if (wl->last_wlvif == wlvif)
+	// 	wl->last_wlvif = NULL;
 	list_del(&wlvif->list);
 	memset(wlvif->ap.sta_hlid_map, 0, sizeof(wlvif->ap.sta_hlid_map));
 	wlvif->role_id = WL12XX_INVALID_ROLE_ID;
@@ -6132,13 +6139,17 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 
 	wl->hw = hw;
 
+	//memset(&VV_tx_queue[0][0], 0, sizeof(VV_tx_queue));
+
 	/*
 	 * wl->num_links is not configured yet, so just use WLCORE_MAX_LINKS.
 	 * we don't allocate any additional resource here, so that's fine.
 	 */
 	for (i = 0; i < NUM_TX_QUEUES; i++)
-		for (j = 0; j < WLCORE_MAX_LINKS; j++)
-			skb_queue_head_init(&wl->links[j].tx_queue[i]);
+		for (j = 0; j < WLCORE_MAX_LINKS; j++){
+			//skb_queue_head_init(&wl->links[j].tx_queue[i]);
+			skb_queue_head_init(&VV_tx_queue[j][i]);
+		}
 
 	skb_queue_head_init(&wl->deferred_rx_queue);
 	skb_queue_head_init(&wl->deferred_tx_queue);

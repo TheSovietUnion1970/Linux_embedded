@@ -254,10 +254,10 @@ struct wl12xx_vif;
 
 struct wl1271_link {
 	/* AP-mode - TX queue per AC in link */
-	struct sk_buff_head tx_queue[NUM_TX_QUEUES];
+	//struct sk_buff_head tx_queue[NUM_TX_QUEUES];
 
 	/* accounting for allocated / freed packets in FW */
-	u8 allocated_pkts;
+	//u8 allocated_pkts;
 	u8 prev_freed_pkts;
 
 	u8 addr[ETH_ALEN];

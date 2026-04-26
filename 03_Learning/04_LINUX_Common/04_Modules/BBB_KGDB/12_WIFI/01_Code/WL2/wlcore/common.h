@@ -15,10 +15,11 @@
 #define Q_BASE 0
 #define HW_QUEUE_BASE  Q_BASE*4 // (0*NUM_TX_QUEUES)
 
-//extern struct sk_buff_head tx_queue[NUM_TX_QUEUES];
+extern struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
+extern u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 
 //              [----------DEFAULT-------]      [-------USER----]
-// QUEUEs       0                               1                      2          
+// QUEUEs       0                               1                      2  ... 15         
 // TYPEs        [VO     VI     BE     BK]       [VO,VI,BE,BK] ...
 //               |       |      |     |
 // REASONs     4-bit   4-bit   4-bit  4-bit

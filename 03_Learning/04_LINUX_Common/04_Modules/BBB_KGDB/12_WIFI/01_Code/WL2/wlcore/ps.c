@@ -86,7 +86,9 @@ static void wl1271_ps_filter_frames(struct wl1271 *wl, u8 hlid)
 	/* filter all frames currently in the low level queues for this hlid */
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		filtered[i] = 0;
-		while ((skb = skb_dequeue(&lnk->tx_queue[i]))) {
+		//while ((skb = skb_dequeue(&lnk->tx_queue[i]))) {
+		while ((skb = skb_dequeue(&VV_tx_queue[hlid][i]))) {
+			printk("TX_QUEUE - wl1271_ps_filter_frames\n");
 			filtered[i]++;
 
 			if (WARN_ON(wl12xx_is_dummy_packet(wl, skb)))
@@ -102,8 +104,6 @@ static void wl1271_ps_filter_frames(struct wl1271 *wl, u8 hlid)
 	spin_lock_irqsave(&wl->wl_lock, flags);
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		wl->tx_queue_count[i] -= filtered[i];
-		if (lnk->wlvif)
-			lnk->wlvif->tx_queue_count[i] -= filtered[i];
 	}
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
@@ -122,10 +122,6 @@ void wl12xx_ps_link_start(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (!test_bit(hlid, wlvif->ap.sta_hlid_map) ||
 	    test_bit(hlid, &wl->ap_ps_map))
 		return;
-
-	wl1271_debug(DEBUG_PSM, "start mac80211 PSM on hlid %d pkts %d "
-		     "clean_queues %d", hlid, wl->links[hlid].allocated_pkts,
-		     clean_queues);
 
 	rcu_read_lock();
 	sta = ieee80211_find_sta(vif, wl->links[hlid].addr);

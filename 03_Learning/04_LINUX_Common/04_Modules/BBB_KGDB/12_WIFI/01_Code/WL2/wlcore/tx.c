@@ -116,7 +116,8 @@ static void wl1271_tx_regulate_link(struct wl1271 *wl,
 		return;
 
 	fw_ps = test_bit(hlid, &wl->ap_fw_ps_map);
-	tx_pkts = wl->links[hlid].allocated_pkts;
+	// tx_pkts = wl->links[hlid].allocated_pkts;
+	tx_pkts = VV_allocated_pkts[hlid];
 
 	/*
 	 * if in FW PS and there is enough data in FW we can put the link
@@ -261,7 +262,8 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		wl->tx_allocated_pkts[ac]++;
 
 		if (test_bit(hlid, wl->links_map))
-			wl->links[hlid].allocated_pkts++;
+			//wl->links[hlid].allocated_pkts++;
+			VV_allocated_pkts[hlid]++;
 
 		ret = 0;
 
@@ -526,25 +528,76 @@ static int wlcore_select_ac(struct wl1271 *wl)
 	return q;
 }
 
-static struct sk_buff *wlcore_lnk_dequeue(struct wl1271 *wl,
-					  struct wl1271_link *lnk, u8 q)
+static struct sk_buff *wlcore_lnk_dequeue(struct wl1271 *wl, u8 hlid, u8 q)
 {
 	struct sk_buff *skb;
 	unsigned long flags;
 
-	skb = skb_dequeue(&lnk->tx_queue[q]);
+	//skb = skb_dequeue(&lnk->tx_queue[q]);
+	skb = skb_dequeue(&VV_tx_queue[hlid][q]);
 	if (skb) {
 		spin_lock_irqsave(&wl->wl_lock, flags);
 		WARN_ON_ONCE(wl->tx_queue_count[q] <= 0);
 		wl->tx_queue_count[q]--;
-		if (lnk->wlvif) {
-			WARN_ON_ONCE(lnk->wlvif->tx_queue_count[q] <= 0);
-			lnk->wlvif->tx_queue_count[q]--;
-		}
 		spin_unlock_irqrestore(&wl->wl_lock, flags);
 	}
 
 	return skb;
+}
+
+static bool VV_lnk_high_prio(struct wl1271 *wl, u8 hlid)
+{
+	u8 thold;
+	struct wl18xx_fw_status_priv *status_priv =
+		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
+	unsigned long suspend_bitmap = 0;
+
+	/* if we don't have the link map yet, assume they all low prio */
+	if (!status_priv)
+		return false;
+
+	// Data here is read from wl18xx_convert_fw_status (Interrupt)
+	/* suspended links are never high priority */
+	//suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
+	printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
+	if (test_bit(hlid, &suspend_bitmap))
+		return false;
+
+	/* the priority thresholds are taken from FW */
+	if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
+	    !test_bit(hlid, &wl->ap_fw_ps_map))
+		thold = status_priv->tx_fast_link_prio_threshold;
+	else
+		thold = status_priv->tx_slow_link_prio_threshold;
+	return VV_allocated_pkts[hlid] < thold;
+}
+
+static bool VV_lnk_low_prio(struct wl1271 *wl, u8 hlid)
+{
+	u8 thold;
+	struct wl18xx_fw_status_priv *status_priv =
+		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
+	unsigned long suspend_bitmap;
+
+	/* if we don't have the link map yet, assume they all low prio */
+	if (!status_priv)
+		return true;
+
+	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
+	//printk("L - suspend_bitmap = 0x%x\n", suspend_bitmap);
+	if (test_bit(hlid, &suspend_bitmap))
+		thold = status_priv->tx_suspend_threshold;
+	else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
+		 !test_bit(hlid, &wl->ap_fw_ps_map))
+		thold = status_priv->tx_fast_stop_threshold;
+	else
+		thold = status_priv->tx_slow_stop_threshold;
+	// printk("L - %d - %d <- %d, %d, %d\n", thold, lnk->allocated_pkts,
+	// 						    status_priv->tx_suspend_threshold, 
+	// 							status_priv->tx_fast_stop_threshold,
+	// 							status_priv->tx_slow_stop_threshold);
+	//return lnk->allocated_pkts < thold;
+	return VV_allocated_pkts[hlid] < thold;
 }
 
 static struct sk_buff *wlcore_lnk_dequeue_high_prio(struct wl1271 *wl,
@@ -553,18 +606,32 @@ static struct sk_buff *wlcore_lnk_dequeue_high_prio(struct wl1271 *wl,
 {
 	struct wl1271_link *lnk = &wl->links[hlid];
 
-	// wl18xx_lnk_high_prio
-	if (!wlcore_hw_lnk_high_prio(wl, hlid, lnk)) {
+	// // wl18xx_lnk_high_prio
+	// if (!wlcore_hw_lnk_high_prio(wl, hlid, lnk)) {
+	// 	if (*low_prio_hlid == WL12XX_INVALID_LINK_ID &&
+	// 	    //!skb_queue_empty(&lnk->tx_queue[ac]) &&
+	// 		!skb_queue_empty(&VV_tx_queue[hlid][ac]) &&
+	// 	    wlcore_hw_lnk_low_prio(wl, hlid, lnk)) // wl18xx_lnk_low_prio
+	// 		/* we found the first non-empty low priority queue */
+	// 		*low_prio_hlid = hlid;
+
+	// 	return NULL;
+	// }
+
+
+
+	if (!VV_lnk_high_prio(wl, hlid)) {
 		if (*low_prio_hlid == WL12XX_INVALID_LINK_ID &&
-		    !skb_queue_empty(&lnk->tx_queue[ac]) &&
-		    wlcore_hw_lnk_low_prio(wl, hlid, lnk)) // wl18xx_lnk_low_prio
+		    //!skb_queue_empty(&lnk->tx_queue[ac]) &&
+			!skb_queue_empty(&VV_tx_queue[hlid][ac]) &&
+		    VV_lnk_low_prio(wl, hlid)) // wl18xx_lnk_low_prio
 			/* we found the first non-empty low priority queue */
 			*low_prio_hlid = hlid;
 
 		return NULL;
 	}
 
-	return wlcore_lnk_dequeue(wl, lnk, ac);
+	return wlcore_lnk_dequeue(wl, hlid, ac);
 }
 
 static struct sk_buff *wlcore_vif_dequeue_high_prio(struct wl1271 *wl,
@@ -613,7 +680,7 @@ static struct sk_buff *wlcore_vif_dequeue_high_prio(struct wl1271 *wl,
 static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 {
 	unsigned long flags;
-	struct wl12xx_vif *wlvif = wl->last_wlvif;
+	struct wl12xx_vif *wlvif = NULL;
 	struct sk_buff *skb = NULL;
 	int ac;
 	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
@@ -684,11 +751,11 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 // 				break;
 // 		}
 
-
+		printk("[0] - wlvif = 0x%x\n", wlvif);
 		wl12xx_for_each_wlvif(wl, wlvif) {
 			//printk("[1] - START LOOP\n");
 			if (!wlvif->tx_queue_count[ac]) {
-				printk("[1] - IF\n");
+				//printk("[1] - IF\n");
 			}
 			else {
 				// [TOTO] - assume skb is always VALID
@@ -699,7 +766,7 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 
 				//printk("[1] - ELSE, skb = 0x%x\n", skb);
 				if (skb) {
-					wl->last_wlvif = wlvif;
+					//wl->last_wlvif = wlvif;
 					break;
 				}
 			}
@@ -715,18 +782,75 @@ static struct sk_buff *wl1271_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 	if (!skb && low_prio_hlid != WL12XX_INVALID_LINK_ID) {
 		//printk("[3] - IFFF\n");
 		struct wl1271_link *lnk = &wl->links[low_prio_hlid];
-		skb = wlcore_lnk_dequeue(wl, lnk, ac);
+		skb = wlcore_lnk_dequeue(wl, hlid, ac);
 
 		WARN_ON(!skb); /* we checked this before */
 		*hlid = low_prio_hlid;
 
-		/* ensure proper round robin in the vif/link levels */
-		wl->last_wlvif = lnk->wlvif;
-		if (lnk->wlvif)
-			lnk->wlvif->last_tx_hlid = low_prio_hlid;
+		//printk("0x%x vs 0x%x\n", lnk->wlvif, wlvif);
+
+		// /* ensure proper round robin in the vif/link levels */
+		// wl->last_wlvif = lnk->wlvif;
+		// if (lnk->wlvif)
+		// 	lnk->wlvif->last_tx_hlid = low_prio_hlid;
 
 	}
 
+	return skb;
+}
+
+static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
+{
+	unsigned long flags;
+	struct wl12xx_vif *wlvif = NULL;
+	struct sk_buff *skb = NULL;
+	int ac;
+	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
+
+	// Find ac has data (the least allocated blks and V0>VI>...)
+	ac = wlcore_select_ac(wl);
+	if (ac < 0){
+		//printk("FAILED - ac\n");
+		return skb;
+	}
+
+	/* Do a new pass over the wlvif list. But no need to continue
+	 * after last_wlvif. The previous pass should have found it. */
+	if (!skb) {
+		printk("[0] - wlvif = 0x%x\n", wlvif);
+		wl12xx_for_each_wlvif(wl, wlvif) {
+			//printk("[1] - START LOOP\n");
+			if (!wlvif->tx_queue_count[ac]) {
+				printk("[1] - IF\n");
+			}
+			else {
+				// [TOTO] - assume skb is always VALID
+				skb = wlcore_lnk_dequeue_high_prio(wl, HW_LINK_ID, ac,
+									&low_prio_hlid);
+				wlvif->last_tx_hlid = HW_LINK_ID;
+				*hlid = wlvif->last_tx_hlid;
+
+				printk("[1] - ELSE, skb = 0x%x\n", skb);
+				if (skb) {
+					//wl->last_wlvif = wlvif;
+					break;
+				}
+			}
+		}
+	}
+
+	//printk("3rd low_prio_hlid = %d\n", low_prio_hlid);
+	printk("[2] - skb = 0x%x, wlvif = 0x%x, low_prio_hlid = %x\n", skb, wlvif, low_prio_hlid);
+
+	/* no high priority skbs found - but maybe a low priority one? */
+	if (!skb && low_prio_hlid != WL12XX_INVALID_LINK_ID) {
+		//printk("[3] - IFFF\n");
+		struct wl1271_link *lnk = &wl->links[low_prio_hlid];
+		skb = wlcore_lnk_dequeue(wl, hlid, ac);
+
+		WARN_ON(!skb); /* we checked this before */
+		*hlid = low_prio_hlid;
+	}
 	return skb;
 }
 
@@ -739,7 +863,8 @@ static void wl1271_skb_queue_head(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (wl12xx_is_dummy_packet(wl, skb)) {
 		set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags);
 	} else {
-		skb_queue_head(&wl->links[hlid].tx_queue[q], skb);
+		//skb_queue_head(&wl->links[hlid].tx_queue[q], skb);
+		skb_queue_head(&VV_tx_queue[hlid][q], skb);
 
 		/* make sure we dequeue the same packet next time */
 		wlvif->last_tx_hlid = (hlid + wl->num_links - 1) %
@@ -823,7 +948,8 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		return 0;
 
-	while ((skb = wl1271_skb_dequeue(wl, &hlid))) {
+	// while ((skb = wl1271_skb_dequeue(wl, &hlid))) {
+	while ((skb = VV_skb_dequeue(wl, &hlid))) {
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 		bool has_data = false;
 
@@ -1072,8 +1198,9 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		total[i] = 0;
-		while ((skb = skb_dequeue(&lnk->tx_queue[i]))) {
-			wl1271_debug(DEBUG_TX, "link freeing skb 0x%p", skb);
+		//while ((skb = skb_dequeue(&lnk->tx_queue[i]))) {
+		while ((skb = skb_dequeue(&VV_tx_queue[hlid][i]))) {
+			printk("TX_QUEUE - wl1271_tx_reset_link_queues\n");
 
 			if (!wl12xx_is_dummy_packet(wl, skb)) {
 				info = IEEE80211_SKB_CB(skb);
@@ -1089,8 +1216,6 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 	spin_lock_irqsave(&wl->wl_lock, flags);
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		wl->tx_queue_count[i] -= total[i];
-		if (lnk->wlvif)
-			lnk->wlvif->tx_queue_count[i] -= total[i];
 	}
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
