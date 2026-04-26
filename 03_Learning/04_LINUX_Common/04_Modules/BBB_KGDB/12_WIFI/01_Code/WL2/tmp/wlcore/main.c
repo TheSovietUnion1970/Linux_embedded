@@ -534,9 +534,7 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 
 	// wl->tx_blocks_freed = VV_status_reg.total_released_blks;
 
-
-	
-	wl->tx_allocated_blocks -= freed_blocks;
+	// wl->tx_allocated_blocks -= freed_blocks;
 
 	/*
 	 * If the FW freed some blocks:
