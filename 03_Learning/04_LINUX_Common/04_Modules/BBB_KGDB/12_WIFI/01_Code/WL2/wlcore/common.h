@@ -15,6 +15,8 @@
 #define Q_BASE 0
 #define HW_QUEUE_BASE  Q_BASE*4 // (0*NUM_TX_QUEUES)
 
+//extern struct sk_buff_head tx_queue[NUM_TX_QUEUES];
+
 //              [----------DEFAULT-------]      [-------USER----]
 // QUEUEs       0                               1                      2          
 // TYPEs        [VO     VI     BE     BK]       [VO,VI,BE,BK] ...
@@ -342,6 +344,24 @@
 
     // wl1271_init_vif_specific                 -> p2p
     // wl1271_sta_hw_init -> specific to STA    -> sta
+
+
+
+// wl18xx_lnk_high_prio:
+    // wl->fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
+    // if (suspend_bitmap = hlid = bit 1) -> choose wl18xx_lnk_low_prio 
+    // else thold = tx_fast_link_prio_threshold or tx_slow_link_prio_threshold
+    // CHECK lnk->allocated_pkts (usually 0) < thold
+
+// wl18xx_lnk_low_prio:
+    // wl->fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
+    // if (suspend_bitmap = hlid = bit 1) -> thold = tx_suspend_threshold 
+    // else thold = tx_fast_stop_threshold or tx_slow_stop_threshold
+    // CHECK lnk->allocated_pkts (usually 0) < thold
+
+// wlcore_lnk_dequeue(wl, lnk, ac);:
+    // skb_dequeue(&lnk->tx_queue[ac])
+    // ->tx_queue_count[q]--
 
 
 

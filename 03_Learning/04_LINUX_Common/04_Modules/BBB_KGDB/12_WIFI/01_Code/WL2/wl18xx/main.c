@@ -1235,6 +1235,8 @@ static void wl18xx_convert_fw_status(struct wl1271 *wl, void *raw_fw_status,
 
 	fw_status->log_start_addr = le32_to_cpu(int_fw_status->log_start_addr);
 
+	//printk("SUSPENDED: 0x%x\n", int_fw_status->priv.link_suspend_bitmap);
+
 	fw_status->priv = &int_fw_status->priv;
 }
 
@@ -1689,8 +1691,10 @@ static bool wl18xx_lnk_high_prio(struct wl1271 *wl, u8 hlid,
 	if (!status_priv)
 		return false;
 
+	// Data here is read from wl18xx_convert_fw_status (Interrupt)
 	/* suspended links are never high priority */
 	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
+	printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
 	if (test_bit(hlid, &suspend_bitmap))
 		return false;
 
@@ -1700,7 +1704,9 @@ static bool wl18xx_lnk_high_prio(struct wl1271 *wl, u8 hlid,
 		thold = status_priv->tx_fast_link_prio_threshold;
 	else
 		thold = status_priv->tx_slow_link_prio_threshold;
-
+	printk("H - %d - %d <- %d, %d\n", thold, lnk->allocated_pkts,
+								status_priv->tx_fast_link_prio_threshold,
+								status_priv->tx_slow_link_prio_threshold);
 	return lnk->allocated_pkts < thold;
 }
 
@@ -1717,6 +1723,7 @@ static bool wl18xx_lnk_low_prio(struct wl1271 *wl, u8 hlid,
 		return true;
 
 	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
+	printk("L - suspend_bitmap = 0x%x\n", suspend_bitmap);
 	if (test_bit(hlid, &suspend_bitmap))
 		thold = status_priv->tx_suspend_threshold;
 	else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
@@ -1724,7 +1731,10 @@ static bool wl18xx_lnk_low_prio(struct wl1271 *wl, u8 hlid,
 		thold = status_priv->tx_fast_stop_threshold;
 	else
 		thold = status_priv->tx_slow_stop_threshold;
-
+	printk("L - %d - %d <- %d, %d, %d\n", thold, lnk->allocated_pkts,
+							    status_priv->tx_suspend_threshold, 
+								status_priv->tx_fast_stop_threshold,
+								status_priv->tx_slow_stop_threshold);
 	return lnk->allocated_pkts < thold;
 }
 
