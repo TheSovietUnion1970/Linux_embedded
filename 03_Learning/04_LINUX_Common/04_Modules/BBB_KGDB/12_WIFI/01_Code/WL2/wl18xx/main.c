@@ -1140,10 +1140,10 @@ static u32 wl18xx_get_rx_packet_len(struct wl1271 *wl, void *rx_data,
 	return data_len - sizeof(*desc);
 }
 
-static void wl18xx_tx_immediate_completion(struct wl1271 *wl)
-{
-	wl18xx_tx_immediate_complete(wl);
-}
+// static void wl18xx_tx_immediate_completion(struct wl1271 *wl)
+// {
+// 	wl18xx_tx_immediate_complete(wl);
+// }
 
 static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 {
@@ -1759,7 +1759,7 @@ static struct wlcore_ops wl18xx_ops = {
 	.set_tx_desc_data_len = wl18xx_set_tx_desc_data_len,
 	.get_rx_buf_align = wl18xx_get_rx_buf_align,
 	.get_rx_packet_len = wl18xx_get_rx_packet_len,
-	.tx_immediate_compl = wl18xx_tx_immediate_completion,
+	// .tx_immediate_compl = wl18xx_tx_immediate_completion,
 	.tx_delayed_compl = NULL,
 	.hw_init	= wl18xx_hw_init,
 	.convert_fw_status = wl18xx_convert_fw_status,

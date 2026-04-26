@@ -27,6 +27,6 @@
  */
 #define CONF_TX_RATE_USE_WIDE_CHAN BIT(31)
 
-void wl18xx_tx_immediate_complete(struct wl1271 *wl);
+//void wl18xx_tx_immediate_complete(struct wl1271 *wl);
 
 #endif /* __WL12XX_TX_H__ */

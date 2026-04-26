@@ -259,7 +259,8 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			wl12xx_rearm_tx_watchdog_locked(wl);
 
 		ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
-		wl->tx_allocated_pkts[ac]++;
+		//wl->tx_allocated_pkts[ac]++;
+		VV_tx_allocated_pkts[ac]++;
 
 		if (test_bit(hlid, wl->links_map))
 			//wl->links[hlid].allocated_pkts++;
@@ -521,9 +522,11 @@ static int wlcore_select_ac(struct wl1271 *wl)
 		ac = wl1271_tx_get_queue(i);
 		//if (wl->tx_queue_count[ac] &&
 		if (VV_tx_queue_count[ac] &&
-		    wl->tx_allocated_pkts[ac] < min_pkts) {
+		    // wl->tx_allocated_pkts[ac] < min_pkts) {
+			VV_tx_allocated_pkts[ac] < min_pkts) {
 			q = ac;
-			min_pkts = wl->tx_allocated_pkts[q];
+			// min_pkts = wl->tx_allocated_pkts[q];
+			min_pkts = VV_tx_allocated_pkts[q];
 		}
 	}
 
@@ -562,7 +565,7 @@ static bool VV_lnk_high_prio(struct wl1271 *wl, u8 hlid)
 	// Data here is read from wl18xx_convert_fw_status (Interrupt)
 	/* suspended links are never high priority */
 	//suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
-	printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
+	//printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
 	if (test_bit(hlid, &suspend_bitmap))
 		return false;
 
@@ -698,7 +701,7 @@ static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 	/* Do a new pass over the wlvif list. But no need to continue
 	 * after last_wlvif. The previous pass should have found it. */
 	if (!skb) {
-		printk("[0] - wlvif = 0x%x\n", wlvif);
+		//printk("[0] - wlvif = 0x%x\n", wlvif);
 		wl12xx_for_each_wlvif(wl, wlvif) {
 			//printk("[1] - START LOOP\n");
 			// [TOTO] - assume skb is always VALID
@@ -707,7 +710,7 @@ static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 			wlvif->last_tx_hlid = HW_LINK_ID;
 			*hlid = wlvif->last_tx_hlid;
 
-			printk("[1] - ELSE, skb = 0x%x\n", skb);
+			//printk("[1] - ELSE, skb = 0x%x\n", skb);
 			if (skb) {
 				//wl->last_wlvif = wlvif;
 				break;
@@ -942,127 +945,6 @@ static u8 wl1271_tx_get_rate_flags(u8 rate_class_index)
 
 	return flags;
 }
-
-// static void wl1271_tx_complete_packet(struct wl1271 *wl,
-// 				      struct wl1271_tx_hw_res_descr *result)
-// {
-// 	struct ieee80211_tx_info *info;
-// 	struct ieee80211_vif *vif;
-// 	struct wl12xx_vif *wlvif;
-// 	struct sk_buff *skb;
-// 	int id = result->id;
-// 	int rate = -1;
-// 	u8 rate_flags = 0;
-// 	u8 retries = 0;
-
-// 	/* check for id legality */
-// 	if (unlikely(id >= wl->num_tx_desc || wl->tx_frames[id] == NULL)) {
-// 		wl1271_warning("TX result illegal id: %d", id);
-// 		return;
-// 	}
-
-// 	skb = wl->tx_frames[id];
-// 	info = IEEE80211_SKB_CB(skb);
-
-// 	if (wl12xx_is_dummy_packet(wl, skb)) {
-// 		wl1271_free_tx_id(wl, id);
-// 		return;
-// 	}
-
-// 	/* info->control is valid as long as we don't update info->status */
-// 	vif = info->control.vif;
-// 	wlvif = wl12xx_vif_to_data(vif);
-
-// 	/* update the TX status info */
-// 	if (result->status == TX_SUCCESS) {
-// 		if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
-// 			info->flags |= IEEE80211_TX_STAT_ACK;
-// 		rate = wlcore_rate_to_idx(wl, result->rate_class_index,
-// 					  wlvif->band);
-// 		rate_flags = wl1271_tx_get_rate_flags(result->rate_class_index);
-// 		retries = result->ack_failures;
-// 	} else if (result->status == TX_RETRY_EXCEEDED) {
-// 		wl->stats.excessive_retries++;
-// 		retries = result->ack_failures;
-// 	}
-
-// 	info->status.rates[0].idx = rate;
-// 	info->status.rates[0].count = retries;
-// 	info->status.rates[0].flags = rate_flags;
-// 	info->status.ack_signal = -1;
-
-// 	wl->stats.retry_count += result->ack_failures;
-
-// 	/* remove private header from packet */
-// 	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
-
-// 	/* remove TKIP header space if present */
-// 	if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
-// 	    info->control.hw_key &&
-// 	    info->control.hw_key->cipher == WLAN_CIPHER_SUITE_TKIP) {
-// 		int hdrlen = ieee80211_get_hdrlen_from_skb(skb);
-// 		memmove(skb->data + WL1271_EXTRA_SPACE_TKIP, skb->data,
-// 			hdrlen);
-// 		skb_pull(skb, WL1271_EXTRA_SPACE_TKIP);
-// 	}
-
-// 	wl1271_debug(DEBUG_TX, "tx status id %u skb 0x%p failures %u rate 0x%x"
-// 		     " status 0x%x",
-// 		     result->id, skb, result->ack_failures,
-// 		     result->rate_class_index, result->status);
-
-// 	/* return the packet to the stack */
-// 	skb_queue_tail(&wl->deferred_tx_queue, skb);
-// 	queue_work(wl->freezable_wq, &wl->netstack_work);
-// 	wl1271_free_tx_id(wl, result->id);
-// }
-
-// /* Called upon reception of a TX complete interrupt */
-// int wlcore_tx_complete(struct wl1271 *wl)
-// {
-// 	struct wl1271_acx_mem_map *memmap = wl->target_mem_map;
-// 	u32 count, fw_counter;
-// 	u32 i;
-// 	int ret;
-
-// 	/* read the tx results from the chipset */
-// 	ret = wlcore_read(wl, le32_to_cpu(memmap->tx_result),
-// 			  wl->tx_res_if, sizeof(*wl->tx_res_if), false);
-// 	if (ret < 0)
-// 		goto out;
-
-// 	fw_counter = le32_to_cpu(wl->tx_res_if->tx_result_fw_counter);
-
-// 	/* write host counter to chipset (to ack) */
-// 	ret = wlcore_write32(wl, le32_to_cpu(memmap->tx_result) +
-// 			     offsetof(struct wl1271_tx_hw_res_if,
-// 				      tx_result_host_counter), fw_counter);
-// 	if (ret < 0)
-// 		goto out;
-
-// 	count = fw_counter - wl->tx_results_count;
-// 	wl1271_debug(DEBUG_TX, "tx_complete received, packets: %d", count);
-
-// 	/* verify that the result buffer is not getting overrun */
-// 	if (unlikely(count > TX_HW_RESULT_QUEUE_LEN))
-// 		wl1271_warning("TX result overflow from chipset: %d", count);
-
-// 	/* process the results */
-// 	for (i = 0; i < count; i++) {
-// 		struct wl1271_tx_hw_res_descr *result;
-// 		u8 offset = wl->tx_results_count & TX_HW_RESULT_QUEUE_LEN_MASK;
-
-// 		/* process the packet */
-// 		result =  &(wl->tx_res_if->tx_results_queue[offset]);
-// 		wl1271_tx_complete_packet(wl, result);
-
-// 		wl->tx_results_count++;
-// 	}
-
-// out:
-// 	return ret;
-// }
-// EXPORT_SYMBOL(wlcore_tx_complete);
 
 void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 {

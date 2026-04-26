@@ -33,6 +33,8 @@
 struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
 u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 int VV_tx_queue_count[NUM_TX_QUEUES];
+u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
+u32 VV_tx_allocated_pkts[NUM_TX_QUEUES];
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -404,6 +406,46 @@ static void wl12xx_irq_update_links_status(struct wl1271 *wl,
 					    VV_allocated_pkts[hlid]);
 }
 
+#include "../wl18xx/wl18xx.h"
+static void VV_convert_fw_status(struct wl1271 *wl, void *raw_fw_status,
+				     struct wl_fw_status *fw_status)
+{
+	struct wl18xx_fw_status *int_fw_status = raw_fw_status;
+
+	fw_status->intr = le32_to_cpu(int_fw_status->intr);
+	fw_status->fw_rx_counter = int_fw_status->fw_rx_counter;
+	fw_status->drv_rx_counter = int_fw_status->drv_rx_counter;
+	fw_status->tx_results_counter = int_fw_status->tx_results_counter;
+	fw_status->rx_pkt_descs = int_fw_status->rx_pkt_descs;
+
+	fw_status->fw_localtime = le32_to_cpu(int_fw_status->fw_localtime);
+	fw_status->link_ps_bitmap = le32_to_cpu(int_fw_status->link_ps_bitmap);
+	fw_status->link_fast_bitmap =
+			le32_to_cpu(int_fw_status->link_fast_bitmap);
+	fw_status->total_released_blks =
+			le32_to_cpu(int_fw_status->total_released_blks);
+	fw_status->tx_total = le32_to_cpu(int_fw_status->tx_total);
+
+	fw_status->counters.tx_released_pkts =
+			int_fw_status->counters.tx_released_pkts;
+	fw_status->counters.tx_lnk_free_pkts =
+			int_fw_status->counters.tx_lnk_free_pkts;
+	fw_status->counters.tx_voice_released_blks =
+			int_fw_status->counters.tx_voice_released_blks;
+	fw_status->counters.tx_last_rate =
+			int_fw_status->counters.tx_last_rate;
+	fw_status->counters.tx_last_rate_mbps =
+			int_fw_status->counters.tx_last_rate_mbps;
+	fw_status->counters.hlid =
+			int_fw_status->counters.hlid;
+
+	fw_status->log_start_addr = le32_to_cpu(int_fw_status->log_start_addr);
+
+	//printk("SUSPENDED: 0x%x\n", int_fw_status->priv.link_suspend_bitmap);
+
+	fw_status->priv = &int_fw_status->priv;
+}
+
 static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 {
 	struct wl12xx_vif *wlvif;
@@ -419,7 +461,8 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 	if (ret < 0)
 		return ret;
 
-	wlcore_hw_convert_fw_status(wl, wl->raw_fw_status, wl->fw_status);
+	// wlcore_hw_convert_fw_status(wl, wl->raw_fw_status, wl->fw_status);
+	VV_convert_fw_status(wl, wl->raw_fw_status, wl->fw_status);
 
 	wl1271_debug(DEBUG_IRQ, "intr: 0x%x (fw_rx_counter = %d, "
 		     "drv_rx_counter = %d, tx_results_counter = %d)",
@@ -430,11 +473,15 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		/* prevent wrap-around in freed-packets counter */
-		wl->tx_allocated_pkts[i] -=
+		VV_tx_allocated_pkts[i] -=
 				(status->counters.tx_released_pkts[i] -
-				wl->tx_pkts_freed[i]) & 0xff;
+				VV_tx_pkts_freed[i]) & 0xff;
 
-		wl->tx_pkts_freed[i] = status->counters.tx_released_pkts[i];
+		//if (!i) printk("[Idx0] - 0x%x, 0x%x, 0x%x\n", VV_tx_allocated_pkts[0], VV_tx_pkts_freed[0], status->counters.tx_released_pkts[0]);
+
+		VV_tx_pkts_freed[i] = status->counters.tx_released_pkts[i];
+
+		// counters.tx_released_pkts and counters.tx_released_pkts are read from Interrupt
 	}
 
 	//printk("START\n");
@@ -548,9 +595,188 @@ static void wl1271_netstack_work(struct work_struct *work)
 	} while (skb_queue_len(&wl->deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
 }
 
+void VV_get_last_tx_rate(struct wl1271 *wl, struct ieee80211_vif *vif,
+			     u8 band, struct ieee80211_tx_rate *rate, u8 hlid)
+{
+	u8 fw_rate = wl->links[hlid].fw_rate_idx;
+
+	if (fw_rate > CONF_HW_RATE_INDEX_MAX) {
+		wl1271_error("last Tx rate invalid: %d", fw_rate);
+		rate->idx = 0;
+		rate->flags = 0;
+		return;
+	}
+
+	printk("[TX_RATE] - fw_rate = %d\n", fw_rate);
+	// fw_rate is usually MCS1, MCS3, MCS5 - normal and reasonable for a real-world connection.
+	if (fw_rate <= CONF_HW_RATE_INDEX_54MBPS) {
+		rate->idx = fw_rate;
+		if (band == NL80211_BAND_5GHZ)
+			rate->idx -= CONF_HW_RATE_INDEX_6MBPS;
+		rate->flags = 0;
+	} else {
+		rate->flags = IEEE80211_TX_RC_MCS;
+		rate->idx = fw_rate - CONF_HW_RATE_INDEX_MCS0;
+
+		/* SGI modifier is counted as a separate rate */
+		if (fw_rate >= CONF_HW_RATE_INDEX_MCS7_SGI)
+			(rate->idx)--;
+		if (fw_rate == CONF_HW_RATE_INDEX_MCS15_SGI)
+			(rate->idx)--;
+
+		/* this also covers the 40Mhz SGI case (= MCS15) */
+		if (fw_rate == CONF_HW_RATE_INDEX_MCS7_SGI ||
+		    fw_rate == CONF_HW_RATE_INDEX_MCS15_SGI)
+			rate->flags |= IEEE80211_TX_RC_SHORT_GI;
+
+		if (fw_rate > CONF_HW_RATE_INDEX_MCS7_SGI && vif) {
+			struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
+			if (wlvif->channel_type == NL80211_CHAN_HT40MINUS ||
+			    wlvif->channel_type == NL80211_CHAN_HT40PLUS) {
+				/* adjustment needed for range 0-7 */
+				rate->idx -= 8;
+				rate->flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
+			}
+		}
+	}
+
+	// Final purpose:
+	// Update ieee80211_tx_rate *rate
+		// idx
+		// flags
+}
+
+#define WL18XX_TX_STATUS_DESC_ID_MASK    0x7F
+#define WL18XX_TX_STATUS_STAT_BIT_IDX    7
+static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
+{
+	struct ieee80211_tx_info *info;
+	struct sk_buff *skb;
+	int id = tx_stat_byte & WL18XX_TX_STATUS_DESC_ID_MASK;
+	bool tx_success;
+	struct wl1271_tx_hw_descr *tx_desc;
+
+	/* check for id legality */
+	if (unlikely(id >= wl->num_tx_desc || wl->tx_frames[id] == NULL)) {
+		wl1271_warning("illegal id in tx completion: %d", id);
+		return;
+	}
+
+	/* a zero bit indicates Tx success */
+	tx_success = !(tx_stat_byte & BIT(WL18XX_TX_STATUS_STAT_BIT_IDX));
+
+	skb = wl->tx_frames[id];
+	info = IEEE80211_SKB_CB(skb);
+	tx_desc = (struct wl1271_tx_hw_descr *)skb->data;
+
+	if (wl12xx_is_dummy_packet(wl, skb)) {
+		wl1271_free_tx_id(wl, id);
+		return;
+	}
+
+	/* update the TX status info */
+	if (tx_success && !(info->flags & IEEE80211_TX_CTL_NO_ACK))
+		info->flags |= IEEE80211_TX_STAT_ACK;
+	/*
+	 * first pass info->control.vif while it's valid, and then fill out
+	 * the info->status structures
+	 */
+	VV_get_last_tx_rate(wl, info->control.vif,
+				info->band,
+				&info->status.rates[0],
+				tx_desc->hlid);
+
+	info->status.rates[0].count = 1; /* no data about retries */
+	info->status.ack_signal = -1;
+
+	if (!tx_success)
+		wl->stats.retry_count++;
+
+	/*
+	 * TODO: update sequence number for encryption? seems to be
+	 * unsupported for now. needed for recovery with encryption.
+	 */
+
+	/* remove private header from packet */
+	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
+
+	// /* remove TKIP header space if present */
+	// if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
+	//     info->control.hw_key &&
+	//     info->control.hw_key->cipher == WLAN_CIPHER_SUITE_TKIP) {
+	// 	int hdrlen = ieee80211_get_hdrlen_from_skb(skb);
+	// 	memmove(skb->data + WL1271_EXTRA_SPACE_TKIP, skb->data, hdrlen);
+	// 	skb_pull(skb, WL1271_EXTRA_SPACE_TKIP);
+	// }
+
+	wl1271_debug(DEBUG_TX, "tx status id %u skb 0x%p success %d",
+		     id, skb, tx_success);
+
+	/* return the packet to the stack */
+	skb_queue_tail(&wl->deferred_tx_queue, skb);
+	queue_work(wl->freezable_wq, &wl->netstack_work);
+
+	//wl1271_free_tx_id(wl, id);
+	if (__test_and_clear_bit(id, wl->tx_frames_map)) {
+		if (unlikely(wl->tx_frames_cnt == wl->num_tx_desc))
+			clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
+
+		wl->tx_frames[id] = NULL;
+		wl->tx_frames_cnt--;
+	}
+}
+
+void VV_tx_immediate_complete(struct wl1271 *wl)
+{
+	struct wl18xx_fw_status_priv *status_priv =
+		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
+	struct wl18xx_priv *priv = wl->priv;
+	u8 i, hlid;
+
+
+	/* nothing to do here */
+	if (priv->last_fw_rls_idx == status_priv->fw_release_idx)
+		return;
+
+	/* update rates per link */
+	hlid = wl->fw_status->counters.hlid;
+
+	//printk("fw_release_idx = %d, hlid = %d\n", status_priv->fw_release_idx, hlid);
+
+	if (hlid < WLCORE_MAX_LINKS) {
+		wl->links[hlid].fw_rate_idx =
+				wl->fw_status->counters.tx_last_rate;
+		wl->links[hlid].fw_rate_mbps =
+				wl->fw_status->counters.tx_last_rate_mbps;
+	}
+
+	/* freed Tx descriptors */
+	wl1271_debug(DEBUG_TX, "last released desc = %d, current idx = %d",
+		     priv->last_fw_rls_idx, status_priv->fw_release_idx);
+
+	if (status_priv->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
+		wl1271_error("invalid desc release index %d",
+			     status_priv->fw_release_idx);
+		WARN_ON(1);
+		return;
+	}
+
+	for (i = priv->last_fw_rls_idx;
+	     i != status_priv->fw_release_idx;
+	     i = (i + 1) % WL18XX_FW_MAX_TX_STATUS_DESC) {
+		VV_tx_complete_packet(wl,
+			status_priv->released_tx_desc[i]);
+
+		//wl->tx_results_count++;
+	}
+
+	priv->last_fw_rls_idx = status_priv->fw_release_idx; // update the last_fw_rls_idx
+												// to avoid redundant work
+}
+
 #define WL1271_IRQ_MAX_LOOPS 256
 
-static int wlcore_irq_locked(struct wl1271 *wl)
+static int VV_irq_locked(struct wl1271 *wl)
 {
 	int ret = 0;
 	u32 intr;
@@ -567,17 +793,13 @@ static int wlcore_irq_locked(struct wl1271 *wl)
 	if (wl->irq_flags & (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING))
 		loopcount = 1;
 
-	wl1271_debug(DEBUG_IRQ, "IRQ work");
-
-	if (unlikely(wl->state != WLCORE_STATE_ON))
-		goto out;
-
 	ret = pm_runtime_get_sync(wl->dev);
 	if (ret < 0) {
 		pm_runtime_put_noidle(wl->dev);
 		goto out;
 	}
 
+	// loopcount = 1
 	while (!done && loopcount--) {
 		smp_mb__after_atomic();
 
@@ -585,7 +807,9 @@ static int wlcore_irq_locked(struct wl1271 *wl)
 		if (ret < 0)
 			goto err_ret;
 
-		wlcore_hw_tx_immediate_compl(wl); // -> wl18xx_tx_complete_packet
+		//VV_tx_immediate_complete
+		//wlcore_hw_tx_immediate_compl(wl); // -> wl18xx_tx_complete_packet
+		VV_tx_immediate_complete(wl);
 
 		intr = wl->fw_status->intr;
 		intr &= WLCORE_ALL_INTR_MASK;
@@ -725,7 +949,8 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	mutex_lock(&wl->mutex);
 
-	ret = wlcore_irq_locked(wl);
+	//ret = wlcore_irq_locked(wl);
+	ret = VV_irq_locked(wl);
 	if (ret)
 		wl12xx_queue_recovery_work(wl);
 
@@ -808,6 +1033,7 @@ out:
 
 void wl12xx_queue_recovery_work(struct wl1271 *wl)
 {
+	printk("wl12xx_queue_recovery_work\n");
 	/* Avoid a recursive recovery */
 	if (wl->state == WLCORE_STATE_ON) {
 		WARN_ON(!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY,
@@ -815,7 +1041,7 @@ void wl12xx_queue_recovery_work(struct wl1271 *wl)
 
 		wl->state = WLCORE_STATE_RESTARTING;
 		set_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags);
-		//ieee80211_queue_work(wl->hw, &wl->recovery_work);
+		ieee80211_queue_work(wl->hw, &wl->recovery_work);
 	}
 }
 
@@ -1962,7 +2188,7 @@ static int __maybe_unused wl1271_op_resume(struct ieee80211_hw *hw)
 
 		/* don't talk to the HW if recovery is pending */
 		if (!pending_recovery) {
-			ret = wlcore_irq_locked(wl);
+			ret = VV_irq_locked(wl);
 			if (ret)
 				wl12xx_queue_recovery_work(wl);
 		}
@@ -2070,7 +2296,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	wl->channel_type = NL80211_CHAN_NO_HT;
 	wl->tx_blocks_available = 0;
 	wl->tx_allocated_blocks = 0;
-	wl->tx_results_count = 0;
+	//wl->tx_results_count = 0;
 	wl->tx_packets_count = 0;
 	wl->time_offset = 0;
 	wl->ap_fw_ps_map = 0;
@@ -2100,8 +2326,9 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	wl->tx_blocks_freed = 0;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		wl->tx_pkts_freed[i] = 0;
-		wl->tx_allocated_pkts[i] = 0;
+		VV_tx_pkts_freed[i] = 0;
+		//wl->tx_allocated_pkts[i] = 0;
+		VV_tx_allocated_pkts[i] = 0;
 	}
 
 	//wl1271_debugfs_reset(wl);

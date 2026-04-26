@@ -16,9 +16,13 @@
 #define HW_QUEUE_BASE  Q_BASE*4 // (0*NUM_TX_QUEUES)
 
 extern struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
-extern int VV_tx_queue_count[NUM_TX_QUEUES]; /* /* Frames scheduled for transmission, not handled yet */ 
+extern int VV_tx_queue_count[NUM_TX_QUEUES]; /* Frames scheduled for transmission, not handled yet */ 
 
 extern u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
+
+/* Accounting for allocated / available Tx packets in HW */
+extern u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
+extern u32 VV_tx_allocated_pkts[NUM_TX_QUEUES];
 
 //              [----------DEFAULT-------]      [-------USER----]
 // QUEUEs       0                               1                      2  ... 15         
