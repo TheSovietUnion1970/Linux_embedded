@@ -31,6 +31,8 @@
 
 #include "common.h"
 struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
+struct sk_buff_head VV_deferred_rx_queue;
+struct sk_buff_head VV_deferred_tx_queue;
 u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 int VV_tx_queue_count[NUM_TX_QUEUES];
 u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
@@ -527,32 +529,34 @@ static void wl1271_flush_deferred_work(struct wl1271 *wl)
 	struct sk_buff *skb;
 
 	/* Pass all received frames to the network stack */
-	while ((skb = skb_dequeue(&wl->deferred_rx_queue)))
+	while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
 		ieee80211_rx_ni(wl->hw, skb);
 
 	/* Return sent skbs to the network stack */
-	while ((skb = skb_dequeue(&wl->deferred_tx_queue)))
+	while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
 		ieee80211_tx_status_ni(wl->hw, skb);
 }
 
 static void wl1271_netstack_work(struct work_struct *work)
 {
 	//printk("[WORK] - wl1271_netstack_work\n");
-	struct wl1271 *wl =
-		container_of(work, struct wl1271, netstack_work);
+	// struct wl1271 *wl =
+	// 	container_of(work, struct wl1271, netstack_work);
 
 	do {
 		//wl1271_flush_deferred_work(wl);
 		struct sk_buff *skb;
 
 		/* Pass all received frames to the network stack */
-		while ((skb = skb_dequeue(&wl->deferred_rx_queue)))
-			ieee80211_rx_ni(wl->hw, skb); // take skb ptr -> pass to nwstack
+		while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
+			// ieee80211_rx_ni(wl->hw, skb); // take skb ptr -> pass to nwstack
+			ieee80211_rx_ni(VV_work.hw, skb); // take skb ptr -> pass to nwstack
 
 		/* Return sent skbs to the network stack */
-		while ((skb = skb_dequeue(&wl->deferred_tx_queue)))
-			ieee80211_tx_status_ni(wl->hw, skb);
-	} while (skb_queue_len(&wl->deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
+		while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
+			// ieee80211_tx_status_ni(wl->hw, skb);
+			ieee80211_tx_status_ni(VV_work.hw, skb);
+	} while (skb_queue_len(&VV_deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
 }
 
 void VV_get_last_tx_rate(struct wl1271 *wl, struct ieee80211_vif *vif,
@@ -664,8 +668,9 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 		     id, skb, tx_success);
 
 	/* return the packet to the stack */
-	skb_queue_tail(&wl->deferred_tx_queue, skb);
-	queue_work(wl->freezable_wq, &wl->netstack_work);
+	skb_queue_tail(&VV_deferred_tx_queue, skb);
+	//queue_work(wl->freezable_wq, &wl->netstack_work);
+	queue_work(wl->freezable_wq, &VV_work.netstack_work);
 
 	wl1271_free_tx_id(wl, id);
 }
@@ -811,18 +816,18 @@ static int VV_irq_locked(struct wl1271 *wl)
 				goto err_ret;
 
 			/* Make sure the deferred queues don't get too long */
-			defer_count = skb_queue_len(&wl->deferred_tx_queue) +
-				      skb_queue_len(&wl->deferred_rx_queue);
+			defer_count = skb_queue_len(&VV_deferred_tx_queue) +
+				      skb_queue_len(&VV_deferred_rx_queue);
 			if (defer_count > WL1271_DEFERRED_QUEUE_LIMIT){
 				// wl1271_flush_deferred_work(wl);
 				struct sk_buff *skb;
 
 				/* Pass all received frames to the network stack */
-				while ((skb = skb_dequeue(&wl->deferred_rx_queue)))
+				while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
 					ieee80211_rx_ni(wl->hw, skb);
 
 				/* Return sent skbs to the network stack */
-				while ((skb = skb_dequeue(&wl->deferred_tx_queue)))
+				while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
 					ieee80211_tx_status_ni(wl->hw, skb);
 			}
 		}
@@ -1468,7 +1473,9 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	mutex_unlock(&wl->mutex);
 
 	wl1271_flush_deferred_work(wl);
-	cancel_work_sync(&wl->netstack_work);
+	//cancel_work_sync(&wl->netstack_work);
+	cancel_work_sync(&VV_work.netstack_work);
+
 	//cancel_work_sync(&wl->recovery_work);
 	cancel_delayed_work_sync(&wl->tx_watchdog_work);
 
@@ -2191,7 +2198,8 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	// 	cancel_work_sync(&wl->recovery_work);
 	wl1271_flush_deferred_work(wl);
 	cancel_delayed_work_sync(&wl->scan_complete_work);
-	cancel_work_sync(&wl->netstack_work);
+	//cancel_work_sync(&wl->netstack_work);
+	cancel_work_sync(&VV_work.netstack_work);
 	cancel_work_sync(&wl->tx_work);
 	cancel_delayed_work_sync(&wl->tx_watchdog_work);
 
@@ -2549,7 +2557,8 @@ irq_disable:
 		   current state, hence the wl1271 struct should be safe. */
 		wlcore_disable_interrupts(wl);
 		wl1271_flush_deferred_work(wl);
-		cancel_work_sync(&wl->netstack_work);
+		//cancel_work_sync(&wl->netstack_work);
+		cancel_work_sync(&VV_work.netstack_work);
 		mutex_lock(&wl->mutex);
 power_off:
 		wl1271_power_off(wl);
@@ -6288,6 +6297,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	INIT_LIST_HEAD(&wl->wlvif_list);
 
 	wl->hw = hw;
+	VV_work.hw = hw;
 
 	//memset(&VV_tx_queue[0][0], 0, sizeof(VV_tx_queue));
 
@@ -6301,10 +6311,12 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 		}
 	}
 
-	skb_queue_head_init(&wl->deferred_rx_queue);
-	skb_queue_head_init(&wl->deferred_tx_queue);
+	skb_queue_head_init(&VV_deferred_rx_queue);
+	skb_queue_head_init(&VV_deferred_tx_queue);
 
-	INIT_WORK(&wl->netstack_work, wl1271_netstack_work);
+	//INIT_WORK(&wl->netstack_work, wl1271_netstack_work);
+	INIT_WORK(&VV_work.netstack_work, wl1271_netstack_work);
+
 	INIT_WORK(&wl->tx_work, wl1271_tx_work);
 	//INIT_WORK(&wl->recovery_work, wl1271_recovery_work);
 	INIT_DELAYED_WORK(&wl->scan_complete_work, wl1271_scan_complete_work);

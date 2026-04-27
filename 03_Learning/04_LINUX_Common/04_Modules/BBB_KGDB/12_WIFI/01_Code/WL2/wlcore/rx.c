@@ -18,6 +18,9 @@
 #include "io.h"
 #include "hw_ops.h"
 
+
+#include "common.h"
+
 /*
  * TODO: this is here just for now, it must be removed when the data
  * operations are in place.
@@ -191,8 +194,9 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 		     beacon ? "beacon" : "",
 		     seq_num, *hlid);
 
-	skb_queue_tail(&wl->deferred_rx_queue, skb);
-	queue_work(wl->freezable_wq, &wl->netstack_work);
+	skb_queue_tail(&VV_deferred_rx_queue, skb);
+	//queue_work(wl->freezable_wq, &wl->netstack_work);
+	queue_work(wl->freezable_wq, &VV_work.netstack_work);
 
 	return is_data;
 }

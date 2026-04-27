@@ -19,6 +19,11 @@
 #define HW_QUEUE_BASE  Q_BASE*4 // (0*NUM_TX_QUEUES)
 
 extern struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
+/* Frames received, not handled yet by mac80211 */
+extern struct sk_buff_head VV_deferred_rx_queue;
+/* Frames sent, not returned yet to mac80211 */
+extern struct sk_buff_head VV_deferred_tx_queue;
+
 extern int VV_tx_queue_count[NUM_TX_QUEUES]; /* Frames scheduled for transmission, not handled yet */ 
         // incremented - wl1271_op_tx, wl1271_tx_dummy_packet
         // decremented - wlcore_lnk_dequeue
@@ -189,6 +194,9 @@ struct VV_Work {
 
 	/* Network stack work  */
 	struct work_struct netstack_work;
+
+    /* Temporary use */
+    struct ieee80211_hw *hw;
 };
 extern struct VV_Work VV_work;
 #endif
