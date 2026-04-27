@@ -20,6 +20,8 @@
 
 extern struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
 extern int VV_tx_queue_count[NUM_TX_QUEUES]; /* Frames scheduled for transmission, not handled yet */ 
+        // incremented - wl1271_op_tx, wl1271_tx_dummy_packet
+        // decremented - wlcore_lnk_dequeue
 
 extern u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 
@@ -181,6 +183,14 @@ struct VV_link {
 	u64 total_freed_pkts;
 };
 extern struct VV_link VV_links[WLCORE_MAX_LINKS];
+
+struct VV_Work {
+	struct workqueue_struct *freezable_wq;
+
+	/* Network stack work  */
+	struct work_struct netstack_work;
+};
+extern struct VV_Work VV_work;
 #endif
 //extern struct VV_wl18xx_fw_status VV_status_reg;
 

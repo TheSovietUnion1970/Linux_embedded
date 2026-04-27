@@ -44,6 +44,7 @@ int VV_skb_tx_frames_cnt;
 u32 VV_last_updated_tmp_tx_blocks_freed;
 u32 VV_tx_packets_count; 
 u8 VV_last_fw_rls_idx = 0;
+struct VV_Work VV_work;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -504,8 +505,8 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	// 				, VV_tx_blocks_available, old_tx_blk_count);
 
 	/* if more blocks are available now, tx work can be scheduled */
-	if (VV_tx_blocks_available > old_tx_blk_count)
-		clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
+	// if (VV_tx_blocks_available > old_tx_blk_count)
+	// 	clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
 
 	/* for AP update num of allocated TX blocks per link and ps status */
 	wl12xx_for_each_wlvif_ap(wl, wlvif) {
@@ -786,7 +787,7 @@ static int VV_irq_locked(struct wl1271 *wl)
 				goto err_ret;
 
 			/* Check if any tx blocks were freed */
-			if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
+			//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
 				if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
 					if (!wl1271_tx_total_queue_count(wl))
 						run_tx_queue = false;
@@ -802,7 +803,7 @@ static int VV_irq_locked(struct wl1271 *wl)
 					if (ret < 0)
 						goto err_ret;
 				}
-			}
+			//}
 
 			/* check for tx results */
 			ret = wlcore_hw_tx_delayed_compl(wl); // null
@@ -865,14 +866,6 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	set_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags);
 
-	/* complete the ELP completion */
-	if (test_bit(WL1271_FLAG_IN_ELP, &wl->flags)) {
-		spin_lock_irqsave(&wl->wl_lock, flags);
-		if (wl->elp_compl)
-			complete(wl->elp_compl);
-		spin_unlock_irqrestore(&wl->wl_lock, flags);
-	}
-
 	if (test_bit(WL1271_FLAG_SUSPENDED, &wl->flags)) {
 		/* don't enqueue a work right now. mark it as pending */
 		set_bit(WL1271_FLAG_PENDING_WORK, &wl->flags);
@@ -897,15 +890,18 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	/* In case TX was not handled in wlcore_irq_locked(), queue TX work */
 	clear_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
-	if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
-		if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
-			if (!wl1271_tx_total_queue_count(wl))
-				queue_tx_work = false;
-			spin_unlock_irqrestore(&wl->wl_lock, flags);
-		}
-		if (queue_tx_work)
-			ieee80211_queue_work(wl->hw, &wl->tx_work);
+	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
+	if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
+		if (!wl1271_tx_total_queue_count(wl)) // counts of all Frames scheduled for transmission, not handled yet
+												// count += VV_tx_queue_count[i];
+			queue_tx_work = false;
+		spin_unlock_irqrestore(&wl->wl_lock, flags);
 	}
+
+	// VV_tx_queue_count is non-zero -> there are frames that not handled yet 
+	if (queue_tx_work)
+		ieee80211_queue_work(wl->hw, &wl->tx_work);
+	//}
 
 	mutex_unlock(&wl->mutex);
 
@@ -1514,7 +1510,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	q = wl1271_tx_get_queue(mapping);
 	printk("q = %d, mapping = %d\n", q, mapping);
 
-	hlid = wl12xx_tx_get_hlid(wl, wlvif, skb, control->sta);
+	hlid = wl12xx_tx_get_hlid(wl, wlvif, skb, control->sta); // sta.hlid
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 
@@ -1525,10 +1521,8 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	 * allow these packets through.
 	 */
 	if (hlid == WL12XX_INVALID_LINK_ID ||
-	    (!test_bit(hlid, wlvif->links_map)) ||
-	     (wlcore_is_queue_stopped_locked(wl, wlvif, q) &&
-	      !wlcore_is_queue_stopped_by_reason_locked(wl, wlvif, q,
-			WLCORE_QUEUE_STOP_REASON_WATERMARK))) {
+	    (!test_bit(hlid, wlvif->links_map))
+		) {
 		wl1271_debug(DEBUG_TX, "DROP skb hlid %d q %d", hlid, q);
 		ieee80211_free_txskb(hw, skb);
 		goto out;
@@ -1550,8 +1544,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	 */
 	// If the TX work is not already busy or pending, schedule wl->tx_work (which eventually calls wlcore_tx_work_locked()
 	// -> This is what triggers the actual transmission.
-	if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags) &&
-	    !test_bit(WL1271_FLAG_TX_PENDING, &wl->flags))
+	if (!test_bit(WL1271_FLAG_TX_PENDING, &wl->flags))
 		ieee80211_queue_work(wl->hw, &wl->tx_work);
 
 out:
@@ -1576,14 +1569,9 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl)
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
 	/* The FW is low on RX memory blocks, so send the dummy packet asap */
-	if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags))
-		return wlcore_tx_work_locked(wl);
+	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags))
+	return wlcore_tx_work_locked(wl);
 
-	/*
-	 * If the FW TX is busy, TX work will be scheduled by the threaded
-	 * interrupt handler function
-	 */
-	return 0;
 }
 
 /*
@@ -6604,92 +6592,6 @@ out:
 	complete_all(&wl->nvs_loading_complete);
 }
 
-static int __maybe_unused wlcore_runtime_suspend(struct device *dev)
-{
-	struct wl1271 *wl = dev_get_drvdata(dev);
-	struct wl12xx_vif *wlvif;
-	int error;
-
-	/* We do not enter elp sleep in PLT mode */
-	if (wl->plt)
-		return 0;
-
-	/* Nothing to do if no ELP mode requested */
-	if (wl->sleep_auth != WL1271_PSM_ELP)
-		return 0;
-
-	wl12xx_for_each_wlvif(wl, wlvif) {
-		if (!test_bit(WLVIF_FLAG_IN_PS, &wlvif->flags) &&
-		    test_bit(WLVIF_FLAG_IN_USE, &wlvif->flags))
-			return -EBUSY;
-	}
-
-	wl1271_debug(DEBUG_PSM, "chip to elp");
-	error = wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_SLEEP);
-	if (error < 0) {
-		wl12xx_queue_recovery_work(wl);
-
-		return error;
-	}
-
-	set_bit(WL1271_FLAG_IN_ELP, &wl->flags);
-
-	return 0;
-}
-
-static int __maybe_unused wlcore_runtime_resume(struct device *dev)
-{
-	struct wl1271 *wl = dev_get_drvdata(dev);
-	DECLARE_COMPLETION_ONSTACK(compl);
-	unsigned long flags;
-	int ret;
-	unsigned long start_time = jiffies;
-	bool recovery = false;
-
-	/* Nothing to do if no ELP mode requested */
-	if (!test_bit(WL1271_FLAG_IN_ELP, &wl->flags))
-		return 0;
-
-	wl1271_debug(DEBUG_PSM, "waking up chip from elp");
-
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	wl->elp_compl = &compl;
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
-
-	ret = wlcore_raw_write32(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP);
-	if (ret < 0) {
-		recovery = true;
-	} else if (!test_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags)) {
-		ret = wait_for_completion_timeout(&compl,
-			msecs_to_jiffies(WL1271_WAKEUP_TIMEOUT));
-		if (ret == 0) {
-			wl1271_warning("ELP wakeup timeout!");
-			recovery = true;
-		}
-	}
-
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	wl->elp_compl = NULL;
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
-	clear_bit(WL1271_FLAG_IN_ELP, &wl->flags);
-
-	if (recovery) {
-		set_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags);
-		wl12xx_queue_recovery_work(wl);
-	} else {
-		wl1271_debug(DEBUG_PSM, "wakeup time: %u ms",
-			     jiffies_to_msecs(jiffies - start_time));
-	}
-
-	return 0;
-}
-
-static const struct dev_pm_ops wlcore_pm_ops = {
-	SET_RUNTIME_PM_OPS(wlcore_runtime_suspend,
-			   wlcore_runtime_resume,
-			   NULL)
-};
-
 int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 {
 	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
@@ -6703,22 +6605,9 @@ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 	wl->pdev = pdev;
 	platform_set_drvdata(pdev, wl);
 
-	// if (pdev_data->family && pdev_data->family->nvs_name) {
-	// 	nvs_name = pdev_data->family->nvs_name;
-	// 	ret = request_firmware_nowait(THIS_MODULE, FW_ACTION_UEVENT,
-	// 				      nvs_name, &pdev->dev, GFP_KERNEL,
-	// 				      wl, wlcore_nvs_cb);
-	// 	if (ret < 0) {
-	// 		wl1271_error("request_firmware_nowait failed for %s: %d",
-	// 			     nvs_name, ret);
-	// 		complete_all(&wl->nvs_loading_complete);
-	// 	}
-	// } else {
-	// 	wlcore_nvs_cb(NULL, wl);
-	// }
 	wlcore_nvs_cb(NULL, wl);
 
-	wl->dev->driver->pm = &wlcore_pm_ops;
+	//wl->dev->driver->pm = &wlcore_pm_ops;
 	pm_runtime_set_autosuspend_delay(wl->dev, 50);
 	pm_runtime_use_autosuspend(wl->dev);
 	pm_runtime_enable(wl->dev);

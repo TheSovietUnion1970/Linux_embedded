@@ -106,7 +106,7 @@ static void wl1271_ps_filter_frames(struct wl1271 *wl, u8 hlid)
 	}
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
-	wl1271_handle_tx_low_watermark(wl);
+	//wl1271_handle_tx_low_watermark(wl);
 }
 
 void wl12xx_ps_link_start(struct wl1271 *wl, struct wl12xx_vif *wlvif,

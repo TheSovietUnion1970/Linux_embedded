@@ -67,9 +67,6 @@ static int wl1271_alloc_tx_id(struct wl1271 *wl, struct sk_buff *skb)
 void wl1271_free_tx_id(struct wl1271 *wl, int id)
 {
 	if (__test_and_clear_bit(id, wl->tx_frames_map)) {
-		if (unlikely(VV_skb_tx_frames_cnt == WL18XX_NUM_TX_DESCRIPTORS))
-			clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
-
 		VV_skb_tx_frames[id] = NULL;
 		VV_skb_tx_frames_cnt--;
 	}
@@ -473,25 +470,6 @@ u32 wl1271_tx_enabled_rates_get(struct wl1271 *wl, u32 rate_set,
 	return enabled_rates;
 }
 
-void wl1271_handle_tx_low_watermark(struct wl1271 *wl)
-{
-	int i;
-	struct wl12xx_vif *wlvif;
-
-	wl12xx_for_each_wlvif(wl, wlvif) {
-		for (i = 0; i < NUM_TX_QUEUES; i++) {
-			if (VV_stopped_by_reason(wl, i, WLCORE_QUEUE_STOP_REASON_WATERMARK)) 
-			    //&& wlvif->tx_queue_count[i] <= WL1271_TX_QUEUE_LOW_WATERMARK)
-				{
-					/* firmware buffer has space, restart queues */
-					VV_wake_queue(wl, wlvif, i,
-						WLCORE_QUEUE_STOP_REASON_WATERMARK);
-					printk("VV_wake_queue - queue = %d\n", i);
-				}
-		}
-	}
-}
-
 static int wlcore_select_ac(struct wl1271 *wl)
 {
 	int i, q = -1, ac;
@@ -825,6 +803,8 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 		ret = wl1271_prepare_tx_frame(wl, wlvif, skb, buf_offset,
 					      hlid);
 
+		printk("wl1271_prepare_tx_frame->ret = %d\n", ret);
+
 		last_len = ret;
 		buf_offset += last_len;
 		VV_tx_packets_count++;
@@ -871,10 +851,10 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 				goto out;
 		}
 
-		wl1271_handle_tx_low_watermark(wl);
+		//wl1271_handle_tx_low_watermark(wl);
 	}
 	// Feature that improves bidirectional throughput
-	wl12xx_rearm_rx_streaming(wl, active_hlids);
+	//wl12xx_rearm_rx_streaming(wl, active_hlids);
 
 out:
 	return bus_ret;
@@ -958,7 +938,7 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 	}
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
-	wl1271_handle_tx_low_watermark(wl);
+	//wl1271_handle_tx_low_watermark(wl);
 }
 
 /* caller must hold wl->mutex and TX must be stopped */
@@ -1005,7 +985,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 	 * function is called from a context other than interface removal.
 	 * This call will always wake the TX queues.
 	 */
-	wl1271_handle_tx_low_watermark(wl);
+	//wl1271_handle_tx_low_watermark(wl);
 
 	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++) {
 		if (VV_skb_tx_frames[i] == NULL)
