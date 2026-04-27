@@ -32,11 +32,14 @@ extern u32 VV_tx_allocated_blocks; // new - last (released blks)
 extern u32 VV_tx_blocks_available; // get from old val or updated (tx total - VV_tx_allocated_blocks)
                                    // = the available slot where blcks can be allocated
         // incremented - max (old, tx total - allocated)
-        // decremented - allocate hw   
+        // decremented - allocate hw  
+extern u32 VV_tx_packets_count; 
+extern u8 VV_last_fw_rls_idx; // it's incremented every TX interrupt
         
 extern struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
         // ptr to skb per tx desc
 extern int VV_skb_tx_frames_cnt;
+extern u32 VV_last_updated_tmp_tx_blocks_freed;
 
 #define WL18XX_NUM_RX_DESCRIPTORS 32
 #define WL18XX_MAX_LINKS 16
@@ -145,6 +148,39 @@ struct VV_wl18xx_fw_status {
 	u8 padding[3];
 } __packed;
 extern struct VV_wl18xx_fw_status* VV_status_reg;
+
+#define WLCORE_MAX_LINKS 16
+
+struct wl12xx_vif;
+struct VV_link {
+	/* AP-mode - TX queue per AC in link */
+	//struct sk_buff_head tx_queue[NUM_TX_QUEUES];
+
+	/* accounting for allocated / freed packets in FW */
+	//u8 allocated_pkts;
+	u8 prev_freed_pkts;
+
+	u8 addr[6];
+
+	/* bitmap of TIDs where RX BA sessions are active for this link */
+	u8 ba_bitmap;
+
+	/* the last fw rate index we used for this link */
+	u8 fw_rate_idx;
+
+	/* the last fw rate [Mbps] we used for this link */
+	u8 fw_rate_mbps;
+
+	/* The wlvif this link belongs to. Might be null for global links */
+	struct wl12xx_vif *wlvif;
+	/*
+	 * total freed FW packets on the link - used for tracking the
+	 * AES/TKIP PN across recoveries. Re-initialized each time
+	 * from the wl1271_station structure.
+	 */
+	u64 total_freed_pkts;
+};
+extern struct VV_link links[WLCORE_MAX_LINKS];
 #endif
 //extern struct VV_wl18xx_fw_status VV_status_reg;
 

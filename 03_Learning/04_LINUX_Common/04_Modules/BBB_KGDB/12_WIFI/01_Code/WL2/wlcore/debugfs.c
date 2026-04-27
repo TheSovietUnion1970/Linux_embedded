@@ -466,7 +466,7 @@ static ssize_t driver_state_read(struct file *file, char __user *user_buf,
 		DRIVER_STATE_PRINT_GENERIC(channel, "%d (%s)", wlvif->channel,
 					   wlvif->p2p ? "P2P-GO" : "AP");
 
-	DRIVER_STATE_PRINT_INT(tx_blocks_available);
+	//DRIVER_STATE_PRINT_INT(tx_blocks_available);
 	//DRIVER_STATE_PRINT_INT(tx_allocated_blocks);
 	// DRIVER_STATE_PRINT_INT(tx_allocated_pkts[0]);
 	// DRIVER_STATE_PRINT_INT(tx_allocated_pkts[1]);
@@ -478,10 +478,10 @@ static ssize_t driver_state_read(struct file *file, char __user *user_buf,
 	// DRIVER_STATE_PRINT_INT(tx_queue_count[1]);
 	// DRIVER_STATE_PRINT_INT(tx_queue_count[2]);
 	// DRIVER_STATE_PRINT_INT(tx_queue_count[3]);
-	DRIVER_STATE_PRINT_INT(tx_packets_count);
+	//DRIVER_STATE_PRINT_INT(tx_packets_count);
 	//DRIVER_STATE_PRINT_INT(tx_results_count);
 	DRIVER_STATE_PRINT_LHEX(flags);
-	DRIVER_STATE_PRINT_INT(tx_blocks_freed);
+	//DRIVER_STATE_PRINT_INT(tx_blocks_freed);
 	DRIVER_STATE_PRINT_INT(rx_counter);
 	DRIVER_STATE_PRINT_INT(state);
 	DRIVER_STATE_PRINT_INT(band);

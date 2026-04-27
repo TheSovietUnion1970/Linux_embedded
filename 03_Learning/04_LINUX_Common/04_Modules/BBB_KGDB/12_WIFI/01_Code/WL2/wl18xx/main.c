@@ -1179,7 +1179,6 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	struct wl18xx_priv *priv = wl->priv;
 
 	/* (re)init private structures. Relevant on recovery as well. */
-	priv->last_fw_rls_idx = 0;
 	priv->extra_spare_key_count = 0;
 
 	/* set the default amount of spare blocks in the bitmap */
@@ -1655,7 +1654,7 @@ static struct wlcore_ops wl18xx_ops = {
 	.trigger_cmd	= wl18xx_trigger_cmd,
 	.ack_event	= wl18xx_ack_event,
 	.wait_for_event	= wl18xx_wait_for_event,
-	.process_mailbox_events = wl18xx_process_mailbox_events,
+	// .process_mailbox_events = wl18xx_process_mailbox_events,
 	.calc_tx_blocks = wl18xx_calc_tx_blocks,
 	.set_tx_desc_blocks = wl18xx_set_tx_desc_blocks,
 	.set_tx_desc_data_len = wl18xx_set_tx_desc_data_len,

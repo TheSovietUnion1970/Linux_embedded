@@ -39,7 +39,11 @@ struct VV_wl18xx_fw_status *VV_status_reg;
 u32 VV_tx_allocated_blocks;
 u32 VV_tx_blocks_available;
 struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
+struct VV_link links[WLCORE_MAX_LINKS];
 int VV_skb_tx_frames_cnt;
+u32 VV_last_updated_tmp_tx_blocks_freed;
+u32 VV_tx_packets_count; 
+u8 VV_last_fw_rls_idx = 0;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -458,14 +462,14 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	//printk("END\n");
 
 	/* prevent wrap-around in total blocks counter */
-	if (likely(wl->tx_blocks_freed <= VV_status_reg->total_released_blks))
+	if (likely(VV_last_updated_tmp_tx_blocks_freed <= VV_status_reg->total_released_blks))
 		freed_blocks = VV_status_reg->total_released_blks -
-			       wl->tx_blocks_freed;
+			       VV_last_updated_tmp_tx_blocks_freed;
 	else
-		freed_blocks = 0x100000000LL - wl->tx_blocks_freed +
+		freed_blocks = 0x100000000LL - VV_last_updated_tmp_tx_blocks_freed +
 			       VV_status_reg->total_released_blks;
 
-	wl->tx_blocks_freed = VV_status_reg->total_released_blks;
+	VV_last_updated_tmp_tx_blocks_freed = VV_status_reg->total_released_blks;
 	// => freed_blocks = new (total_released_blks) - last (tx_blocks_freed)
 	//				   = the ctr number of released blocks
 
@@ -658,15 +662,6 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	/* remove private header from packet */
 	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
 
-	// /* remove TKIP header space if present */
-	// if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
-	//     info->control.hw_key &&
-	//     info->control.hw_key->cipher == WLAN_CIPHER_SUITE_TKIP) {
-	// 	int hdrlen = ieee80211_get_hdrlen_from_skb(skb);
-	// 	memmove(skb->data + WL1271_EXTRA_SPACE_TKIP, skb->data, hdrlen);
-	// 	skb_pull(skb, WL1271_EXTRA_SPACE_TKIP);
-	// }
-
 	wl1271_debug(DEBUG_TX, "tx status id %u skb 0x%p success %d",
 		     id, skb, tx_success);
 
@@ -679,14 +674,10 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 
 void VV_tx_immediate_complete(struct wl1271 *wl)
 {
-	struct wl18xx_priv *priv = wl->priv;
 	u8 i, hlid;
 
-
 	/* nothing to do here */
-	// if (priv->last_fw_rls_idx == status_priv->fw_release_idx)
-	// 	return;
-	if (priv->last_fw_rls_idx == VV_status_reg->fw_release_idx)
+	if (VV_last_fw_rls_idx == VV_status_reg->fw_release_idx)
 		return;
 
 	/* update rates per link */
@@ -702,8 +693,8 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 	}
 
 	/* freed Tx descriptors */
-	// wl1271_debug(DEBUG_TX, "last released desc = %d, current idx = %d",
-	// 	     priv->last_fw_rls_idx, status_priv->fw_release_idx);
+	wl1271_info("last released desc = %d, current idx = %d",
+	 	     VV_last_fw_rls_idx, VV_status_reg->fw_release_idx);
 
 	if (VV_status_reg->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
 		wl1271_error("invalid desc release index %d",
@@ -712,7 +703,7 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 		return;
 	}
 
-	for (i = priv->last_fw_rls_idx;
+	for (i = VV_last_fw_rls_idx;
 	    //i != status_priv->fw_release_idx;
 		i != VV_status_reg->fw_release_idx;
 	     i = (i + 1) % WL18XX_FW_MAX_TX_STATUS_DESC) {
@@ -724,9 +715,9 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 		//wl->tx_results_count++;
 	}
 
-	//priv->last_fw_rls_idx = status_priv->fw_release_idx; // update the last_fw_rls_idx
+	//VV_last_fw_rls_idx = status_priv->fw_release_idx; // update the VV_last_fw_rls_idx
 												// to avoid redundant work
-	priv->last_fw_rls_idx = VV_status_reg->fw_release_idx;
+	VV_last_fw_rls_idx = VV_status_reg->fw_release_idx;
 }
 
 #define WL1271_IRQ_MAX_LOOPS 256
@@ -2240,7 +2231,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	VV_tx_blocks_available = 0;
 	VV_tx_allocated_blocks = 0;
 	//wl->tx_results_count = 0;
-	wl->tx_packets_count = 0;
+	VV_tx_packets_count = 0;
 	wl->time_offset = 0;
 	wl->ap_fw_ps_map = 0;
 	wl->ap_ps_map = 0;
@@ -2266,7 +2257,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 */
 	wl->flags = 0;
 
-	wl->tx_blocks_freed = 0;
+	VV_last_updated_tmp_tx_blocks_freed = 0;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		VV_tx_pkts_freed[i] = 0;
@@ -6319,11 +6310,12 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	 * wl->num_links is not configured yet, so just use WLCORE_MAX_LINKS.
 	 * we don't allocate any additional resource here, so that's fine.
 	 */
-	for (i = 0; i < NUM_TX_QUEUES; i++)
+	for (i = 0; i < NUM_TX_QUEUES; i++){
 		for (j = 0; j < WLCORE_MAX_LINKS; j++){
 			//skb_queue_head_init(&wl->links[j].tx_queue[i]);
 			skb_queue_head_init(&VV_tx_queue[j][i]);
 		}
+	}
 
 	skb_queue_head_init(&wl->deferred_rx_queue);
 	skb_queue_head_init(&wl->deferred_tx_queue);

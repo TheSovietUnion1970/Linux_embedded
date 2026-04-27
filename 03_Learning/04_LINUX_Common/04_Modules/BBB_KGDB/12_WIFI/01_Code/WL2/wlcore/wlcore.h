@@ -240,8 +240,8 @@ struct wl1271 {
 	struct wl1271_acx_mem_map *target_mem_map;
 
 	/* Accounting for allocated / available TX blocks on HW */
-	u32 tx_blocks_freed;
-	u32 tx_blocks_available;
+	//u32 tx_blocks_freed;
+	//u32 tx_blocks_available;
 	//u32 tx_allocated_blocks;
 	//u32 tx_results_count;
 
@@ -250,7 +250,7 @@ struct wl1271 {
 	//u32 tx_allocated_pkts[NUM_TX_QUEUES];
 
 	/* Transmitted TX packets counter for chipset interface */
-	u32 tx_packets_count;
+	//u32 tx_packets_count;
 
 	/* Time-offset between host and chipset clocks */
 	s64 time_offset;

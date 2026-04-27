@@ -105,6 +105,5 @@ struct wl18xx_event_mailbox {
 
 int wl18xx_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event,
 			  bool *timeout);
-int wl18xx_process_mailbox_events(struct wl1271 *wl);
 
 #endif

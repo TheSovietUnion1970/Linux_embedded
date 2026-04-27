@@ -38,7 +38,7 @@ struct wl18xx_priv {
 	struct wl18xx_priv_conf conf;
 
 	/* Index of last released Tx desc in FW */
-	u8 last_fw_rls_idx;
+	//u8 last_fw_rls_idx;
 
 	/* number of keys requiring extra spare mem-blocks */
 	int extra_spare_key_count;
