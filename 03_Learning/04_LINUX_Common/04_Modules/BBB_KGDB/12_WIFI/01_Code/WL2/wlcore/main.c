@@ -39,7 +39,7 @@ struct VV_wl18xx_fw_status *VV_status_reg;
 u32 VV_tx_allocated_blocks;
 u32 VV_tx_blocks_available;
 struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
-struct VV_link links[WLCORE_MAX_LINKS];
+struct VV_link VV_links[WLCORE_MAX_LINKS];
 int VV_skb_tx_frames_cnt;
 u32 VV_last_updated_tmp_tx_blocks_freed;
 u32 VV_tx_packets_count; 
@@ -420,7 +420,6 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	int avail, freed_blocks;
 	int i;
 	int ret;
-	struct wl1271_link *lnk;
 
 	ret = VV_sdio_raw_read(wl, wl->rtable[REG_RAW_FW_STATUS_ADDR],
 				   (void*)VV_status_reg,
@@ -443,21 +442,19 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	for_each_set_bit(i, wl->links_map, wl->num_links) {
 		//printk("wlcore_fw_status i = %d\n", i);
 		u8 diff;
-		lnk = &wl->links[i];
 
 		/* prevent wrap-around in freed-packets counter */
 		diff = (VV_status_reg->tx_lnk_free_pkts[i] -
-		       lnk->prev_freed_pkts) & 0xff;
+		       VV_links[i].prev_freed_pkts) & 0xff;
 
 		if (diff == 0)
 			continue;
 
-		//lnk->allocated_pkts -= diff;
 		VV_allocated_pkts[i] -= diff;
-		lnk->prev_freed_pkts = VV_status_reg->tx_lnk_free_pkts[i];
+		VV_links[i].prev_freed_pkts = VV_status_reg->tx_lnk_free_pkts[i];
 
 		/* accumulate the prev_freed_pkts counter */
-		lnk->total_freed_pkts += diff;
+		VV_links[i].total_freed_pkts += diff;
 	}
 	//printk("END\n");
 
@@ -560,7 +557,7 @@ static void wl1271_netstack_work(struct work_struct *work)
 void VV_get_last_tx_rate(struct wl1271 *wl, struct ieee80211_vif *vif,
 			     u8 band, struct ieee80211_tx_rate *rate, u8 hlid)
 {
-	u8 fw_rate = wl->links[hlid].fw_rate_idx;
+	u8 fw_rate = VV_links[hlid].fw_rate_idx;
 
 	if (fw_rate > CONF_HW_RATE_INDEX_MAX) {
 		wl1271_error("last Tx rate invalid: %d", fw_rate);
@@ -686,9 +683,9 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 	//printk("fw_release_idx = %d, hlid = %d\n", status_priv->fw_release_idx, hlid);
 
 	if (hlid < WLCORE_MAX_LINKS) {
-		wl->links[hlid].fw_rate_idx =
+		VV_links[hlid].fw_rate_idx =
 				VV_status_reg->tx_last_rate;
-		wl->links[hlid].fw_rate_mbps =
+		VV_links[hlid].fw_rate_mbps =
 				VV_status_reg->tx_last_rate_mbps;
 	}
 
@@ -1044,7 +1041,7 @@ static void wlcore_save_freed_pkts(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	u32 sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING;
 
 	wl_sta = (void *)sta->drv_priv;
-	wl_sta->total_freed_pkts = wl->links[hlid].total_freed_pkts;
+	wl_sta->total_freed_pkts = VV_links[hlid].total_freed_pkts;
 
 	/*
 	 * increment the initial seq number on recovery to account for
@@ -1540,7 +1537,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	// Put the packet into the per-link, per-queue list and update counters.
 	wl1271_debug(DEBUG_TX, "queue skb hlid %d q %d len %d",
 		     hlid, q, skb->len);
-	//skb_queue_tail(&wl->links[hlid].tx_queue[q], skb);
+	//skb_queue_tail(&VV_links[hlid].tx_queue[q], skb);
 	skb_queue_tail(&VV_tx_queue[hlid][q], skb);
 
 	//wl->tx_queue_count[q]++;
@@ -2245,9 +2242,9 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	wl->active_link_count = 0;
 
 	/* The system link is always allocated */
-	//wl->links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
+	//VV_links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
 	VV_allocated_pkts[WL12XX_SYSTEM_HLID] = 0;
-	wl->links[WL12XX_SYSTEM_HLID].prev_freed_pkts = 0;
+	VV_links[WL12XX_SYSTEM_HLID].prev_freed_pkts = 0;
 	__set_bit(WL12XX_SYSTEM_HLID, wl->links_map);
 
 	/*
@@ -3693,7 +3690,7 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 	hlid = wlvif->sta.hlid;
 
 	if (hlid != WL12XX_INVALID_LINK_ID) {
-		u64 tx_seq = wl->links[hlid].total_freed_pkts;
+		u64 tx_seq = VV_links[hlid].total_freed_pkts;
 		tx_seq_32 = WL1271_TX_SECURITY_HI32(tx_seq);
 		tx_seq_16 = WL1271_TX_SECURITY_LO16(tx_seq);
 	}
@@ -4598,10 +4595,10 @@ static int wl1271_allocate_sta(struct wl1271 *wl,
 	}
 
 	/* use the previous security seq, if this is a recovery/resume */
-	wl->links[wl_sta->hlid].total_freed_pkts = wl_sta->total_freed_pkts;
+	VV_links[wl_sta->hlid].total_freed_pkts = wl_sta->total_freed_pkts;
 
 	set_bit(wl_sta->hlid, wlvif->ap.sta_hlid_map);
-	memcpy(wl->links[wl_sta->hlid].addr, sta->addr, ETH_ALEN);
+	memcpy(VV_links[wl_sta->hlid].addr, sta->addr, ETH_ALEN);
 	wl->active_sta_count++;
 	return 0;
 }
@@ -4619,16 +4616,16 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	 * save the last used PN in the private part of iee80211_sta,
 	 * in case of recovery/suspend
 	 */
-	//wlcore_save_freed_pkts_addr(wl, wlvif, hlid, wl->links[hlid].addr);
+	//wlcore_save_freed_pkts_addr(wl, wlvif, hlid, VV_links[hlid].addr);
 	struct ieee80211_sta *sta;
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 
 	if (WARN_ON(hlid == WL12XX_INVALID_LINK_ID ||
-		    is_zero_ether_addr(wl->links[hlid].addr)))
+		    is_zero_ether_addr(VV_links[hlid].addr)))
 		return;
 
 	rcu_read_lock();
-	sta = ieee80211_find_sta(vif, wl->links[hlid].addr);
+	sta = ieee80211_find_sta(vif, VV_links[hlid].addr);
 	if (sta)
 		wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
 	rcu_read_unlock();
@@ -5117,7 +5114,7 @@ static u32 wlcore_op_get_expected_throughput(struct ieee80211_hw *hw,
 	u8 hlid = wl_sta->hlid;
 
 	/* return in units of Kbps */
-	return (wl->links[hlid].fw_rate_mbps * 1000);
+	return (VV_links[hlid].fw_rate_mbps * 1000);
 }
 
 static int wl1271_op_get_survey(struct ieee80211_hw *hw, int idx,
@@ -5200,7 +5197,7 @@ static int wl1271_op_ampdu_action(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	ba_bitmap = &wl->links[hlid].ba_bitmap;
+	ba_bitmap = &VV_links[hlid].ba_bitmap;
 
 	ret = pm_runtime_get_sync(wl->dev);
 	if (ret < 0) {
@@ -6312,7 +6309,6 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	 */
 	for (i = 0; i < NUM_TX_QUEUES; i++){
 		for (j = 0; j < WLCORE_MAX_LINKS; j++){
-			//skb_queue_head_init(&wl->links[j].tx_queue[i]);
 			skb_queue_head_init(&VV_tx_queue[j][i]);
 		}
 	}

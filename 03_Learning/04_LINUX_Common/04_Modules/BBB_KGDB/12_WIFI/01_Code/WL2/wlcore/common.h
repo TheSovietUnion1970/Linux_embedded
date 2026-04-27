@@ -180,7 +180,7 @@ struct VV_link {
 	 */
 	u64 total_freed_pkts;
 };
-extern struct VV_link links[WLCORE_MAX_LINKS];
+extern struct VV_link VV_links[WLCORE_MAX_LINKS];
 #endif
 //extern struct VV_wl18xx_fw_status VV_status_reg;
 

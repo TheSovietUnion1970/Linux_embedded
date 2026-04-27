@@ -434,18 +434,18 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	 * tx_lnk_free_pkts will be NULL. check for it.
 	 */
 	if (VV_status_reg->tx_lnk_free_pkts)
-		wl->links[link].prev_freed_pkts =
+		VV_links[link].prev_freed_pkts =
 			VV_status_reg->tx_lnk_free_pkts[link];
 
 
-	wl->links[link].wlvif = wlvif;
+	VV_links[link].wlvif = wlvif;
 
 	/*
 	 * Take saved value for total freed packets from wlvif, in case this is
 	 * recovery/resume
 	 */
 	if (wlvif->bss_type != BSS_TYPE_AP_BSS)
-		wl->links[link].total_freed_pkts = wlvif->total_freed_pkts;
+		VV_links[link].total_freed_pkts = wlvif->total_freed_pkts;
 
 	*hlid = link;
 
@@ -466,18 +466,18 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	__clear_bit(*hlid, wlvif->links_map);
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
-	// wl->links[*hlid].allocated_pkts = 0;
+	// VV_links[*hlid].allocated_pkts = 0;
 	VV_allocated_pkts[*hlid] = 0;
-	wl->links[*hlid].prev_freed_pkts = 0;
-	wl->links[*hlid].ba_bitmap = 0;
-	eth_zero_addr(wl->links[*hlid].addr);
+	VV_links[*hlid].prev_freed_pkts = 0;
+	VV_links[*hlid].ba_bitmap = 0;
+	eth_zero_addr(VV_links[*hlid].addr);
 
 	/*
 	 * At this point op_tx() will not add more packets to the queues. We
 	 * can purge them.
 	 */
 	wl1271_tx_reset_link_queues(wl, *hlid);
-	wl->links[*hlid].wlvif = NULL;
+	VV_links[*hlid].wlvif = NULL;
 
 	if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
 	    *hlid == wlvif->ap.bcast_hlid) {
@@ -486,7 +486,7 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 		 * save the total freed packets in the wlvif, in case this is
 		 * recovery or suspend
 		 */
-		wlvif->total_freed_pkts = wl->links[*hlid].total_freed_pkts;
+		wlvif->total_freed_pkts = VV_links[*hlid].total_freed_pkts;
 
 		/*
 		 * increment the initial seq number on recovery to account for
@@ -499,7 +499,7 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 			wlvif->total_freed_pkts += sqn_padding;
 	}
 
-	wl->links[*hlid].total_freed_pkts = 0;
+	VV_links[*hlid].total_freed_pkts = 0;
 
 	*hlid = WL12XX_INVALID_LINK_ID;
 	wl->active_link_count--;
@@ -760,7 +760,7 @@ int wl12xx_cmd_role_start_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		goto out_free_global;
 
 	/* use the previous security seq, if this is a recovery/resume */
-	wl->links[wlvif->ap.bcast_hlid].total_freed_pkts =
+	VV_links[wlvif->ap.bcast_hlid].total_freed_pkts =
 						wlvif->total_freed_pkts;
 
 	cmd->role_id = wlvif->role_id;

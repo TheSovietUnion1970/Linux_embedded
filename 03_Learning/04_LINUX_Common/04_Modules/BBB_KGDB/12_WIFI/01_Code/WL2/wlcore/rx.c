@@ -214,7 +214,7 @@ int wlcore_rx(struct wl1271 *wl)
 	hlid = VV_status_reg->hlid;
 
 	if (hlid < WLCORE_MAX_LINKS)
-		wl->links[hlid].fw_rate_mbps =
+		VV_links[hlid].fw_rate_mbps =
 				VV_status_reg->tx_last_rate_mbps;
 
 	while (drv_rx_counter != fw_rx_counter) {

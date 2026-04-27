@@ -250,38 +250,6 @@ enum wl12xx_vif_flags {
 	WLVIF_FLAG_BEACON_DISABLED,
 };
 
-struct wl12xx_vif;
-
-struct wl1271_link {
-	/* AP-mode - TX queue per AC in link */
-	//struct sk_buff_head tx_queue[NUM_TX_QUEUES];
-
-	/* accounting for allocated / freed packets in FW */
-	//u8 allocated_pkts;
-	u8 prev_freed_pkts;
-
-	u8 addr[ETH_ALEN];
-
-	/* bitmap of TIDs where RX BA sessions are active for this link */
-	u8 ba_bitmap;
-
-	/* the last fw rate index we used for this link */
-	u8 fw_rate_idx;
-
-	/* the last fw rate [Mbps] we used for this link */
-	u8 fw_rate_mbps;
-
-	/* The wlvif this link belongs to. Might be null for global links */
-	struct wl12xx_vif *wlvif;
-
-	/*
-	 * total freed FW packets on the link - used for tracking the
-	 * AES/TKIP PN across recoveries. Re-initialized each time
-	 * from the wl1271_station structure.
-	 */
-	u64 total_freed_pkts;
-};
-
 #define WL1271_MAX_RX_FILTERS 5
 #define WL1271_RX_FILTER_MAX_FIELDS 8
 

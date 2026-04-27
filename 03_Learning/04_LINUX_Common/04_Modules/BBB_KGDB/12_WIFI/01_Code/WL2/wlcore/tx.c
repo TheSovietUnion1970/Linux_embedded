@@ -524,7 +524,6 @@ static struct sk_buff *wlcore_lnk_dequeue(struct wl1271 *wl, u8 hlid, u8 q)
 	struct sk_buff *skb;
 	unsigned long flags;
 
-	//skb = skb_dequeue(&lnk->tx_queue[q]);
 	skb = skb_dequeue(&VV_tx_queue[hlid][q]);
 	printk("[3] - skb = 0x%x\n", skb);
 	if (skb) {
@@ -601,8 +600,6 @@ static struct sk_buff *wlcore_lnk_dequeue_high_prio(struct wl1271 *wl,
 						    u8 hlid, u8 ac,
 						    u8 *low_prio_hlid)
 {
-	struct wl1271_link *lnk = &wl->links[hlid];
-
 	if (!VV_lnk_high_prio(wl, hlid)) {
 		if (*low_prio_hlid == WL12XX_INVALID_LINK_ID &&
 			!skb_queue_empty(&VV_tx_queue[hlid][ac]) &&
@@ -709,7 +706,6 @@ static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 
 	if (!skb && (low_prio_hlid != WL12XX_INVALID_LINK_ID) && (wl->last_valid_wlvif == wlvif)) {
 		printk("[3] - IFFF\n");
-		struct wl1271_link *lnk = &wl->links[low_prio_hlid];
 		skb = wlcore_lnk_dequeue(wl, hlid, ac);
 		printk("[3] - Done - wlcore_lnk_dequeue\n");
 
@@ -938,11 +934,9 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 	unsigned long flags;
 	struct ieee80211_tx_info *info;
 	int total[NUM_TX_QUEUES];
-	struct wl1271_link *lnk = &wl->links[hlid];
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		total[i] = 0;
-		//while ((skb = skb_dequeue(&lnk->tx_queue[i]))) {
 		while ((skb = skb_dequeue(&VV_tx_queue[hlid][i]))) {
 			printk("TX_QUEUE - wl1271_tx_reset_link_queues\n");
 

@@ -16,6 +16,8 @@
 #include "wl12xx_80211.h"
 #include "hw_ops.h"
 
+#include "common.h"
+
 #define WL18XX_LOGGER_SDIO_BUFF_MAX	(0x1020)
 #define WL18XX_DATA_RAM_BASE_ADDRESS	(0x20000000)
 #define WL18XX_LOGGER_SDIO_BUFF_ADDR	(0x40159c)
@@ -139,22 +141,20 @@ static void wl1271_stop_ba_event(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	if (wlvif->bss_type != BSS_TYPE_AP_BSS) {
 		u8 hlid = wlvif->sta.hlid;
-		if (!wl->links[hlid].ba_bitmap)
+		if (!VV_links[hlid].ba_bitmap)
 			return;
-		ieee80211_stop_rx_ba_session(vif, wl->links[hlid].ba_bitmap,
+		ieee80211_stop_rx_ba_session(vif, VV_links[hlid].ba_bitmap,
 					     vif->bss_conf.bssid);
 	} else {
 		u8 hlid;
-		struct wl1271_link *lnk;
 		for_each_set_bit(hlid, wlvif->ap.sta_hlid_map,
 				 wl->num_links) {
-			lnk = &wl->links[hlid];
-			if (!lnk->ba_bitmap)
+			if (!VV_links[hlid].ba_bitmap)
 				continue;
 
 			ieee80211_stop_rx_ba_session(vif,
-						     lnk->ba_bitmap,
-						     lnk->addr);
+						     VV_links[hlid].ba_bitmap,
+						     VV_links[hlid].addr);
 		}
 	}
 }
@@ -276,7 +276,7 @@ static void wlcore_disconnect_sta(struct wl1271 *wl, unsigned long sta_bitmap)
 			continue;
 
 		vif = wl12xx_wlvif_to_vif(wlvif);
-		addr = wl->links[h].addr;
+		addr = VV_links[h].addr;
 
 		rcu_read_lock();
 		sta = ieee80211_find_sta(vif, addr);
@@ -568,7 +568,7 @@ int VV_process_mailbox_events(struct wl1271 *wl)
 		u8 win_size = mbox->rx_ba_win_size;
 		const u8 *addr;
 
-		wlvif = wl->links[link_id].wlvif;
+		wlvif = VV_links[link_id].wlvif;
 		vif = wl12xx_wlvif_to_vif(wlvif);
 
 		/* Update RX aggregation window size and call
@@ -577,13 +577,13 @@ int VV_process_mailbox_events(struct wl1271 *wl)
 		if (wlvif->bss_type != BSS_TYPE_AP_BSS)
 			addr = vif->bss_conf.bssid;
 		else
-			addr = wl->links[link_id].addr;
+			addr = VV_links[link_id].addr;
 
 		sta = ieee80211_find_sta(vif, addr);
 		if (sta) {
 			sta->max_rx_aggregation_subframes = win_size;
 			ieee80211_stop_rx_ba_session(vif,
-						wl->links[link_id].ba_bitmap,
+						VV_links[link_id].ba_bitmap,
 						addr);
 		}
 	}

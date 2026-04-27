@@ -99,10 +99,6 @@ struct wlcore_ops {
 			    bool allow_ht_operation,
 			    u32 rate_set, u8 hlid);
 	u32 (*convert_hwaddr)(struct wl1271 *wl, u32 hwaddr);
-	bool (*lnk_high_prio)(struct wl1271 *wl, u8 hlid,
-			      struct wl1271_link *lnk);
-	bool (*lnk_low_prio)(struct wl1271 *wl, u8 hlid,
-			     struct wl1271_link *lnk);
 	int (*interrupt_notify)(struct wl1271 *wl, bool action);
 	int (*rx_ba_filter)(struct wl1271 *wl, bool action);
 	int (*ap_sleep)(struct wl1271 *wl);
@@ -370,7 +366,6 @@ struct wl1271 {
 	 * AP-mode - links indexed by HLID. The global and broadcast links
 	 * are always active.
 	 */
-	struct wl1271_link links[WLCORE_MAX_LINKS];
 
 	/* number of currently active links */
 	int active_link_count;

@@ -123,10 +123,10 @@ void wl12xx_ps_link_start(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		return;
 
 	rcu_read_lock();
-	sta = ieee80211_find_sta(vif, wl->links[hlid].addr);
+	sta = ieee80211_find_sta(vif, VV_links[hlid].addr);
 	if (!sta) {
 		wl1271_error("could not find sta %pM for starting ps",
-			     wl->links[hlid].addr);
+			     VV_links[hlid].addr);
 		rcu_read_unlock();
 		return;
 	}
@@ -154,10 +154,10 @@ void wl12xx_ps_link_end(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	__clear_bit(hlid, &wl->ap_ps_map);
 
 	rcu_read_lock();
-	sta = ieee80211_find_sta(vif, wl->links[hlid].addr);
+	sta = ieee80211_find_sta(vif, VV_links[hlid].addr);
 	if (!sta) {
 		wl1271_error("could not find sta %pM for ending ps",
-			     wl->links[hlid].addr);
+			     VV_links[hlid].addr);
 		goto end;
 	}
 
