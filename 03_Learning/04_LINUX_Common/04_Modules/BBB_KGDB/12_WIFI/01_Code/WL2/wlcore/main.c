@@ -36,6 +36,10 @@ int VV_tx_queue_count[NUM_TX_QUEUES];
 u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
 u32 VV_tx_allocated_pkts[NUM_TX_QUEUES];
 struct VV_wl18xx_fw_status *VV_status_reg;
+u32 VV_tx_allocated_blocks;
+u32 VV_tx_blocks_available;
+struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
+int VV_skb_tx_frames_cnt;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -221,8 +225,8 @@ void wl12xx_rearm_tx_watchdog_locked(struct wl1271 *wl)
 {
 	/* if the watchdog is not armed, don't do anything */
 	// If there are no blocks currently allocated for TX -> no need to transmit
-	//printk("wl->tx_allocated_blocks = %d\n", wl->tx_allocated_blocks);
-	if (wl->tx_allocated_blocks == 0)
+	printk("[WORK] TX watchdog: %d\n", VV_tx_allocated_blocks);
+	if (VV_tx_allocated_blocks == 0)
 		return;
 
 	cancel_delayed_work(&wl->tx_watchdog_work);
@@ -281,7 +285,7 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 		goto out;
 
 	/* Tx went out in the meantime - everything is ok */
-	if (unlikely(wl->tx_allocated_blocks == 0))
+	if (unlikely(VV_tx_allocated_blocks == 0))
 		goto out;
 
 	/*
@@ -389,7 +393,6 @@ static void wl12xx_irq_update_links_status(struct wl1271 *wl,
 	unsigned long cur_fw_ps_map;
 	u8 hlid;
 
-	//cur_fw_ps_map = status->link_ps_bitmap;
 	cur_fw_ps_map = VV_status_reg->link_ps_bitmap;
 	if (wl->ap_fw_ps_map != cur_fw_ps_map) {
 		wl1271_debug(DEBUG_PSM,
@@ -401,8 +404,6 @@ static void wl12xx_irq_update_links_status(struct wl1271 *wl,
 	}
 
 	for_each_set_bit(hlid, wlvif->ap.sta_hlid_map, wl->num_links)
-		// wl12xx_irq_ps_regulate_link(wl, wlvif, hlid,
-		// 			    wl->links[hlid].allocated_pkts);
 		wl12xx_irq_ps_regulate_link(wl, wlvif, hlid,
 					    VV_allocated_pkts[hlid]);
 }
@@ -411,37 +412,24 @@ static void wl12xx_irq_update_links_status(struct wl1271 *wl,
 static int wlcore_fw_status(struct wl1271 *wl)
 {
 	struct wl12xx_vif *wlvif;
-	u32 old_tx_blk_count = wl->tx_blocks_available;
+	u32 old_tx_blk_count = VV_tx_blocks_available;
 	int avail, freed_blocks;
 	int i;
 	int ret;
 	struct wl1271_link *lnk;
 
-	// ret = wlcore_raw_read_data(wl, REG_RAW_FW_STATUS_ADDR,
-	// 			   wl->raw_fw_status,
-	// 			   wl->fw_status_len, false);
 	ret = VV_sdio_raw_read(wl, wl->rtable[REG_RAW_FW_STATUS_ADDR],
 				   (void*)VV_status_reg,
 				   sizeof(struct VV_wl18xx_fw_status), false);
 	if (ret < 0)
 		return ret;
 
-	// wlcore_hw_convert_fw_status(wl, wl->raw_fw_status, wl->fw_status);
-	//VV_convert_fw_status(wl, VV_status_reg, wl->fw_status);
-
-
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		/* prevent wrap-around in freed-packets counter */
-		// VV_tx_allocated_pkts[i] -=
-		// 		(status->counters.tx_released_pkts[i] -
-		// 		VV_tx_pkts_freed[i]) & 0xff;
 		VV_tx_allocated_pkts[i] -=
 				(VV_status_reg->tx_released_pkts[i] -
 				VV_tx_pkts_freed[i]) & 0xff;
 
-		//if (!i) printk("[Idx0] - 0x%x, 0x%x, 0x%x\n", VV_tx_allocated_pkts[0], VV_tx_pkts_freed[0], status->counters.tx_released_pkts[0]);
-
-		// VV_tx_pkts_freed[i] = status->counters.tx_released_pkts[i];
 		VV_tx_pkts_freed[i] = VV_status_reg->tx_released_pkts[i];
 
 		// counters.tx_released_pkts and counters.tx_released_pkts are read from Interrupt
@@ -454,8 +442,6 @@ static int wlcore_fw_status(struct wl1271 *wl)
 		lnk = &wl->links[i];
 
 		/* prevent wrap-around in freed-packets counter */
-		// diff = (status->counters.tx_lnk_free_pkts[i] -
-		//        lnk->prev_freed_pkts) & 0xff;
 		diff = (VV_status_reg->tx_lnk_free_pkts[i] -
 		       lnk->prev_freed_pkts) & 0xff;
 
@@ -464,7 +450,6 @@ static int wlcore_fw_status(struct wl1271 *wl)
 
 		//lnk->allocated_pkts -= diff;
 		VV_allocated_pkts[i] -= diff;
-		//lnk->prev_freed_pkts = status->counters.tx_lnk_free_pkts[i];
 		lnk->prev_freed_pkts = VV_status_reg->tx_lnk_free_pkts[i];
 
 		/* accumulate the prev_freed_pkts counter */
@@ -472,16 +457,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	}
 	//printk("END\n");
 
-
 	/* prevent wrap-around in total blocks counter */
-	// if (likely(wl->tx_blocks_freed <= status->total_released_blks))
-	// 	freed_blocks = status->total_released_blks -
-	// 		       wl->tx_blocks_freed;
-	// else
-	// 	freed_blocks = 0x100000000LL - wl->tx_blocks_freed +
-	// 		       status->total_released_blks;
-
-	// wl->tx_blocks_freed = status->total_released_blks;
 	if (likely(wl->tx_blocks_freed <= VV_status_reg->total_released_blks))
 		freed_blocks = VV_status_reg->total_released_blks -
 			       wl->tx_blocks_freed;
@@ -490,10 +466,12 @@ static int wlcore_fw_status(struct wl1271 *wl)
 			       VV_status_reg->total_released_blks;
 
 	wl->tx_blocks_freed = VV_status_reg->total_released_blks;
+	// => freed_blocks = new (total_released_blks) - last (tx_blocks_freed)
+	//				   = the ctr number of released blocks
 
 
 	
-	wl->tx_allocated_blocks -= freed_blocks;
+	VV_tx_allocated_blocks = VV_tx_allocated_blocks - freed_blocks;
 
 	/*
 	 * If the FW freed some blocks:
@@ -501,14 +479,15 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	 * not stuck. Otherwise, cancel the timer (no Tx currently).
 	 */
 	if (freed_blocks) {
-		if (wl->tx_allocated_blocks)
+		if (VV_tx_allocated_blocks) 
 			wl12xx_rearm_tx_watchdog_locked(wl);
 		else
 			cancel_delayed_work(&wl->tx_watchdog_work);
 	}
+	// // if tx_allocated_blocks > 0 -> there is blocks in fw -> raise TX stuck when there
+	// is no action to send these blks out
 
-	//avail = status->tx_total - wl->tx_allocated_blocks;
-	avail = VV_status_reg->tx_total - wl->tx_allocated_blocks;
+	avail = VV_status_reg->tx_total - VV_tx_allocated_blocks;
 
 	/*
 	 * The FW might change the total number of TX memblocks before
@@ -518,11 +497,13 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	 * mind that only blocks that were allocated can be moved from
 	 * TX to RX, tx_blocks_available should never decrease here.
 	 */
-	wl->tx_blocks_available = max((int)wl->tx_blocks_available,
+	VV_tx_blocks_available = max((int)VV_tx_blocks_available,
 				      avail);
+	// printk("[RUN] - 0x%x vs 0x%x - 0x%x vs 0x%x\n", VV_status_reg->tx_total, VV_tx_allocated_blocks
+	// 				, VV_tx_blocks_available, old_tx_blk_count);
 
 	/* if more blocks are available now, tx work can be scheduled */
-	if (wl->tx_blocks_available > old_tx_blk_count)
+	if (VV_tx_blocks_available > old_tx_blk_count)
 		clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
 
 	/* for AP update num of allocated TX blocks per link and ps status */
@@ -531,12 +512,9 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	}
 
 	/* update the host-chipset time offset */
-	// wl->time_offset = (ktime_get_boottime_ns() >> 10) -
-	// 	(s64)(status->fw_localtime);
 	wl->time_offset = (ktime_get_boottime_ns() >> 10) -
 		(s64)(VV_status_reg->fw_localtime);
 
-	//wl->fw_fast_lnk_map = status->link_fast_bitmap;
 	wl->fw_fast_lnk_map = VV_status_reg->link_fast_bitmap;
 
 	return 0;
@@ -637,7 +615,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	struct wl1271_tx_hw_descr *tx_desc;
 
 	/* check for id legality */
-	if (unlikely(id >= wl->num_tx_desc || wl->tx_frames[id] == NULL)) {
+	if (unlikely(id >= WL18XX_NUM_TX_DESCRIPTORS || VV_skb_tx_frames[id] == NULL)) {
 		wl1271_warning("illegal id in tx completion: %d", id);
 		return;
 	}
@@ -645,7 +623,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	/* a zero bit indicates Tx success */
 	tx_success = !(tx_stat_byte & BIT(WL18XX_TX_STATUS_STAT_BIT_IDX));
 
-	skb = wl->tx_frames[id];
+	skb = VV_skb_tx_frames[id];
 	info = IEEE80211_SKB_CB(skb);
 	tx_desc = (struct wl1271_tx_hw_descr *)skb->data;
 
@@ -696,14 +674,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	skb_queue_tail(&wl->deferred_tx_queue, skb);
 	queue_work(wl->freezable_wq, &wl->netstack_work);
 
-	//wl1271_free_tx_id(wl, id);
-	if (__test_and_clear_bit(id, wl->tx_frames_map)) {
-		if (unlikely(wl->tx_frames_cnt == wl->num_tx_desc))
-			clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
-
-		wl->tx_frames[id] = NULL;
-		wl->tx_frames_cnt--;
-	}
+	wl1271_free_tx_id(wl, id);
 }
 
 void VV_tx_immediate_complete(struct wl1271 *wl)
@@ -719,16 +690,11 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 		return;
 
 	/* update rates per link */
-	//hlid = wl->fw_status->counters.hlid;
 	hlid = VV_status_reg->hlid;
 
 	//printk("fw_release_idx = %d, hlid = %d\n", status_priv->fw_release_idx, hlid);
 
 	if (hlid < WLCORE_MAX_LINKS) {
-		// wl->links[hlid].fw_rate_idx =
-		// 		wl->fw_status->counters.tx_last_rate;
-		// wl->links[hlid].fw_rate_mbps =
-		// 		wl->fw_status->counters.tx_last_rate_mbps;
 		wl->links[hlid].fw_rate_idx =
 				VV_status_reg->tx_last_rate;
 		wl->links[hlid].fw_rate_mbps =
@@ -739,10 +705,7 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 	// wl1271_debug(DEBUG_TX, "last released desc = %d, current idx = %d",
 	// 	     priv->last_fw_rls_idx, status_priv->fw_release_idx);
 
-	//if (status_priv->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
 	if (VV_status_reg->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
-		// wl1271_error("invalid desc release index %d",
-		// 	     status_priv->fw_release_idx);
 		wl1271_error("invalid desc release index %d",
 			     VV_status_reg->fw_release_idx);
 		WARN_ON(1);
@@ -799,11 +762,8 @@ static int VV_irq_locked(struct wl1271 *wl)
 		if (ret < 0)
 			goto err_ret;
 
-		//VV_tx_immediate_complete
-		//wlcore_hw_tx_immediate_compl(wl); // -> wl18xx_tx_complete_packet
 		VV_tx_immediate_complete(wl);
 
-		//intr = wl->fw_status->intr;
 		intr = VV_status_reg->intr;
 		intr &= WLCORE_ALL_INTR_MASK;
 		if (!intr) {
@@ -1267,18 +1227,6 @@ out_unlock:
 
 static int wl1271_setup(struct wl1271 *wl)
 {
-	// wl->raw_fw_status = kzalloc(wl->fw_status_len, GFP_KERNEL);
-	// if (!wl->raw_fw_status)
-	// 	goto err;
-
-	// wl->fw_status = kzalloc(sizeof(*wl->fw_status), GFP_KERNEL);
-	// if (!wl->fw_status)
-	// 	goto err;
-
-	wl->tx_res_if = kzalloc(sizeof(*wl->tx_res_if), GFP_KERNEL);
-	if (!wl->tx_res_if)
-		goto err;
-
 	/* Vinh custom */
 	VV_status_reg = kzalloc(sizeof(struct VV_wl18xx_fw_status), GFP_KERNEL);
 	if (!VV_status_reg)
@@ -1286,8 +1234,6 @@ static int wl1271_setup(struct wl1271 *wl)
 
 	return 0;
 err:
-	// kfree(wl->fw_status);
-	kfree(wl->raw_fw_status);
 	kfree(VV_status_reg);
 	return -ENOMEM;
 }
@@ -1431,9 +1377,6 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 
 	ret = wl12xx_fetch_firmware(wl, plt); // VV_
 	if (ret < 0) {
-		//kfree(wl->fw_status);
-		//kfree(wl->raw_fw_status);
-		kfree(wl->tx_res_if);
 		kfree(VV_status_reg);
 	}
 
@@ -2294,8 +2237,8 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	wl->rx_counter = 0;
 	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	wl->channel_type = NL80211_CHAN_NO_HT;
-	wl->tx_blocks_available = 0;
-	wl->tx_allocated_blocks = 0;
+	VV_tx_blocks_available = 0;
+	VV_tx_allocated_blocks = 0;
 	//wl->tx_results_count = 0;
 	wl->tx_packets_count = 0;
 	wl->time_offset = 0;
@@ -2333,12 +2276,6 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 
 	//wl1271_debugfs_reset(wl);
 
-	//kfree(wl->raw_fw_status);
-	//wl->raw_fw_status = NULL;
-	//kfree(wl->fw_status);
-	//wl->fw_status = NULL;
-	kfree(wl->tx_res_if);
-	wl->tx_res_if = NULL;
 	kfree(wl->target_mem_map);
 	wl->target_mem_map = NULL;
 
@@ -2922,6 +2859,7 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 		ieee80211_scan_completed(wl->hw, &info);
 	}
 
+	printk("[MAIN] - 0x%x vs 0x%x\n", wl->sched_vif, wlvif);
 	if (wl->sched_vif == wlvif)
 		wl->sched_vif = NULL;
 
@@ -3319,6 +3257,20 @@ static void wl1271_set_band_rate(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	wlvif->rate_set = wlvif->basic_rate_set;
 }
 
+#include "../wl18xx/scan.h"
+static int VV_scan_stop(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+			       u8 scan_type)
+{
+	struct wl18xx_cmd_scan_stop stop;
+	int ret;
+
+	stop.role_id = wlvif->role_id;
+	stop.scan_type = scan_type; // SCAN_TYPE_PERIODIC
+
+	ret = VV_cmd_send(wl, CMD_STOP_SCAN, &stop, sizeof(stop), 0);
+	return ret;
+}
+
 static void wl1271_sta_handle_idle(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				   bool idle)
 {
@@ -3331,8 +3283,10 @@ static void wl1271_sta_handle_idle(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		clear_bit(WLVIF_FLAG_ACTIVE, &wlvif->flags);
 	} else {
 		/* The current firmware only supports sched_scan in idle */
+		printk("[MAIN2] - 0x%x vs 0x%x\n", wl->sched_vif, wlvif);
 		if (wl->sched_vif == wlvif)
-			wl->ops->sched_scan_stop(wl, wlvif);
+			// wl->ops->sched_scan_stop(wl, wlvif);
+			VV_scan_stop(wl, wlvif, SCAN_TYPE_PERIODIC);
 
 		set_bit(WLVIF_FLAG_ACTIVE, &wlvif->flags);
 	}
@@ -6409,8 +6363,8 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	__set_bit(WL12XX_SYSTEM_HLID, wl->links_map);
 
 	memset(wl->tx_frames_map, 0, sizeof(wl->tx_frames_map));
-	for (i = 0; i < wl->num_tx_desc; i++)
-		wl->tx_frames[i] = NULL;
+	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++)
+		VV_skb_tx_frames[i] = NULL;
 
 	spin_lock_init(&wl->wl_lock);
 
@@ -6507,9 +6461,6 @@ int wlcore_free_hw(struct wl1271 *wl)
 	kfree(wl->nvs);
 	wl->nvs = NULL;
 
-	//kfree(wl->raw_fw_status);
-	//kfree(wl->fw_status);
-	kfree(wl->tx_res_if);
 	kfree(VV_status_reg);
 	destroy_workqueue(wl->freezable_wq);
 
@@ -6565,7 +6516,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	if (ret < 0)
 		goto out_free_nvs;
 
-	BUG_ON(wl->num_tx_desc > WLCORE_MAX_TX_DESCRIPTORS);
+	BUG_ON(WL18XX_NUM_TX_DESCRIPTORS > WLCORE_MAX_TX_DESCRIPTORS);
 
 	/* adjust some runtime configuration parameters */
 	wlcore_adjust_conf(wl);

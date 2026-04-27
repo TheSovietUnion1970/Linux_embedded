@@ -19,7 +19,6 @@
 
 void wl1271_scan_complete_work(struct work_struct *work)
 {
-	//printk("[WORK] - wl1271_scan_complete_work\n");
 	struct delayed_work *dwork;
 	struct wl1271 *wl;
 	struct wl12xx_vif *wlvif;
@@ -31,7 +30,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	dwork = to_delayed_work(work);
 	wl = container_of(dwork, struct wl1271, scan_complete_work);
 
-	//wl1271_info("Scanning complete");
+	printk("[WORK] Scan complete state: %d\n", wl->scan.state);
 
 	mutex_lock(&wl->mutex);
 

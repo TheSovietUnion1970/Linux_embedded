@@ -62,8 +62,6 @@ struct wlcore_ops {
 	void (*tx_immediate_compl)(struct wl1271 *wl);
 	int (*hw_init)(struct wl1271 *wl);
 	int (*init_vif)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-	// void (*convert_fw_status)(struct wl1271 *wl, void *raw_fw_status,
-	// 			  struct wl_fw_status *fw_status);
 	u32 (*sta_get_ap_rate_mask)(struct wl1271 *wl,
 				    struct wl12xx_vif *wlvif);
 	int (*get_pg_ver)(struct wl1271 *wl, s8 *ver);
@@ -244,7 +242,7 @@ struct wl1271 {
 	/* Accounting for allocated / available TX blocks on HW */
 	u32 tx_blocks_freed;
 	u32 tx_blocks_available;
-	u32 tx_allocated_blocks;
+	//u32 tx_allocated_blocks;
 	//u32 tx_results_count;
 
 	/* Accounting for allocated / available Tx packets in HW */
@@ -274,7 +272,7 @@ struct wl1271 {
 	/* Pending TX frames */
 	unsigned long tx_frames_map[BITS_TO_LONGS(WLCORE_MAX_TX_DESCRIPTORS)];
 	struct sk_buff *tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
-	int tx_frames_cnt;
+	//int tx_frames_cnt;
 
 	/* FW Rx counter */
 	u32 rx_counter;
@@ -345,10 +343,6 @@ struct wl1271 {
 	__le32 *buffer_32;
 	u32 buffer_cmd;
 	u32 buffer_busyword[WL1271_BUSY_WORD_CNT];
-
-	void *raw_fw_status;
-	//struct wl_fw_status *fw_status;
-	struct wl1271_tx_hw_res_if *tx_res_if;
 
 	/* Current chipset configuration */
 	struct wlcore_conf conf;
@@ -431,7 +425,7 @@ struct wl1271 {
 	void *priv;
 
 	/* number of TX descriptors the HW supports. */
-	u32 num_tx_desc;
+	//u32 num_tx_desc;
 	/* number of RX descriptors the HW supports. */
 	u32 num_rx_desc;
 	/* number of links the HW supports */

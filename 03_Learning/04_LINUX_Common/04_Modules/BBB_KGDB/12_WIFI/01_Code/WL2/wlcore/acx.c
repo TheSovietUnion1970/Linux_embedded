@@ -958,6 +958,7 @@ out:
 	return ret;
 }
 
+#define WL18XX_NUM_TX_DESCRIPTORS 32
 int wl12xx_acx_mem_cfg(struct wl1271 *wl)
 {
 	struct wl12xx_acx_config_memory *mem_conf;
@@ -979,7 +980,7 @@ int wl12xx_acx_mem_cfg(struct wl1271 *wl)
 	mem_conf->rx_mem_block_num = mem->rx_block_num;
 	mem_conf->tx_min_mem_block_num = mem->tx_min_block_num;
 	mem_conf->num_ssid_profiles = mem->ssid_profiles;
-	mem_conf->total_tx_descriptors = cpu_to_le32(wl->num_tx_desc);
+	mem_conf->total_tx_descriptors = cpu_to_le32(WL18XX_NUM_TX_DESCRIPTORS);
 	mem_conf->dyn_mem_enable = mem->dynamic_memory;
 	mem_conf->tx_free_req = mem->min_req_tx_blocks;
 	mem_conf->rx_free_req = mem->min_req_rx_blocks;
@@ -1021,10 +1022,11 @@ int wl1271_acx_init_mem_config(struct wl1271 *wl)
 	}
 
 	/* initialize TX block book keeping */
-	wl->tx_blocks_available =
+	VV_tx_blocks_available =
 		le32_to_cpu(wl->target_mem_map->num_tx_mem_blocks);
-	wl1271_debug(DEBUG_TX, "available tx blocks: %d",
-		     wl->tx_blocks_available);
+	// wl1271_debug(DEBUG_TX, "available tx blocks: %d",
+	// 	     VV_tx_blocks_available);
+	printk("[INIT] available tx blocks: %d", VV_tx_blocks_available);
 
 	return 0;
 }

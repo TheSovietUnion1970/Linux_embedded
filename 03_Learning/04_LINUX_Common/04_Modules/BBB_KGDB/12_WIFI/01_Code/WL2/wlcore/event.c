@@ -180,6 +180,7 @@ void wlcore_event_sched_scan_completed(struct wl1271 *wl,
 	wl1271_debug(DEBUG_EVENT, "PERIODIC_SCAN_COMPLETE_EVENT (status 0x%0x)",
 		     status);
 
+	printk("[EVENT] - wl->sched_vif: 0x%x\n", wl->sched_vif);
 	if (wl->sched_vif) {
 		ieee80211_sched_scan_stopped(wl->hw);
 		wl->sched_vif = NULL;
@@ -473,8 +474,9 @@ int VV_process_mailbox_events(struct wl1271 *wl)
 	u32 vector;
 
 	vector = le32_to_cpu(mbox->events_vector);
-	//printk("[EVENTS] - MBOX vector: 0x%x, bit: %d", vector, fls(vector) - 1);
+	printk("[EVENTS] - MBOX vector: 0x%x, bit: %d", vector, fls(vector) - 1);
 
+	// 0x100
 	if (vector & SCAN_COMPLETE_EVENT_ID) {
 		wl1271_debug(DEBUG_EVENT, "scan results: %d",
 			     mbox->number_of_scan_results);
@@ -506,7 +508,6 @@ int VV_process_mailbox_events(struct wl1271 *wl)
 		wlcore_scan_sched_scan_results(wl);
 	}
 
-	// 0x100
 	if (vector & PERIODIC_SCAN_COMPLETE_EVENT_ID)
 		wlcore_event_sched_scan_completed(wl, 1);
 

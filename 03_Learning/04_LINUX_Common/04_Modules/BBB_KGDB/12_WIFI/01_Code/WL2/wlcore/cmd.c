@@ -433,9 +433,6 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	 * on recovery, we might not have fw_status yet, and
 	 * tx_lnk_free_pkts will be NULL. check for it.
 	 */
-	// if (wl->fw_status->counters.tx_lnk_free_pkts)
-	// 	wl->links[link].prev_freed_pkts =
-	// 		wl->fw_status->counters.tx_lnk_free_pkts[link];
 	if (VV_status_reg->tx_lnk_free_pkts)
 		wl->links[link].prev_freed_pkts =
 			VV_status_reg->tx_lnk_free_pkts[link];

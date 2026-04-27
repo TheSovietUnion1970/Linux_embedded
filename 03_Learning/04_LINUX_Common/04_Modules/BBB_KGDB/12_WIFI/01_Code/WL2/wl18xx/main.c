@@ -1675,7 +1675,7 @@ static struct wlcore_ops wl18xx_ops = {
 	.scan_start	= wl18xx_scan_start,
 	.scan_stop	= wl18xx_scan_stop,
 	.sched_scan_start	= wl18xx_sched_scan_start,
-	.sched_scan_stop	= wl18xx_scan_sched_scan_stop,
+	//.sched_scan_stop	= wl18xx_scan_sched_scan_stop,
 	.handle_static_data	= wl18xx_handle_static_data,
 	.get_spare_blocks = wl18xx_get_spare_blocks,
 	.set_key	= wl18xx_set_key,
@@ -1821,7 +1821,7 @@ static int wl18xx_setup(struct wl1271 *wl)
 	BUILD_BUG_ON(WL18XX_CONF_SG_PARAMS_MAX > WLCORE_CONF_SG_PARAMS_MAX);
 
 	wl->rtable = wl18xx_rtable;
-	wl->num_tx_desc = WL18XX_NUM_TX_DESCRIPTORS;
+	//WL18XX_NUM_TX_DESCRIPTORS = WL18XX_NUM_TX_DESCRIPTORS;
 	wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
 	wl->num_links = WL18XX_MAX_LINKS;
 	wl->max_ap_stations = WL18XX_MAX_AP_STATIONS;

@@ -23,6 +23,8 @@
 
 #include "common.h"
 
+#define WL18XX_NUM_TX_DESCRIPTORS 32
+
 /*
  * TODO: this is here just for now, it must be removed when the data
  * operations are in place.
@@ -52,24 +54,24 @@ static int wl1271_alloc_tx_id(struct wl1271 *wl, struct sk_buff *skb)
 {
 	int id;
 
-	id = find_first_zero_bit(wl->tx_frames_map, wl->num_tx_desc);
-	if (id >= wl->num_tx_desc)
+	id = find_first_zero_bit(wl->tx_frames_map, WL18XX_NUM_TX_DESCRIPTORS);
+	if (id >= WL18XX_NUM_TX_DESCRIPTORS)
 		return -EBUSY;
 
 	__set_bit(id, wl->tx_frames_map);
-	wl->tx_frames[id] = skb;
-	wl->tx_frames_cnt++;
+	VV_skb_tx_frames[id] = skb;
+	VV_skb_tx_frames_cnt++;
 	return id;
 }
 
 void wl1271_free_tx_id(struct wl1271 *wl, int id)
 {
 	if (__test_and_clear_bit(id, wl->tx_frames_map)) {
-		if (unlikely(wl->tx_frames_cnt == wl->num_tx_desc))
+		if (unlikely(VV_skb_tx_frames_cnt == WL18XX_NUM_TX_DESCRIPTORS))
 			clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
 
-		wl->tx_frames[id] = NULL;
-		wl->tx_frames_cnt--;
+		VV_skb_tx_frames[id] = NULL;
+		VV_skb_tx_frames_cnt--;
 	}
 }
 EXPORT_SYMBOL(wl1271_free_tx_id);
@@ -116,7 +118,6 @@ static void wl1271_tx_regulate_link(struct wl1271 *wl,
 		return;
 
 	fw_ps = test_bit(hlid, &wl->ap_fw_ps_map);
-	// tx_pkts = wl->links[hlid].allocated_pkts;
 	tx_pkts = VV_allocated_pkts[hlid];
 
 	/*
@@ -220,15 +221,7 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 
 	/* allocate free identifier for the packet */
-	// id = wl1271_alloc_tx_id(wl, skb);
-	//int id;
-	id = find_first_zero_bit(wl->tx_frames_map, wl->num_tx_desc);
-	if (id >= wl->num_tx_desc)
-		return -EBUSY;
-
-	__set_bit(id, wl->tx_frames_map);
-	wl->tx_frames[id] = skb;
-	wl->tx_frames_cnt++;
+	id = wl1271_alloc_tx_id(wl, skb);
 	if (id < 0)
 		return id;
 
@@ -236,7 +229,7 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	u32 blk_size = WL18XX_TX_HW_BLOCK_SIZE;
 	total_blocks = (total_len + blk_size - 1) / blk_size + spare_blocks;
 
-	if (total_blocks <= wl->tx_blocks_available) {
+	if (total_blocks <= VV_tx_blocks_available) {
 		// Adds the TX descriptor at the front of the skb
 		desc = skb_push(skb, total_len - skb->len); // len = sizeof(struct wl1271_tx_hw_descr) + extra
 
@@ -246,24 +239,24 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 		desc->id = id;
 
-		wl->tx_blocks_available -= total_blocks;
-		wl->tx_allocated_blocks += total_blocks;
+		VV_tx_blocks_available -= total_blocks;
+
+		// VV_tx_allocated_blocks += total_blocks;
+		VV_tx_allocated_blocks = VV_tx_allocated_blocks + total_blocks;
 
 		/*
 		 * If the FW was empty before, arm the Tx watchdog. Also do
 		 * this on the first Tx after resume, as we always cancel the
 		 * watchdog on suspend.
 		 */
-		if (wl->tx_allocated_blocks == total_blocks ||
+		if (VV_tx_allocated_blocks == total_blocks ||
 		    test_and_clear_bit(WL1271_FLAG_REINIT_TX_WDOG, &wl->flags))
 			wl12xx_rearm_tx_watchdog_locked(wl);
 
 		ac = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
-		//wl->tx_allocated_pkts[ac]++;
 		VV_tx_allocated_pkts[ac]++;
 
 		if (test_bit(hlid, wl->links_map))
-			//wl->links[hlid].allocated_pkts++;
 			VV_allocated_pkts[hlid]++;
 
 		ret = 0;
@@ -272,14 +265,7 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			     "tx_allocate: size: %d, blocks: %d, id: %d",
 			     total_len, total_blocks, id);
 	} else {
-		//wl1271_free_tx_id(wl, id);
-		if (__test_and_clear_bit(id, wl->tx_frames_map)) {
-			if (unlikely(wl->tx_frames_cnt == wl->num_tx_desc))
-				clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
-
-			wl->tx_frames[id] = NULL;
-			wl->tx_frames_cnt--;
-		}
+		wl1271_free_tx_id(wl, id);
 	}
 
 	return ret;
@@ -1067,11 +1053,11 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 	 */
 	wl1271_handle_tx_low_watermark(wl);
 
-	for (i = 0; i < wl->num_tx_desc; i++) {
-		if (wl->tx_frames[i] == NULL)
+	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++) {
+		if (VV_skb_tx_frames[i] == NULL)
 			continue;
 
-		skb = wl->tx_frames[i];
+		skb = VV_skb_tx_frames[i];
 		wl1271_free_tx_id(wl, i);
 		wl1271_debug(DEBUG_TX, "freeing skb 0x%p", skb);
 
@@ -1114,7 +1100,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 	mutex_lock(&wl->flush_mutex);
 
 	mutex_lock(&wl->mutex);
-	if (wl->tx_frames_cnt == 0 && wl1271_tx_total_queue_count(wl) == 0) {
+	if (VV_skb_tx_frames_cnt == 0 && wl1271_tx_total_queue_count(wl) == 0) {
 		mutex_unlock(&wl->mutex);
 		goto out;
 	}
@@ -1123,7 +1109,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 
 	while (!time_after(jiffies, timeout)) {
 		wl1271_debug(DEBUG_MAC80211, "flushing tx buffer: %d %d",
-			     wl->tx_frames_cnt,
+			     VV_skb_tx_frames_cnt,
 			     wl1271_tx_total_queue_count(wl));
 
 		/* force Tx and give the driver some time to flush data */
@@ -1133,7 +1119,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 		msleep(20);
 		mutex_lock(&wl->mutex);
 
-		if ((wl->tx_frames_cnt == 0) &&
+		if ((VV_skb_tx_frames_cnt == 0) &&
 		    (wl1271_tx_total_queue_count(wl) == 0)) {
 			wl1271_debug(DEBUG_MAC80211, "tx flush took %d ms",
 				     jiffies_to_msecs(jiffies - start_time));

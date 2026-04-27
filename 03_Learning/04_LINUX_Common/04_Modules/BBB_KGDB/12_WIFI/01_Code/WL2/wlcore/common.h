@@ -26,6 +26,17 @@ extern u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 /* Accounting for allocated / available Tx packets in HW */
 extern u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
 extern u32 VV_tx_allocated_pkts[NUM_TX_QUEUES];
+extern u32 VV_tx_allocated_blocks; // new - last (released blks)
+        // incremented - allocate hw
+        // decremented - TX interupt
+extern u32 VV_tx_blocks_available; // get from old val or updated (tx total - VV_tx_allocated_blocks)
+                                   // = the available slot where blcks can be allocated
+        // incremented - max (old, tx total - allocated)
+        // decremented - allocate hw   
+        
+extern struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
+        // ptr to skb per tx desc
+extern int VV_skb_tx_frames_cnt;
 
 #define WL18XX_NUM_RX_DESCRIPTORS 32
 #define WL18XX_MAX_LINKS 16
@@ -298,8 +309,8 @@ extern struct VV_wl18xx_fw_status* VV_status_reg;
         // CMD_SET_KEYS <-
 
 // 	ret = wl1271_tx_allocate(wl, wlvif, skb, extra, buf_offset, hlid,is_gem);
-    // wl->tx_blocks_available -= total_blocks;
-    // wl->tx_allocated_blocks += total_blocks;
+    // VV_tx_blocks_available -= total_blocks;
+    // VV_tx_allocated_blocks += total_blocks;
     // Adds the TX descriptor at the front of the skb (sizeof(struct wl1271_tx_hw_descr) + extra;)
 
 // wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid);
