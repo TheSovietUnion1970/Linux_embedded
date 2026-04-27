@@ -62,8 +62,8 @@ struct wlcore_ops {
 	void (*tx_immediate_compl)(struct wl1271 *wl);
 	int (*hw_init)(struct wl1271 *wl);
 	int (*init_vif)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-	void (*convert_fw_status)(struct wl1271 *wl, void *raw_fw_status,
-				  struct wl_fw_status *fw_status);
+	// void (*convert_fw_status)(struct wl1271 *wl, void *raw_fw_status,
+	// 			  struct wl_fw_status *fw_status);
 	u32 (*sta_get_ap_rate_mask)(struct wl1271 *wl,
 				    struct wl12xx_vif *wlvif);
 	int (*get_pg_ver)(struct wl1271 *wl, s8 *ver);
@@ -347,7 +347,7 @@ struct wl1271 {
 	u32 buffer_busyword[WL1271_BUSY_WORD_CNT];
 
 	void *raw_fw_status;
-	struct wl_fw_status *fw_status;
+	//struct wl_fw_status *fw_status;
 	struct wl1271_tx_hw_res_if *tx_res_if;
 
 	/* Current chipset configuration */
@@ -494,6 +494,8 @@ struct wl1271 {
 
 	/* time sync zone master */
 	u8 zone_master_mac_addr[ETH_ALEN];
+
+	void *last_valid_wlvif;
 };
 
 int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev);

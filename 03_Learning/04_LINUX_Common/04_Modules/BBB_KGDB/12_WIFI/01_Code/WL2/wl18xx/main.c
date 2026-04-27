@@ -1201,45 +1201,6 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	return ret;
 }
 
-static void wl18xx_convert_fw_status(struct wl1271 *wl, void *raw_fw_status,
-				     struct wl_fw_status *fw_status)
-{
-	struct wl18xx_fw_status *int_fw_status = raw_fw_status;
-
-	fw_status->intr = le32_to_cpu(int_fw_status->intr);
-	fw_status->fw_rx_counter = int_fw_status->fw_rx_counter;
-	fw_status->drv_rx_counter = int_fw_status->drv_rx_counter;
-	fw_status->tx_results_counter = int_fw_status->tx_results_counter;
-	fw_status->rx_pkt_descs = int_fw_status->rx_pkt_descs;
-
-	fw_status->fw_localtime = le32_to_cpu(int_fw_status->fw_localtime);
-	fw_status->link_ps_bitmap = le32_to_cpu(int_fw_status->link_ps_bitmap);
-	fw_status->link_fast_bitmap =
-			le32_to_cpu(int_fw_status->link_fast_bitmap);
-	fw_status->total_released_blks =
-			le32_to_cpu(int_fw_status->total_released_blks);
-	fw_status->tx_total = le32_to_cpu(int_fw_status->tx_total);
-
-	fw_status->counters.tx_released_pkts =
-			int_fw_status->counters.tx_released_pkts;
-	fw_status->counters.tx_lnk_free_pkts =
-			int_fw_status->counters.tx_lnk_free_pkts;
-	fw_status->counters.tx_voice_released_blks =
-			int_fw_status->counters.tx_voice_released_blks;
-	fw_status->counters.tx_last_rate =
-			int_fw_status->counters.tx_last_rate;
-	fw_status->counters.tx_last_rate_mbps =
-			int_fw_status->counters.tx_last_rate_mbps;
-	fw_status->counters.hlid =
-			int_fw_status->counters.hlid;
-
-	fw_status->log_start_addr = le32_to_cpu(int_fw_status->log_start_addr);
-
-	//printk("SUSPENDED: 0x%x\n", int_fw_status->priv.link_suspend_bitmap);
-
-	fw_status->priv = &int_fw_status->priv;
-}
-
 static void wl18xx_set_tx_desc_csum(struct wl1271 *wl,
 				    struct wl1271_tx_hw_descr *desc,
 				    struct sk_buff *skb)
@@ -1679,65 +1640,6 @@ static int wl18xx_set_peer_cap(struct wl1271 *wl,
 				       rate_set, hlid);
 }
 
-// static bool wl18xx_lnk_high_prio(struct wl1271 *wl, u8 hlid,
-// 				 struct wl1271_link *lnk)
-// {
-// 	u8 thold;
-// 	struct wl18xx_fw_status_priv *status_priv =
-// 		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
-// 	unsigned long suspend_bitmap;
-
-// 	/* if we don't have the link map yet, assume they all low prio */
-// 	if (!status_priv)
-// 		return false;
-
-// 	// Data here is read from wl18xx_convert_fw_status (Interrupt)
-// 	/* suspended links are never high priority */
-// 	//suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
-// 	printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
-// 	if (test_bit(hlid, &suspend_bitmap))
-// 		return false;
-
-// 	/* the priority thresholds are taken from FW */
-// 	if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-// 	    !test_bit(hlid, &wl->ap_fw_ps_map))
-// 		thold = status_priv->tx_fast_link_prio_threshold;
-// 	else
-// 		thold = status_priv->tx_slow_link_prio_threshold;
-// 	// printk("H - %d - %d <- %d, %d\n", thold, lnk->allocated_pkts,
-// 	// 							status_priv->tx_fast_link_prio_threshold,
-// 	// 							status_priv->tx_slow_link_prio_threshold);
-// 	return lnk->allocated_pkts < thold;
-// }
-
-// static bool wl18xx_lnk_low_prio(struct wl1271 *wl, u8 hlid,
-// 				struct wl1271_link *lnk)
-// {
-// 	u8 thold;
-// 	struct wl18xx_fw_status_priv *status_priv =
-// 		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
-// 	unsigned long suspend_bitmap;
-
-// 	/* if we don't have the link map yet, assume they all low prio */
-// 	if (!status_priv)
-// 		return true;
-
-// 	suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
-// 	//printk("L - suspend_bitmap = 0x%x\n", suspend_bitmap);
-// 	if (test_bit(hlid, &suspend_bitmap))
-// 		thold = status_priv->tx_suspend_threshold;
-// 	else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-// 		 !test_bit(hlid, &wl->ap_fw_ps_map))
-// 		thold = status_priv->tx_fast_stop_threshold;
-// 	else
-// 		thold = status_priv->tx_slow_stop_threshold;
-// 	// printk("L - %d - %d <- %d, %d, %d\n", thold, lnk->allocated_pkts,
-// 	// 						    status_priv->tx_suspend_threshold, 
-// 	// 							status_priv->tx_fast_stop_threshold,
-// 	// 							status_priv->tx_slow_stop_threshold);
-// 	return lnk->allocated_pkts < thold;
-// }
-
 static u32 wl18xx_convert_hwaddr(struct wl1271 *wl, u32 hwaddr)
 {
 	return hwaddr & ~0x80000000;
@@ -1762,7 +1664,7 @@ static struct wlcore_ops wl18xx_ops = {
 	// .tx_immediate_compl = wl18xx_tx_immediate_completion,
 	.tx_delayed_compl = NULL,
 	.hw_init	= wl18xx_hw_init,
-	.convert_fw_status = wl18xx_convert_fw_status,
+	// .convert_fw_status = wl18xx_convert_fw_status,
 	.set_tx_desc_csum = wl18xx_set_tx_desc_csum,
 	.get_pg_ver	= wl18xx_get_pg_ver,
 	.set_rx_csum = wl18xx_set_rx_csum,
@@ -1929,7 +1831,7 @@ static int wl18xx_setup(struct wl1271 *wl)
 	wl->band_rate_to_idx = wl18xx_band_rate_to_idx;
 	wl->hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
 	wl->hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
-	wl->fw_status_len = sizeof(struct wl18xx_fw_status);
+	// wl->fw_status_len = sizeof(struct wl18xx_fw_status);
 	wl->fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
 	wl->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
 	wl->static_data_priv_len = sizeof(struct wl18xx_static_data_priv);

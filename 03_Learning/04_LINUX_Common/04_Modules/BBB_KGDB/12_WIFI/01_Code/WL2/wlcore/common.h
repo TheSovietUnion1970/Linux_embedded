@@ -133,7 +133,7 @@ struct VV_wl18xx_fw_status {
 
 	u8 padding[3];
 } __packed;
-extern struct VV_wl18xx_fw_status VV_status_reg;
+extern struct VV_wl18xx_fw_status* VV_status_reg;
 #endif
 //extern struct VV_wl18xx_fw_status VV_status_reg;
 

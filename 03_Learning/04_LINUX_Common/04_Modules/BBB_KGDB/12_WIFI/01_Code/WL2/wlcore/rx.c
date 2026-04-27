@@ -197,12 +197,12 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 	return is_data;
 }
 
-int wlcore_rx(struct wl1271 *wl, struct wl_fw_status *status)
+int wlcore_rx(struct wl1271 *wl)
 {
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
 	u32 buf_size;
-	u32 fw_rx_counter = status->fw_rx_counter % wl->num_rx_desc;
-	//u32 fw_rx_counter = VV_status_reg.fw_rx_counter % wl->num_rx_desc;
+	//u32 fw_rx_counter = status->fw_rx_counter % wl->num_rx_desc;
+	u32 fw_rx_counter = VV_status_reg->fw_rx_counter % wl->num_rx_desc;
 	u32 drv_rx_counter = wl->rx_counter % wl->num_rx_desc;
 	u32 rx_counter;
 	u32 pkt_len, align_pkt_len;
@@ -212,21 +212,21 @@ int wlcore_rx(struct wl1271 *wl, struct wl_fw_status *status)
 	int ret = 0;
 
 	/* update rates per link */
-	hlid = status->counters.hlid;
-	//hlid = VV_status_reg.hlid;
+	//hlid = status->counters.hlid;
+	hlid = VV_status_reg->hlid;
 
 	if (hlid < WLCORE_MAX_LINKS)
-		wl->links[hlid].fw_rate_mbps =
-				status->counters.tx_last_rate_mbps;
 		// wl->links[hlid].fw_rate_mbps =
-		// 		VV_status_reg.tx_last_rate_mbps;
+		// 		status->counters.tx_last_rate_mbps;
+		wl->links[hlid].fw_rate_mbps =
+				VV_status_reg->tx_last_rate_mbps;
 
 	while (drv_rx_counter != fw_rx_counter) {
 		buf_size = 0;
 		rx_counter = drv_rx_counter;
 		while (rx_counter != fw_rx_counter) {
-			des = le32_to_cpu(status->rx_pkt_descs[rx_counter]);
-			//des = le32_to_cpu(VV_status_reg.rx_pkt_descs[rx_counter]);
+			//des = le32_to_cpu(status->rx_pkt_descs[rx_counter]);
+			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[rx_counter]);
 			pkt_len = wlcore_rx_get_buf_size(wl, des);
 			align_pkt_len = wlcore_rx_get_align_buf_size(wl,
 								     pkt_len);
@@ -243,8 +243,8 @@ int wlcore_rx(struct wl1271 *wl, struct wl_fw_status *status)
 		}
 
 		/* Read all available packets at once */
-		des = le32_to_cpu(status->rx_pkt_descs[drv_rx_counter]);
-		//des = le32_to_cpu(VV_status_reg.rx_pkt_descs[drv_rx_counter]);
+		//des = le32_to_cpu(status->rx_pkt_descs[drv_rx_counter]);
+		des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
 		ret = wlcore_hw_prepare_read(wl, des, buf_size);
 		if (ret < 0)
 			goto out;
@@ -258,8 +258,8 @@ int wlcore_rx(struct wl1271 *wl, struct wl_fw_status *status)
 		/* Split data into separate packets */
 		pkt_offset = 0;
 		while (pkt_offset < buf_size) {
-			des = le32_to_cpu(status->rx_pkt_descs[drv_rx_counter]);
-			//des = le32_to_cpu(VV_status_reg.rx_pkt_descs[drv_rx_counter]);
+			//des = le32_to_cpu(status->rx_pkt_descs[drv_rx_counter]);
+			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
 			pkt_len = wlcore_rx_get_buf_size(wl, des);
 			rx_align = wlcore_hw_get_rx_buf_align(wl, des);
 

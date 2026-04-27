@@ -35,7 +35,7 @@ u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
 int VV_tx_queue_count[NUM_TX_QUEUES];
 u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
 u32 VV_tx_allocated_pkts[NUM_TX_QUEUES];
-struct VV_wl18xx_fw_status VV_status_reg;
+struct VV_wl18xx_fw_status *VV_status_reg;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -384,14 +384,13 @@ static void wl12xx_irq_ps_regulate_link(struct wl1271 *wl,
 }
 
 static void wl12xx_irq_update_links_status(struct wl1271 *wl,
-					   struct wl12xx_vif *wlvif,
-					   struct wl_fw_status *status)
+					   struct wl12xx_vif *wlvif)
 {
 	unsigned long cur_fw_ps_map;
 	u8 hlid;
 
-	cur_fw_ps_map = status->link_ps_bitmap;
-	//cur_fw_ps_map = VV_status_reg.link_ps_bitmap;
+	//cur_fw_ps_map = status->link_ps_bitmap;
+	cur_fw_ps_map = VV_status_reg->link_ps_bitmap;
 	if (wl->ap_fw_ps_map != cur_fw_ps_map) {
 		wl1271_debug(DEBUG_PSM,
 			     "link ps prev 0x%lx cur 0x%lx changed 0x%lx",
@@ -409,47 +408,7 @@ static void wl12xx_irq_update_links_status(struct wl1271 *wl,
 }
 
 #include "../wl18xx/wl18xx.h"
-static void VV_convert_fw_status(struct wl1271 *wl, void *raw_fw_status,
-				     struct wl_fw_status *fw_status)
-{
-	struct wl18xx_fw_status *int_fw_status = raw_fw_status;
-
-	fw_status->intr = le32_to_cpu(int_fw_status->intr);
-	fw_status->fw_rx_counter = int_fw_status->fw_rx_counter;
-	fw_status->drv_rx_counter = int_fw_status->drv_rx_counter;
-	fw_status->tx_results_counter = int_fw_status->tx_results_counter;
-	fw_status->rx_pkt_descs = int_fw_status->rx_pkt_descs;
-
-	fw_status->fw_localtime = le32_to_cpu(int_fw_status->fw_localtime);
-	fw_status->link_ps_bitmap = le32_to_cpu(int_fw_status->link_ps_bitmap);
-	fw_status->link_fast_bitmap =
-			le32_to_cpu(int_fw_status->link_fast_bitmap);
-	fw_status->total_released_blks =
-			le32_to_cpu(int_fw_status->total_released_blks);
-	fw_status->tx_total = le32_to_cpu(int_fw_status->tx_total);
-
-	fw_status->counters.tx_released_pkts =
-			int_fw_status->counters.tx_released_pkts;
-	fw_status->counters.tx_lnk_free_pkts =
-			int_fw_status->counters.tx_lnk_free_pkts;
-	fw_status->counters.tx_voice_released_blks =
-			int_fw_status->counters.tx_voice_released_blks;
-	fw_status->counters.tx_last_rate =
-			int_fw_status->counters.tx_last_rate;
-	fw_status->counters.tx_last_rate_mbps =
-			int_fw_status->counters.tx_last_rate_mbps;
-	fw_status->counters.hlid =
-			int_fw_status->counters.hlid;
-
-	fw_status->log_start_addr = le32_to_cpu(int_fw_status->log_start_addr);
-
-	//printk("SUSPENDED: 0x%x\n", int_fw_status->priv.link_suspend_bitmap);
-
-	fw_status->priv = &int_fw_status->priv;
-
-}
-
-static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
+static int wlcore_fw_status(struct wl1271 *wl)
 {
 	struct wl12xx_vif *wlvif;
 	u32 old_tx_blk_count = wl->tx_blocks_available;
@@ -458,34 +417,32 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 	int ret;
 	struct wl1271_link *lnk;
 
-	ret = wlcore_raw_read_data(wl, REG_RAW_FW_STATUS_ADDR,
-				   wl->raw_fw_status,
-				   wl->fw_status_len, false);
 	// ret = wlcore_raw_read_data(wl, REG_RAW_FW_STATUS_ADDR,
-	// 			   &VV_status_reg,
-	// 			   sizeof(VV_status_reg), false);
+	// 			   wl->raw_fw_status,
+	// 			   wl->fw_status_len, false);
+	ret = VV_sdio_raw_read(wl, wl->rtable[REG_RAW_FW_STATUS_ADDR],
+				   (void*)VV_status_reg,
+				   sizeof(struct VV_wl18xx_fw_status), false);
 	if (ret < 0)
 		return ret;
 
 	// wlcore_hw_convert_fw_status(wl, wl->raw_fw_status, wl->fw_status);
-	VV_convert_fw_status(wl, wl->raw_fw_status, wl->fw_status);
+	//VV_convert_fw_status(wl, VV_status_reg, wl->fw_status);
 
-	// wl1271_debug(DEBUG_IRQ, "intr: 0x%x (fw_rx_counter = %d, "
-	// 	     "drv_rx_counter = %d, tx_results_counter = %d)",
-	// 	     status->intr,
-	// 	     status->fw_rx_counter,
-	// 	     status->drv_rx_counter,
-	// 	     status->tx_results_counter);
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		/* prevent wrap-around in freed-packets counter */
+		// VV_tx_allocated_pkts[i] -=
+		// 		(status->counters.tx_released_pkts[i] -
+		// 		VV_tx_pkts_freed[i]) & 0xff;
 		VV_tx_allocated_pkts[i] -=
-				(status->counters.tx_released_pkts[i] -
+				(VV_status_reg->tx_released_pkts[i] -
 				VV_tx_pkts_freed[i]) & 0xff;
 
 		//if (!i) printk("[Idx0] - 0x%x, 0x%x, 0x%x\n", VV_tx_allocated_pkts[0], VV_tx_pkts_freed[0], status->counters.tx_released_pkts[0]);
 
-		VV_tx_pkts_freed[i] = status->counters.tx_released_pkts[i];
+		// VV_tx_pkts_freed[i] = status->counters.tx_released_pkts[i];
+		VV_tx_pkts_freed[i] = VV_status_reg->tx_released_pkts[i];
 
 		// counters.tx_released_pkts and counters.tx_released_pkts are read from Interrupt
 	}
@@ -497,18 +454,18 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 		lnk = &wl->links[i];
 
 		/* prevent wrap-around in freed-packets counter */
-		diff = (status->counters.tx_lnk_free_pkts[i] -
-		       lnk->prev_freed_pkts) & 0xff;
-		// diff = (VV_status_reg.tx_lnk_free_pkts[i] -
+		// diff = (status->counters.tx_lnk_free_pkts[i] -
 		//        lnk->prev_freed_pkts) & 0xff;
+		diff = (VV_status_reg->tx_lnk_free_pkts[i] -
+		       lnk->prev_freed_pkts) & 0xff;
 
 		if (diff == 0)
 			continue;
 
 		//lnk->allocated_pkts -= diff;
 		VV_allocated_pkts[i] -= diff;
-		lnk->prev_freed_pkts = status->counters.tx_lnk_free_pkts[i];
-		//lnk->prev_freed_pkts = VV_status_reg.tx_lnk_free_pkts[i];
+		//lnk->prev_freed_pkts = status->counters.tx_lnk_free_pkts[i];
+		lnk->prev_freed_pkts = VV_status_reg->tx_lnk_free_pkts[i];
 
 		/* accumulate the prev_freed_pkts counter */
 		lnk->total_freed_pkts += diff;
@@ -517,22 +474,22 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 
 
 	/* prevent wrap-around in total blocks counter */
-	if (likely(wl->tx_blocks_freed <= status->total_released_blks))
-		freed_blocks = status->total_released_blks -
-			       wl->tx_blocks_freed;
-	else
-		freed_blocks = 0x100000000LL - wl->tx_blocks_freed +
-			       status->total_released_blks;
-
-	wl->tx_blocks_freed = status->total_released_blks;
-	// if (likely(wl->tx_blocks_freed <= VV_status_reg.total_released_blks))
-	// 	freed_blocks = VV_status_reg.total_released_blks -
+	// if (likely(wl->tx_blocks_freed <= status->total_released_blks))
+	// 	freed_blocks = status->total_released_blks -
 	// 		       wl->tx_blocks_freed;
 	// else
 	// 	freed_blocks = 0x100000000LL - wl->tx_blocks_freed +
-	// 		       VV_status_reg.total_released_blks;
+	// 		       status->total_released_blks;
 
-	// wl->tx_blocks_freed = VV_status_reg.total_released_blks;
+	// wl->tx_blocks_freed = status->total_released_blks;
+	if (likely(wl->tx_blocks_freed <= VV_status_reg->total_released_blks))
+		freed_blocks = VV_status_reg->total_released_blks -
+			       wl->tx_blocks_freed;
+	else
+		freed_blocks = 0x100000000LL - wl->tx_blocks_freed +
+			       VV_status_reg->total_released_blks;
+
+	wl->tx_blocks_freed = VV_status_reg->total_released_blks;
 
 
 	
@@ -550,8 +507,8 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 			cancel_delayed_work(&wl->tx_watchdog_work);
 	}
 
-	avail = status->tx_total - wl->tx_allocated_blocks;
-	//avail = VV_status_reg.tx_total - wl->tx_allocated_blocks;
+	//avail = status->tx_total - wl->tx_allocated_blocks;
+	avail = VV_status_reg->tx_total - wl->tx_allocated_blocks;
 
 	/*
 	 * The FW might change the total number of TX memblocks before
@@ -570,17 +527,17 @@ static int wlcore_fw_status(struct wl1271 *wl, struct wl_fw_status *status)
 
 	/* for AP update num of allocated TX blocks per link and ps status */
 	wl12xx_for_each_wlvif_ap(wl, wlvif) {
-		wl12xx_irq_update_links_status(wl, wlvif, status);
+		wl12xx_irq_update_links_status(wl, wlvif);
 	}
 
 	/* update the host-chipset time offset */
-	wl->time_offset = (ktime_get_boottime_ns() >> 10) -
-		(s64)(status->fw_localtime);
 	// wl->time_offset = (ktime_get_boottime_ns() >> 10) -
-	// 	(s64)(VV_status_reg.fw_localtime);
+	// 	(s64)(status->fw_localtime);
+	wl->time_offset = (ktime_get_boottime_ns() >> 10) -
+		(s64)(VV_status_reg->fw_localtime);
 
-	wl->fw_fast_lnk_map = status->link_fast_bitmap;
-	//wl->fw_fast_lnk_map = VV_status_reg.link_fast_bitmap;
+	//wl->fw_fast_lnk_map = status->link_fast_bitmap;
+	wl->fw_fast_lnk_map = VV_status_reg->link_fast_bitmap;
 
 	return 0;
 }
@@ -751,65 +708,62 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 
 void VV_tx_immediate_complete(struct wl1271 *wl)
 {
-	struct wl18xx_fw_status_priv *status_priv =
-		(struct wl18xx_fw_status_priv *)wl->fw_status->priv;
-
 	struct wl18xx_priv *priv = wl->priv;
 	u8 i, hlid;
 
 
 	/* nothing to do here */
-	if (priv->last_fw_rls_idx == status_priv->fw_release_idx)
-		return;
-	// if (priv->last_fw_rls_idx == VV_status_reg.fw_release_idx)
+	// if (priv->last_fw_rls_idx == status_priv->fw_release_idx)
 	// 	return;
+	if (priv->last_fw_rls_idx == VV_status_reg->fw_release_idx)
+		return;
 
 	/* update rates per link */
-	hlid = wl->fw_status->counters.hlid;
-	// hlid = VV_status_reg.hlid;
+	//hlid = wl->fw_status->counters.hlid;
+	hlid = VV_status_reg->hlid;
 
 	//printk("fw_release_idx = %d, hlid = %d\n", status_priv->fw_release_idx, hlid);
 
 	if (hlid < WLCORE_MAX_LINKS) {
-		wl->links[hlid].fw_rate_idx =
-				wl->fw_status->counters.tx_last_rate;
-		wl->links[hlid].fw_rate_mbps =
-				wl->fw_status->counters.tx_last_rate_mbps;
 		// wl->links[hlid].fw_rate_idx =
-		// 		VV_status_reg.tx_last_rate;
+		// 		wl->fw_status->counters.tx_last_rate;
 		// wl->links[hlid].fw_rate_mbps =
-		// 		VV_status_reg.tx_last_rate_mbps;
+		// 		wl->fw_status->counters.tx_last_rate_mbps;
+		wl->links[hlid].fw_rate_idx =
+				VV_status_reg->tx_last_rate;
+		wl->links[hlid].fw_rate_mbps =
+				VV_status_reg->tx_last_rate_mbps;
 	}
 
 	/* freed Tx descriptors */
 	// wl1271_debug(DEBUG_TX, "last released desc = %d, current idx = %d",
 	// 	     priv->last_fw_rls_idx, status_priv->fw_release_idx);
 
-	if (status_priv->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
-	//if (VV_status_reg.fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
-		wl1271_error("invalid desc release index %d",
-			     status_priv->fw_release_idx);
+	//if (status_priv->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
+	if (VV_status_reg->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
 		// wl1271_error("invalid desc release index %d",
-		// 	     VV_status_reg.fw_release_idx);
+		// 	     status_priv->fw_release_idx);
+		wl1271_error("invalid desc release index %d",
+			     VV_status_reg->fw_release_idx);
 		WARN_ON(1);
 		return;
 	}
 
 	for (i = priv->last_fw_rls_idx;
-	    i != status_priv->fw_release_idx;
-		//i != VV_status_reg.fw_release_idx;
+	    //i != status_priv->fw_release_idx;
+		i != VV_status_reg->fw_release_idx;
 	     i = (i + 1) % WL18XX_FW_MAX_TX_STATUS_DESC) {
-		VV_tx_complete_packet(wl,
-			status_priv->released_tx_desc[i]);
 		// VV_tx_complete_packet(wl,
-		// 	VV_status_reg.released_tx_desc[i]);
+		// 	status_priv->released_tx_desc[i]);
+		VV_tx_complete_packet(wl,
+			VV_status_reg->released_tx_desc[i]);
 
 		//wl->tx_results_count++;
 	}
 
-	priv->last_fw_rls_idx = status_priv->fw_release_idx; // update the last_fw_rls_idx
+	//priv->last_fw_rls_idx = status_priv->fw_release_idx; // update the last_fw_rls_idx
 												// to avoid redundant work
-	//priv->last_fw_rls_idx = VV_status_reg.fw_release_idx;
+	priv->last_fw_rls_idx = VV_status_reg->fw_release_idx;
 }
 
 #define WL1271_IRQ_MAX_LOOPS 256
@@ -841,7 +795,7 @@ static int VV_irq_locked(struct wl1271 *wl)
 	while (!done && loopcount--) {
 		smp_mb__after_atomic();
 
-		ret = wlcore_fw_status(wl, wl->fw_status);
+		ret = wlcore_fw_status(wl);
 		if (ret < 0)
 			goto err_ret;
 
@@ -849,8 +803,8 @@ static int VV_irq_locked(struct wl1271 *wl)
 		//wlcore_hw_tx_immediate_compl(wl); // -> wl18xx_tx_complete_packet
 		VV_tx_immediate_complete(wl);
 
-		intr = wl->fw_status->intr;
-		//intr = VV_status_reg.intr;
+		//intr = wl->fw_status->intr;
+		intr = VV_status_reg->intr;
 		intr &= WLCORE_ALL_INTR_MASK;
 		if (!intr) {
 			done = true;
@@ -879,7 +833,7 @@ static int VV_irq_locked(struct wl1271 *wl)
 		if (likely(intr & WL1271_ACX_INTR_DATA)) {
 			wl1271_debug(DEBUG_IRQ, "WL1271_ACX_INTR_DATA");
 
-			ret = wlcore_rx(wl, wl->fw_status);
+			ret = wlcore_rx(wl);
 			if (ret < 0)
 				goto err_ret;
 
@@ -1072,7 +1026,7 @@ out:
 
 void wl12xx_queue_recovery_work(struct wl1271 *wl)
 {
-	printk("wl12xx_queue_recovery_work\n");
+	printk("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
 	/* Avoid a recursive recovery */
 	if (wl->state == WLCORE_STATE_ON) {
 		WARN_ON(!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY,
@@ -1080,7 +1034,7 @@ void wl12xx_queue_recovery_work(struct wl1271 *wl)
 
 		wl->state = WLCORE_STATE_RESTARTING;
 		set_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags);
-		ieee80211_queue_work(wl->hw, &wl->recovery_work);
+		//ieee80211_queue_work(wl->hw, &wl->recovery_work);
 	}
 }
 
@@ -1313,22 +1267,28 @@ out_unlock:
 
 static int wl1271_setup(struct wl1271 *wl)
 {
-	wl->raw_fw_status = kzalloc(wl->fw_status_len, GFP_KERNEL);
-	if (!wl->raw_fw_status)
-		goto err;
+	// wl->raw_fw_status = kzalloc(wl->fw_status_len, GFP_KERNEL);
+	// if (!wl->raw_fw_status)
+	// 	goto err;
 
-	wl->fw_status = kzalloc(sizeof(*wl->fw_status), GFP_KERNEL);
-	if (!wl->fw_status)
-		goto err;
+	// wl->fw_status = kzalloc(sizeof(*wl->fw_status), GFP_KERNEL);
+	// if (!wl->fw_status)
+	// 	goto err;
 
 	wl->tx_res_if = kzalloc(sizeof(*wl->tx_res_if), GFP_KERNEL);
 	if (!wl->tx_res_if)
 		goto err;
 
+	/* Vinh custom */
+	VV_status_reg = kzalloc(sizeof(struct VV_wl18xx_fw_status), GFP_KERNEL);
+	if (!VV_status_reg)
+		goto err;
+
 	return 0;
 err:
-	kfree(wl->fw_status);
+	// kfree(wl->fw_status);
 	kfree(wl->raw_fw_status);
+	kfree(VV_status_reg);
 	return -ENOMEM;
 }
 
@@ -1471,9 +1431,10 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 
 	ret = wl12xx_fetch_firmware(wl, plt); // VV_
 	if (ret < 0) {
-		kfree(wl->fw_status);
-		kfree(wl->raw_fw_status);
+		//kfree(wl->fw_status);
+		//kfree(wl->raw_fw_status);
 		kfree(wl->tx_res_if);
+		kfree(VV_status_reg);
 	}
 
 out:
@@ -2372,14 +2333,17 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 
 	//wl1271_debugfs_reset(wl);
 
-	kfree(wl->raw_fw_status);
-	wl->raw_fw_status = NULL;
-	kfree(wl->fw_status);
-	wl->fw_status = NULL;
+	//kfree(wl->raw_fw_status);
+	//wl->raw_fw_status = NULL;
+	//kfree(wl->fw_status);
+	//wl->fw_status = NULL;
 	kfree(wl->tx_res_if);
 	wl->tx_res_if = NULL;
 	kfree(wl->target_mem_map);
 	wl->target_mem_map = NULL;
+
+	kfree(VV_status_reg);
+	VV_status_reg = NULL;
 
 	/*
 	 * FW channels must be re-calibrated after recovery,
@@ -6543,9 +6507,10 @@ int wlcore_free_hw(struct wl1271 *wl)
 	kfree(wl->nvs);
 	wl->nvs = NULL;
 
-	kfree(wl->raw_fw_status);
-	kfree(wl->fw_status);
+	//kfree(wl->raw_fw_status);
+	//kfree(wl->fw_status);
 	kfree(wl->tx_res_if);
+	kfree(VV_status_reg);
 	destroy_workqueue(wl->freezable_wq);
 
 	kfree(wl->priv);
