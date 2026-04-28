@@ -448,8 +448,8 @@ static const char *VV_radar_type_decode(u8 radar_type)
 void VV_scan_completed(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	wl->scan.failed = false;
-	cancel_delayed_work(&wl->scan_complete_work);
-	ieee80211_queue_delayed_work(wl->hw, &wl->scan_complete_work,
+	cancel_delayed_work(&VV_work.scan_complete_work);
+	ieee80211_queue_delayed_work(wl->hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(0));
 }
 

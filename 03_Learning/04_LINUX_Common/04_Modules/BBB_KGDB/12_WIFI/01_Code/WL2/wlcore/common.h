@@ -195,10 +195,35 @@ struct VV_Work {
 	/* Network stack work  */
 	struct work_struct netstack_work;
 
+    struct work_struct tx_work;
+
+	/* work to fire when Tx is stuck */
+	struct delayed_work tx_watchdog_work;
+
+    struct delayed_work scan_complete_work;
+
     /* Temporary use */
     struct ieee80211_hw *hw;
 };
 extern struct VV_Work VV_work;
+
+struct VV_vif {
+	struct list_head list_id;
+};
+extern struct VV_vif VV_vif;
+
+struct Wifi_data {
+	struct device *dev;
+    struct mutex mutex;
+    spinlock_t lock;
+
+    struct ieee80211_vif *vif;
+    struct list_head wifi_vif_list;
+
+    /* Temporary use */
+    struct wl1271 *wl;
+};
+extern struct Wifi_data wifi_data;
 #endif
 //extern struct VV_wl18xx_fw_status VV_status_reg;
 
@@ -378,7 +403,7 @@ extern struct VV_Work VV_work;
     // = wl1271_prepare_tx_frame
     // write wl->aggr_buf -> REG_SLV_MEM_DATA = the address in the firmware’s memory where TX data should be written.
 
-// wl->tx_work = wl1271_tx_work = wlcore_tx_work_locked
+// VV_work.tx_work = wl1271_tx_work = wlcore_tx_work_locked
 
 // wl1271_op_tx -> called whenver there is a packet about to transmit.
     // Decide drop or transmit

@@ -195,8 +195,8 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 		     seq_num, *hlid);
 
 	skb_queue_tail(&VV_deferred_rx_queue, skb);
-	//queue_work(wl->freezable_wq, &wl->netstack_work);
-	queue_work(wl->freezable_wq, &VV_work.netstack_work);
+	//queue_work(VV_work.freezable_wq, &wl->netstack_work);
+	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
 
 	return is_data;
 }

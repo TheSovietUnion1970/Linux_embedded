@@ -104,34 +104,6 @@ static void wl1271_tx_ap_update_inconnection_sta(struct wl1271 *wl,
 	// 			msecs_to_jiffies(WLCORE_PEND_AUTH_ROC_TIMEOUT));
 }
 
-static void wl1271_tx_regulate_link(struct wl1271 *wl,
-				    struct wl12xx_vif *wlvif,
-				    u8 hlid)
-{
-	bool fw_ps;
-	u8 tx_pkts;
-
-	if (WARN_ON(!test_bit(hlid, wlvif->links_map)))
-		return;
-
-	fw_ps = test_bit(hlid, &wl->ap_fw_ps_map);
-	tx_pkts = VV_allocated_pkts[hlid];
-
-	/*
-	 * if in FW PS and there is enough data in FW we can put the link
-	 * into high-level PS and clean out its TX queues.
-	 * Make an exception if this is the only connected link. In this
-	 * case FW-memory congestion is less of a problem.
-	 * Note that a single connected STA means 2*ap_count + 1 active links,
-	 * since we must account for the global and broadcast AP links
-	 * for each AP. The "fw_ps" check assures us the other link is a STA
-	 * connected to the AP. Otherwise the FW would not set the PSM bit.
-	 */
-	if (wl->active_link_count > (wl->ap_count*2 + 1) && fw_ps &&
-	    tx_pkts >= WL1271_PS_STA_MAX_PACKETS)
-		wl12xx_ps_link_start(wl, wlvif, hlid, true);
-}
-
 bool wl12xx_is_dummy_packet(struct wl1271 *wl, struct sk_buff *skb)
 {
 	return wl->dummy_packet == skb;
@@ -199,11 +171,11 @@ EXPORT_SYMBOL(wlcore_calc_packet_alignment);
 #define WL18XX_TX_HW_BLOCK_SIZE         268
 #include "../wl18xx/wl18xx.h"
 static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			      struct sk_buff *skb, u32 extra, u32 buf_offset,
+			      struct sk_buff *skb, u32 buf_offset,
 			      u8 hlid, bool is_gem)
 {
 	struct wl1271_tx_hw_descr *desc;
-	u32 total_len = skb->len + sizeof(struct wl1271_tx_hw_descr) + extra;
+	u32 total_len = skb->len + sizeof(struct wl1271_tx_hw_descr);
 	u32 total_blocks;
 	int id, ret = -EBUSY, ac;
 	u32 spare_blocks;
@@ -271,7 +243,7 @@ static int wl1271_tx_allocate(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 /* Indicates this TX HW frame is not padded to SDIO block size */
 #define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
 static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			       struct sk_buff *skb, u32 extra,
+			       struct sk_buff *skb,
 			       struct ieee80211_tx_info *control, u8 hlid)
 {
 	struct wl1271_tx_hw_descr *desc;
@@ -285,7 +257,7 @@ static void wl1271_tx_fill_hdr(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	desc = (struct wl1271_tx_hw_descr *) skb->data;
 	frame_start = (u8 *)(desc + 1); // frame_start points to the actual 802.11 frame.
-	hdr = (struct ieee80211_hdr *)(frame_start + extra);
+	hdr = (struct ieee80211_hdr *)(frame_start);
 	frame_control = hdr->frame_control;
 
 	// printk("[CHECK] - extra = %d\n", extra);
@@ -369,7 +341,6 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				   struct sk_buff *skb, u32 buf_offset, u8 hlid)
 {
 	struct ieee80211_tx_info *info;
-	u32 extra = 0;
 	int ret = 0;
 	u32 total_len;
 	// bool is_dummy;
@@ -387,39 +358,12 @@ static int wl1271_prepare_tx_frame(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	info = IEEE80211_SKB_CB(skb);
 
-	// is_dummy = wl12xx_is_dummy_packet(wl, skb);
-
-	// if (info->control.hw_key) {
-	// 	//printk("info->control.hw_key\n");
-	// 	bool is_wep;
-	// 	u8 idx = info->control.hw_key->hw_key_idx;
-	// 	u32 cipher = info->control.hw_key->cipher;
-
-	// 	is_wep = (cipher == WLAN_CIPHER_SUITE_WEP40) ||
-	// 		 (cipher == WLAN_CIPHER_SUITE_WEP104);
-
-	// 	if (WARN_ON(is_wep && wlvif && wlvif->default_key != idx)) {
-	// 		//ret = wl1271_set_default_wep_key(wl, wlvif, idx);
-	// 		ret = wl12xx_cmd_set_default_wep_key(wl, idx, wlvif->sta.hlid);
-	// 		if (ret < 0)
-	// 			return ret;
-	// 		wlvif->default_key = idx;
-	// 	}
-
-	// 	is_gem = (cipher == WL1271_CIPHER_SUITE_GEM);
-	// }
-
-	ret = wl1271_tx_allocate(wl, wlvif, skb, extra, buf_offset, hlid,
+	ret = wl1271_tx_allocate(wl, wlvif, skb, buf_offset, hlid,
 				 is_gem);
 	if (ret < 0)
 		return ret;
 
-	wl1271_tx_fill_hdr(wl, wlvif, skb, extra, info, hlid);
-
-	// if (!is_dummy && wlvif && wlvif->bss_type == BSS_TYPE_AP_BSS) {
-	// 	wl1271_tx_ap_update_inconnection_sta(wl, wlvif, skb);
-	// 	wl1271_tx_regulate_link(wl, wlvif, hlid);
-	// }
+	wl1271_tx_fill_hdr(wl, wlvif, skb, info, hlid);
 
 	/*
 	 * The length of each packet is stored in terms of
@@ -470,7 +414,7 @@ u32 wl1271_tx_enabled_rates_get(struct wl1271 *wl, u32 rate_set,
 	return enabled_rates;
 }
 
-static int wlcore_select_ac(struct wl1271 *wl)
+static int wlcore_select_ac(void)
 {
 	int i, q = -1, ac;
 	u32 min_pkts = 0xffffffff;
@@ -497,7 +441,7 @@ static int wlcore_select_ac(struct wl1271 *wl)
 	return q;
 }
 
-static struct sk_buff *wlcore_lnk_dequeue(struct wl1271 *wl, u8 hlid, u8 q)
+static struct sk_buff *wlcore_lnk_dequeue(u8 hlid, u8 q)
 {
 	struct sk_buff *skb;
 	unsigned long flags;
@@ -505,67 +449,43 @@ static struct sk_buff *wlcore_lnk_dequeue(struct wl1271 *wl, u8 hlid, u8 q)
 	skb = skb_dequeue(&VV_tx_queue[hlid][q]);
 	printk("[3] - skb = 0x%x\n", skb);
 	if (skb) {
-		spin_lock_irqsave(&wl->wl_lock, flags);
-		//WARN_ON_ONCE(wl->tx_queue_count[q] <= 0);
-		//wl->tx_queue_count[q]--;
+		spin_lock_irqsave(&wifi_data.lock, flags);
 		VV_tx_queue_count[q]--;
-		spin_unlock_irqrestore(&wl->wl_lock, flags);
+		spin_unlock_irqrestore(&wifi_data.lock, flags);
 	}
 
 	return skb;
 }
 
-static bool VV_lnk_high_prio(struct wl1271 *wl, u8 hlid)
+static bool VV_lnk_high_prio(u8 hlid)
 {
 	u8 thold;
 	unsigned long suspend_bitmap = 0;
 
-	// /* if we don't have the link map yet, assume they all low prio */
-	// if (!status_priv)
-	// 	return false;
-
-	// Data here is read from wl18xx_convert_fw_status (Interrupt)
-	/* suspended links are never high priority */
-	//suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
-	//printk("H - suspend_bitmap = 0x%x\n", suspend_bitmap);
 	if (test_bit(hlid, &suspend_bitmap))
-		return false;
+		return false; // false if using default hlink 0
 
 	/* the priority thresholds are taken from FW */
-	if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-	    !test_bit(hlid, &wl->ap_fw_ps_map))
-		//thold = status_priv->tx_fast_link_prio_threshold;
+	// if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
+	//     !test_bit(hlid, &wl->ap_fw_ps_map))
+	if (test_bit(hlid, (unsigned long*)&VV_status_reg->link_fast_bitmap))
 		thold = VV_status_reg->tx_fast_link_prio_threshold;
 	else
-		//thold = status_priv->tx_slow_link_prio_threshold;
 		thold = VV_status_reg->tx_slow_link_prio_threshold;
 	return VV_allocated_pkts[hlid] < thold;
 }
 
-static bool VV_lnk_low_prio(struct wl1271 *wl, u8 hlid)
+static bool VV_lnk_low_prio(u8 hlid)
 {
 	u8 thold;
 	unsigned long suspend_bitmap;
 
-	/* if we don't have the link map yet, assume they all low prio */
-	// if (!status_priv)
-	// 	return true;
-
-	//suspend_bitmap = le32_to_cpu(status_priv->link_suspend_bitmap);
 	suspend_bitmap = le32_to_cpu(VV_status_reg->link_suspend_bitmap);
 	//printk("L - suspend_bitmap = 0x%x\n", suspend_bitmap);
 
-	// if (test_bit(hlid, &suspend_bitmap))
-	// 	thold = status_priv->tx_suspend_threshold;
-	// else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-	// 	 !test_bit(hlid, &wl->ap_fw_ps_map))
-	// 	thold = status_priv->tx_fast_stop_threshold;
-	// else
-	// 	thold = status_priv->tx_slow_stop_threshold;
 	if (test_bit(hlid, &suspend_bitmap))
 		thold = VV_status_reg->tx_suspend_threshold;
-	else if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-		 !test_bit(hlid, &wl->ap_fw_ps_map))
+	else if (test_bit(hlid, (unsigned long*)&VV_status_reg->link_fast_bitmap))
 		thold = VV_status_reg->tx_fast_stop_threshold;
 	else
 		thold = VV_status_reg->tx_slow_stop_threshold;
@@ -574,67 +494,8 @@ static bool VV_lnk_low_prio(struct wl1271 *wl, u8 hlid)
 	return VV_allocated_pkts[hlid] < thold;
 }
 
-static struct sk_buff *wlcore_lnk_dequeue_high_prio(struct wl1271 *wl,
-						    u8 hlid, u8 ac,
-						    u8 *low_prio_hlid)
-{
-	if (!VV_lnk_high_prio(wl, hlid)) {
-		if (*low_prio_hlid == WL12XX_INVALID_LINK_ID &&
-			!skb_queue_empty(&VV_tx_queue[hlid][ac]) &&
-		    VV_lnk_low_prio(wl, hlid)) // wl18xx_lnk_low_prio
-			/* we found the first non-empty low priority queue */
-			*low_prio_hlid = hlid;
-
-		return NULL;
-	}
-
-	return wlcore_lnk_dequeue(wl, hlid, ac);
-}
-
-static struct sk_buff *wlcore_vif_dequeue_high_prio(struct wl1271 *wl,
-						    struct wl12xx_vif *wlvif,
-						    u8 ac, u8 *hlid,
-						    u8 *low_prio_hlid)
-{
-	struct sk_buff *skb = NULL;
-	int i, h, start_hlid;
-
-	/* start from the link after the last one */
-	start_hlid = (wlvif->last_tx_hlid + 1) % wl->num_links;
-
-	printk("last hild: %d, start_hlid: %d\n", wlvif->last_tx_hlid, start_hlid);
-
-	// /* dequeue according to AC, round robin on each link */
-	for (i = 0; i < wl->num_links; i++) {
-		h = (start_hlid + i) % wl->num_links;
-
-		/* only consider connected stations */
-		if (!test_bit(h, wlvif->links_map))
-			continue;
-		printk("h = %d\n", h);
-		skb = wlcore_lnk_dequeue_high_prio(wl, h, ac,
-						   low_prio_hlid);
-		if (!skb)
-			continue;
-
-		wlvif->last_tx_hlid = h;
-		break;
-	}
-
-	// // [TOTO] - assume skb is always VALID
-	// h = HW_LINK_ID;
-	// skb = wlcore_lnk_dequeue_high_prio(wl, h, ac,
-	// 					low_prio_hlid);
-	// wlvif->last_tx_hlid = h;
-
-	if (!skb)
-		wlvif->last_tx_hlid = 0;
-
-	*hlid = wlvif->last_tx_hlid;
-	return skb;
-}
 int test = 0;
-static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
+static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl)
 {
 	unsigned long flags;
 	struct wl12xx_vif *wlvif = wl->last_valid_wlvif;
@@ -643,7 +504,7 @@ static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
 
 	// Find ac has data (the least allocated blks and V0>VI>...)
-	ac = wlcore_select_ac(wl);
+	ac = wlcore_select_ac();
 	if (ac < 0){
 		//printk("FAILED - ac\n");
 		return skb;
@@ -655,41 +516,30 @@ static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl, u8 *hlid)
 		//printk("[0] - wlvif = 0x%x\n", wlvif);
 		wl12xx_for_each_wlvif(wl, wlvif) {
 			//printk("[1] - START LOOP\n");
-			if (!VV_lnk_high_prio(wl, HW_LINK_ID)) {
+			if (!VV_lnk_high_prio(HW_LINK_ID)) {
 				if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
 					!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
-					VV_lnk_low_prio(wl, HW_LINK_ID)) // wl18xx_lnk_low_prio
+					VV_lnk_low_prio(HW_LINK_ID)) // wl18xx_lnk_low_prio
 					/* we found the first non-empty low priority queue */
 					low_prio_hlid = HW_LINK_ID;
 
 				skb = NULL;
 			}
-			else skb = wlcore_lnk_dequeue(wl, HW_LINK_ID, ac);
+			else skb = wlcore_lnk_dequeue(HW_LINK_ID, ac);
 
 			wlvif->last_tx_hlid = HW_LINK_ID;
-			*hlid = wlvif->last_tx_hlid;
+
 	// // test
 	// if (!test) skb = NULL;
 	// test = 1;
-			//printk("[1] - ELSE, skb = 0x%x\n", skb);
+
 			if (skb) {
-				//wl->last_wlvif = wlvif;
-				wl->last_valid_wlvif = wlvif;
 				break;
 			}
 		}
 	}
 
 	printk("[2] - skb = 0x%x, wlvif = 0x%x, low_prio_hlid = %x\n", skb, wlvif, low_prio_hlid);
-
-	if (!skb && (low_prio_hlid != WL12XX_INVALID_LINK_ID) && (wl->last_valid_wlvif == wlvif)) {
-		printk("[3] - IFFF\n");
-		skb = wlcore_lnk_dequeue(wl, hlid, ac);
-		printk("[3] - Done - wlcore_lnk_dequeue\n");
-
-		WARN_ON(!skb); /* we checked this before */
-		*hlid = low_prio_hlid;
-	}
 	return skb;
 }
 
@@ -782,13 +632,13 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
 	int ret = 0;
 	int bus_ret = 0;
-	u8 hlid;
+	u8 hlid = HW_LINK_ID;
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		return 0;
 
 	// while ((skb = wl1271_skb_dequeue(wl, &hlid))) {
-	while ((skb = VV_skb_dequeue(wl, &hlid))) {
+	while ((skb = VV_skb_dequeue(wl))) {
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 		bool has_data = false;
 
@@ -863,27 +713,27 @@ out:
 void wl1271_tx_work(struct work_struct *work)
 {
 	//printk("[WORK] - wl1271_tx_work\n");
-	struct wl1271 *wl = container_of(work, struct wl1271, tx_work);
+	// struct wl1271 *wl = container_of(work, struct wl1271, tx_work);
 	int ret;
 
-	mutex_lock(&wl->mutex);
-	ret = pm_runtime_get_sync(wl->dev);
+	mutex_lock(&wifi_data.mutex);
+	ret = pm_runtime_get_sync(wifi_data.wl->dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
+		pm_runtime_put_noidle(wifi_data.wl->dev);
 		goto out;
 	}
 
-	ret = wlcore_tx_work_locked(wl);
+	ret = wlcore_tx_work_locked(wifi_data.wl);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
-		wl12xx_queue_recovery_work(wl);
+		pm_runtime_put_noidle(wifi_data.wl->dev);
+		wl12xx_queue_recovery_work(wifi_data.wl);
 		goto out;
 	}
 
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.wl->dev);
+	pm_runtime_put_autosuspend(wifi_data.wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static u8 wl1271_tx_get_rate_flags(u8 rate_class_index)
@@ -1049,7 +899,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 		/* force Tx and give the driver some time to flush data */
 		mutex_unlock(&wl->mutex);
 		if (wl1271_tx_total_queue_count(wl))
-			wl1271_tx_work(&wl->tx_work);
+			wl1271_tx_work(&VV_work.tx_work);
 		msleep(20);
 		mutex_lock(&wl->mutex);
 

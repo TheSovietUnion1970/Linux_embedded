@@ -48,6 +48,10 @@ u32 VV_tx_packets_count;
 u8 VV_last_fw_rls_idx = 0;
 struct VV_Work VV_work;
 
+/* Main */
+struct Wifi_data wifi_data;
+struct VV_vif VV_vif;
+
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
 
@@ -236,8 +240,8 @@ void wl12xx_rearm_tx_watchdog_locked(struct wl1271 *wl)
 	if (VV_tx_allocated_blocks == 0)
 		return;
 
-	cancel_delayed_work(&wl->tx_watchdog_work);
-	ieee80211_queue_delayed_work(wl->hw, &wl->tx_watchdog_work,
+	cancel_delayed_work(&VV_work.tx_watchdog_work);
+	ieee80211_queue_delayed_work(wl->hw, &VV_work.tx_watchdog_work,
 		msecs_to_jiffies(wl->conf.tx.tx_watchdog_timeout));
 }
 
@@ -281,14 +285,14 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 {
 	printk("[WORK] - wl12xx_tx_watchdog_work\n");
 	struct delayed_work *dwork;
-	struct wl1271 *wl;
+	//struct wl1271 *wl;
 
 	dwork = to_delayed_work(work);
-	wl = container_of(dwork, struct wl1271, tx_watchdog_work);
+	//wl = container_of(dwork, struct wl1271, tx_watchdog_work);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
-	if (unlikely(wl->state != WLCORE_STATE_ON))
+	if (unlikely(wifi_data.wl->state != WLCORE_STATE_ON))
 		goto out;
 
 	/* Tx went out in the meantime - everything is ok */
@@ -299,10 +303,10 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 	 * if a ROC is in progress, we might not have any Tx for a long
 	 * time (e.g. pending Tx on the non-ROC channels)
 	 */
-	if (find_first_bit(wl->roc_map, WL12XX_MAX_ROLES) < WL12XX_MAX_ROLES) {
+	if (find_first_bit(wifi_data.wl->roc_map, WL12XX_MAX_ROLES) < WL12XX_MAX_ROLES) {
 		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms due to ROC",
-			     wl->conf.tx.tx_watchdog_timeout);
-		wl12xx_rearm_tx_watchdog_locked(wl);
+			     wifi_data.wl->conf.tx.tx_watchdog_timeout);
+		wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
 		goto out;
 	}
 
@@ -310,10 +314,10 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 	 * if a scan is in progress, we might not have any Tx for a long
 	 * time
 	 */
-	if (wl->scan.state != WL1271_SCAN_STATE_IDLE) {
+	if (wifi_data.wl->scan.state != WL1271_SCAN_STATE_IDLE) {
 		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms due to scan",
-			     wl->conf.tx.tx_watchdog_timeout);
-		wl12xx_rearm_tx_watchdog_locked(wl);
+			     wifi_data.wl->conf.tx.tx_watchdog_timeout);
+		wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
 		goto out;
 	}
 
@@ -323,21 +327,21 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 	* Tx is genuinely stuck we will most hopefully discover it when all
 	* stations are removed due to inactivity.
 	*/
-	if (wl->active_sta_count) {
+	if (wifi_data.wl->active_sta_count) {
 		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms. AP has "
 			     " %d stations",
-			      wl->conf.tx.tx_watchdog_timeout,
-			      wl->active_sta_count);
-		wl12xx_rearm_tx_watchdog_locked(wl);
+			      wifi_data.wl->conf.tx.tx_watchdog_timeout,
+			      wifi_data.wl->active_sta_count);
+		wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
 		goto out;
 	}
 
 	wl1271_error("Tx stuck (in FW) for %d ms. Starting recovery",
-		     wl->conf.tx.tx_watchdog_timeout);
-	wl12xx_queue_recovery_work(wl);
+		     wifi_data.wl->conf.tx.tx_watchdog_timeout);
+	wl12xx_queue_recovery_work(wifi_data.wl);
 
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static void wlcore_adjust_conf(struct wl1271 *wl)
@@ -363,56 +367,6 @@ static void wlcore_adjust_conf(struct wl1271 *wl)
 
 	if (no_recovery != -1)
 		wl->conf.recovery.no_recovery = (u8) no_recovery;
-}
-
-static void wl12xx_irq_ps_regulate_link(struct wl1271 *wl,
-					struct wl12xx_vif *wlvif,
-					u8 hlid, u8 tx_pkts)
-{
-	bool fw_ps;
-
-	fw_ps = test_bit(hlid, &wl->ap_fw_ps_map);
-
-	/*
-	 * Wake up from high level PS if the STA is asleep with too little
-	 * packets in FW or if the STA is awake.
-	 */
-	if (!fw_ps || tx_pkts < WL1271_PS_STA_MAX_PACKETS)
-		wl12xx_ps_link_end(wl, wlvif, hlid);
-
-	/*
-	 * Start high-level PS if the STA is asleep with enough blocks in FW.
-	 * Make an exception if this is the only connected link. In this
-	 * case FW-memory congestion is less of a problem.
-	 * Note that a single connected STA means 2*ap_count + 1 active links,
-	 * since we must account for the global and broadcast AP links
-	 * for each AP. The "fw_ps" check assures us the other link is a STA
-	 * connected to the AP. Otherwise the FW would not set the PSM bit.
-	 */
-	else if (wl->active_link_count > (wl->ap_count*2 + 1) && fw_ps &&
-		 tx_pkts >= WL1271_PS_STA_MAX_PACKETS)
-		wl12xx_ps_link_start(wl, wlvif, hlid, true);
-}
-
-static void wl12xx_irq_update_links_status(struct wl1271 *wl,
-					   struct wl12xx_vif *wlvif)
-{
-	unsigned long cur_fw_ps_map;
-	u8 hlid;
-
-	cur_fw_ps_map = VV_status_reg->link_ps_bitmap;
-	if (wl->ap_fw_ps_map != cur_fw_ps_map) {
-		wl1271_debug(DEBUG_PSM,
-			     "link ps prev 0x%lx cur 0x%lx changed 0x%lx",
-			     wl->ap_fw_ps_map, cur_fw_ps_map,
-			     wl->ap_fw_ps_map ^ cur_fw_ps_map);
-
-		wl->ap_fw_ps_map = cur_fw_ps_map;
-	}
-
-	for_each_set_bit(hlid, wlvif->ap.sta_hlid_map, wl->num_links)
-		wl12xx_irq_ps_regulate_link(wl, wlvif, hlid,
-					    VV_allocated_pkts[hlid]);
 }
 
 #include "../wl18xx/wl18xx.h"
@@ -486,7 +440,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 		if (VV_tx_allocated_blocks) 
 			wl12xx_rearm_tx_watchdog_locked(wl);
 		else
-			cancel_delayed_work(&wl->tx_watchdog_work);
+			cancel_delayed_work(&VV_work.tx_watchdog_work);
 	}
 	// // if tx_allocated_blocks > 0 -> there is blocks in fw -> raise TX stuck when there
 	// is no action to send these blks out
@@ -509,11 +463,6 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	/* if more blocks are available now, tx work can be scheduled */
 	// if (VV_tx_blocks_available > old_tx_blk_count)
 	// 	clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
-
-	/* for AP update num of allocated TX blocks per link and ps status */
-	wl12xx_for_each_wlvif_ap(wl, wlvif) {
-		wl12xx_irq_update_links_status(wl, wlvif);
-	}
 
 	/* update the host-chipset time offset */
 	wl->time_offset = (ktime_get_boottime_ns() >> 10) -
@@ -669,8 +618,8 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 
 	/* return the packet to the stack */
 	skb_queue_tail(&VV_deferred_tx_queue, skb);
-	//queue_work(wl->freezable_wq, &wl->netstack_work);
-	queue_work(wl->freezable_wq, &VV_work.netstack_work);
+	//queue_work(VV_work.freezable_wq, &wl->netstack_work);
+	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
 
 	wl1271_free_tx_id(wl, id);
 }
@@ -884,7 +833,7 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	/* TX might be handled here, avoid redundant work */
 	set_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
-	cancel_work_sync(&wl->tx_work);
+	cancel_work_sync(&VV_work.tx_work);
 
 	mutex_lock(&wl->mutex);
 
@@ -905,7 +854,7 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	// VV_tx_queue_count is non-zero -> there are frames that not handled yet 
 	if (queue_tx_work)
-		ieee80211_queue_work(wl->hw, &wl->tx_work);
+		ieee80211_queue_work(wl->hw, &VV_work.tx_work);
 	//}
 
 	mutex_unlock(&wl->mutex);
@@ -1477,7 +1426,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	cancel_work_sync(&VV_work.netstack_work);
 
 	//cancel_work_sync(&wl->recovery_work);
-	cancel_delayed_work_sync(&wl->tx_watchdog_work);
+	cancel_delayed_work_sync(&VV_work.tx_watchdog_work);
 
 	mutex_lock(&wl->mutex);
 	wl1271_power_off(wl);
@@ -1549,10 +1498,10 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	 * The chip specific setup must run before the first TX packet -
 	 * before that, the tx_work will not be initialized!
 	 */
-	// If the TX work is not already busy or pending, schedule wl->tx_work (which eventually calls wlcore_tx_work_locked()
+	// If the TX work is not already busy or pending, schedule VV_work.tx_work (which eventually calls wlcore_tx_work_locked()
 	// -> This is what triggers the actual transmission.
 	if (!test_bit(WL1271_FLAG_TX_PENDING, &wl->flags))
-		ieee80211_queue_work(wl->hw, &wl->tx_work);
+		ieee80211_queue_work(wl->hw, &VV_work.tx_work);
 
 out:
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
@@ -2055,13 +2004,13 @@ out_sleep:
 	/* flush any remaining work */
 	wl1271_debug(DEBUG_MAC80211, "flushing remaining works");
 
-	flush_work(&wl->tx_work);
+	flush_work(&VV_work.tx_work);
 
 	/*
 	 * Cancel the watchdog even if above tx_flush failed. We will detect
 	 * it on resume anyway.
 	 */
-	cancel_delayed_work(&wl->tx_watchdog_work);
+	cancel_delayed_work(&VV_work.tx_watchdog_work);
 
 	/*
 	 * set suspended flag to avoid triggering a new threaded_irq
@@ -2197,11 +2146,11 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	// if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
 	// 	cancel_work_sync(&wl->recovery_work);
 	wl1271_flush_deferred_work(wl);
-	cancel_delayed_work_sync(&wl->scan_complete_work);
+	cancel_delayed_work_sync(&VV_work.scan_complete_work);
 	//cancel_work_sync(&wl->netstack_work);
 	cancel_work_sync(&VV_work.netstack_work);
-	cancel_work_sync(&wl->tx_work);
-	cancel_delayed_work_sync(&wl->tx_watchdog_work);
+	cancel_work_sync(&VV_work.tx_work);
+	cancel_delayed_work_sync(&VV_work.tx_watchdog_work);
 
 	/* let's notify MAC80211 about the remaining pending TX frames */
 	mutex_lock(&wl->mutex);
@@ -2226,8 +2175,8 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	//wl->tx_results_count = 0;
 	VV_tx_packets_count = 0;
 	wl->time_offset = 0;
-	wl->ap_fw_ps_map = 0;
-	wl->ap_ps_map = 0;
+	//wl->ap_fw_ps_map = 0;
+	//wl->ap_ps_map = 0;
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
 	//memset(wl->roles_map, 0, sizeof(wl->roles_map));
 	memset(wl->links_map, 0, sizeof(wl->links_map));
@@ -2519,6 +2468,7 @@ static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 	wlvif->channel_type = wl->channel_type;
 
 	INIT_LIST_HEAD(&wlvif->list);
+	//INIT_LIST_HEAD(&VV_vif.list_id);
 	return 0;
 }
 
@@ -2791,6 +2741,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	}
 
 	list_add(&wlvif->list, &wl->wlvif_list);
+	//list_add(&VV_vif.list_id, &wifi_data.wifi_vif_list);
 	set_bit(WLVIF_FLAG_INITIALIZED, &wlvif->flags);
 
 	if (wlvif->bss_type == BSS_TYPE_AP_BSS)
@@ -4606,8 +4557,6 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 		return;
 
 	clear_bit(hlid, wlvif->ap.sta_hlid_map);
-	__clear_bit(hlid, &wl->ap_ps_map);
-	__clear_bit(hlid, &wl->ap_fw_ps_map);
 
 	/*
 	 * save the last used PN in the private part of iee80211_sta,
@@ -4909,21 +4858,6 @@ out:
 	mutex_unlock(&wl->mutex);
 
 	return ret;
-}
-
-static void wlcore_roc_complete_work(struct work_struct *work)
-{
-	//printk("[WORK] - wlcore_roc_complete_work\n");
-	struct delayed_work *dwork;
-	struct wl1271 *wl;
-	int ret;
-
-	dwork = to_delayed_work(work);
-	wl = container_of(dwork, struct wl1271, roc_complete_work);
-
-	ret = wlcore_roc_completed(wl);
-	if (!ret)
-		ieee80211_remain_on_channel_expired(wl->hw);
 }
 
 /* can't be const, mac80211 writes to this */
@@ -5396,7 +5330,7 @@ out_sleep:
 out:
 	mutex_unlock(&wl->mutex);
 
-	cancel_delayed_work_sync(&wl->scan_complete_work);
+	cancel_delayed_work_sync(&VV_work.scan_complete_work);
 }
 
 static void wl1271_op_set_default_key_idx(struct ieee80211_hw *hw,
@@ -6285,6 +6219,8 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	}
 
 	wl = hw->priv;
+	wifi_data.wl = wl;
+	wifi_data.dev = wl->dev;
 	memset(wl, 0, sizeof(*wl));
 
 	wl->priv = kzalloc(priv_size, GFP_KERNEL);
@@ -6295,6 +6231,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	}
 
 	INIT_LIST_HEAD(&wl->wlvif_list);
+	INIT_LIST_HEAD(&wifi_data.wifi_vif_list);
 
 	wl->hw = hw;
 	VV_work.hw = hw;
@@ -6317,14 +6254,14 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	//INIT_WORK(&wl->netstack_work, wl1271_netstack_work);
 	INIT_WORK(&VV_work.netstack_work, wl1271_netstack_work);
 
-	INIT_WORK(&wl->tx_work, wl1271_tx_work);
+	INIT_WORK(&VV_work.tx_work, wl1271_tx_work);
 	//INIT_WORK(&wl->recovery_work, wl1271_recovery_work);
-	INIT_DELAYED_WORK(&wl->scan_complete_work, wl1271_scan_complete_work);
-	INIT_DELAYED_WORK(&wl->roc_complete_work, wlcore_roc_complete_work);
-	INIT_DELAYED_WORK(&wl->tx_watchdog_work, wl12xx_tx_watchdog_work);
+	INIT_DELAYED_WORK(&VV_work.scan_complete_work, wl1271_scan_complete_work);
+	//INIT_DELAYED_WORK(&wl->roc_complete_work, wlcore_roc_complete_work);
+	INIT_DELAYED_WORK(&VV_work.tx_watchdog_work, wl12xx_tx_watchdog_work);
 
-	wl->freezable_wq = create_freezable_workqueue("wl12xx_wq");
-	if (!wl->freezable_wq) {
+	VV_work.freezable_wq = create_freezable_workqueue("wl12xx_wq");
+	if (!VV_work.freezable_wq) {
 		ret = -ENOMEM;
 		goto err_hw;
 	}
@@ -6339,8 +6276,8 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
 	wl->recovery_count = 0;
 	wl->hw_pg_ver = -1;
-	wl->ap_ps_map = 0;
-	wl->ap_fw_ps_map = 0;
+	//wl->ap_ps_map = 0;
+	//wl->ap_fw_ps_map = 0;
 	wl->quirks = 0;
 	wl->system_hlid = WL12XX_SYSTEM_HLID;
 	wl->active_sta_count = 0;
@@ -6411,7 +6348,7 @@ err_aggr:
 	free_pages((unsigned long)wl->aggr_buf, order);
 
 err_wq:
-	destroy_workqueue(wl->freezable_wq);
+	destroy_workqueue(VV_work.freezable_wq);
 
 err_hw:
 	//wl1271_debugfs_exit(wl);
@@ -6450,7 +6387,7 @@ int wlcore_free_hw(struct wl1271 *wl)
 	wl->nvs = NULL;
 
 	kfree(VV_status_reg);
-	destroy_workqueue(wl->freezable_wq);
+	destroy_workqueue(VV_work.freezable_wq);
 
 	kfree(wl->priv);
 	ieee80211_free_hw(wl->hw);

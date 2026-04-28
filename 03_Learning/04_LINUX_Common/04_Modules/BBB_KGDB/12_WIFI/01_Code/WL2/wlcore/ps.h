@@ -15,9 +15,6 @@
 
 int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		       enum wl1271_cmd_ps_mode mode);
-void wl12xx_ps_link_start(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			  u8 hlid, bool clean_queues);
-void wl12xx_ps_link_end(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid);
 
 #define WL1271_PS_COMPLETE_TIMEOUT 500
 

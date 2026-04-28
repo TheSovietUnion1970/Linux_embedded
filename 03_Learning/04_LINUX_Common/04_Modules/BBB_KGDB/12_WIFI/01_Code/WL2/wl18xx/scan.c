@@ -144,14 +144,6 @@ out:
 	return ret;
 }
 
-void wl18xx_scan_completed(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	wl->scan.failed = false;
-	cancel_delayed_work(&wl->scan_complete_work);
-	ieee80211_queue_delayed_work(wl->hw, &wl->scan_complete_work,
-				     msecs_to_jiffies(0));
-}
-
 static
 int wl18xx_scan_sched_scan_config(struct wl1271 *wl,
 				  struct wl12xx_vif *wlvif,
