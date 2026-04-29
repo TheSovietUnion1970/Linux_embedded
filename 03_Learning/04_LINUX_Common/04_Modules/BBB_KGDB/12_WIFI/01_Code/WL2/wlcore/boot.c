@@ -19,6 +19,7 @@
 #include "hw_ops.h"
 
 #include "common.h"
+#include "wl18.h"
 
 static int wl1271_boot_set_ecpu_ctrl(struct wl1271 *wl, u32 flag)
 {
@@ -130,7 +131,42 @@ fail:
 	return -EINVAL;
 }
 
-static int wlcore_boot_static_data(struct wl1271 *wl)
+// static int wlcore_boot_static_data(struct wl1271 *wl)
+// {
+// 	struct wl1271_static_data *static_data;
+// 	size_t len = sizeof(*static_data) + wl->static_data_priv_len;
+// 	int ret;
+
+// 	static_data = kmalloc(len, GFP_KERNEL);
+// 	if (!static_data) {
+// 		ret = -ENOMEM;
+// 		goto out;
+// 	}
+
+// 	//ret = wlcore_read(wl, wl->cmd_box_addr, static_data, len, false);
+// 	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->cmd_box_addr), (u32*)static_data, len, false);
+// 	if (ret < 0)
+// 		goto out_free;
+
+// 	ret = wlcore_boot_parse_fw_ver(wl, static_data);
+// 	if (ret < 0)
+// 		goto out_free;
+
+// 	ret = wlcore_validate_fw_ver(wl);
+// 	if (ret < 0)
+// 		goto out_free;
+
+// 	ret = wlcore_handle_static_data(wl, static_data);
+// 	if (ret < 0)
+// 		goto out_free;
+
+// out_free:
+// 	kfree(static_data);
+// out:
+// 	return ret;
+// }
+
+static int VV_boot_static_data(struct wl1271 *wl)
 {
 	struct wl1271_static_data *static_data;
 	size_t len = sizeof(*static_data) + wl->static_data_priv_len;
@@ -155,7 +191,7 @@ static int wlcore_boot_static_data(struct wl1271 *wl)
 	if (ret < 0)
 		goto out_free;
 
-	ret = wlcore_handle_static_data(wl, static_data);
+	ret = VV_handle_static_data(wl, static_data);
 	if (ret < 0)
 		goto out_free;
 
@@ -519,7 +555,8 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	wl1271_debug(DEBUG_MAILBOX, "MBOX ptrs: 0x%x 0x%x",
 		     wl->mbox_ptr[0], wl->mbox_ptr[1]);
 
-	ret = wlcore_boot_static_data(wl);
+	// ret = wlcore_boot_static_data(wl);
+	ret = VV_boot_static_data(wl);
 	if (ret < 0) {
 		wl1271_error("error getting static data");
 		return ret;

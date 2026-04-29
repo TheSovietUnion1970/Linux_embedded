@@ -637,8 +637,9 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	memcpy(cmd->sta.ssid, wlvif->ssid, wlvif->ssid_len);
 	memcpy(cmd->sta.bssid, vif->bss_conf.bssid, ETH_ALEN);
 
-	supported_rates = CONF_TX_ENABLED_RATES | CONF_TX_MCS_RATES |
-			  wlcore_hw_sta_get_ap_rate_mask(wl, wlvif);
+	// supported_rates = CONF_TX_ENABLED_RATES | CONF_TX_MCS_RATES |
+	// 		  wlcore_hw_sta_get_ap_rate_mask(wl, wlvif);
+	supported_rates = CONF_TX_ENABLED_RATES | CONF_TX_MCS_RATES | wlvif->rate_set;
 	if (wlvif->p2p)
 		supported_rates &= ~CONF_TX_CCK_RATES;
 

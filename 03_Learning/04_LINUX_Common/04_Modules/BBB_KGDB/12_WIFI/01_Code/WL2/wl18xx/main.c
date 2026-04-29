@@ -1262,15 +1262,16 @@ static u32 wl18xx_sta_get_ap_rate_mask(struct wl1271 *wl,
 {
 	u32 hw_rate_set = wlvif->rate_set;
 
+	printk("wl18xx_sta_get_ap_rate_mask\n");
 	if (wlvif->channel_type == NL80211_CHAN_HT40MINUS ||
 	    wlvif->channel_type == NL80211_CHAN_HT40PLUS) {
-		wl1271_debug(DEBUG_ACX, "using wide channel rate mask");
+		wl1271_info("using wide channel rate mask");
 		hw_rate_set |= CONF_TX_RATE_USE_WIDE_CHAN;
 
 		/* we don't support MIMO in wide-channel mode */
 		hw_rate_set &= ~CONF_TX_MIMO_RATES;
 	} else if (wl18xx_is_mimo_supported(wl)) {
-		wl1271_debug(DEBUG_ACX, "using MIMO channel rate mask");
+		wl1271_info("using MIMO channel rate mask");
 		hw_rate_set |= CONF_TX_MIMO_RATES;
 	}
 

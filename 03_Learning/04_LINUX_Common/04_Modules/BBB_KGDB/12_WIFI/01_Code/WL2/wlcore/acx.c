@@ -758,8 +758,10 @@ int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx->rate_policy_idx = cpu_to_le32(STA_AP_RATE_IDX);
 
 	/* the AP policy is HW specific */
-	acx->rate_policy.enabled_rates =
-		cpu_to_le32(wlcore_hw_sta_get_ap_rate_mask(wl, wlvif));
+	// acx->rate_policy.enabled_rates =
+	// 	cpu_to_le32(wlcore_hw_sta_get_ap_rate_mask(wl, wlvif));
+	acx->rate_policy.enabled_rates = wlvif->rate_set;
+		
 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;

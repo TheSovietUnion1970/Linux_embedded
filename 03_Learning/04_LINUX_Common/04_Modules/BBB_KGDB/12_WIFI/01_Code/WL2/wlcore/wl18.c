@@ -174,4 +174,19 @@ out:
 	return ret;
 }
 
+int VV_handle_static_data(struct wl1271 *wl,
+				     struct wl1271_static_data *static_data)
+{
+	struct VV_static_data_priv *static_data_priv =
+		(struct VV_static_data_priv *) static_data->priv;
 
+	strncpy(wl->chip.phy_fw_ver_str, static_data_priv->phy_version,
+		sizeof(wl->chip.phy_fw_ver_str));
+
+	/* make sure the string is NULL-terminated */
+	wl->chip.phy_fw_ver_str[sizeof(wl->chip.phy_fw_ver_str) - 1] = '\0';
+
+	wl1271_info("**PHY firmware version: %s", static_data_priv->phy_version);
+
+	return 0;
+}
