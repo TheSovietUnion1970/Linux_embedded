@@ -1277,31 +1277,6 @@ static u32 wl18xx_sta_get_ap_rate_mask(struct wl1271 *wl,
 	return hw_rate_set;
 }
 
-static u32 wl18xx_ap_get_mimo_wide_rate_mask(struct wl1271 *wl,
-					     struct wl12xx_vif *wlvif)
-{
-	if (wlvif->channel_type == NL80211_CHAN_HT40MINUS ||
-	    wlvif->channel_type == NL80211_CHAN_HT40PLUS) {
-		wl1271_debug(DEBUG_ACX, "using wide channel rate mask");
-
-		/* sanity check - we don't support this */
-		if (WARN_ON(wlvif->band != NL80211_BAND_5GHZ))
-			return 0;
-
-		return CONF_TX_RATE_USE_WIDE_CHAN;
-	} else if (wl18xx_is_mimo_supported(wl) &&
-		   wlvif->band == NL80211_BAND_2GHZ) {
-		wl1271_debug(DEBUG_ACX, "using MIMO rate mask");
-		/*
-		 * we don't care about HT channel here - if a peer doesn't
-		 * support MIMO, we won't enable it in its rates
-		 */
-		return CONF_TX_MIMO_RATES;
-	} else {
-		return 0;
-	}
-}
-
 static const char *wl18xx_rdl_name(enum wl18xx_rdl_num rdl_num)
 {
 	switch (rdl_num) {
@@ -1652,7 +1627,7 @@ static struct wlcore_ops wl18xx_ops = {
 	.get_pg_ver	= wl18xx_get_pg_ver,
 	.set_rx_csum = wl18xx_set_rx_csum,
 	.sta_get_ap_rate_mask = wl18xx_sta_get_ap_rate_mask,
-	.ap_get_mimo_wide_rate_mask = wl18xx_ap_get_mimo_wide_rate_mask,
+	//.ap_get_mimo_wide_rate_mask = wl18xx_ap_get_mimo_wide_rate_mask,
 	.get_mac	= wl18xx_get_mac,
 	.debugfs_init	= wl18xx_debugfs_add_files,
 	.scan_start	= wl18xx_scan_start,
@@ -1662,7 +1637,7 @@ static struct wlcore_ops wl18xx_ops = {
 	.handle_static_data	= wl18xx_handle_static_data,
 	.get_spare_blocks = wl18xx_get_spare_blocks,
 	.set_key	= wl18xx_set_key,
-	.channel_switch	= wl18xx_cmd_channel_switch,
+	//.channel_switch	= wl18xx_cmd_channel_switch,
 	//.pre_pkt_send	= wl18xx_pre_pkt_send,
 	.sta_rc_update	= wl18xx_sta_rc_update,
 	.set_peer_cap	= wl18xx_set_peer_cap,
@@ -1671,11 +1646,11 @@ static struct wlcore_ops wl18xx_ops = {
 	// .lnk_low_prio	= wl18xx_lnk_low_prio,
 	.smart_config_start = wl18xx_cmd_smart_config_start,
 	.smart_config_stop  = wl18xx_cmd_smart_config_stop,
-	.smart_config_set_group_key = wl18xx_cmd_smart_config_set_group_key,
+	// .smart_config_set_group_key = wl18xx_cmd_smart_config_set_group_key,
 	.interrupt_notify = wl18xx_acx_interrupt_notify_config,
 	.rx_ba_filter	= wl18xx_acx_rx_ba_filter,
 	.ap_sleep	= wl18xx_acx_ap_sleep,
-	.set_cac	= wl18xx_cmd_set_cac,
+	// .set_cac	= wl18xx_cmd_set_cac,
 	.dfs_master_restart	= wl18xx_cmd_dfs_master_restart,
 };
 
@@ -1912,6 +1887,7 @@ static int wl18xx_setup(struct wl1271 *wl)
 				  &wl18xx_siso20_ht_cap);
 	}
 
+	printk("checksum_param = 0x%x\n", checksum_param);
 	if (!checksum_param) {
 		wl18xx_ops.set_rx_csum = NULL;
 		wl18xx_ops.init_vif = NULL;

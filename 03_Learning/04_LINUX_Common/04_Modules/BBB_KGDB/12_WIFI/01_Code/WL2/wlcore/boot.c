@@ -63,9 +63,9 @@ static int wlcore_boot_parse_fw_ver(struct wl1271 *wl,
 		goto out;
 	}
 
-	ret = wlcore_identify_fw(wl);
-	if (ret < 0)
-		goto out;
+	// ret = wlcore_identify_fw(wl);
+	// if (ret < 0)
+	// 	goto out;
 out:
 	return ret;
 }

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
-wlc-y		:= main.o cmd.o io.o event.o tx.o rx.o ps.o acx.o \
+wlc-y		:= main.o cmd.o io.o event.o tx.o rx.o ps.o acx.o wl18.o\
 			  boot.o init.o debugfs.o scan.o sysfs.o vendor_cmd.o \
 			  sdio.o
 obj-m += wlc.o

@@ -27,7 +27,7 @@ int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id);
 int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl12xx_cmd_role_start_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif);
+//int wl12xx_cmd_role_start_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl12xx_cmd_role_stop_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl12xx_start_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif,

@@ -369,23 +369,6 @@ static int wl1271_sta_hw_init_post_mem(struct wl1271 *wl,
 	return 0;
 }
 
-/* generic ap initialization (non vif-specific) */
-static int wl1271_ap_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	int ret;
-
-	ret = wl1271_init_ap_rates(wl, wlvif);
-	if (ret < 0)
-		return ret;
-
-	/* configure AP sleep, if enabled */
-	ret = wlcore_hw_ap_sleep(wl);
-	if (ret < 0)
-		return ret;
-
-	return 0;
-}
-
 int wl1271_ap_init_templates(struct wl1271 *wl, struct ieee80211_vif *vif)
 {
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
@@ -418,65 +401,6 @@ static int wl1271_ap_hw_init_post_mem(struct wl1271 *wl,
 				      struct ieee80211_vif *vif)
 {
 	return wl1271_ap_init_templates(wl, vif);
-}
-
-int wl1271_init_ap_rates(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	int i, ret;
-	struct conf_tx_rate_class rc;
-	u32 supported_rates;
-
-	wl1271_debug(DEBUG_AP, "AP basic rate set: 0x%x",
-		     wlvif->basic_rate_set);
-
-	if (wlvif->basic_rate_set == 0)
-		return -EINVAL;
-
-	rc.enabled_rates = wlvif->basic_rate_set;
-	rc.long_retry_limit = 10;
-	rc.short_retry_limit = 10;
-	rc.aflags = 0;
-	ret = wl1271_acx_ap_rate_policy(wl, &rc, wlvif->ap.mgmt_rate_idx);
-	if (ret < 0)
-		return ret;
-
-	/* use the min basic rate for AP broadcast/multicast */
-	rc.enabled_rates = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
-	rc.short_retry_limit = 10;
-	rc.long_retry_limit = 10;
-	rc.aflags = 0;
-	ret = wl1271_acx_ap_rate_policy(wl, &rc, wlvif->ap.bcast_rate_idx);
-	if (ret < 0)
-		return ret;
-
-	/*
-	 * If the basic rates contain OFDM rates, use OFDM only
-	 * rates for unicast TX as well. Else use all supported rates.
-	 */
-	if (wl->ofdm_only_ap && (wlvif->basic_rate_set & CONF_TX_OFDM_RATES))
-		supported_rates = CONF_TX_OFDM_RATES;
-	else
-		supported_rates = CONF_TX_ENABLED_RATES;
-
-	/* unconditionally enable HT rates */
-	supported_rates |= CONF_TX_MCS_RATES;
-
-	/* get extra MIMO or wide-chan rates where the HW supports it */
-	supported_rates |= wlcore_hw_ap_get_mimo_wide_rate_mask(wl, wlvif);
-
-	/* configure unicast TX rate classes */
-	for (i = 0; i < wl->conf.tx.ac_conf_count; i++) {
-		rc.enabled_rates = supported_rates;
-		rc.short_retry_limit = 10;
-		rc.long_retry_limit = 10;
-		rc.aflags = 0;
-		ret = wl1271_acx_ap_rate_policy(wl, &rc,
-						wlvif->ap.ucast_rate_idx[i]);
-		if (ret < 0)
-			return ret;
-	}
-
-	return 0;
 }
 
 static int wl1271_set_ba_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
@@ -625,9 +549,9 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	if (ret < 0)
 		return ret;
 
-	ret = wlcore_hw_init_vif(wl, wlvif);
-	if (ret < 0)
-		return ret;
+	// ret = wlcore_hw_init_vif(wl, wlvif);
+	// if (ret < 0)
+	// 	return ret;
 
 	return 0;
 }

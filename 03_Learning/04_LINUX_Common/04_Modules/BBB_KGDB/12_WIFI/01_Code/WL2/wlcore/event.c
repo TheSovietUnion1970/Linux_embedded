@@ -524,9 +524,10 @@ int VV_process_mailbox_events(struct wl1271 *wl)
 					 le16_to_cpu(mbox->bss_loss_bitmap));
 
 	if (vector & CHANNEL_SWITCH_COMPLETE_EVENT_ID)
-		wlcore_event_channel_switch(wl,
-			le16_to_cpu(mbox->channel_switch_role_id_bitmap),
-			true);
+		// wlcore_event_channel_switch(wl,
+		// 	le16_to_cpu(mbox->channel_switch_role_id_bitmap),
+		// 	true);
+		printk("CHANNEL_SWITCH_COMPLETE_EVENT_ID\n");
 
 	if (vector & DUMMY_PACKET_EVENT_ID)
 		wlcore_event_dummy_packet(wl);

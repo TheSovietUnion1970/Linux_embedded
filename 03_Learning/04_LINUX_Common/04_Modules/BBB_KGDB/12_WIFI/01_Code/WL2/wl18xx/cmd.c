@@ -11,65 +11,6 @@
 
 #include "cmd.h"
 
-int wl18xx_cmd_channel_switch(struct wl1271 *wl,
-			      struct wl12xx_vif *wlvif,
-			      struct ieee80211_channel_switch *ch_switch)
-{
-	struct wl18xx_cmd_channel_switch *cmd;
-	u32 supported_rates;
-	int ret;
-
-	wl1271_debug(DEBUG_ACX, "cmd channel switch (count=%d)",
-		     ch_switch->count);
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	cmd->role_id = wlvif->role_id;
-	cmd->channel = ch_switch->chandef.chan->hw_value;
-	cmd->switch_time = ch_switch->count;
-	cmd->stop_tx = ch_switch->block_tx;
-
-	switch (ch_switch->chandef.chan->band) {
-	case NL80211_BAND_2GHZ:
-		cmd->band = WLCORE_BAND_2_4GHZ;
-		break;
-	case NL80211_BAND_5GHZ:
-		cmd->band = WLCORE_BAND_5GHZ;
-		break;
-	default:
-		wl1271_error("invalid channel switch band: %d",
-			     ch_switch->chandef.chan->band);
-		ret = -EINVAL;
-		goto out_free;
-	}
-
-	supported_rates = CONF_TX_ENABLED_RATES | CONF_TX_MCS_RATES;
-	if (wlvif->bss_type == BSS_TYPE_STA_BSS)
-		supported_rates |= wlcore_hw_sta_get_ap_rate_mask(wl, wlvif);
-	else
-		supported_rates |=
-			wlcore_hw_ap_get_mimo_wide_rate_mask(wl, wlvif);
-	if (wlvif->p2p)
-		supported_rates &= ~CONF_TX_CCK_RATES;
-	cmd->local_supported_rates = cpu_to_le32(supported_rates);
-	cmd->channel_type = wlvif->channel_type;
-
-	ret = wl1271_cmd_send(wl, CMD_CHANNEL_SWITCH, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send channel switch command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-out:
-	return ret;
-}
-
 int wl18xx_cmd_smart_config_start(struct wl1271 *wl, u32 group_bitmap)
 {
 	struct wl18xx_cmd_smart_config_start *cmd;
@@ -156,37 +97,6 @@ int wl18xx_cmd_smart_config_set_group_key(struct wl1271 *wl, u16 group_id,
 out_free:
 	kfree(cmd);
 out:
-	return ret;
-}
-
-int wl18xx_cmd_set_cac(struct wl1271 *wl, struct wl12xx_vif *wlvif, bool start)
-{
-	struct wlcore_cmd_cac_start *cmd;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_CMD, "cmd cac (channel %d) %s",
-		     wlvif->channel, start ? "start" : "stop");
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd)
-		return -ENOMEM;
-
-	cmd->role_id = wlvif->role_id;
-	cmd->channel = wlvif->channel;
-	if (wlvif->band == NL80211_BAND_5GHZ)
-		cmd->band = WLCORE_BAND_5GHZ;
-	cmd->bandwidth = wlcore_get_native_channel_type(wlvif->channel_type);
-
-	ret = wl1271_cmd_send(wl,
-			      start ? CMD_CAC_START : CMD_CAC_STOP,
-			      cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send cac command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
 	return ret;
 }
 

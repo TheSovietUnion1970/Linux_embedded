@@ -15,6 +15,8 @@
 #include "hw_ops.h"
 #include "vendor_cmd.h"
 
+#include "wl18.h"
+
 static const
 struct nla_policy wlcore_vendor_attr_policy[NUM_WLCORE_VENDOR_ATTR] = {
 	[WLCORE_VENDOR_ATTR_FREQ]		= { .type = NLA_U32 },
@@ -59,7 +61,7 @@ wlcore_vendor_cmd_smart_config_start(struct wiphy *wiphy,
 		goto out;
 	}
 
-	ret = wlcore_smart_config_start(wl,
+	ret = VV_cmd_smart_config_start(wl,
 			nla_get_u32(tb[WLCORE_VENDOR_ATTR_GROUP_ID]));
 
 	pm_runtime_mark_last_busy(wl->dev);
@@ -94,7 +96,7 @@ wlcore_vendor_cmd_smart_config_stop(struct wiphy *wiphy,
 		goto out;
 	}
 
-	ret = wlcore_smart_config_stop(wl);
+	ret = VV_cmd_smart_config_stop(wl);
 
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
@@ -141,7 +143,7 @@ wlcore_vendor_cmd_smart_config_set_group_key(struct wiphy *wiphy,
 		goto out;
 	}
 
-	ret = wlcore_smart_config_set_group_key(wl,
+	ret = VV_cmd_smart_config_set_group_key(wl,
 			nla_get_u32(tb[WLCORE_VENDOR_ATTR_GROUP_ID]),
 			nla_len(tb[WLCORE_VENDOR_ATTR_GROUP_KEY]),
 			nla_data(tb[WLCORE_VENDOR_ATTR_GROUP_KEY]));

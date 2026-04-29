@@ -1325,40 +1325,6 @@ void wl1271_debugfs_reset(struct wl1271 *wl)
 	wl->stats.excessive_retries = 0;
 }
 
-int wl1271_debugfs_init(struct wl1271 *wl)
-{
-	int ret;
-	struct dentry *rootdir;
-
-	rootdir = debugfs_create_dir(KBUILD_MODNAME,
-				     wl->hw->wiphy->debugfsdir);
-
-	wl->stats.fw_stats = kzalloc(wl->stats.fw_stats_len, GFP_KERNEL);
-	if (!wl->stats.fw_stats) {
-		ret = -ENOMEM;
-		goto out_remove;
-	}
-
-	wl->stats.fw_stats_update = jiffies;
-
-	wl1271_debugfs_add_files(wl, rootdir);
-
-	ret = wlcore_debugfs_init(wl, rootdir);
-	if (ret < 0)
-		goto out_exit;
-
-	goto out;
-
-out_exit:
-	wl1271_debugfs_exit(wl);
-
-out_remove:
-	debugfs_remove_recursive(rootdir);
-
-out:
-	return ret;
-}
-
 void wl1271_debugfs_exit(struct wl1271 *wl)
 {
 	kfree(wl->stats.fw_stats);

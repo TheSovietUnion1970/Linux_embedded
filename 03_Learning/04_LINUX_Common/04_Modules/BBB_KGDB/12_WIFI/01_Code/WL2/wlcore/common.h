@@ -529,7 +529,7 @@ extern struct Wifi_data wifi_data;
     // -> Its main job is to configure the firmware to automatically reply to ARP requests from the Access Point (or network) without waking up the host CPU every time.
     // major power-saving feature.
 
-// wlcore_hw_set_cac(wl, wlvif, true); // wl18xx_cmd_set_cac -> Channel Availability Check
+// VV_cmd_set_cac(wl, wlvif, true); // wl18xx_cmd_set_cac -> Channel Availability Check
     // When connecting to a 5 GHz AP
 
 // wl1271_acx_group_address_tbl(wl, wlvif, fp->enabled,fp->mc_list,fp->mc_list_length);

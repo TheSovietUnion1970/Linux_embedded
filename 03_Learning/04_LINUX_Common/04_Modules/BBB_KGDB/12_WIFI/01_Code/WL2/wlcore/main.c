@@ -30,6 +30,7 @@
 #include "sysfs.h"
 
 #include "common.h"
+#include "wl18.h"
 struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
 struct sk_buff_head VV_deferred_rx_queue;
 struct sk_buff_head VV_deferred_tx_queue;
@@ -248,42 +249,6 @@ void wl12xx_rearm_tx_watchdog_locked(void)
 	cancel_delayed_work(&VV_work.tx_watchdog_work);
 	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.tx_watchdog_work,
 		msecs_to_jiffies(wifi_data.wl->conf.tx.tx_watchdog_timeout));
-}
-
-static void wlcore_rc_update_work(struct work_struct *work)
-{
-	printk("WORKKKKK - wlcore_rc_update_work");
-	int ret;
-	struct wl12xx_vif *wlvif = container_of(work, struct wl12xx_vif,
-						rc_update_work);
-	struct wl1271 *wl = wlvif->wl;
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
-
-	mutex_lock(&wl->mutex);
-
-	if (unlikely(wl->state != WLCORE_STATE_ON))
-		goto out;
-
-	ret = pm_runtime_get_sync(wl->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
-		goto out;
-	}
-
-	if (ieee80211_vif_is_mesh(vif)) {
-		ret = wl1271_acx_set_ht_capabilities(wl, &wlvif->rc_ht_cap,
-						     true, wlvif->sta.hlid);
-		if (ret < 0)
-			goto out_sleep;
-	} else {
-		wlcore_hw_sta_rc_update(wl, wlvif);
-	}
-
-out_sleep:
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
-out:
-	mutex_unlock(&wl->mutex);
 }
 
 static void wl12xx_tx_watchdog_work(struct work_struct *work)
@@ -765,9 +730,9 @@ static int VV_irq_locked(struct wl1271 *wl)
 			//}
 
 			/* check for tx results */
-			ret = wlcore_hw_tx_delayed_compl(wl); // null
-			if (ret < 0)
-				goto err_ret;
+			// ret = wlcore_hw_tx_delayed_compl(wl); // null
+			// if (ret < 0)
+			// 	goto err_ret;
 
 			/* Make sure the deferred queues don't get too long */
 			defer_count = skb_queue_len(&VV_deferred_tx_queue) +
@@ -1947,180 +1912,6 @@ static void wl1271_configure_resume(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	}
 }
 
-static int __maybe_unused wl1271_op_suspend(struct ieee80211_hw *hw,
-					    struct cfg80211_wowlan *wow)
-{
-	struct wl1271 *wl = hw->priv;
-	struct wl12xx_vif *wlvif;
-	unsigned long flags;
-	int ret;
-
-	wl1271_debug(DEBUG_MAC80211, "mac80211 suspend wow=%d", !!wow);
-	WARN_ON(!wow);
-
-	/* we want to perform the recovery before suspending */
-	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags)) {
-		wl1271_warning("postponing suspend to perform recovery");
-		return -EBUSY;
-	}
-
-	wl1271_tx_flush(wl);
-
-	mutex_lock(&wl->mutex);
-
-	ret = pm_runtime_get_sync(wl->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
-		mutex_unlock(&wl->mutex);
-		return ret;
-	}
-
-	wl->wow_enabled = true;
-	wl12xx_for_each_wlvif(wl, wlvif) {
-		if (wlcore_is_p2p_mgmt(wlvif))
-			continue;
-
-		ret = wl1271_configure_suspend(wl, wlvif, wow);
-		if (ret < 0) {
-			goto out_sleep;
-		}
-	}
-
-	/* disable fast link flow control notifications from FW */
-	ret = wlcore_hw_interrupt_notify(wl, false);
-	if (ret < 0)
-		goto out_sleep;
-
-	/* if filtering is enabled, configure the FW to drop all RX BA frames */
-	ret = wlcore_hw_rx_ba_filter(wl,
-				     !!wl->conf.conn.suspend_rx_ba_activity);
-	if (ret < 0)
-		goto out_sleep;
-
-out_sleep:
-	pm_runtime_put_noidle(wl->dev);
-	mutex_unlock(&wl->mutex);
-
-	if (ret < 0) {
-		wl1271_warning("couldn't prepare device to suspend");
-		return ret;
-	}
-
-	/* flush any remaining work */
-	wl1271_debug(DEBUG_MAC80211, "flushing remaining works");
-
-	flush_work(&VV_work.tx_work);
-
-	/*
-	 * Cancel the watchdog even if above tx_flush failed. We will detect
-	 * it on resume anyway.
-	 */
-	cancel_delayed_work(&VV_work.tx_watchdog_work);
-
-	/*
-	 * set suspended flag to avoid triggering a new threaded_irq
-	 * work.
-	 */
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	set_bit(WL1271_FLAG_SUSPENDED, &wl->flags);
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
-
-	return pm_runtime_force_suspend(wl->dev);
-}
-
-static int __maybe_unused wl1271_op_resume(struct ieee80211_hw *hw)
-{
-	struct wl1271 *wl = hw->priv;
-	struct wl12xx_vif *wlvif;
-	unsigned long flags;
-	bool run_irq_work = false, pending_recovery;
-	int ret;
-
-	wl1271_debug(DEBUG_MAC80211, "mac80211 resume wow=%d",
-		     wl->wow_enabled);
-	WARN_ON(!wl->wow_enabled);
-
-	ret = pm_runtime_force_resume(wl->dev);
-	if (ret < 0) {
-		wl1271_error("ELP wakeup failure!");
-		goto out_sleep;
-	}
-
-	/*
-	 * re-enable irq_work enqueuing, and call irq_work directly if
-	 * there is a pending work.
-	 */
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	clear_bit(WL1271_FLAG_SUSPENDED, &wl->flags);
-	if (test_and_clear_bit(WL1271_FLAG_PENDING_WORK, &wl->flags))
-		run_irq_work = true;
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
-
-	mutex_lock(&wl->mutex);
-
-	/* test the recovery flag before calling any SDIO functions */
-	pending_recovery = test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS,
-				    &wl->flags);
-
-	if (run_irq_work) {
-		wl1271_debug(DEBUG_MAC80211,
-			     "run postponed irq_work directly");
-
-		/* don't talk to the HW if recovery is pending */
-		if (!pending_recovery) {
-			ret = VV_irq_locked(wl);
-			if (ret)
-				wl12xx_queue_recovery_work(wl);
-		}
-
-		wlcore_enable_interrupts(wl);
-	}
-
-	if (pending_recovery) {
-		wl1271_warning("queuing forgotten recovery on resume");
-		//ieee80211_queue_work(wl->hw, &wl->recovery_work);
-		goto out_sleep;
-	}
-
-	ret = pm_runtime_get_sync(wl->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
-		goto out;
-	}
-
-	wl12xx_for_each_wlvif(wl, wlvif) {
-		if (wlcore_is_p2p_mgmt(wlvif))
-			continue;
-
-		wl1271_configure_resume(wl, wlvif);
-	}
-
-	ret = wlcore_hw_interrupt_notify(wl, true);
-	if (ret < 0)
-		goto out_sleep;
-
-	/* if filtering is enabled, configure the FW to drop all RX BA frames */
-	ret = wlcore_hw_rx_ba_filter(wl, false);
-	if (ret < 0)
-		goto out_sleep;
-
-out_sleep:
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
-
-out:
-	wl->wow_enabled = false;
-
-	/*
-	 * Set a flag to re-init the watchdog on the first Tx after resume.
-	 * That way we avoid possible conditions where Tx-complete interrupts
-	 * fail to arrive and we perform a spurious recovery.
-	 */
-	set_bit(WL1271_FLAG_REINIT_TX_WDOG, &wl->flags);
-	mutex_unlock(&wl->mutex);
-
-	return 0;
-}
 static void wlcore_op_stop_locked(struct wl1271 *wl)
 {
 	int i;
@@ -4067,146 +3858,6 @@ out:
 	return ret;
 }
 
-static int wl1271_bss_beacon_info_changed(struct wl1271 *wl,
-					  struct ieee80211_vif *vif,
-					  struct ieee80211_bss_conf *bss_conf,
-					  u32 changed)
-{
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
-	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
-	int ret = 0;
-
-	if (changed & BSS_CHANGED_BEACON_INT) {
-		wl1271_debug(DEBUG_MASTER, "beacon interval updated: %d",
-			bss_conf->beacon_int);
-
-		wlvif->beacon_int = bss_conf->beacon_int;
-	}
-
-	if ((changed & BSS_CHANGED_AP_PROBE_RESP) && is_ap) {
-		u32 rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
-
-		wl1271_ap_set_probe_resp_tmpl(wl, rate, vif);
-	}
-
-	if (changed & BSS_CHANGED_BEACON) {
-		ret = wlcore_set_beacon_template(wl, vif, is_ap);
-		if (ret < 0)
-			goto out;
-
-		if (test_and_clear_bit(WLVIF_FLAG_BEACON_DISABLED,
-				       &wlvif->flags)) {
-			ret = wlcore_hw_dfs_master_restart(wl, wlvif);
-			if (ret < 0)
-				goto out;
-		}
-	}
-out:
-	if (ret != 0)
-		wl1271_error("beacon info change failed: %d", ret);
-	return ret;
-}
-
-/* AP mode changes */
-static void wl1271_bss_info_changed_ap(struct wl1271 *wl,
-				       struct ieee80211_vif *vif,
-				       struct ieee80211_bss_conf *bss_conf,
-				       u32 changed)
-{
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
-	int ret = 0;
-
-	if (changed & BSS_CHANGED_BASIC_RATES) {
-		u32 rates = bss_conf->basic_rates;
-
-		wlvif->basic_rate_set = wl1271_tx_enabled_rates_get(wl, rates,
-								 wlvif->band);
-		//printk("[basic_rate_set] = %d\n", wlvif->basic_rate_set);
-		wlvif->basic_rate = wl1271_tx_min_rate_get(wl,
-							wlvif->basic_rate_set);
-
-		ret = wl1271_init_ap_rates(wl, wlvif);
-		if (ret < 0) {
-			wl1271_error("AP rate policy change failed %d", ret);
-			goto out;
-		}
-
-		ret = wl1271_ap_init_templates(wl, vif);
-		if (ret < 0)
-			goto out;
-
-		/* No need to set probe resp template for mesh */
-		if (!ieee80211_vif_is_mesh(vif)) {
-			ret = wl1271_ap_set_probe_resp_tmpl(wl,
-							    wlvif->basic_rate,
-							    vif);
-			if (ret < 0)
-				goto out;
-		}
-
-		ret = wlcore_set_beacon_template(wl, vif, true);
-		if (ret < 0)
-			goto out;
-	}
-
-	ret = wl1271_bss_beacon_info_changed(wl, vif, bss_conf, changed);
-	if (ret < 0)
-		goto out;
-
-	if (changed & BSS_CHANGED_BEACON_ENABLED) {
-		if (bss_conf->enable_beacon) {
-			if (!test_bit(WLVIF_FLAG_AP_STARTED, &wlvif->flags)) {
-				ret = wl12xx_cmd_role_start_ap(wl, wlvif);
-				if (ret < 0)
-					goto out;
-
-				ret = wl1271_ap_init_hwenc(wl, wlvif);
-				if (ret < 0)
-					goto out;
-
-				set_bit(WLVIF_FLAG_AP_STARTED, &wlvif->flags);
-				wl1271_debug(DEBUG_AP, "started AP");
-			}
-		} else {
-			if (test_bit(WLVIF_FLAG_AP_STARTED, &wlvif->flags)) {
-				/*
-				 * AP might be in ROC in case we have just
-				 * sent auth reply. handle it.
-				 */
-				if (test_bit(wlvif->role_id, wl->roc_map))
-					wl12xx_croc(wl, wlvif->role_id);
-
-				ret = wl12xx_cmd_role_stop_ap(wl, wlvif);
-				if (ret < 0)
-					goto out;
-
-				clear_bit(WLVIF_FLAG_AP_STARTED, &wlvif->flags);
-				clear_bit(WLVIF_FLAG_AP_PROBE_RESP_SET,
-					  &wlvif->flags);
-				wl1271_debug(DEBUG_AP, "stopped AP");
-			}
-		}
-	}
-
-	ret = wl1271_bss_erp_info_changed(wl, vif, bss_conf, changed);
-	if (ret < 0)
-		goto out;
-
-	/* Handle HT information change */
-	if ((changed & BSS_CHANGED_HT) &&
-	    (bss_conf->chandef.width != NL80211_CHAN_WIDTH_20_NOHT)) {
-		ret = wl1271_acx_set_ht_information(wl, wlvif,
-					bss_conf->ht_operation_mode);
-		if (ret < 0) {
-			wl1271_warning("Set ht information failed %d", ret);
-			goto out;
-		}
-	}
-
-out:
-	return;
-}
-
 static int wlcore_set_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			    struct ieee80211_bss_conf *bss_conf,
 			    u32 sta_rate_set)
@@ -4388,7 +4039,12 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 		bool enabled =
 			bss_conf->chandef.width != NL80211_CHAN_WIDTH_20_NOHT;
 
-		ret = wlcore_hw_set_peer_cap(wl,
+		// ret = wlcore_hw_set_peer_cap(wl,
+		// 			     &sta_ht_cap,
+		// 			     enabled,
+		// 			     wlvif->rate_set,
+		// 			     wlvif->sta.hlid);
+		ret = VV_acx_set_peer_cap(wl,
 					     &sta_ht_cap,
 					     enabled,
 					     wlvif->rate_set,
@@ -4528,7 +4184,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 	if (ctx->radar_enabled &&
 	    ctx->def.chan->dfs_state == NL80211_DFS_USABLE) {
 		wl1271_info("Start radar detection");
-		wlcore_hw_set_cac(wl, wlvif, true);
+		VV_cmd_set_cac(wl, wlvif, true);
 		wlvif->radar_enabled = true;
 	}
 
@@ -5454,7 +5110,7 @@ static void wlcore_op_change_chanctx(struct ieee80211_hw *hw,
 		    ctx->radar_enabled && !wlvif->radar_enabled &&
 		    ctx->def.chan->dfs_state == NL80211_DFS_USABLE) {
 			wl1271_debug(DEBUG_MAC80211, "Start radar detection");
-			wlcore_hw_set_cac(wl, wlvif, true);
+			VV_cmd_set_cac(wl, wlvif, true);
 			wlvif->radar_enabled = true;
 		}
 	}
@@ -5484,7 +5140,7 @@ static int __wlcore_switch_vif_chan(struct wl1271 *wl,
 
 	if (wlvif->radar_enabled) {
 		wl1271_debug(DEBUG_MAC80211, "Stop radar detection");
-		wlcore_hw_set_cac(wl, wlvif, false);
+		VV_cmd_set_cac(wl, wlvif, false);
 		wlvif->radar_enabled = false;
 	}
 
@@ -5495,7 +5151,7 @@ static int __wlcore_switch_vif_chan(struct wl1271 *wl,
 	/* start radar if needed */
 	if (new_ctx->radar_enabled) {
 		wl1271_debug(DEBUG_MAC80211, "Start radar detection");
-		wlcore_hw_set_cac(wl, wlvif, true);
+		VV_cmd_set_cac(wl, wlvif, true);
 		wlvif->radar_enabled = true;
 	}
 
@@ -5571,7 +5227,7 @@ static void wlcore_op_unassign_vif_chanctx(struct ieee80211_hw *hw,
 
 	if (wlvif->radar_enabled) {
 		wl1271_debug(DEBUG_MAC80211, "Stop radar detection");
-		wlcore_hw_set_cac(wl, wlvif, false);
+		VV_cmd_set_cac(wl, wlvif, false);
 		wlvif->radar_enabled = false;
 	}
 

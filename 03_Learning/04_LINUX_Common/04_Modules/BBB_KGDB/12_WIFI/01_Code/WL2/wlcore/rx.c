@@ -104,6 +104,18 @@ static void wl1271_rx_status(struct wl1271 *wl,
 						status->band);
 }
 
+static u32 VV_get_rx_packet_len(struct wl1271 *wl, void *rx_data,
+				    u32 data_len)
+{
+	struct wl1271_rx_descriptor *desc = rx_data;
+
+	/* invalid packet */
+	if (data_len < sizeof(*desc))
+		return 0;
+
+	return data_len - sizeof(*desc);
+}
+
 static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 				 enum wl_rx_buf_align rx_align, u8 *hlid)
 {
@@ -123,7 +135,7 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 	if (unlikely(wl->plt))
 		return -EINVAL;
 
-	pkt_data_len = wlcore_hw_get_rx_packet_len(wl, data, length);
+	pkt_data_len = VV_get_rx_packet_len(wl, data, length);
 	if (!pkt_data_len) {
 		wl1271_error("Invalid packet arrived from HW. length %d",
 			     length);
@@ -186,7 +198,7 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 
 	wl1271_rx_status(wl, desc, IEEE80211_SKB_RXCB(skb), beacon,
 			 ieee80211_is_probe_resp(hdr->frame_control));
-	wlcore_hw_set_rx_csum(wl, desc, skb);
+	//wlcore_hw_set_rx_csum(wl, desc, skb);
 
 	seq_num = (le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_SEQ) >> 4;
 	wl1271_debug(DEBUG_RX, "rx skb 0x%p: %d B %s seq %d hlid %d", skb,
@@ -200,6 +212,16 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 
 	return is_data;
 }
+
+static enum wl_rx_buf_align
+VV_get_rx_buf_align(struct wl1271 *wl, u32 rx_desc)
+{
+	if (rx_desc & RX_BUF_PADDED_PAYLOAD)
+		return WLCORE_RX_BUF_PADDED;
+
+	return WLCORE_RX_BUF_ALIGNED;
+}
+
 #include "../wl18xx/wl18xx.h"
 int wlcore_rx(struct wl1271 *wl)
 {
@@ -243,9 +265,9 @@ int wlcore_rx(struct wl1271 *wl)
 
 		/* Read all available packets at once */
 		des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
-		ret = wlcore_hw_prepare_read(wl, des, buf_size);
-		if (ret < 0)
-			goto out;
+		// ret = wlcore_hw_prepare_read(wl, des, buf_size);
+		// if (ret < 0)
+		// 	goto out;
 
 		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
 		// 		       buf_size, true);
@@ -258,7 +280,7 @@ int wlcore_rx(struct wl1271 *wl)
 		while (pkt_offset < buf_size) {
 			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
 			pkt_len = wlcore_rx_get_buf_size(wl, des);
-			rx_align = wlcore_hw_get_rx_buf_align(wl, des);
+			rx_align = VV_get_rx_buf_align(wl, des);
 
 			/*
 			 * the handle data call can only fail in memory-outage
