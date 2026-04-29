@@ -32,6 +32,8 @@
 #include "event.h"
 #include "debugfs.h"
 
+#include "../wlcore/common.h"
+
 #define WL18XX_RX_CHECKSUM_MASK      0x40
 
 static char *ht_mode_param = NULL;
@@ -1585,25 +1587,6 @@ out:
 	return ret;
 }
 
-static u32 wl18xx_pre_pkt_send(struct wl1271 *wl,
-			       u32 buf_offset, u32 last_len)
-{
-	if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) {
-		struct wl1271_tx_hw_descr *last_desc;
-
-		/* get the last TX HW descriptor written to the aggr buf */
-		last_desc = (struct wl1271_tx_hw_descr *)(wl->aggr_buf +
-							buf_offset - last_len);
-
-		/* the last frame is padded up to an SDIO block */
-		last_desc->wl18xx_mem.ctrl &= ~WL18XX_TX_CTRL_NOT_PADDED;
-		return ALIGN(buf_offset, WL12XX_BUS_BLOCK_SIZE);
-	}
-
-	/* no modifications */
-	return buf_offset;
-}
-
 static void wl18xx_sta_rc_update(struct wl1271 *wl,
 				 struct wl12xx_vif *wlvif)
 {
@@ -1679,7 +1662,7 @@ static struct wlcore_ops wl18xx_ops = {
 	.get_spare_blocks = wl18xx_get_spare_blocks,
 	.set_key	= wl18xx_set_key,
 	.channel_switch	= wl18xx_cmd_channel_switch,
-	.pre_pkt_send	= wl18xx_pre_pkt_send,
+	//.pre_pkt_send	= wl18xx_pre_pkt_send,
 	.sta_rc_update	= wl18xx_sta_rc_update,
 	.set_peer_cap	= wl18xx_set_peer_cap,
 	.convert_hwaddr = wl18xx_convert_hwaddr,

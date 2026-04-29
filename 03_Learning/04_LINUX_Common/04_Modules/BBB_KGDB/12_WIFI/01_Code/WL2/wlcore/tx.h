@@ -248,7 +248,7 @@ bool wl12xx_is_dummy_packet(struct wl1271 *wl, struct sk_buff *skb);
 void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids);
 unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
 					  unsigned int packet_length);
-void wl1271_free_tx_id(struct wl1271 *wl, int id);
+void wl1271_free_tx_id(int id);
 void wlcore_stop_queue_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      u8 queue, enum wlcore_queue_stop_reason reason);
 void wlcore_stop_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
@@ -272,7 +272,7 @@ bool wlcore_is_queue_stopped_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 /* from main.c */
 void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid);
-void wl12xx_rearm_tx_watchdog_locked(struct wl1271 *wl);
+void wl12xx_rearm_tx_watchdog_locked(void);
 
 /* Vinh custom */
 void VV_wake_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,

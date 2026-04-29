@@ -403,12 +403,12 @@ out:
 
 static int wlcore_get_new_session_id(struct wl1271 *wl, u8 hlid)
 {
-	if (wl->session_ids[hlid] >= SESSION_COUNTER_MAX)
-		wl->session_ids[hlid] = 0;
+	if (VV_session_ids[hlid] >= SESSION_COUNTER_MAX)
+		VV_session_ids[hlid] = 0;
 
-	wl->session_ids[hlid]++;
+	VV_session_ids[hlid]++;
 
-	return wl->session_ids[hlid];
+	return VV_session_ids[hlid];
 }
 
 #define WL18XX_MAX_LINKS 16
@@ -420,11 +420,11 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	if (link >= WL18XX_MAX_LINKS)
 		return -EBUSY;
 
-	wl->session_ids[link] = wlcore_get_new_session_id(wl, link);
+	VV_session_ids[link] = wlcore_get_new_session_id(wl, link);
 
 	/* these bits are used by op_tx */
 	spin_lock_irqsave(&wl->wl_lock, flags);
-	__set_bit(link, wl->links_map);
+	__set_bit(link, VV_map.links_map);
 	__set_bit(link, wlvif->links_map);
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
@@ -462,7 +462,7 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 
 	/* these bits are used by op_tx */
 	spin_lock_irqsave(&wl->wl_lock, flags);
-	__clear_bit(*hlid, wl->links_map);
+	__clear_bit(*hlid, VV_map.links_map);
 	__clear_bit(*hlid, wlvif->links_map);
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
@@ -551,9 +551,9 @@ static int wl12xx_cmd_role_start_dev(struct wl1271 *wl,
 			goto out_free;
 	}
 	cmd->device.hlid = wlvif->dev_hlid;
-	cmd->device.session = wl->session_ids[wlvif->dev_hlid];
+	cmd->device.session = VV_session_ids[wlvif->dev_hlid];
 
-	wl1271_debug(DEBUG_CMD, "role start: roleid=%d, hlid=%d, session=%d",
+	wl1271_info("[START_DEV] role start: roleid=%d, hlid=%d, session=%d",
 		     cmd->role_id, cmd->device.hlid, cmd->device.session);
 
 	ret = VV_cmd_send(wl, CMD_ROLE_START, cmd, sizeof(*cmd), 0);
@@ -652,7 +652,7 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 			goto out_free;
 	}
 	cmd->sta.hlid = wlvif->sta.hlid;
-	cmd->sta.session = wl->session_ids[wlvif->sta.hlid];
+	cmd->sta.session = VV_session_ids[wlvif->sta.hlid];
 	//printk("cmd->sta.hlid = %d\n", cmd->sta.hlid);
 	/*
 	 * We don't have the correct remote rates in this stage.  The
@@ -662,10 +662,10 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	 */
 	cmd->sta.remote_rates = cpu_to_le32(supported_rates);
 
-	wl1271_debug(DEBUG_CMD, "role start: roleid=%d, hlid=%d, session=%d "
-		     "basic_rate_set: 0x%x, remote_rates: 0x%x",
-		     wlvif->role_id, cmd->sta.hlid, cmd->sta.session,
-		     wlvif->basic_rate_set, wlvif->rate_set);
+	// wl1271_info("[START_STA] - role start: roleid=%d, hlid=%d, session=%d "
+	// 	     "basic_rate_set: 0x%x, remote_rates: 0x%x",
+	// 	     wlvif->role_id, cmd->sta.hlid, cmd->sta.session,
+	// 	     wlvif->basic_rate_set, wlvif->rate_set);
 
 	ret = VV_cmd_send(wl, CMD_ROLE_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
@@ -768,8 +768,8 @@ int wl12xx_cmd_role_start_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	cmd->ap.bss_index = WL1271_AP_BSS_INDEX;
 	cmd->ap.global_hlid = wlvif->ap.global_hlid;
 	cmd->ap.broadcast_hlid = wlvif->ap.bcast_hlid;
-	cmd->ap.global_session_id = wl->session_ids[wlvif->ap.global_hlid];
-	cmd->ap.bcast_session_id = wl->session_ids[wlvif->ap.bcast_hlid];
+	cmd->ap.global_session_id = VV_session_ids[wlvif->ap.global_hlid];
+	cmd->ap.bcast_session_id = VV_session_ids[wlvif->ap.bcast_hlid];
 	cmd->ap.basic_rate_set = cpu_to_le32(wlvif->basic_rate_set);
 	cmd->ap.beacon_interval = cpu_to_le16(wlvif->beacon_int);
 	cmd->ap.dtim_interval = bss_conf->dtim_period;
@@ -1658,7 +1658,7 @@ int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	cmd->hlid = hlid;
 	cmd->sp_len = sta->max_sp;
 	cmd->wmm = sta->wme ? 1 : 0;
-	cmd->session_id = wl->session_ids[hlid];
+	cmd->session_id = VV_session_ids[hlid];
 	cmd->role_id = wlvif->role_id;
 
 	for (i = 0; i < NUM_ACCESS_CATEGORIES_COPY; i++)
@@ -2082,7 +2082,7 @@ int wl12xx_croc(struct wl1271 *wl, u8 role_id)
 	 * a chance to get out.
 	 */
 	if (find_first_bit(wl->roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES)
-		wl12xx_rearm_tx_watchdog_locked(wl);
+		wl12xx_rearm_tx_watchdog_locked();
 out:
 	return ret;
 }
@@ -2276,7 +2276,7 @@ int wl12xx_crocV(struct wl1271 *wl, u8 role_id)
 	 * a chance to get out.
 	 */
 	if (find_first_bit(wl->roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES)
-		wl12xx_rearm_tx_watchdog_locked(wl);
+		wl12xx_rearm_tx_watchdog_locked();
 out:
 	return ret;
 }

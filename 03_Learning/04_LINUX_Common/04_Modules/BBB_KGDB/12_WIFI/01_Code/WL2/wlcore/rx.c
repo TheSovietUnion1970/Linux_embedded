@@ -200,7 +200,7 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 
 	return is_data;
 }
-
+#include "../wl18xx/wl18xx.h"
 int wlcore_rx(struct wl1271 *wl)
 {
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
@@ -229,7 +229,7 @@ int wlcore_rx(struct wl1271 *wl)
 			pkt_len = wlcore_rx_get_buf_size(wl, des);
 			align_pkt_len = wlcore_rx_get_align_buf_size(wl,
 								     pkt_len);
-			if (buf_size + align_pkt_len > wl->aggr_buf_size)
+			if (buf_size + align_pkt_len > WL18XX_AGGR_BUFFER_SIZE)
 				break;
 			buf_size += align_pkt_len;
 			rx_counter++;
@@ -247,9 +247,9 @@ int wlcore_rx(struct wl1271 *wl)
 		if (ret < 0)
 			goto out;
 
-		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, wl->aggr_buf,
+		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
 		// 		       buf_size, true);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), (u32*)wl->aggr_buf, buf_size, true);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 
@@ -266,7 +266,7 @@ int wlcore_rx(struct wl1271 *wl)
 			 * be dropped.
 			 */
 			if (wl1271_rx_handle_data(wl,
-						  wl->aggr_buf + pkt_offset,
+						  VV_aggr_buf + pkt_offset,
 						  pkt_len, rx_align,
 						  &hlid) == 1) {
 				if (hlid < wl->num_links)

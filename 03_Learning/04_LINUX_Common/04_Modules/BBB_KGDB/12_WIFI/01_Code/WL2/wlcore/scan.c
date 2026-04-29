@@ -46,7 +46,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	 * Rearm the tx watchdog just before idling scan. This
 	 * prevents just-finished scans from triggering the watchdog
 	 */
-	wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
+	wl12xx_rearm_tx_watchdog_locked();
 
 	wifi_data.wl->scan.state = WL1271_SCAN_STATE_IDLE;
 	memset(wifi_data.wl->scan.scanned_ch, 0, sizeof(wifi_data.wl->scan.scanned_ch));

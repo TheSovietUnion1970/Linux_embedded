@@ -28,7 +28,7 @@ extern int VV_tx_queue_count[NUM_TX_QUEUES]; /* Frames scheduled for transmissio
         // incremented - wl1271_op_tx, wl1271_tx_dummy_packet
         // decremented - wlcore_lnk_dequeue
 
-extern u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
+extern u8 VV_allocated_pkts[WLCORE_MAX_LINKS]; // refer to links_map
 
 /* Accounting for allocated / available Tx packets in HW */
 extern u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
@@ -47,6 +47,11 @@ extern struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
         // ptr to skb per tx desc
 extern int VV_skb_tx_frames_cnt;
 extern u32 VV_last_updated_tmp_tx_blocks_freed;
+extern u8 *VV_aggr_buf;
+
+/* session_id for starting sta role, configure the tx attributes (tx_attr = session_id << TX_HW_ATTR_OFST_SESSION_COUNTER;) */
+extern u8 VV_session_ids[WLCORE_MAX_LINKS];
+extern s64 VV_time_offset; /* Time-offset between host and chipset clocks */
 
 #define WL18XX_NUM_RX_DESCRIPTORS 32
 #define WL18XX_MAX_LINKS 16
@@ -208,9 +213,170 @@ struct VV_Work {
 extern struct VV_Work VV_work;
 
 struct VV_vif {
+	struct wl1271 *wl;
 	struct list_head list_id;
+	unsigned long flags;
+	u8 bss_type;
+	u8 p2p; /* we are using p2p role */
+	u8 role_id;
+
+	/* sta/ibss specific */
+	u8 dev_role_id;
+	u8 dev_hlid;
+
+	union {
+		struct {
+			u8 hlid;
+
+			u8 basic_rate_idx;
+			u8 ap_rate_idx;
+			u8 p2p_rate_idx;
+
+			u8 klv_template_id;
+
+			bool qos;
+			/* channel type we started the STA role with */
+			enum nl80211_channel_type role_chan_type;
+		} sta;
+		struct {
+			u8 global_hlid;
+			u8 bcast_hlid;
+
+			/* HLIDs bitmap of associated stations */
+			unsigned long sta_hlid_map[BITS_TO_LONGS(
+							WLCORE_MAX_LINKS)];
+
+			/* recoreded keys - set here before AP startup */
+			struct wl1271_ap_key *recorded_keys[MAX_NUM_KEYS];
+
+			u8 mgmt_rate_idx;
+			u8 bcast_rate_idx;
+			u8 ucast_rate_idx[CONF_TX_MAX_AC_COUNT];
+		} ap;
+	};
+
+	/* the hlid of the last transmitted skb */
+	int last_tx_hlid;
+
+	/* counters of packets per AC, across all links in the vif */
+	//int tx_queue_count[NUM_TX_QUEUES];
+
+	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
+
+	u8 ssid[IEEE80211_MAX_SSID_LEN + 1];
+	u8 ssid_len;
+
+	/* The current band */
+	enum nl80211_band band;
+	int channel;
+	enum nl80211_channel_type channel_type;
+
+	u32 bitrate_masks[WLCORE_NUM_BANDS];
+	u32 basic_rate_set;
+
+	/*
+	 * currently configured rate set:
+	 *	bits  0-15 - 802.11abg rates
+	 *	bits 16-23 - 802.11n   MCS index mask
+	 * support only 1 stream, thus only 8 bits for the MCS rates (0-7).
+	 */
+	u32 basic_rate;
+	u32 rate_set;
+
+	/* probe-req template for the current AP */
+	struct sk_buff *probereq;
+
+	/* Beaconing interval (needed for ad-hoc) */
+	u32 beacon_int;
+
+	/* Default key (for WEP) */
+	u32 default_key;
+
+	/* Our association ID */
+	u16 aid;
+
+	/* retry counter for PSM entries */
+	u8 psm_entry_retry;
+
+	/* in dBm */
+	int power_level;
+
+	int rssi_thold;
+	int last_rssi_event;
+
+	/* save the current encryption type for auto-arp config */
+	u8 encryption_type;
+	__be32 ip_addr;
+
+	/* RX BA constraint value */
+	bool ba_support;
+	bool ba_allowed;
+
+	bool wmm_enabled;
+
+	bool radar_enabled;
+
+	/* Rx Streaming */
+	struct work_struct rx_streaming_enable_work;
+	struct work_struct rx_streaming_disable_work;
+	struct timer_list rx_streaming_timer;
+
+	struct delayed_work channel_switch_work;
+	struct delayed_work connection_loss_work;
+
+	/* number of in connection stations */
+	int inconn_count;
+
+	/*
+	 * This vif's queues are mapped to mac80211 HW queues as:
+	 * VO - hw_queue_base
+	 * VI - hw_queue_base + 1
+	 * BE - hw_queue_base + 2
+	 * BK - hw_queue_base + 3
+	 */
+	//int hw_queue_base;
+
+	/* do we have a pending auth reply? (and ROC) */
+	bool ap_pending_auth_reply;
+
+	/* time when we sent the pending auth reply */
+	unsigned long pending_auth_reply_time;
+
+	/* work for canceling ROC after pending auth reply */
+	struct delayed_work pending_auth_complete_work;
+
+	/* update rate conrol */
+	enum ieee80211_sta_rx_bandwidth rc_update_bw;
+	struct ieee80211_sta_ht_cap rc_ht_cap;
+	struct work_struct rc_update_work;
+
+	/*
+	 * total freed FW packets on the link.
+	 * For STA this holds the PN of the link to the AP.
+	 * For AP this holds the PN of the broadcast link.
+	 */
+	u64 total_freed_pkts;
+
+	/*
+	 * This struct must be last!
+	 * data that has to be saved acrossed reconfigs (e.g. recovery)
+	 * should be declared in this struct.
+	 */
+	struct {
+		u8 persistent[0];
+	};
 };
-extern struct VV_vif VV_vif;
+extern struct VV_vif* VV_vif_ptr[10]; // buffer up to 19
+extern int VV_vif_ptr_id;
+
+struct VV_map {
+    /* Mapping to skb per tx desc */
+	unsigned long tx_frames_map[BITS_TO_LONGS(WLCORE_MAX_TX_DESCRIPTORS)];
+
+    /* Mapping for hw link */
+    unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
+};
+extern struct VV_map VV_map;
 
 struct Wifi_data {
 	struct device *dev;
@@ -397,11 +563,11 @@ extern struct Wifi_data wifi_data;
 
 // ret = wl1271_prepare_tx_frame(wl, wlvif, skb, buf_offset, hlid);
     // wl1271_tx_allocate + wl1271_tx_fill_hdr
-    // update wl->aggr_buf
+    // update VV_aggr_buf
 
 // wlcore_tx_work_locked:
     // = wl1271_prepare_tx_frame
-    // write wl->aggr_buf -> REG_SLV_MEM_DATA = the address in the firmware’s memory where TX data should be written.
+    // write VV_aggr_buf -> REG_SLV_MEM_DATA = the address in the firmware’s memory where TX data should be written.
 
 // VV_work.tx_work = wl1271_tx_work = wlcore_tx_work_locked
 

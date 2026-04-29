@@ -47,10 +47,15 @@ u32 VV_last_updated_tmp_tx_blocks_freed;
 u32 VV_tx_packets_count; 
 u8 VV_last_fw_rls_idx = 0;
 struct VV_Work VV_work;
+u8 VV_session_ids[WLCORE_MAX_LINKS];
+s64 VV_time_offset;
 
 /* Main */
 struct Wifi_data wifi_data;
-struct VV_vif VV_vif;
+struct VV_map VV_map;
+struct VV_vif* VV_vif_ptr[10];
+int VV_vif_ptr_id = 0;
+u8 *VV_aggr_buf;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -232,7 +237,7 @@ static void wl1271_rx_streaming_timer(struct timer_list *t)
 }
 
 /* wl->mutex must be taken */
-void wl12xx_rearm_tx_watchdog_locked(struct wl1271 *wl)
+void wl12xx_rearm_tx_watchdog_locked(void)
 {
 	/* if the watchdog is not armed, don't do anything */
 	// If there are no blocks currently allocated for TX -> no need to transmit
@@ -241,8 +246,8 @@ void wl12xx_rearm_tx_watchdog_locked(struct wl1271 *wl)
 		return;
 
 	cancel_delayed_work(&VV_work.tx_watchdog_work);
-	ieee80211_queue_delayed_work(wl->hw, &VV_work.tx_watchdog_work,
-		msecs_to_jiffies(wl->conf.tx.tx_watchdog_timeout));
+	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.tx_watchdog_work,
+		msecs_to_jiffies(wifi_data.wl->conf.tx.tx_watchdog_timeout));
 }
 
 static void wlcore_rc_update_work(struct work_struct *work)
@@ -306,7 +311,7 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 	if (find_first_bit(wifi_data.wl->roc_map, WL12XX_MAX_ROLES) < WL12XX_MAX_ROLES) {
 		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms due to ROC",
 			     wifi_data.wl->conf.tx.tx_watchdog_timeout);
-		wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
+		wl12xx_rearm_tx_watchdog_locked();
 		goto out;
 	}
 
@@ -317,7 +322,7 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 	if (wifi_data.wl->scan.state != WL1271_SCAN_STATE_IDLE) {
 		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms due to scan",
 			     wifi_data.wl->conf.tx.tx_watchdog_timeout);
-		wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
+		wl12xx_rearm_tx_watchdog_locked();
 		goto out;
 	}
 
@@ -332,7 +337,7 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 			     " %d stations",
 			      wifi_data.wl->conf.tx.tx_watchdog_timeout,
 			      wifi_data.wl->active_sta_count);
-		wl12xx_rearm_tx_watchdog_locked(wifi_data.wl);
+		wl12xx_rearm_tx_watchdog_locked();
 		goto out;
 	}
 
@@ -396,7 +401,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	}
 
 	//printk("START\n");
-	for_each_set_bit(i, wl->links_map, wl->num_links) {
+	for_each_set_bit(i, VV_map.links_map, wl->num_links) {
 		//printk("wlcore_fw_status i = %d\n", i);
 		u8 diff;
 
@@ -438,7 +443,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	 */
 	if (freed_blocks) {
 		if (VV_tx_allocated_blocks) 
-			wl12xx_rearm_tx_watchdog_locked(wl);
+			wl12xx_rearm_tx_watchdog_locked();
 		else
 			cancel_delayed_work(&VV_work.tx_watchdog_work);
 	}
@@ -465,7 +470,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	// 	clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
 
 	/* update the host-chipset time offset */
-	wl->time_offset = (ktime_get_boottime_ns() >> 10) -
+	VV_time_offset = (ktime_get_boottime_ns() >> 10) -
 		(s64)(VV_status_reg->fw_localtime);
 
 	wl->fw_fast_lnk_map = VV_status_reg->link_fast_bitmap;
@@ -583,7 +588,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	tx_desc = (struct wl1271_tx_hw_descr *)skb->data;
 
 	if (wl12xx_is_dummy_packet(wl, skb)) {
-		wl1271_free_tx_id(wl, id);
+		wl1271_free_tx_id(id);
 		return;
 	}
 
@@ -621,7 +626,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	//queue_work(VV_work.freezable_wq, &wl->netstack_work);
 	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
 
-	wl1271_free_tx_id(wl, id);
+	wl1271_free_tx_id(id);
 }
 
 void VV_tx_immediate_complete(struct wl1271 *wl)
@@ -2174,14 +2179,14 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	VV_tx_allocated_blocks = 0;
 	//wl->tx_results_count = 0;
 	VV_tx_packets_count = 0;
-	wl->time_offset = 0;
+	VV_time_offset = 0;
 	//wl->ap_fw_ps_map = 0;
 	//wl->ap_ps_map = 0;
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
 	//memset(wl->roles_map, 0, sizeof(wl->roles_map));
-	memset(wl->links_map, 0, sizeof(wl->links_map));
+	memset(VV_map.links_map, 0, sizeof(VV_map.links_map));
 	memset(wl->roc_map, 0, sizeof(wl->roc_map));
-	memset(wl->session_ids, 0, sizeof(wl->session_ids));
+	memset(VV_session_ids, 0, sizeof(VV_session_ids));
 	memset(wl->rx_filter_enabled, 0, sizeof(wl->rx_filter_enabled));
 	wl->active_sta_count = 0;
 	wl->active_link_count = 0;
@@ -2190,7 +2195,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	//VV_links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
 	VV_allocated_pkts[WL12XX_SYSTEM_HLID] = 0;
 	VV_links[WL12XX_SYSTEM_HLID].prev_freed_pkts = 0;
-	__set_bit(WL12XX_SYSTEM_HLID, wl->links_map);
+	__set_bit(WL12XX_SYSTEM_HLID, VV_map.links_map);
 
 	/*
 	 * this is performed after the cancel_work calls and the associated
@@ -2742,6 +2747,18 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 
 	list_add(&wlvif->list, &wl->wlvif_list);
 	//list_add(&VV_vif.list_id, &wifi_data.wifi_vif_list);
+
+	/* Vinh custom */
+	int i = 0, exist = 0;
+	for (i = 0; i < VV_vif_ptr_id; i++){
+		if (VV_vif_ptr[i] == wlvif) exist = 1;
+	}
+
+	if (!exist){
+		VV_vif_ptr[VV_vif_ptr_id++] = (struct VV_vif *)wlvif;
+	}
+	//printk("VV_if: 0x%x, 0x%x\n", VV_vif_ptr[0], VV_vif_ptr[1]);
+	
 	set_bit(WLVIF_FLAG_INITIALIZED, &wlvif->flags);
 
 	if (wlvif->bss_type == BSS_TYPE_AP_BSS)
@@ -2786,7 +2803,7 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 		 * Rearm the tx watchdog just before idling scan. This
 		 * prevents just-finished scans from triggering the watchdog
 		 */
-		wl12xx_rearm_tx_watchdog_locked(wl);
+		wl12xx_rearm_tx_watchdog_locked();
 
 		wl->scan.state = WL1271_SCAN_STATE_IDLE;
 		memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
@@ -2853,6 +2870,7 @@ deinit:
 	// if (wl->last_wlvif == wlvif)
 	// 	wl->last_wlvif = NULL;
 	list_del(&wlvif->list);
+	//list_del(&VV_vif.list_id);
 	memset(wlvif->ap.sta_hlid_map, 0, sizeof(wlvif->ap.sta_hlid_map));
 	wlvif->role_id = WL12XX_INVALID_ROLE_ID;
 	wlvif->dev_role_id = WL12XX_INVALID_ROLE_ID;
@@ -4585,7 +4603,7 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	 * chance to return STA-buffered packets before complaining.
 	 */
 	if (wl->active_sta_count == 0)
-		wl12xx_rearm_tx_watchdog_locked(wl);
+		wl12xx_rearm_tx_watchdog_locked();
 }
 
 static int wl12xx_sta_add(struct wl1271 *wl,
@@ -5316,7 +5334,7 @@ static void wl1271_op_cancel_hw_scan(struct ieee80211_hw *hw,
 	 * Rearm the tx watchdog just before idling scan. This
 	 * prevents just-finished scans from triggering the watchdog
 	 */
-	wl12xx_rearm_tx_watchdog_locked(wl);
+	wl12xx_rearm_tx_watchdog_locked();
 
 	wl->scan.state = WL1271_SCAN_STATE_IDLE;
 	memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
@@ -6285,9 +6303,9 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	wl->fwlog_size = 0;
 
 	/* The system link is always allocated */
-	__set_bit(WL12XX_SYSTEM_HLID, wl->links_map);
+	__set_bit(WL12XX_SYSTEM_HLID, VV_map.links_map);
 
-	memset(wl->tx_frames_map, 0, sizeof(wl->tx_frames_map));
+	//memset(wl->tx_frames_map, 0, sizeof(wl->tx_frames_map));
 	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++)
 		VV_skb_tx_frames[i] = NULL;
 
@@ -6300,14 +6318,18 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	init_completion(&wl->nvs_loading_complete);
 
 	order = get_order(aggr_buf_size);
-	wl->aggr_buf = (u8 *)__get_free_pages(GFP_KERNEL, order);
-	if (!wl->aggr_buf) {
+	VV_aggr_buf = (u8 *)__get_free_pages(GFP_KERNEL, order);
+	if (!VV_aggr_buf) {
 		ret = -ENOMEM;
 		goto err_wq;
 	}
-	wl->aggr_buf_size = aggr_buf_size;
+	//WL18XX_AGGR_BUFFER_SIZE = aggr_buf_size;
+	// 53248 ÷ 4096 = 13.0 -> aggr_buf_size needs 13 pages
+	// get_order returns the number has the power of 2
+	// -> order = 4 -> 2^4 = 16 > 13
 
 	wl->dummy_packet = wl12xx_alloc_dummy_packet(wl);
+	printk("wl->dummy_packet: 0x%x\n", wl->dummy_packet);
 	if (!wl->dummy_packet) {
 		ret = -ENOMEM;
 		goto err_aggr;
@@ -6345,7 +6367,7 @@ err_dummy_packet:
 	dev_kfree_skb(wl->dummy_packet);
 
 err_aggr:
-	free_pages((unsigned long)wl->aggr_buf, order);
+	free_pages((unsigned long)VV_aggr_buf, order);
 
 err_wq:
 	destroy_workqueue(VV_work.freezable_wq);
@@ -6376,7 +6398,7 @@ int wlcore_free_hw(struct wl1271 *wl)
 	kfree(wl->mbox);
 	free_page((unsigned long)wl->fwlog);
 	dev_kfree_skb(wl->dummy_packet);
-	free_pages((unsigned long)wl->aggr_buf, get_order(wl->aggr_buf_size));
+	free_pages((unsigned long)VV_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));
 
 	//wl1271_debugfs_exit(wl);
 
