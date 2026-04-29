@@ -21,13 +21,13 @@ struct tracking_ch_params {
 	u8 padding[2];
 } __packed;
 
-/* probe request rate */
-enum
-{
-	WL18XX_SCAN_RATE_1	= 0,
-	WL18XX_SCAN_RATE_5_5	= 1,
-	WL18XX_SCAN_RATE_6	= 2,
-};
+// /* probe request rate */
+// enum
+// {
+// 	WL18XX_SCAN_RATE_1	= 0,
+// 	WL18XX_SCAN_RATE_5_5	= 1,
+// 	WL18XX_SCAN_RATE_6	= 2,
+// };
 
 #define WL18XX_MAX_CHANNELS_5GHZ 32
 

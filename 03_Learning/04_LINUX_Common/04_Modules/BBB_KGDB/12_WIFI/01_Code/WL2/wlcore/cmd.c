@@ -26,6 +26,7 @@
 #include "hw_ops.h"
 
 #include "common.h"
+#include "ops.h"
 
 #define WL1271_CMD_FAST_POLL_COUNT       50
 #define WL1271_WAIT_EVENT_FAST_POLL_COUNT 20
@@ -1621,7 +1622,10 @@ int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		goto out_free;
 	}
 
-	ret = wl->ops->wait_for_event(wl,
+	// ret = wl->ops->wait_for_event(wl,
+	// 			      WLCORE_EVENT_PEER_REMOVE_COMPLETE,
+	// 			      &timeout);
+	ret = VV_wait_for_event(wl,
 				      WLCORE_EVENT_PEER_REMOVE_COMPLETE,
 				      &timeout);
 
@@ -1757,7 +1761,10 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = wl->ops->wait_for_event(wl,
+	// ret = wl->ops->wait_for_event(wl,
+	// 			      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
+	// 			      &timeout);
+	ret = VV_wait_for_event(wl,
 				      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
 				      &timeout);
 	if (ret < 0 || timeout) {

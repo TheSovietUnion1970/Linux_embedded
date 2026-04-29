@@ -11,6 +11,7 @@
 #define __SCAN_H__
 
 #include "wlcore.h"
+// #include "ops.h"
 
 int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 		const u8 *ssid, size_t ssid_len,

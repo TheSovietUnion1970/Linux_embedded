@@ -115,6 +115,7 @@ struct conf_ap_sleep_settings {
 	u8 idle_conn_thresh;
 } __packed;
 
+
 struct wl18xx_priv_conf {
 	/* Module params structures */
 	struct wl18xx_ht_settings ht;

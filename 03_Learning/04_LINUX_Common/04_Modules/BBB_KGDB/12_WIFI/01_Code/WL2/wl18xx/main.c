@@ -1608,51 +1608,10 @@ static int wl18xx_setup(struct wl1271 *wl);
 
 static struct wlcore_ops wl18xx_ops = {
 	.setup		= wl18xx_setup,
-	.identify_chip	= wl18xx_identify_chip,
 	.boot		= wl18xx_boot,
 	.plt_init	= wl18xx_plt_init,
 	.trigger_cmd	= wl18xx_trigger_cmd,
-	.ack_event	= wl18xx_ack_event,
-	.wait_for_event	= wl18xx_wait_for_event,
-	// .process_mailbox_events = wl18xx_process_mailbox_events,
-	.calc_tx_blocks = wl18xx_calc_tx_blocks,
-	.set_tx_desc_blocks = wl18xx_set_tx_desc_blocks,
-	.set_tx_desc_data_len = wl18xx_set_tx_desc_data_len,
-	.get_rx_buf_align = wl18xx_get_rx_buf_align,
-	.get_rx_packet_len = wl18xx_get_rx_packet_len,
-	// .tx_immediate_compl = wl18xx_tx_immediate_completion,
-	.tx_delayed_compl = NULL,
 	.hw_init	= wl18xx_hw_init,
-	// .convert_fw_status = wl18xx_convert_fw_status,
-	.set_tx_desc_csum = wl18xx_set_tx_desc_csum,
-	.get_pg_ver	= wl18xx_get_pg_ver,
-	.set_rx_csum = wl18xx_set_rx_csum,
-	.sta_get_ap_rate_mask = wl18xx_sta_get_ap_rate_mask,
-	//.ap_get_mimo_wide_rate_mask = wl18xx_ap_get_mimo_wide_rate_mask,
-	.get_mac	= wl18xx_get_mac,
-	.debugfs_init	= wl18xx_debugfs_add_files,
-	.scan_start	= wl18xx_scan_start,
-	.scan_stop	= wl18xx_scan_stop,
-	.sched_scan_start	= wl18xx_sched_scan_start,
-	//.sched_scan_stop	= wl18xx_scan_sched_scan_stop,
-	.handle_static_data	= wl18xx_handle_static_data,
-	.get_spare_blocks = wl18xx_get_spare_blocks,
-	.set_key	= wl18xx_set_key,
-	//.channel_switch	= wl18xx_cmd_channel_switch,
-	//.pre_pkt_send	= wl18xx_pre_pkt_send,
-	.sta_rc_update	= wl18xx_sta_rc_update,
-	.set_peer_cap	= wl18xx_set_peer_cap,
-	.convert_hwaddr = wl18xx_convert_hwaddr,
-	// .lnk_high_prio	= wl18xx_lnk_high_prio,
-	// .lnk_low_prio	= wl18xx_lnk_low_prio,
-	.smart_config_start = wl18xx_cmd_smart_config_start,
-	.smart_config_stop  = wl18xx_cmd_smart_config_stop,
-	// .smart_config_set_group_key = wl18xx_cmd_smart_config_set_group_key,
-	.interrupt_notify = wl18xx_acx_interrupt_notify_config,
-	.rx_ba_filter	= wl18xx_acx_rx_ba_filter,
-	.ap_sleep	= wl18xx_acx_ap_sleep,
-	// .set_cac	= wl18xx_cmd_set_cac,
-	.dfs_master_restart	= wl18xx_cmd_dfs_master_restart,
 };
 
 /* HT cap appropriate for wide channels in 2Ghz */
@@ -1888,11 +1847,11 @@ static int wl18xx_setup(struct wl1271 *wl)
 				  &wl18xx_siso20_ht_cap);
 	}
 
-	printk("checksum_param = 0x%x\n", checksum_param);
-	if (!checksum_param) {
-		wl18xx_ops.set_rx_csum = NULL;
-		wl18xx_ops.init_vif = NULL;
-	}
+	// printk("checksum_param = 0x%x\n", checksum_param);
+	// if (!checksum_param) {
+	// 	wl18xx_ops.set_rx_csum = NULL;
+	// 	wl18xx_ops.init_vif = NULL;
+	// }
 
 	/* Enable 11a Band only if we have 5G antennas */
 	wl->enable_11a = (priv->conf.phy.number_of_assembled_ant5 != 0);

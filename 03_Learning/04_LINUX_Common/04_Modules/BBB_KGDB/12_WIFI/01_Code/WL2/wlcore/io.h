@@ -149,21 +149,6 @@ static inline int __must_check wlcore_read_data(struct wl1271 *wl, int reg,
 	return wlcore_read(wl, wl->rtable[reg], buf, len, fixed);
 }
 
-static inline int __must_check wlcore_read_hwaddr(struct wl1271 *wl, int hwaddr,
-						  void *buf, size_t len,
-						  bool fixed)
-{
-	int physical;
-	int addr;
-
-	/* Convert from FW internal address which is chip arch dependent */
-	addr = wl->ops->convert_hwaddr(wl, hwaddr);
-
-	physical = wlcore_translate_addr(addr);
-
-	return wlcore_raw_read(wl, physical, buf, len, fixed);
-}
-
 static inline int __must_check wlcore_read32(struct wl1271 *wl, int addr,
 					     u32 *val)
 {

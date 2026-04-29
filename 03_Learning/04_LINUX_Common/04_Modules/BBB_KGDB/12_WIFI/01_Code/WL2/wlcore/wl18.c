@@ -190,3 +190,4 @@ int VV_handle_static_data(struct wl1271 *wl,
 
 	return 0;
 }
+

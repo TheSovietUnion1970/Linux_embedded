@@ -31,6 +31,8 @@
 
 #include "common.h"
 #include "wl18.h"
+#include "reg.h"
+#include "ops.h"
 struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
 struct sk_buff_head VV_deferred_rx_queue;
 struct sk_buff_head VV_deferred_tx_queue;
@@ -3002,20 +3004,6 @@ static void wl1271_set_band_rate(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	wlvif->rate_set = wlvif->basic_rate_set;
 }
 
-#include "../wl18xx/scan.h"
-static int VV_scan_stop(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			       u8 scan_type)
-{
-	struct wl18xx_cmd_scan_stop stop;
-	int ret;
-
-	stop.role_id = wlvif->role_id;
-	stop.scan_type = scan_type; // SCAN_TYPE_PERIODIC
-
-	ret = VV_cmd_send(wl, CMD_STOP_SCAN, &stop, sizeof(stop), 0);
-	return ret;
-}
-
 static void wl1271_sta_handle_idle(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				   bool idle)
 {
@@ -4981,7 +4969,8 @@ static void wl1271_op_cancel_hw_scan(struct ieee80211_hw *hw,
 	}
 
 	if (wl->scan.state != WL1271_SCAN_STATE_DONE) {
-		ret = wl->ops->scan_stop(wl, wlvif);
+		//ret = wl->ops->scan_stop(wl, wlvif);
+		ret = VV_scan_stop(wl, wlvif, SCAN_TYPE_SEARCH);
 		if (ret < 0)
 			goto out_sleep;
 	}
@@ -5638,12 +5627,14 @@ static int wl12xx_get_hw_info(struct wl1271 *wl)
 	wl->fuse_oui_addr = 0;
 	wl->fuse_nic_addr = 0;
 
-	ret = wl->ops->get_pg_ver(wl, &wl->hw_pg_ver);
+	//ret = wl->ops->get_pg_ver(wl, &wl->hw_pg_ver);
+	ret = VV1_get_pg_ver(wl, &wl->hw_pg_ver);
 	if (ret < 0)
 		goto out;
 
-	if (wl->ops->get_mac)
-		ret = wl->ops->get_mac(wl);
+	// if (wl->ops->get_mac)
+	// 	ret = wl->ops->get_mac(wl);
+	ret = VV_get_mac(wl);
 
 out:
 	return ret;
@@ -6189,7 +6180,8 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	disable_irq(wl->irq);
 	wl1271_power_off(wl);
 
-	ret = wl->ops->identify_chip(wl);
+	//ret = wl->ops->identify_chip(wl);
+	ret = VV_identify_chip(wl);
 	if (ret < 0)
 		goto out_irq;
 

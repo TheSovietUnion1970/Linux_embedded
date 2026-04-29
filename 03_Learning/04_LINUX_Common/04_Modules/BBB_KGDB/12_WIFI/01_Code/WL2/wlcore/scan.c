@@ -16,6 +16,7 @@
 #include "scan.h"
 #include "acx.h"
 #include "tx.h"
+#include "ops.h"
 
 void wl1271_scan_complete_work(struct work_struct *work)
 {
@@ -380,7 +381,8 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	ieee80211_queue_delayed_work(wl->hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
 
-	wl->ops->scan_start(wl, wlvif, req); // wl18xx_scan_send
+	//wl->ops->scan_start(wl, wlvif, req); // wl18xx_scan_send
+	int ret = VV_scan_send(wl, wlvif, req);
 
 	return 0;
 }

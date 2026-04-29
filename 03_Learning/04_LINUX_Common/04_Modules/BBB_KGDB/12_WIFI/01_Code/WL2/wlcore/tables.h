@@ -14,7 +14,7 @@
 #include "../wlcore/rx.h"
 #include "../wlcore/boot.h"
 
-#include "../wl18xx/reg.h"
+#include "reg.h"
 
 
 static const int VV_rtable[REG_TABLE_LEN] = {
