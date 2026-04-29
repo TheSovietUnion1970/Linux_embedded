@@ -1037,24 +1037,24 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 		    wl->chip.fw_ver_str);
 
 	/* change partitions momentarily so we can read the FW pc */
-	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition_core(wl, (struct VV_partition_set *)&wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		return;
 
 	//ret = wlcore_read_reg(wl, REG_PC_ON_RECOVERY, &pc);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_PC_ON_RECOVERY]), &pc, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_PC_ON_RECOVERY]), &pc, 4, false);
 	if (ret < 0)
 		return;
 
 	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &hint_sts);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &hint_sts, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &hint_sts, 4, false);
 	if (ret < 0)
 		return;
 
 	wl1271_info("pc: 0x%x, hint_sts: 0x%08x count: %d",
 				pc, hint_sts, ++wl->recovery_count);
 
-	VV_set_partition(wl, &wl->ptable[PART_WORK]);
+	VV_set_partition_core(wl, (struct VV_partition_set *)&wifi_data.ptable[PART_WORK]);
 }
 
 
@@ -1271,7 +1271,7 @@ static int wl12xx_set_power_on(struct wl1271 *wl)
 	// wl1271_io_reset(wl);
 	// wl1271_io_init(wl);
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
@@ -5975,7 +5975,7 @@ static int wl12xx_get_hw_info(struct wl1271 *wl)
 	int ret;
 
 	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -6431,7 +6431,7 @@ static irqreturn_t wlcore_hardirq(int irq, void *cookie)
 {
 	return IRQ_WAKE_THREAD;
 }
-
+#include "tables.h"
 static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 {
 	struct wl1271 *wl = context;
@@ -6462,6 +6462,12 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	ret = wl->ops->setup(wl);
 	if (ret < 0)
 		goto out_free_nvs;
+
+	/* VInh custom */
+	wifi_data.rtable = VV_rtable;
+	wifi_data.ptable = VV_ptable;
+	/* Fucking custom */
+	wl->wifi_data_ptr = &wifi_data;
 
 	BUG_ON(WL18XX_NUM_TX_DESCRIPTORS > WLCORE_MAX_TX_DESCRIPTORS);
 

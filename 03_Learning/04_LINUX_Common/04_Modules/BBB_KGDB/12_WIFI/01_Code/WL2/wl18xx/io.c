@@ -20,22 +20,22 @@ int wl18xx_top_reg_write(struct wl1271 *wl, int addr, u16 val)
 
 	if ((addr % 4) == 0) {
 		//ret = wlcore_read32(wl, addr, &tmp);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr), &tmp, 4, false);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff0000) | val;
 		//ret = wlcore_write32(wl, addr, tmp);
-		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, addr), tmp, 4, false);
+		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(addr), tmp, 4, false);
 	} else {
 		//ret = wlcore_read32(wl, addr - 2, &tmp);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr - 2), &tmp, 4, false);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr - 2), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff) | (val << 16);
 		//ret = wlcore_write32(wl, addr - 2, tmp);
-		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, addr - 2), tmp, 4, false);
+		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(addr - 2), tmp, 4, false);
 	}
 
 out:
@@ -53,12 +53,12 @@ int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
 	if ((addr % 4) == 0) {
 		/* address is 4-bytes aligned */
 		//ret = wlcore_read32(wl, addr, &val);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr), &val, 4, false);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = val & 0xffff;
 	} else {
 		//ret = wlcore_read32(wl, addr - 2, &val);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, addr - 2), &val, 4, false);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr - 2), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = (val & 0xffff0000) >> 16;
 	}
@@ -130,12 +130,13 @@ int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fix
 	return ret;
 }
 
-int VV_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p)
+int VV_set_partition_18(struct wl1271 *wl, const struct VV_partition_set *p)
 {
 	int ret;
 
 	/* copy partition info */
-	memcpy(&wl->curr_part, p, sizeof(*p));
+	//memcpy(&wl->curr_part, p, sizeof(*p));
+	memcpy(&wl->wifi_data_ptr->curr_part, p, sizeof(*p));
 
 	ret = VV_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
 	if (ret < 0)

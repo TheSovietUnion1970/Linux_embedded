@@ -1046,162 +1046,162 @@ static const struct file_operations sleep_auth_ops = {
 	.llseek = default_llseek,
 };
 
-static ssize_t dev_mem_read(struct file *file,
-	     char __user *user_buf, size_t count,
-	     loff_t *ppos)
-{
-	struct wl1271 *wl = file->private_data;
-	struct wlcore_partition_set part, old_part;
-	size_t bytes = count;
-	int ret;
-	char *buf;
+// static ssize_t dev_mem_read(struct file *file,
+// 	     char __user *user_buf, size_t count,
+// 	     loff_t *ppos)
+// {
+// 	struct wl1271 *wl = file->private_data;
+// 	struct wlcore_partition_set part, old_part;
+// 	size_t bytes = count;
+// 	int ret;
+// 	char *buf;
 
-	/* only requests of dword-aligned size and offset are supported */
-	if (bytes % 4)
-		return -EINVAL;
+// 	/* only requests of dword-aligned size and offset are supported */
+// 	if (bytes % 4)
+// 		return -EINVAL;
 
-	if (*ppos % 4)
-		return -EINVAL;
+// 	if (*ppos % 4)
+// 		return -EINVAL;
 
-	/* function should return in reasonable time */
-	bytes = min(bytes, WLCORE_MAX_BLOCK_SIZE);
+// 	/* function should return in reasonable time */
+// 	bytes = min(bytes, WLCORE_MAX_BLOCK_SIZE);
 
-	if (bytes == 0)
-		return -EINVAL;
+// 	if (bytes == 0)
+// 		return -EINVAL;
 
-	memset(&part, 0, sizeof(part));
-	part.mem.start = *ppos;
-	part.mem.size = bytes;
+// 	memset(&part, 0, sizeof(part));
+// 	part.mem.start = *ppos;
+// 	part.mem.size = bytes;
 
-	buf = kmalloc(bytes, GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
+// 	buf = kmalloc(bytes, GFP_KERNEL);
+// 	if (!buf)
+// 		return -ENOMEM;
 
-	mutex_lock(&wl->mutex);
+// 	mutex_lock(&wl->mutex);
 
-	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
-		ret = -EFAULT;
-		goto skip_read;
-	}
+// 	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
+// 		ret = -EFAULT;
+// 		goto skip_read;
+// 	}
 
-	/*
-	 * Don't fail if elp_wakeup returns an error, so the device's memory
-	 * could be read even if the FW crashed
-	 */
-	pm_runtime_get_sync(wl->dev);
+// 	/*
+// 	 * Don't fail if elp_wakeup returns an error, so the device's memory
+// 	 * could be read even if the FW crashed
+// 	 */
+// 	pm_runtime_get_sync(wl->dev);
 
-	/* store current partition and switch partition */
-	memcpy(&old_part, &wl->curr_part, sizeof(old_part));
-	ret = VV_set_partition(wl, &part);
-	if (ret < 0)
-		goto part_err;
+// 	/* store current partition and switch partition */
+// 	memcpy(&old_part, &wl->curr_part, sizeof(old_part));
+// 	ret = VV_set_partition_core(wl, &part);
+// 	if (ret < 0)
+// 		goto part_err;
 
-	ret = wlcore_raw_read(wl, 0, buf, bytes, false);
-	if (ret < 0)
-		goto read_err;
+// 	ret = wlcore_raw_read(wl, 0, buf, bytes, false);
+// 	if (ret < 0)
+// 		goto read_err;
 
-read_err:
-	/* recover partition */
-	ret = VV_set_partition(wl, &old_part);
-	if (ret < 0)
-		goto part_err;
+// read_err:
+// 	/* recover partition */
+// 	ret = VV_set_partition_core(wl, &old_part);
+// 	if (ret < 0)
+// 		goto part_err;
 
-part_err:
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+// part_err:
+// 	pm_runtime_mark_last_busy(wl->dev);
+// 	pm_runtime_put_autosuspend(wl->dev);
 
-skip_read:
-	mutex_unlock(&wl->mutex);
+// skip_read:
+// 	mutex_unlock(&wl->mutex);
 
-	if (ret == 0) {
-		ret = copy_to_user(user_buf, buf, bytes);
-		if (ret < bytes) {
-			bytes -= ret;
-			*ppos += bytes;
-			ret = 0;
-		} else {
-			ret = -EFAULT;
-		}
-	}
+// 	if (ret == 0) {
+// 		ret = copy_to_user(user_buf, buf, bytes);
+// 		if (ret < bytes) {
+// 			bytes -= ret;
+// 			*ppos += bytes;
+// 			ret = 0;
+// 		} else {
+// 			ret = -EFAULT;
+// 		}
+// 	}
 
-	kfree(buf);
+// 	kfree(buf);
 
-	return ((ret == 0) ? bytes : ret);
-}
+// 	return ((ret == 0) ? bytes : ret);
+// }
 
-static ssize_t dev_mem_write(struct file *file, const char __user *user_buf,
-		size_t count, loff_t *ppos)
-{
-	struct wl1271 *wl = file->private_data;
-	struct wlcore_partition_set part, old_part;
-	size_t bytes = count;
-	int ret;
-	char *buf;
+// static ssize_t dev_mem_write(struct file *file, const char __user *user_buf,
+// 		size_t count, loff_t *ppos)
+// {
+// 	struct wl1271 *wl = file->private_data;
+// 	struct wlcore_partition_set part, old_part;
+// 	size_t bytes = count;
+// 	int ret;
+// 	char *buf;
 
-	/* only requests of dword-aligned size and offset are supported */
-	if (bytes % 4)
-		return -EINVAL;
+// 	/* only requests of dword-aligned size and offset are supported */
+// 	if (bytes % 4)
+// 		return -EINVAL;
 
-	if (*ppos % 4)
-		return -EINVAL;
+// 	if (*ppos % 4)
+// 		return -EINVAL;
 
-	/* function should return in reasonable time */
-	bytes = min(bytes, WLCORE_MAX_BLOCK_SIZE);
+// 	/* function should return in reasonable time */
+// 	bytes = min(bytes, WLCORE_MAX_BLOCK_SIZE);
 
-	if (bytes == 0)
-		return -EINVAL;
+// 	if (bytes == 0)
+// 		return -EINVAL;
 
-	memset(&part, 0, sizeof(part));
-	part.mem.start = *ppos;
-	part.mem.size = bytes;
+// 	memset(&part, 0, sizeof(part));
+// 	part.mem.start = *ppos;
+// 	part.mem.size = bytes;
 
-	buf = memdup_user(user_buf, bytes);
-	if (IS_ERR(buf))
-		return PTR_ERR(buf);
+// 	buf = memdup_user(user_buf, bytes);
+// 	if (IS_ERR(buf))
+// 		return PTR_ERR(buf);
 
-	mutex_lock(&wl->mutex);
+// 	mutex_lock(&wl->mutex);
 
-	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
-		ret = -EFAULT;
-		goto skip_write;
-	}
+// 	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
+// 		ret = -EFAULT;
+// 		goto skip_write;
+// 	}
 
-	/*
-	 * Don't fail if elp_wakeup returns an error, so the device's memory
-	 * could be read even if the FW crashed
-	 */
-	pm_runtime_get_sync(wl->dev);
+// 	/*
+// 	 * Don't fail if elp_wakeup returns an error, so the device's memory
+// 	 * could be read even if the FW crashed
+// 	 */
+// 	pm_runtime_get_sync(wl->dev);
 
-	/* store current partition and switch partition */
-	memcpy(&old_part, &wl->curr_part, sizeof(old_part));
-	ret = VV_set_partition(wl, &part);
-	if (ret < 0)
-		goto part_err;
+// 	/* store current partition and switch partition */
+// 	memcpy(&old_part, &wl->curr_part, sizeof(old_part));
+// 	ret = VV_set_partition_core(wl, &part);
+// 	if (ret < 0)
+// 		goto part_err;
 
-	ret = wlcore_raw_write(wl, 0, buf, bytes, false);
-	if (ret < 0)
-		goto write_err;
+// 	ret = wlcore_raw_write(wl, 0, buf, bytes, false);
+// 	if (ret < 0)
+// 		goto write_err;
 
-write_err:
-	/* recover partition */
-	ret = VV_set_partition(wl, &old_part);
-	if (ret < 0)
-		goto part_err;
+// write_err:
+// 	/* recover partition */
+// 	ret = VV_set_partition_core(wl, &old_part);
+// 	if (ret < 0)
+// 		goto part_err;
 
-part_err:
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+// part_err:
+// 	pm_runtime_mark_last_busy(wl->dev);
+// 	pm_runtime_put_autosuspend(wl->dev);
 
-skip_write:
-	mutex_unlock(&wl->mutex);
+// skip_write:
+// 	mutex_unlock(&wl->mutex);
 
-	if (ret == 0)
-		*ppos += bytes;
+// 	if (ret == 0)
+// 		*ppos += bytes;
 
-	kfree(buf);
+// 	kfree(buf);
 
-	return ((ret == 0) ? bytes : ret);
-}
+// 	return ((ret == 0) ? bytes : ret);
+// }
 
 static loff_t dev_mem_seek(struct file *file, loff_t offset, int orig)
 {
@@ -1214,8 +1214,8 @@ static loff_t dev_mem_seek(struct file *file, loff_t offset, int orig)
 
 static const struct file_operations dev_mem_ops = {
 	.open = simple_open,
-	.read = dev_mem_read,
-	.write = dev_mem_write,
+	//.read = dev_mem_read,
+	//.write = dev_mem_write,
 	.llseek = dev_mem_seek,
 };
 

@@ -741,7 +741,7 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 		// REG_SLV_MEM_DATA → the address in the firmware’s memory where TX data should be written.
 		// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
 		// 			     buf_offset, true);
-		bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), VV_aggr_buf, buf_offset, true);
+		bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wifi_data.rtable[REG_SLV_MEM_DATA]), VV_aggr_buf, buf_offset, true);
 		if (bus_ret < 0)
 			goto out;
 
@@ -755,7 +755,7 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 		if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
 			// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
 			// 		     VV_tx_packets_count);
-			bus_ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL12XX_HOST_WR_ACCESS), VV_tx_packets_count, 4, false);
+			bus_ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL12XX_HOST_WR_ACCESS), VV_tx_packets_count, 4, false);
 			if (bus_ret < 0)
 				goto out;
 		}

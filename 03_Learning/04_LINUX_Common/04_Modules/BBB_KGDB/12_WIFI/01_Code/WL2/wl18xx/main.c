@@ -32,7 +32,7 @@
 #include "event.h"
 #include "debugfs.h"
 
-#include "../wlcore/common.h"
+//#include "../wlcore/common.h"
 
 #define WL18XX_RX_CHECKSUM_MASK      0x40
 
@@ -714,7 +714,7 @@ static int wl18xx_set_clk(struct wl1271 *wl)
 	u16 clk_freq;
 	int ret;
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -823,13 +823,13 @@ static int wl18xx_boot_soft_reset(struct wl1271 *wl)
 
 	/* disable Rx/Tx */
 	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_ENABLE), 0x0, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
 	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_SPARE_A2), 0xffff, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -845,32 +845,32 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 
 	/* Continue the ELP wake up sequence */
 	//ret = wlcore_write32(wl, WL18XX_WELP_ARM_COMMAND, WELP_ARM_COMMAND_VAL);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	udelay(500);
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
 	/* Disable interrupts */
 	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, WL1271_ACX_INTR_ALL);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wl18xx_boot_soft_reset(wl);
 	/* disable Rx/Tx */
 	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_ENABLE), 0x0, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
 	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_SPARE_A2), 0xffff, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -885,25 +885,25 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	BUILD_BUG_ON(sizeof(struct wl18xx_mac_and_phy_params) >
 		WL18XX_PHY_INIT_MEM_SIZE);
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
 	/* TODO: check if this is all needed */
 	//ret = wlcore_write32(wl, WL18XX_EEPROMLESS_IND, WL18XX_EEPROMLESS_IND);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &tmp);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wl1271_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
 
 	//ret = wlcore_read32(wl, WL18XX_SCR_PAD2, &tmp);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_SCR_PAD2), &tmp, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -914,36 +914,37 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	 * its own clock.
 	 */
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
 	/* disable FDSP clock */
 	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
 	// 		     MEM_FDSP_CLK_120_DISABLE);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* set ATPG clock toward FDSP Code RAM rather than its own clock */
 	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
 	// 		     MEM_FDSP_CODERAM_FUNC_CLK_SEL);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* re-enable FDSP clock */
 	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
 	// 		     MEM_FDSP_CLK_120_ENABLE);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	ret = irq_get_trigger_type(wl->irq);
 	if ((ret == IRQ_TYPE_LEVEL_LOW) || (ret == IRQ_TYPE_EDGE_FALLING)) {
 		wl1271_info("using inverted interrupt logic: %d", ret);
-		ret = VV_set_partition(wl,
-					   &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+		// ret = VV_set_partition_18(wl,
+		// 			   &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+		ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
 		if (ret < 0)
 			goto out;
 
@@ -956,7 +957,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		if (ret < 0)
 			goto out;
 
-		ret = VV_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
+		ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_PHY_INIT]);
 	}
 
 out:
@@ -975,13 +976,13 @@ static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_PHY_INIT]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
 	// ret = wlcore_write(wl, WL18XX_PHY_INIT_MEM_ADDR, params,
 	// 		   sizeof(*params), false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
 
 out:
 	kfree(params);
@@ -997,7 +998,7 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 	intr_mask = WL18XX_INTR_MASK;
 
 	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, event_mask);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1005,7 +1006,7 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 
 	// ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK,
 	// 		       WL1271_ACX_INTR_ALL & ~intr_mask);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
 
@@ -1079,14 +1080,14 @@ static int wl18xx_trigger_cmd(struct wl1271 *wl, int cmd_box_addr,
 
 	// return wlcore_write(wl, cmd_box_addr, priv->cmd_buf,
 	// 		    WL18XX_CMD_MAX_SIZE, false);
-	return VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
+	return VV_sdio_raw_write1(wl, wlcore_translate_addr(cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
 }
 
 static int wl18xx_ack_event(struct wl1271 *wl)
 {
 	// return wlcore_write_reg(wl, REG_INTERRUPT_TRIG,
 	// 			WL18XX_INTR_TRIG_EVENT_ACK);
-	return VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	return VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
 static u32 wl18xx_calc_tx_blocks(struct wl1271 *wl, u32 len, u32 spare_blks)
@@ -1333,19 +1334,19 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	s8 rom = 0, metal = 0, pg_ver = 0, rdl_ver = 0, package_type = 0;
 	int ret;
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
 	package_type = (fuse >> WL18XX_PACKAGE_TYPE_OFFSET) & 1;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_1_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1360,7 +1361,7 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 			WL18XX_NEW_METAL_VER_OFFSET;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1372,7 +1373,7 @@ static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	if (ver)
 		*ver = pg_ver;
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_BOOT]);
 
 out:
 	return ret;
@@ -1457,7 +1458,7 @@ static int wl18xx_plt_init(struct wl1271 *wl)
 	}
 
 	//ret = wlcore_write32(wl, WL18XX_SCR_PAD8, WL18XX_SCR_PAD8_PLT);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL18XX_SCR_PAD8), WL18XX_SCR_PAD8_PLT, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_SCR_PAD8), WL18XX_SCR_PAD8_PLT, 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -1469,17 +1470,17 @@ static int wl18xx_get_mac(struct wl1271 *wl)
 	u32 mac1, mac2;
 	int ret;
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1498,7 +1499,7 @@ static int wl18xx_get_mac(struct wl1271 *wl)
 		wl1271_warning("MAC address from fuse not available, using random locally administered addresses.");
 	}
 
-	ret = VV_set_partition(wl, &wl->ptable[PART_DOWN]);
+	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_DOWN]);
 
 out:
 	return ret;
@@ -1803,6 +1804,7 @@ static int wl18xx_setup(struct wl1271 *wl)
 	BUILD_BUG_ON(WL18XX_CONF_SG_PARAMS_MAX > WLCORE_CONF_SG_PARAMS_MAX);
 
 	wl->rtable = wl18xx_rtable;
+
 	//WL18XX_NUM_TX_DESCRIPTORS = WL18XX_NUM_TX_DESCRIPTORS;
 	wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
 	wl->num_links = WL18XX_MAX_LINKS;

@@ -18,6 +18,8 @@
 #include "rx.h"
 #include "hw_ops.h"
 
+#include "common.h"
+
 static int wl1271_boot_set_ecpu_ctrl(struct wl1271 *wl, u32 flag)
 {
 	u32 cpu_ctrl;
@@ -25,14 +27,14 @@ static int wl1271_boot_set_ecpu_ctrl(struct wl1271 *wl, u32 flag)
 
 	/* 10.5.0 run the firmware (I) */
 	//ret = wlcore_read_reg(wl, REG_ECPU_CONTROL, &cpu_ctrl);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* 10.5.1 run the firmware (II) */
 	cpu_ctrl |= flag;
 	//ret = wlcore_write_reg(wl, REG_ECPU_CONTROL, cpu_ctrl);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
 
 out:
 	return ret;
@@ -141,7 +143,7 @@ static int wlcore_boot_static_data(struct wl1271 *wl)
 	}
 
 	//ret = wlcore_read(wl, wl->cmd_box_addr, static_data, len, false);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)static_data, len, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->cmd_box_addr), (u32*)static_data, len, false);
 	if (ret < 0)
 		goto out_free;
 
@@ -166,7 +168,8 @@ out:
 static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 					     size_t fw_data_len, u32 dest)
 {
-	struct wlcore_partition_set partition;
+	// struct wlcore_partition_set partition;
+	struct VV_partition_set partition;
 	int addr, chunk_num, partition_limit;
 	u8 *p, *chunk;
 	int ret;
@@ -189,9 +192,10 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 		return -ENOMEM;
 	}
 
-	memcpy(&partition, &wl->ptable[PART_DOWN], sizeof(partition));
+	// memcpy(&partition, &wl->ptable[PART_DOWN], sizeof(partition));
+	memcpy(&partition, &wifi_data.ptable[PART_DOWN], sizeof(partition));
 	partition.mem.start = dest;
-	ret = VV_set_partition(wl, &partition);
+	ret = VV_set_partition_core(wl, &partition);
 	if (ret < 0)
 		goto out;
 
@@ -207,7 +211,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 			partition_limit = chunk_num * CHUNK_SIZE +
 				wl->ptable[PART_DOWN].mem.size;
 			partition.mem.start = addr;
-			ret = VV_set_partition(wl, &partition);
+			ret = VV_set_partition_core(wl, &partition);
 			if (ret < 0)
 				goto out;
 		}
@@ -219,7 +223,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 		wl1271_debug(DEBUG_BOOT, "uploading fw chunk 0x%p to 0x%x",
 			     p, addr);
 		// ret = wlcore_write(wl, addr, chunk, CHUNK_SIZE, false);
-		ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, addr), chunk, CHUNK_SIZE, false);
+		ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(addr), chunk, CHUNK_SIZE, false);
 		if (ret < 0)
 			goto out;
 
@@ -233,7 +237,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 	wl1271_debug(DEBUG_BOOT, "uploading fw last chunk (%zd B) 0x%p to 0x%x",
 		     fw_data_len % CHUNK_SIZE, p, addr);
 	// ret = wlcore_write(wl, addr, chunk, fw_data_len % CHUNK_SIZE, false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, addr), chunk, fw_data_len % CHUNK_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(addr), chunk, fw_data_len % CHUNK_SIZE, false);
 
 out:
 	kfree(chunk);
@@ -386,7 +390,7 @@ int wlcore_boot_upload_nvs(struct wl1271 *wl)
 				     "nvs burst write 0x%x: 0x%x",
 				     dest_addr, val);
 			// ret = wlcore_write32(wl, dest_addr, val);
-			ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, dest_addr), val, 4, false);
+			ret = VV_sdio_raw_write(wl, wlcore_translate_addr(dest_addr), val, 4, false);
 			if (ret < 0)
 				return ret;
 
@@ -414,7 +418,7 @@ int wlcore_boot_upload_nvs(struct wl1271 *wl)
 	nvs_len -= nvs_ptr - (u8 *)wl->nvs;
 
 	/* Now we must set the partition correctly */
-	ret = VV_set_partition(wl, &wl->ptable[PART_WORK]);
+	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_WORK]);
 	if (ret < 0)
 		return ret;
 
@@ -426,7 +430,7 @@ int wlcore_boot_upload_nvs(struct wl1271 *wl)
 	/* And finally we upload the NVS tables */
 	// ret = wlcore_write_data(wl, REG_CMD_MBOX_ADDRESS, nvs_aligned, nvs_len,
 	// 			false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->rtable[REG_CMD_MBOX_ADDRESS]), nvs_aligned, nvs_len, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl->rtable[REG_CMD_MBOX_ADDRESS]), nvs_aligned, nvs_len, false);
 
 	kfree(nvs_aligned);
 	return ret;
@@ -443,7 +447,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	u32 chip_id, intr;
 
 	/* Make sure we have the boot partition */
-	ret = VV_set_partition(wl, &wl->ptable[PART_BOOT]);
+	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		return ret;
 
@@ -452,7 +456,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 		return ret;
 
 	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &chip_id);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -468,7 +472,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	while (loop++ < INIT_LOOP) {
 		udelay(INIT_LOOP_DELAY);
 		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
 		if (ret < 0)
 			return ret;
 
@@ -481,7 +485,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 		else if (intr & WL1271_ACX_INTR_INIT_COMPLETE) {
 			// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
 			// 		       WL1271_ACX_INTR_INIT_COMPLETE);
-			ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
+			ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
 			if (ret < 0)
 				return ret;
 			break;
@@ -496,7 +500,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 
 	/* get hardware config command mail box */
 	//ret = wlcore_read_reg(wl, REG_COMMAND_MAILBOX_PTR, &wl->cmd_box_addr);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_COMMAND_MAILBOX_PTR]), &wl->cmd_box_addr, 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_COMMAND_MAILBOX_PTR]), &wl->cmd_box_addr, 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -506,7 +510,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 
 	/* get hardware config event mail box */
 	//ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_EVENT_MAILBOX_PTR]), &wl->mbox_ptr[0], 4, false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_EVENT_MAILBOX_PTR]), &wl->mbox_ptr[0], 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -534,7 +538,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	}
 
 	/* set the working partition to its "running" mode offset */
-	ret = VV_set_partition(wl, &wl->ptable[PART_WORK]);
+	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_WORK]);
 
 	/* firmware startup completed */
 	return ret;

@@ -52,9 +52,10 @@ void wlcore_synchronize_interrupts(struct wl1271 *wl)
 }
 EXPORT_SYMBOL_GPL(wlcore_synchronize_interrupts);
 
-int wlcore_translate_addr(struct wl1271 *wl, int addr)
+int wlcore_translate_addr(int addr)
 {
-	struct wlcore_partition_set *part = &wl->curr_part;
+	// struct wlcore_partition_set *part = &wl->curr_part;
+	struct VV_partition_set *part = &wifi_data.curr_part;
 
 	/*
 	 * To translate, first check to which window of addresses the
@@ -224,7 +225,7 @@ int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fix
 int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool fixed)
 {
 	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
 
 	sdio_claim_host(func);
 
@@ -263,12 +264,13 @@ int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fix
 	return ret;
 }
 
-int VV_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p)
+int VV_set_partition_core(struct wl1271 *wl, struct VV_partition_set *p)
 {
 	int ret;
 
 	/* copy partition info */
-	memcpy(&wl->curr_part, p, sizeof(*p));
+	//memcpy(&wl->curr_part, p, sizeof(*p));
+	memcpy(&wifi_data.curr_part, p, sizeof(*p));
 
 	ret = VV_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
 	if (ret < 0)
@@ -314,3 +316,4 @@ void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz)
 	sdio_set_block_size(func, blksz);
 	sdio_release_host(func);
 }
+

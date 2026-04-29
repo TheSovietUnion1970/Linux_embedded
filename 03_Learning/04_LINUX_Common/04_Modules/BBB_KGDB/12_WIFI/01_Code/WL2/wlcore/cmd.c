@@ -64,7 +64,7 @@ static int __wlcore_cmd_send(struct wl1271 *wl, u16 id, void *buf,
 	WARN_ON(test_bit(WL1271_FLAG_IN_ELP, &wl->flags));
 
 	//ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl->cmd_box_addr), buf, len, false);
 	if (ret < 0)
 		return ret;
 
@@ -175,7 +175,7 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 	cmd->status = 0;
 
 	//ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), buf, len, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl->cmd_box_addr), buf, len, false);
 	if (ret < 0)
 		return ret;
 
@@ -184,12 +184,12 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 
 	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
 	// 		    WL18XX_CMD_MAX_SIZE, false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
 
 
 	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
 	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 	if (ret < 0)
 		return ret;
 
@@ -199,7 +199,7 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 			return -ETIMEDOUT;
 		}
 		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 		if (ret < 0)
 			return ret;
 	}
@@ -209,13 +209,13 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 		res_len = sizeof(struct wl1271_cmd_header);
 
 	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
 	if (ret < 0)
 		return ret;
 	status = le16_to_cpu(cmd->status);
 	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
 	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, wl->rtable[REG_INTERRUPT_ACK]), 
+	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_ACK]), 
 				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
 	if (ret < 0){
 		printk("[FAILED] - 1.VV_cmd_send\n");

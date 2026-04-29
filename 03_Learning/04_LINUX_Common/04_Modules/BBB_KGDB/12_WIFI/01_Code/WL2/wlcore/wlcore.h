@@ -485,6 +485,9 @@ struct wl1271 {
 	u8 zone_master_mac_addr[ETH_ALEN];
 
 	void *last_valid_wlvif;
+
+	/* Fucking custom */
+	struct Wifi_data* wifi_data_ptr;
 };
 
 int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev);

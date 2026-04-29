@@ -249,7 +249,7 @@ int wlcore_rx(struct wl1271 *wl)
 
 		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
 		// 		       buf_size, true);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl, wl->rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
+		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 
@@ -291,7 +291,7 @@ int wlcore_rx(struct wl1271 *wl)
 	if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
 		// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
 		// 		     wl->rx_counter);
-		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl, WL12XX_REG_RX_DRIVER_COUNTER), wl->rx_counter, 4, false);
+		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), wl->rx_counter, 4, false);
 		if (ret < 0)
 			goto out;
 	}

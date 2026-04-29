@@ -38,7 +38,7 @@ void wlcore_synchronize_interrupts(struct wl1271 *wl);
 
 void wl1271_io_reset(struct wl1271 *wl);
 void wl1271_io_init(struct wl1271 *wl);
-int wlcore_translate_addr(struct wl1271 *wl, int addr);
+int wlcore_translate_addr(int addr);
 
 /* Raw target IO, address is not translated */
 static inline int __must_check wlcore_raw_write(struct wl1271 *wl, int addr,
@@ -120,7 +120,7 @@ static inline int __must_check wlcore_read(struct wl1271 *wl, int addr,
 {
 	int physical;
 
-	physical = wlcore_translate_addr(wl, addr);
+	physical = wlcore_translate_addr(addr);
 
 	return wlcore_raw_read(wl, physical, buf, len, fixed);
 }
@@ -130,7 +130,7 @@ static inline int __must_check wlcore_write(struct wl1271 *wl, int addr,
 {
 	int physical;
 
-	physical = wlcore_translate_addr(wl, addr);
+	physical = wlcore_translate_addr(addr);
 
 	return wlcore_raw_write(wl, physical, buf, len, fixed);
 }
@@ -159,7 +159,7 @@ static inline int __must_check wlcore_read_hwaddr(struct wl1271 *wl, int hwaddr,
 	/* Convert from FW internal address which is chip arch dependent */
 	addr = wl->ops->convert_hwaddr(wl, hwaddr);
 
-	physical = wlcore_translate_addr(wl, addr);
+	physical = wlcore_translate_addr(addr);
 
 	return wlcore_raw_read(wl, physical, buf, len, fixed);
 }
@@ -167,20 +167,20 @@ static inline int __must_check wlcore_read_hwaddr(struct wl1271 *wl, int hwaddr,
 static inline int __must_check wlcore_read32(struct wl1271 *wl, int addr,
 					     u32 *val)
 {
-	return wlcore_raw_read32(wl, wlcore_translate_addr(wl, addr), val);
+	return wlcore_raw_read32(wl, wlcore_translate_addr(addr), val);
 }
 
 static inline int __must_check wlcore_write32(struct wl1271 *wl, int addr,
 					      u32 val)
 {
-	return wlcore_raw_write32(wl, wlcore_translate_addr(wl, addr), val);
+	return wlcore_raw_write32(wl, wlcore_translate_addr(addr), val);
 }
 
 static inline int __must_check wlcore_read_reg(struct wl1271 *wl, int reg,
 					       u32 *val)
 {
 	return wlcore_raw_read32(wl,
-				 wlcore_translate_addr(wl, wl->rtable[reg]),
+				 wlcore_translate_addr(wl->rtable[reg]),
 				 val);
 }
 
@@ -188,7 +188,7 @@ static inline int __must_check wlcore_write_reg(struct wl1271 *wl, int reg,
 						u32 val)
 {
 	return wlcore_raw_write32(wl,
-				  wlcore_translate_addr(wl, wl->rtable[reg]),
+				  wlcore_translate_addr(wl->rtable[reg]),
 				  val);
 }
 
@@ -232,11 +232,12 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl);
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
+#include "common.h"
 int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed);
 int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool fixed);
 int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fixed);
-int wlcore_translate_addr(struct wl1271 *wl, int addr);
-int VV_set_partition(struct wl1271 *wl, const struct wlcore_partition_set *p);
+int wlcore_translate_addr(int addr);
+int VV_set_partition_core(struct wl1271 *wl, struct VV_partition_set *p);
 void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz);
 
 #endif

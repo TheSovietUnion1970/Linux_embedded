@@ -378,6 +378,18 @@ struct VV_map {
 };
 extern struct VV_map VV_map;
 
+struct VV_partition {
+	u32 size;
+	u32 start;
+};
+
+struct VV_partition_set {
+	struct VV_partition mem;
+	struct VV_partition reg;
+	struct VV_partition mem2;
+	struct VV_partition mem3;
+};
+
 struct Wifi_data {
 	struct device *dev;
     struct mutex mutex;
@@ -385,6 +397,10 @@ struct Wifi_data {
 
     struct ieee80211_vif *vif;
     struct list_head wifi_vif_list;
+
+	const int *rtable;
+	struct VV_partition_set curr_part;
+	struct VV_partition_set *ptable;
 
     /* Temporary use */
     struct wl1271 *wl;
