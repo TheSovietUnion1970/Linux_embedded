@@ -20,19 +20,35 @@
 #include "../wlcore/tx.h"
 #include "../wlcore/rx.h"
 #include "../wlcore/boot.h"
+#include "../wlcore/ops.h"
+#include "../wlcore/wl18.h"
 
-#include "reg.h"
-#include "conf.h"
-#include "cmd.h"
-#include "acx.h"
-#include "tx.h"
+// #include "reg.h"
+// #include "conf.h"
+// #include "acx.h"
+// #include "tx.h"
 #include "wl18xx.h"
 #include "io.h"
-#include "scan.h"
-#include "event.h"
-#include "debugfs.h"
+// #include "scan.h"
+// #include "event.h"
 
-//#include "../wlcore/common.h"
+#define WL18XX_TX_HW_BLOCK_SPARE        1
+/* for special cases - namely, TKIP and GEM */
+#define WL18XX_TX_HW_EXTRA_BLOCK_SPARE  2
+#define WL18XX_TX_HW_BLOCK_SIZE         268
+
+#define WL18XX_TX_STATUS_DESC_ID_MASK    0x7F
+#define WL18XX_TX_STATUS_STAT_BIT_IDX    7
+
+/* Indicates this TX HW frame is not padded to SDIO block size */
+#define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
+
+/*
+ * The FW uses a special bit to indicate a wide channel should be used in
+ * the rate policy.
+ */
+#define CONF_TX_RATE_USE_WIDE_CHAN BIT(31)
+
 
 #define WL18XX_RX_CHECKSUM_MASK      0x40
 
@@ -162,6 +178,14 @@ enum wl18xx_hw_rates {
 	WL18XX_CONF_HW_RXTX_RATE_1,
 	WL18XX_CONF_HW_RXTX_RATE_MAX,
 };
+
+#define SCAN_MAX_CYCLE_INTERVALS 16
+
+/* The FW intervals can take up to 16 entries.
+ * The 1st entry isn't used (scan is immediate). The last
+ * entry should be used for the long_interval
+ */
+#define SCAN_MAX_SHORT_INTERVALS (SCAN_MAX_CYCLE_INTERVALS - 2)
 
 static struct wlcore_conf wl18xx_conf = {
 	.sg = {
@@ -657,58 +681,6 @@ static const struct wl18xx_clk_cfg wl18xx_clk_table[NUM_CLOCK_CONFIGS] = {
 	[CLOCK_CONFIG_52_M]	= { 13, 120,    0, 0, false },
 };
 
-/* TODO: maybe move to a new header file? */
-#define WL18XX_FW_NAME "ti-connectivity/wl18xx-fw-4.bin"
-
-static int wl18xx_identify_chip(struct wl1271 *wl)
-{
-	int ret = 0;
-
-	switch (wl->chip.id) {
-	case CHIP_ID_185x_PG20:
-		wl1271_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
-				 wl->chip.id);
-		wl->sr_fw_name = WL18XX_FW_NAME;
-		/* wl18xx uses the same firmware for PLT */
-		wl->plt_fw_name = WL18XX_FW_NAME;
-		wl->quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
-			      WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN |
-			      WLCORE_QUIRK_NO_SCHED_SCAN_WHILE_CONN |
-			      WLCORE_QUIRK_TX_PAD_LAST_FRAME |
-			      WLCORE_QUIRK_REGDOMAIN_CONF |
-			      WLCORE_QUIRK_DUAL_PROBE_TMPL;
-
-		wlcore_set_min_fw_ver(wl, WL18XX_CHIP_VER,
-				      WL18XX_IFTYPE_VER,  WL18XX_MAJOR_VER,
-				      WL18XX_SUBTYPE_VER, WL18XX_MINOR_VER,
-				      /* there's no separate multi-role FW */
-				      0, 0, 0, 0);
-		break;
-	case CHIP_ID_185x_PG10:
-		wl1271_warning("chip id 0x%x (185x PG10) is deprecated",
-			       wl->chip.id);
-		ret = -ENODEV;
-		goto out;
-
-	default:
-		wl1271_warning("unsupported chip id: 0x%x", wl->chip.id);
-		ret = -ENODEV;
-		goto out;
-	}
-
-	wl->fw_mem_block_size = 272;
-	wl->fwlog_end = 0x40000000;
-
-	wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
-	wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
-	wl->sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
-	wl->sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
-	wl->max_channels_5 = WL18XX_MAX_CHANNELS_5GHZ;
-	wl->ba_rx_session_count_max = WL18XX_RX_BA_MAX_SESSIONS;
-out:
-	return ret;
-}
-
 static int wl18xx_set_clk(struct wl1271 *wl)
 {
 	u16 clk_freq;
@@ -812,24 +784,6 @@ static int wl18xx_set_clk(struct wl1271 *wl)
 	/* reset the swallowing logic */
 	ret = wl18xx_top_reg_write(wl, PLLSH_COEX_PLL_SWALLOW_EN,
 				   PLLSH_COEX_PLL_SWALLOW_EN_VAL2);
-
-out:
-	return ret;
-}
-
-static int wl18xx_boot_soft_reset(struct wl1271 *wl)
-{
-	int ret;
-
-	/* disable Rx/Tx */
-	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
-	if (ret < 0)
-		goto out;
-
-	/* disable auto calibration on start*/
-	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -1083,70 +1037,40 @@ static int wl18xx_trigger_cmd(struct wl1271 *wl, int cmd_box_addr,
 	return VV_sdio_raw_write1(wl, wlcore_translate_addr(cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
 }
 
-static int wl18xx_ack_event(struct wl1271 *wl)
+static int VV_acx_host_if_cfg_bitmap(struct wl1271 *wl, u32 host_cfg_bitmap,
+				  u32 sdio_blk_size, u32 extra_mem_blks,
+				  u32 len_field_size)
 {
-	// return wlcore_write_reg(wl, REG_INTERRUPT_TRIG,
-	// 			WL18XX_INTR_TRIG_EVENT_ACK);
-	return VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	struct wl18xx_acx_host_config_bitmap *bitmap_conf;
+	int ret;
+
+	wl1271_debug(DEBUG_ACX, "acx cfg bitmap %d blk %d spare %d field %d",
+		     host_cfg_bitmap, sdio_blk_size, extra_mem_blks,
+		     len_field_size);
+
+	bitmap_conf = kzalloc(sizeof(*bitmap_conf), GFP_KERNEL);
+	if (!bitmap_conf) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	bitmap_conf->host_cfg_bitmap = cpu_to_le32(host_cfg_bitmap);
+	bitmap_conf->host_sdio_block_size = cpu_to_le32(sdio_blk_size);
+	bitmap_conf->extra_mem_blocks = cpu_to_le32(extra_mem_blks);
+	bitmap_conf->length_field_size = cpu_to_le32(len_field_size);
+
+	ret = wl1271_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP,
+				   bitmap_conf, sizeof(*bitmap_conf));
+	if (ret < 0) {
+		wl1271_warning("wl1271 bitmap config opt failed: %d", ret);
+		goto out;
+	}
+
+out:
+	kfree(bitmap_conf);
+
+	return ret;
 }
-
-static u32 wl18xx_calc_tx_blocks(struct wl1271 *wl, u32 len, u32 spare_blks)
-{
-	u32 blk_size = WL18XX_TX_HW_BLOCK_SIZE;
-	return (len + blk_size - 1) / blk_size + spare_blks;
-}
-
-static void
-wl18xx_set_tx_desc_blocks(struct wl1271 *wl, struct wl1271_tx_hw_descr *desc,
-			  u32 blks, u32 spare_blks)
-{
-	desc->wl18xx_mem.total_mem_blocks = blks;
-}
-
-static void
-wl18xx_set_tx_desc_data_len(struct wl1271 *wl, struct wl1271_tx_hw_descr *desc,
-			    struct sk_buff *skb)
-{
-	desc->length = cpu_to_le16(skb->len);
-
-	/* if only the last frame is to be padded, we unset this bit on Tx */
-	if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME)
-		desc->wl18xx_mem.ctrl = WL18XX_TX_CTRL_NOT_PADDED;
-	else
-		desc->wl18xx_mem.ctrl = 0;
-
-	wl1271_debug(DEBUG_TX, "tx_fill_hdr: hlid: %d "
-		     "len: %d life: %d mem: %d", desc->hlid,
-		     le16_to_cpu(desc->length),
-		     le16_to_cpu(desc->life_time),
-		     desc->wl18xx_mem.total_mem_blocks);
-}
-
-static enum wl_rx_buf_align
-wl18xx_get_rx_buf_align(struct wl1271 *wl, u32 rx_desc)
-{
-	if (rx_desc & RX_BUF_PADDED_PAYLOAD)
-		return WLCORE_RX_BUF_PADDED;
-
-	return WLCORE_RX_BUF_ALIGNED;
-}
-
-static u32 wl18xx_get_rx_packet_len(struct wl1271 *wl, void *rx_data,
-				    u32 data_len)
-{
-	struct wl1271_rx_descriptor *desc = rx_data;
-
-	/* invalid packet */
-	if (data_len < sizeof(*desc))
-		return 0;
-
-	return data_len - sizeof(*desc);
-}
-
-// static void wl18xx_tx_immediate_completion(struct wl1271 *wl)
-// {
-// 	wl18xx_tx_immediate_complete(wl);
-// }
 
 static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 {
@@ -1167,13 +1091,43 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
 	}
 
-	ret = wl18xx_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
+	// ret = wl18xx_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
+	// 				    sdio_align_size, extra_mem_blk,
+	// 				    WL18XX_HOST_IF_LEN_SIZE_FIELD);
+	ret = VV_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
 					    sdio_align_size, extra_mem_blk,
 					    WL18XX_HOST_IF_LEN_SIZE_FIELD);
 	if (ret < 0)
 		return ret;
 
 	return 0;
+}
+
+static int VV_acx_dynamic_fw_traces(struct wl1271 *wl)
+{
+	struct acx_dynamic_fw_traces_cfg *acx;
+	int ret;
+
+	wl1271_debug(DEBUG_ACX, "acx dynamic fw traces config %d",
+		     wl->dynamic_fw_traces);
+
+	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
+	if (!acx) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	acx->dynamic_fw_traces = cpu_to_le32(wl->dynamic_fw_traces);
+
+	ret = wl1271_cmd_configure(wl, ACX_DYNAMIC_TRACES_CFG,
+				   acx, sizeof(*acx));
+	if (ret < 0) {
+		wl1271_warning("acx config dynamic fw traces failed: %d", ret);
+		goto out;
+	}
+out:
+	kfree(acx);
+	return ret;
 }
 
 static int wl18xx_hw_init(struct wl1271 *wl)
@@ -1190,7 +1144,8 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 		return ret;
 
 	/* set the dynamic fw traces bitmap */
-	ret = wl18xx_acx_dynamic_fw_traces(wl);
+	// ret = wl18xx_acx_dynamic_fw_traces(wl);
+	ret = VV_acx_dynamic_fw_traces(wl);
 	if (ret < 0)
 		return ret;
 
@@ -1203,44 +1158,6 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	return ret;
 }
 
-static void wl18xx_set_tx_desc_csum(struct wl1271 *wl,
-				    struct wl1271_tx_hw_descr *desc,
-				    struct sk_buff *skb)
-{
-	u32 ip_hdr_offset;
-	struct iphdr *ip_hdr;
-
-	if (!checksum_param) {
-		desc->wl18xx_checksum_data = 0;
-		return;
-	}
-
-	if (skb->ip_summed != CHECKSUM_PARTIAL) {
-		desc->wl18xx_checksum_data = 0;
-		return;
-	}
-
-	ip_hdr_offset = skb_network_header(skb) - skb_mac_header(skb);
-	if (WARN_ON(ip_hdr_offset >= (1<<7))) {
-		desc->wl18xx_checksum_data = 0;
-		return;
-	}
-
-	desc->wl18xx_checksum_data = ip_hdr_offset << 1;
-
-	/* FW is interested only in the LSB of the protocol  TCP=0 UDP=1 */
-	ip_hdr = (void *)skb_network_header(skb);
-	desc->wl18xx_checksum_data |= (ip_hdr->protocol & 0x01);
-}
-
-static void wl18xx_set_rx_csum(struct wl1271 *wl,
-			       struct wl1271_rx_descriptor *desc,
-			       struct sk_buff *skb)
-{
-	if (desc->status & WL18XX_RX_CHECKSUM_MASK)
-		skb->ip_summed = CHECKSUM_UNNECESSARY;
-}
-
 static bool wl18xx_is_mimo_supported(struct wl1271 *wl)
 {
 	struct wl18xx_priv *priv = wl->priv;
@@ -1251,108 +1168,6 @@ static bool wl18xx_is_mimo_supported(struct wl1271 *wl)
 	return (priv->conf.phy.number_of_assembled_ant2_4 >= 2) &&
 	       (priv->conf.ht.mode != HT_MODE_WIDE) &&
 	       (priv->conf.ht.mode != HT_MODE_SISO20);
-}
-
-/*
- * TODO: instead of having these two functions to get the rate mask,
- * we should modify the wlvif->rate_set instead
- */
-static u32 wl18xx_sta_get_ap_rate_mask(struct wl1271 *wl,
-				       struct wl12xx_vif *wlvif)
-{
-	u32 hw_rate_set = wlvif->rate_set;
-
-	printk("wl18xx_sta_get_ap_rate_mask\n");
-	if (wlvif->channel_type == NL80211_CHAN_HT40MINUS ||
-	    wlvif->channel_type == NL80211_CHAN_HT40PLUS) {
-		wl1271_info("using wide channel rate mask");
-		hw_rate_set |= CONF_TX_RATE_USE_WIDE_CHAN;
-
-		/* we don't support MIMO in wide-channel mode */
-		hw_rate_set &= ~CONF_TX_MIMO_RATES;
-	} else if (wl18xx_is_mimo_supported(wl)) {
-		wl1271_info("using MIMO channel rate mask");
-		hw_rate_set |= CONF_TX_MIMO_RATES;
-	}
-
-	return hw_rate_set;
-}
-
-static const char *wl18xx_rdl_name(enum wl18xx_rdl_num rdl_num)
-{
-	switch (rdl_num) {
-	case RDL_1_HP:
-		return "183xH";
-	case RDL_2_SP:
-		return "183x or 180x";
-	case RDL_3_HP:
-		return "187xH";
-	case RDL_4_SP:
-		return "187x";
-	case RDL_5_SP:
-		return "RDL11 - Not Supported";
-	case RDL_6_SP:
-		return "180xD";
-	case RDL_7_SP:
-		return "RDL13 - Not Supported (1893Q)";
-	case RDL_8_SP:
-		return "18xxQ";
-	case RDL_NONE:
-		return "UNTRIMMED";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-static int wl18xx_get_pg_ver(struct wl1271 *wl, s8 *ver)
-{
-	u32 fuse;
-	s8 rom = 0, metal = 0, pg_ver = 0, rdl_ver = 0, package_type = 0;
-	int ret;
-
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
-	if (ret < 0)
-		goto out;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
-	if (ret < 0)
-		goto out;
-
-	package_type = (fuse >> WL18XX_PACKAGE_TYPE_OFFSET) & 1;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_1_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
-	if (ret < 0)
-		goto out;
-
-	pg_ver = (fuse & WL18XX_PG_VER_MASK) >> WL18XX_PG_VER_OFFSET;
-	rom = (fuse & WL18XX_ROM_VER_MASK) >> WL18XX_ROM_VER_OFFSET;
-
-	if ((rom <= 0xE) && (package_type == WL18XX_PACKAGE_TYPE_WSP))
-		metal = (fuse & WL18XX_METAL_VER_MASK) >>
-			WL18XX_METAL_VER_OFFSET;
-	else
-		metal = (fuse & WL18XX_NEW_METAL_VER_MASK) >>
-			WL18XX_NEW_METAL_VER_OFFSET;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
-	if (ret < 0)
-		goto out;
-
-	rdl_ver = (fuse & WL18XX_RDL_VER_MASK) >> WL18XX_RDL_VER_OFFSET;
-
-	wl1271_info("wl18xx HW: %s, PG %d.%d (ROM 0x%x)",
-		    wl18xx_rdl_name(rdl_ver), pg_ver, metal, rom);
-
-	if (ver)
-		*ver = pg_ver;
-
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_BOOT]);
-
-out:
-	return ret;
 }
 
 static int wl18xx_load_conf_file(struct device *dev, struct wlcore_conf *conf,
@@ -1423,193 +1238,11 @@ static int wl18xx_conf_init(struct wl1271 *wl, struct device *dev)
 	return 0;
 }
 
-static int wl18xx_plt_init(struct wl1271 *wl)
-{
-	int ret;
-
-	/* calibrator based auto/fem detect not supported for 18xx */
-	if (wl->plt_mode == PLT_FEM_DETECT) {
-		wl1271_error("wl18xx_plt_init: PLT FEM_DETECT not supported");
-		return -EINVAL;
-	}
-
-	//ret = wlcore_write32(wl, WL18XX_SCR_PAD8, WL18XX_SCR_PAD8_PLT);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_SCR_PAD8), WL18XX_SCR_PAD8_PLT, 4, false);
-	if (ret < 0)
-		return ret;
-
-	return wl->ops->boot(wl);
-}
-
-static int wl18xx_get_mac(struct wl1271 *wl)
-{
-	u32 mac1, mac2;
-	int ret;
-
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
-	if (ret < 0)
-		goto out;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
-	if (ret < 0)
-		goto out;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
-	if (ret < 0)
-		goto out;
-
-	/* these are the two parts of the BD_ADDR */
-	wl->fuse_oui_addr = ((mac2 & 0xffff) << 8) +
-		((mac1 & 0xff000000) >> 24);
-	wl->fuse_nic_addr = (mac1 & 0xffffff);
-
-	if (!wl->fuse_oui_addr && !wl->fuse_nic_addr) {
-		u8 mac[ETH_ALEN];
-
-		eth_random_addr(mac);
-
-		wl->fuse_oui_addr = (mac[0] << 16) + (mac[1] << 8) + mac[2];
-		wl->fuse_nic_addr = (mac[3] << 16) + (mac[4] << 8) + mac[5];
-		wl1271_warning("MAC address from fuse not available, using random locally administered addresses.");
-	}
-
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_DOWN]);
-
-out:
-	return ret;
-}
-
-static int wl18xx_handle_static_data(struct wl1271 *wl,
-				     struct wl1271_static_data *static_data)
-{
-	struct wl18xx_static_data_priv *static_data_priv =
-		(struct wl18xx_static_data_priv *) static_data->priv;
-
-	strncpy(wl->chip.phy_fw_ver_str, static_data_priv->phy_version,
-		sizeof(wl->chip.phy_fw_ver_str));
-
-	/* make sure the string is NULL-terminated */
-	wl->chip.phy_fw_ver_str[sizeof(wl->chip.phy_fw_ver_str) - 1] = '\0';
-
-	wl1271_info("PHY firmware version: %s", static_data_priv->phy_version);
-
-	return 0;
-}
-
-static int wl18xx_get_spare_blocks(struct wl1271 *wl, bool is_gem)
-{
-	struct wl18xx_priv *priv = wl->priv;
-
-	/* If we have keys requiring extra spare, indulge them */
-	if (priv->extra_spare_key_count)
-		return WL18XX_TX_HW_EXTRA_BLOCK_SPARE;
-
-	return WL18XX_TX_HW_BLOCK_SPARE;
-}
-
-static int wl18xx_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
-			  struct ieee80211_vif *vif,
-			  struct ieee80211_sta *sta,
-			  struct ieee80211_key_conf *key_conf)
-{
-	struct wl18xx_priv *priv = wl->priv;
-	bool change_spare = false, special_enc;
-	int ret;
-
-	wl1271_debug(DEBUG_CRYPT, "extra spare keys before: %d",
-		     priv->extra_spare_key_count);
-
-	// special_enc = key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
-	// 	      key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
-
-	ret = wlcore_set_key(wl, cmd, vif, sta, key_conf);
-	if (ret < 0)
-		goto out;
-
-	/*
-	 * when adding the first or removing the last GEM/TKIP key,
-	 * we have to adjust the number of spare blocks.
-	 */
-	// if (special_enc) {
-	// 	if (cmd == SET_KEY) {
-	// 		/* first key */
-	// 		change_spare = (priv->extra_spare_key_count == 0);
-	// 		priv->extra_spare_key_count++;
-	// 	} else if (cmd == DISABLE_KEY) {
-	// 		/* last key */
-	// 		change_spare = (priv->extra_spare_key_count == 1);
-	// 		priv->extra_spare_key_count--;
-	// 	}
-	// }
-
-	//printk("BEFORE wl18xx_set_host_cfg_bitmap\n");
-	wl1271_debug(DEBUG_CRYPT, "extra spare keys after: %d",
-		     priv->extra_spare_key_count);
-
-	if (!change_spare)
-		goto out;
-
-	// printk("wl18xx_set_host_cfg_bitmap\n");
-	// /* key is now set, change the spare blocks */
-	// if (priv->extra_spare_key_count)
-	// 	ret = wl18xx_set_host_cfg_bitmap(wl,
-	// 				WL18XX_TX_HW_EXTRA_BLOCK_SPARE);
-	// else
-	// 	ret = wl18xx_set_host_cfg_bitmap(wl,
-	// 				WL18XX_TX_HW_BLOCK_SPARE);
-
-out:
-	return ret;
-}
-
-static void wl18xx_sta_rc_update(struct wl1271 *wl,
-				 struct wl12xx_vif *wlvif)
-{
-	bool wide = wlvif->rc_update_bw >= IEEE80211_STA_RX_BW_40;
-
-	wl1271_debug(DEBUG_MAC80211, "mac80211 sta_rc_update wide %d", wide);
-
-	/* sanity */
-	if (WARN_ON(wlvif->bss_type != BSS_TYPE_STA_BSS))
-		return;
-
-	/* ignore the change before association */
-	if (!test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags))
-		return;
-
-	/*
-	 * If we started out as wide, we can change the operation mode. If we
-	 * thought this was a 20mhz AP, we have to reconnect
-	 */
-	if (wlvif->sta.role_chan_type == NL80211_CHAN_HT40MINUS ||
-	    wlvif->sta.role_chan_type == NL80211_CHAN_HT40PLUS)
-		wl18xx_acx_peer_ht_operation_mode(wl, wlvif->sta.hlid, wide);
-	else
-		ieee80211_connection_loss(wl12xx_wlvif_to_vif(wlvif));
-}
-
-static int wl18xx_set_peer_cap(struct wl1271 *wl,
-			       struct ieee80211_sta_ht_cap *ht_cap,
-			       bool allow_ht_operation,
-			       u32 rate_set, u8 hlid)
-{
-	return wl18xx_acx_set_peer_cap(wl, ht_cap, allow_ht_operation,
-				       rate_set, hlid);
-}
-
-static u32 wl18xx_convert_hwaddr(struct wl1271 *wl, u32 hwaddr)
-{
-	return hwaddr & ~0x80000000;
-}
-
 static int wl18xx_setup(struct wl1271 *wl);
 
 static struct wlcore_ops wl18xx_ops = {
 	.setup		= wl18xx_setup,
 	.boot		= wl18xx_boot,
-	.plt_init	= wl18xx_plt_init,
 	.trigger_cmd	= wl18xx_trigger_cmd,
 	.hw_init	= wl18xx_hw_init,
 };
@@ -1957,4 +1590,4 @@ MODULE_PARM_DESC(num_rx_desc_param,
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Luciano Coelho <coelho@ti.com>");
-MODULE_FIRMWARE(WL18XX_FW_NAME);
+//MODULE_FIRMWARE(WL18XX_FW_NAME);

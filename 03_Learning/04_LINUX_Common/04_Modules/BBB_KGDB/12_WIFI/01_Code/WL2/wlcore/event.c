@@ -17,6 +17,8 @@
 #include "hw_ops.h"
 
 #include "common.h"
+#include "../wl18xx/wl18xx.h"
+#include "ops.h"
 
 #define WL18XX_LOGGER_SDIO_BUFF_MAX	(0x1020)
 #define WL18XX_DATA_RAM_BASE_ADDRESS	(0x20000000)
@@ -362,7 +364,7 @@ int wl1271_event_unmask(struct wl1271 *wl)
 	return 0;
 }
 
-#include "../wl18xx/event.h"
+// #include "../wl18xx/event.h"
 
 enum wlcore_vendor_events {
 	WLCORE_VENDOR_EVENT_SC_SYNC,
