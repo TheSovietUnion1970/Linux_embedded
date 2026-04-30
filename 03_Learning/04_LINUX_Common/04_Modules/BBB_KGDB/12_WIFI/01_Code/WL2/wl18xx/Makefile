@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
-wl18-y		:= main.o io.o
+wl18-y		:= main.o 
 obj-m += wl18.o
 
 KDIR := /home/vinh/build_BBB_custom/linux-stable-rcn-ee
