@@ -52,7 +52,7 @@ int wlcore_event_fw_logger(struct wl1271 *wl)
 
 	// ret = wlcore_read(wl, addr, buffer, WL18XX_LOGGER_SDIO_BUFF_MAX,
 	// 		  false);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr), (u32*)buffer, WL18XX_LOGGER_SDIO_BUFF_MAX, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(addr), (u32*)buffer, WL18XX_LOGGER_SDIO_BUFF_MAX, false);
 	if (ret < 0) {
 		wl1271_error("Fail to read logger buffer, error_id = %d",
 			     ret);
@@ -104,7 +104,7 @@ int wlcore_event_fw_logger(struct wl1271 *wl)
 	/* Update the read pointer */
 	// ret = wlcore_write32(wl, addr + WL18XX_LOGGER_READ_POINT_OFFSET,
 	// 		     clear_ptr);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(addr + WL18XX_LOGGER_READ_POINT_OFFSET), clear_ptr, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(addr + WL18XX_LOGGER_READ_POINT_OFFSET), clear_ptr, 4, false);
 free_out:
 	kfree(buffer);
 out:
@@ -599,7 +599,7 @@ int VV_ack_event(struct wl1271 *wl)
 {
 	// return wlcore_write_reg(wl, REG_INTERRUPT_TRIG,
 	// 			WL18XX_INTR_TRIG_EVENT_ACK);
-	return VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	return VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
 int wl1271_event_handle(struct wl1271 *wl, u8 mbox_num)
@@ -614,7 +614,7 @@ int wl1271_event_handle(struct wl1271 *wl, u8 mbox_num)
 	/* first we read the mbox descriptor */
 	// ret = wlcore_read(wl, wl->mbox_ptr[mbox_num], wl->mbox,
 	// 		  wl->mbox_size, false);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->mbox_ptr[mbox_num]), (u32*)wl->mbox, wl->mbox_size, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->mbox_ptr[mbox_num]), (u32*)wl->mbox, wl->mbox_size, false);
 	if (ret < 0)
 		return ret;
 

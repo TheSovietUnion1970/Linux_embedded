@@ -350,7 +350,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	int i;
 	int ret;
 
-	ret = VV_sdio_raw_read(wl, wl->rtable[REG_RAW_FW_STATUS_ADDR],
+	ret = VV_sdio_raw_read(wl->rtable[REG_RAW_FW_STATUS_ADDR],
 				   (void*)VV_status_reg,
 				   sizeof(struct VV_wl18xx_fw_status), false);
 	if (ret < 0)
@@ -725,7 +725,7 @@ static int VV_irq_locked(struct wl1271 *wl)
 				 * call the work function directly.
 				 */
 				if (run_tx_queue) {
-					ret = wlcore_tx_work_locked(wl);
+					ret = wlcore_tx_work_locked();
 					if (ret < 0)
 						goto err_ret;
 				}
@@ -1009,12 +1009,12 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 		return;
 
 	//ret = wlcore_read_reg(wl, REG_PC_ON_RECOVERY, &pc);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_PC_ON_RECOVERY]), &pc, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_PC_ON_RECOVERY]), &pc, 4, false);
 	if (ret < 0)
 		return;
 
 	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &hint_sts);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &hint_sts, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &hint_sts, 4, false);
 	if (ret < 0)
 		return;
 
@@ -1430,7 +1430,7 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl)
 
 	/* The FW is low on RX memory blocks, so send the dummy packet asap */
 	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags))
-	return wlcore_tx_work_locked(wl);
+	return wlcore_tx_work_locked();
 
 }
 
@@ -5425,7 +5425,7 @@ static int wl12xx_get_hw_info(struct wl1271 *wl)
 	int ret;
 
 	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, 4, false);
 	if (ret < 0)
 		goto out;
 

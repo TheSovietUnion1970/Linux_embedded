@@ -397,12 +397,12 @@ int VV_get_mac(struct wl1271 *wl)
 		goto out;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -464,14 +464,14 @@ int VV1_get_pg_ver(struct wl1271 *wl, s8 *ver)
 		goto out;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
 	package_type = (fuse >> WL18XX_PACKAGE_TYPE_OFFSET) & 1;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_1_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -486,7 +486,7 @@ int VV1_get_pg_ver(struct wl1271 *wl, s8 *ver)
 			WL18XX_NEW_METAL_VER_OFFSET;
 
 	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
 	if (ret < 0)
 		goto out;
 

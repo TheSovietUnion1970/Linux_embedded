@@ -201,10 +201,10 @@ void wl1271_io_init(struct wl1271 *wl)
 
 
 /* Vinh custom */
-int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed)
+int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)
 {
 	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
 
 	sdio_claim_host(func);
 
@@ -222,7 +222,7 @@ int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fix
 	return ret;
 }
 
-int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool fixed)
+int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed)
 {
 	int ret = 0;
 	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
@@ -243,10 +243,10 @@ int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool 
 	return ret;
 }
 
-int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fixed)
+int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed)
 {
 	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
 
 	sdio_claim_host(func);
 
@@ -272,35 +272,35 @@ int VV_set_partition_core(struct wl1271 *wl, struct VV_partition_set *p)
 	//memcpy(&wl->curr_part, p, sizeof(*p));
 	memcpy(&wifi_data.curr_part, p, sizeof(*p));
 
-	ret = VV_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
+	ret = VV_sdio_raw_write(HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
+	ret = VV_sdio_raw_write(HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
+	ret = VV_sdio_raw_write(HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
+	ret = VV_sdio_raw_write(HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
+	ret = VV_sdio_raw_write(HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
+	ret = VV_sdio_raw_write(HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
+	ret = VV_sdio_raw_write(HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
+	ret = VV_sdio_raw_write(HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
 	if (ret < 0)
 		goto out;
 

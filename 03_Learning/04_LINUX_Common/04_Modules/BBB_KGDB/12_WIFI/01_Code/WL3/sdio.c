@@ -26,6 +26,8 @@
 #include "wl12xx_80211.h"
 #include "io.h"
 
+#include "common.h"
+
 static bool dump = false;
 
 struct wl12xx_sdio_glue {
@@ -306,6 +308,8 @@ static int wl1271_probe(struct sdio_func *func,
 
 	/* Tell PM core that we don't need the card to be powered now */
 	pm_runtime_put_noidle(&func->dev);
+
+	printk("[MERGE] - glue->dev: 0x%x, parent = 0x%x\n", glue->dev, glue->dev->parent);
 
 	/*
 	 * Due to a hardware bug, we can't differentiate wl18xx from

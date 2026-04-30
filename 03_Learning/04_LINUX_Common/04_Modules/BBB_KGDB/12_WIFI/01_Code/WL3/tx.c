@@ -682,7 +682,7 @@ void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids)
  */
 /* Indicates this TX HW frame is not padded to SDIO block size */
 #define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
-int wlcore_tx_work_locked(struct wl1271 *wl)
+int wlcore_tx_work_locked(void)
 {
 	struct wl12xx_vif *wlvif;
 	struct sk_buff *skb;
@@ -741,7 +741,7 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 		// REG_SLV_MEM_DATA → the address in the firmware’s memory where TX data should be written.
 		// bus_ret = wlcore_write_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
 		// 			     buf_offset, true);
-		bus_ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(wifi_data.rtable[REG_SLV_MEM_DATA]), VV_aggr_buf, buf_offset, true);
+		bus_ret = VV_sdio_raw_write1(wlcore_translate_addr(wifi_data.rtable[REG_SLV_MEM_DATA]), VV_aggr_buf, buf_offset, true);
 		if (bus_ret < 0)
 			goto out;
 
@@ -752,13 +752,14 @@ int wlcore_tx_work_locked(struct wl1271 *wl)
 		 * Interrupt the firmware with the new packets. This is only
 		 * required for older hardware revisions
 		 */
-		if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-			// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
-			// 		     VV_tx_packets_count);
-			bus_ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL12XX_HOST_WR_ACCESS), VV_tx_packets_count, 4, false);
-			if (bus_ret < 0)
-				goto out;
-		}
+		// if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
+		// 	printk("WLCORE_QUIRK_END_OF_TRANSACTION\n");
+		// 	// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
+		// 	// 		     VV_tx_packets_count);
+		// 	bus_ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_HOST_WR_ACCESS), VV_tx_packets_count, 4, false);
+		// 	if (bus_ret < 0)
+		// 		goto out;
+		// }
 
 		//wl1271_handle_tx_low_watermark(wl);
 	}
@@ -782,7 +783,7 @@ void wl1271_tx_work(struct work_struct *work)
 		goto out;
 	}
 
-	ret = wlcore_tx_work_locked(wifi_data.wl);
+	ret = wlcore_tx_work_locked();
 	if (ret < 0) {
 		pm_runtime_put_noidle(wifi_data.wl->dev);
 		wl12xx_queue_recovery_work(wifi_data.wl);

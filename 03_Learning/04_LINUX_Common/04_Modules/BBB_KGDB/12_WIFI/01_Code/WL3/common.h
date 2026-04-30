@@ -402,6 +402,7 @@ struct Wifi_data {
 	struct VV_partition_set curr_part;
 	struct VV_partition_set *ptable;
 
+
     /* Temporary use */
     struct wl1271 *wl;
 };

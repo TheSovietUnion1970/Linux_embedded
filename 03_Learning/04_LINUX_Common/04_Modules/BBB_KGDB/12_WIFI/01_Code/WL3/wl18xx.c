@@ -49,22 +49,22 @@ int wl18xx_top_reg_write(struct wl1271 *wl, int addr, u16 val)
 
 	if ((addr % 4) == 0) {
 		//ret = wlcore_read32(wl, addr, &tmp);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr), &tmp, 4, false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(addr), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff0000) | val;
 		//ret = wlcore_write32(wl, addr, tmp);
-		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(addr), tmp, 4, false);
+		ret = VV_sdio_raw_write(wlcore_translate_addr(addr), tmp, 4, false);
 	} else {
 		//ret = wlcore_read32(wl, addr - 2, &tmp);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr - 2), &tmp, 4, false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(addr - 2), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff) | (val << 16);
 		//ret = wlcore_write32(wl, addr - 2, tmp);
-		ret = VV_sdio_raw_write(wl, wlcore_translate_addr(addr - 2), tmp, 4, false);
+		ret = VV_sdio_raw_write(wlcore_translate_addr(addr - 2), tmp, 4, false);
 	}
 
 out:
@@ -82,12 +82,12 @@ int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
 	if ((addr % 4) == 0) {
 		/* address is 4-bytes aligned */
 		//ret = wlcore_read32(wl, addr, &val);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr), &val, 4, false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(addr), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = val & 0xffff;
 	} else {
 		//ret = wlcore_read32(wl, addr - 2, &val);
-		ret = VV_sdio_raw_read(wl, wlcore_translate_addr(addr - 2), &val, 4, false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(addr - 2), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = (val & 0xffff0000) >> 16;
 	}
@@ -103,35 +103,35 @@ int VV_set_partition_18(struct wl1271 *wl, const struct VV_partition_set *p)
 	//memcpy(&wl->curr_part, p, sizeof(*p));
 	memcpy(&wl->wifi_data_ptr->curr_part, p, sizeof(*p));
 
-	ret = VV_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
+	ret = VV_sdio_raw_write(HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
+	ret = VV_sdio_raw_write(HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
+	ret = VV_sdio_raw_write(HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
+	ret = VV_sdio_raw_write(HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
+	ret = VV_sdio_raw_write(HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
+	ret = VV_sdio_raw_write(HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
+	ret = VV_sdio_raw_write(HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(wl, HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
+	ret = VV_sdio_raw_write(HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
 	if (ret < 0)
 		goto out;
 
@@ -916,7 +916,7 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 
 	/* Continue the ELP wake up sequence */
 	//ret = wlcore_write32(wl, WL18XX_WELP_ARM_COMMAND, WELP_ARM_COMMAND_VAL);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -928,20 +928,20 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 
 	/* Disable interrupts */
 	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, WL1271_ACX_INTR_ALL);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wl18xx_boot_soft_reset(wl);
 	/* disable Rx/Tx */
 	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
 	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -962,19 +962,19 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 
 	/* TODO: check if this is all needed */
 	//ret = wlcore_write32(wl, WL18XX_EEPROMLESS_IND, WL18XX_EEPROMLESS_IND);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &tmp);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wl1271_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
 
 	//ret = wlcore_read32(wl, WL18XX_SCR_PAD2, &tmp);
-	ret = VV_sdio_raw_read(wl, wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -992,21 +992,21 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	/* disable FDSP clock */
 	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
 	// 		     MEM_FDSP_CLK_120_DISABLE);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* set ATPG clock toward FDSP Code RAM rather than its own clock */
 	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
 	// 		     MEM_FDSP_CODERAM_FUNC_CLK_SEL);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* re-enable FDSP clock */
 	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
 	// 		     MEM_FDSP_CLK_120_ENABLE);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1053,7 +1053,7 @@ static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 
 	// ret = wlcore_write(wl, WL18XX_PHY_INIT_MEM_ADDR, params,
 	// 		   sizeof(*params), false);
-	ret = VV_sdio_raw_write1(wl, wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
+	ret = VV_sdio_raw_write1(wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
 
 out:
 	kfree(params);
@@ -1069,7 +1069,7 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 	intr_mask = WL18XX_INTR_MASK;
 
 	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, event_mask);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1077,7 +1077,7 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 
 	// ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK,
 	// 		       WL1271_ACX_INTR_ALL & ~intr_mask);
-	ret = VV_sdio_raw_write(wl, wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
 
@@ -1151,7 +1151,7 @@ static int wl18xx_trigger_cmd(struct wl1271 *wl, int cmd_box_addr,
 
 	// return wlcore_write(wl, cmd_box_addr, priv->cmd_buf,
 	// 		    WL18XX_CMD_MAX_SIZE, false);
-	return VV_sdio_raw_write1(wl, wlcore_translate_addr(cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
+	return VV_sdio_raw_write1(wlcore_translate_addr(cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
 }
 
 static int VV_acx_host_if_cfg_bitmap(struct wl1271 *wl, u32 host_cfg_bitmap,
@@ -1630,6 +1630,7 @@ static int wl18xx_probe(struct platform_device *pdev)
 	wl->ops = &wl18xx_ops;
 	wl->ptable = wl18xx_ptable;
 	ret = wlcore_probe(wl, pdev);
+	printk("[MERGE] - wl->dev: 0x%x, parent = 0x%x\n", wl->dev, wl->dev->parent);
 	if (ret)
 		goto out_free;
 
