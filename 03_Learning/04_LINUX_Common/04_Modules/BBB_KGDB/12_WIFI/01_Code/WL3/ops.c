@@ -375,7 +375,7 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	//wl1271_dump(DEBUG_SCAN, "SCAN: ", cmd, sizeof(*cmd));
 
-	ret = wl1271_cmd_send(wl, CMD_SCAN, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(wl, CMD_SCAN, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		printk("SCAN failed");
 		goto out;

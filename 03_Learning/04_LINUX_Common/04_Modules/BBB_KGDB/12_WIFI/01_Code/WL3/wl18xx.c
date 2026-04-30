@@ -95,70 +95,6 @@ int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
 	return ret;
 }
 
-/* Vinh custom */
-// int VV_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed)
-// {
-// 	int ret = 0;
-// 	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
-
-// 	sdio_claim_host(func);
-
-// 	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-// 	// 	addr, len);
-
-// 	if (fixed)
-// 		ret = sdio_writesb(func, addr, &var, len);
-// 	else
-// 		ret = sdio_memcpy_toio(func, addr, &var, len);
-	
-
-// 	sdio_release_host(func);
-
-// 	return ret;
-// }
-
-// int VV_sdio_raw_write1(struct wl1271 *wl, int addr, void* var, size_t len, bool fixed)
-// {
-// 	int ret = 0;
-// 	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
-
-// 	sdio_claim_host(func);
-
-// 	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-// 	// 	addr, len);
-
-// 	if (fixed)
-// 		ret = sdio_writesb(func, addr, var, len);
-// 	else
-// 		ret = sdio_memcpy_toio(func, addr, var, len);
-	
-
-// 	sdio_release_host(func);
-
-// 	return ret;
-// }
-
-// int VV_sdio_raw_read(struct wl1271 *wl, int addr, u32* var, size_t len, bool fixed)
-// {
-// 	int ret = 0;
-// 	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
-
-// 	sdio_claim_host(func);
-
-// 	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-// 	// 	addr, len);
-
-// 	if (fixed)
-// 		ret = sdio_readsb(func, var, addr, len);
-// 	else
-// 		ret = sdio_memcpy_fromio(func, var, addr, len);
-	
-
-// 	sdio_release_host(func);
-
-// 	return ret;
-// }
-
 int VV_set_partition_18(struct wl1271 *wl, const struct VV_partition_set *p)
 {
 	int ret;
@@ -1240,7 +1176,7 @@ static int VV_acx_host_if_cfg_bitmap(struct wl1271 *wl, u32 host_cfg_bitmap,
 	bitmap_conf->extra_mem_blocks = cpu_to_le32(extra_mem_blks);
 	bitmap_conf->length_field_size = cpu_to_le32(len_field_size);
 
-	ret = wl1271_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP,
+	ret = VV_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP,
 				   bitmap_conf, sizeof(*bitmap_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 bitmap config opt failed: %d", ret);
@@ -1300,7 +1236,7 @@ static int VV_acx_dynamic_fw_traces(struct wl1271 *wl)
 
 	acx->dynamic_fw_traces = cpu_to_le32(wl->dynamic_fw_traces);
 
-	ret = wl1271_cmd_configure(wl, ACX_DYNAMIC_TRACES_CFG,
+	ret = VV_cmd_configure(wl, ACX_DYNAMIC_TRACES_CFG,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx config dynamic fw traces failed: %d", ret);

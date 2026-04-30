@@ -20,8 +20,8 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
 				  size_t len);;
 
-int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
-		    size_t res_len);
+// int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
+// 		    size_t res_len);
 int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 			   u8 *role_id);
 int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id);
@@ -33,12 +33,12 @@ int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl12xx_start_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		     enum nl80211_band band, int channel);
 int wl12xx_stop_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl1271_cmd_test(struct wl1271 *wl, void *buf, size_t buf_len, u8 answer);
+// int wl1271_cmd_test(struct wl1271 *wl, void *buf, size_t buf_len, u8 answer);
 int wl1271_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
 			   size_t cmd_len, size_t res_len);
-int wl1271_cmd_configure(struct wl1271 *wl, u16 id, void *buf, size_t len);
-int wlcore_cmd_configure_failsafe(struct wl1271 *wl, u16 id, void *buf,
-				  size_t len, unsigned long valid_rets);
+// int wl1271_cmd_configure(struct wl1271 *wl, u16 id, void *buf, size_t len);
+// int wlcore_cmd_configure_failsafe(struct wl1271 *wl, u16 id, void *buf,
+// 				  size_t len, unsigned long valid_rets);
 int wl1271_cmd_data_path(struct wl1271 *wl, bool enable);
 int wl1271_cmd_ps_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		       u8 ps_mode, u16 auto_ps_timeout);
