@@ -1,7 +1,7 @@
 GPIOs
 Clock
 
-[3]
+[3] + full/half duplex
 Master/slave
 Speed mode[5]
 Addressing mode (7 or 10 bits)

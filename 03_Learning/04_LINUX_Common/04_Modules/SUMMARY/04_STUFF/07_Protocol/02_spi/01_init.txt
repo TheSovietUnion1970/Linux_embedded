@@ -1,7 +1,7 @@
 GPIOs
 Clock
 
-[4]
+[4] + full/half duplex
 Master/Slave
 CPOL + CPHA, Data order + size
 Speed clock

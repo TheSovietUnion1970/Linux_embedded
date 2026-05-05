@@ -2,7 +2,7 @@ Application
 
 System call
 
-Network stack
+Network stack[4]
 
 sk_buff
 eth0/wifi0

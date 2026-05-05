@@ -4,9 +4,9 @@
                 port->T port on another sw
 
               < ========= SW A =========>	   < ======= SW B ==========>
-Device 1 <--> A port1 -	 Forward	  Trunk cable      Forward  - B port1 <--> Device 1
-Device 2 <--> A port2 - <-------> T port1  <-----> T port2 <------> - B port2 <--> Device 2
-Device 3 <--> A port3 -					            - B port3 <--> Device 3
+Device 1 <--> A port1 -	 Forward	  Trunk cable      Forward  - A port1 <--> Device 1
+Device 2 <--> A port2 - <-------> T port1  <-----> T port2 <------> - A port2 <--> Device 2
+Device 3 <--> A port3 -					            - A port3 <--> Device 3
           (1)              (2)                (3)
 
 (1) - Untagged frame 
