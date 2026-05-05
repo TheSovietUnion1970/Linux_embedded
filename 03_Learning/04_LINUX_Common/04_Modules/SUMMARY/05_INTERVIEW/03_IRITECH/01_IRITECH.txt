@@ -1,0 +1,6 @@
+raw NAND vs emmc
+uart case
+boot time performance
+pwr consum
+Boot failed -> raw NAND broken
+AB partitions for OTA update
