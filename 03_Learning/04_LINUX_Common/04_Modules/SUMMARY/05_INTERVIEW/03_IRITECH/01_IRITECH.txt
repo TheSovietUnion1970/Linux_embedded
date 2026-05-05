@@ -4,3 +4,17 @@ boot time performance
 pwr consum
 Boot failed -> raw NAND broken
 AB partitions for OTA update
+
+
+===
+raw NAND/NOR vs emmc
+	-> raw NAND - bare engine (not controller)
+Uart case
+	-> debug/console, modules - UART interface (GPS, ble)
+boot time performance
+	-> X heavy services
+	   X unne... drivers
+	   emmc > SD card
+	   busybox > systemd
+pwr consum
+SD card raw NAND
