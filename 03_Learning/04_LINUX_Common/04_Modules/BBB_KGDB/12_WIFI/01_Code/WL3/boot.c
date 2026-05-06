@@ -16,7 +16,7 @@
 #include "io.h"
 #include "event.h"
 #include "rx.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 
 #include "common.h"
 #include "wl18.h"

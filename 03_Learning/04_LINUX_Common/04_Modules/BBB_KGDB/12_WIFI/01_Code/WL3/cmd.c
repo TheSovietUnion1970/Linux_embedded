@@ -23,7 +23,7 @@
 #include "cmd.h"
 #include "event.h"
 #include "tx.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 
 #include "common.h"
 #include "ops.h"
@@ -163,15 +163,17 @@ int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
 			usleep_range(1000, 5000);
 
 		/* read from both event fields */
-		ret = wlcore_read(wl, wl->mbox_ptr[0], events_vector,
-				  sizeof(*events_vector), false);
+		// ret = wlcore_read(wl, wl->mbox_ptr[0], events_vector,
+		// 		  sizeof(*events_vector), false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->mbox_ptr[0]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 
 		event = *events_vector & mask;
 
-		ret = wlcore_read(wl, wl->mbox_ptr[1], events_vector,
-				  sizeof(*events_vector), false);
+		// ret = wlcore_read(wl, wl->mbox_ptr[1], events_vector,
+		// 		  sizeof(*events_vector), false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->mbox_ptr[1]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 

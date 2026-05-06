@@ -16,7 +16,7 @@
 #include "rx.h"
 #include "tx.h"
 #include "io.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 
 
 #include "common.h"

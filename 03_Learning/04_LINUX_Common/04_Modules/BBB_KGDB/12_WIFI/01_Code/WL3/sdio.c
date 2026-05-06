@@ -41,93 +41,6 @@ static const struct sdio_device_id wl1271_devices[] = {
 };
 MODULE_DEVICE_TABLE(sdio, wl1271_devices);
 
-static void wl1271_sdio_set_block_size(struct device *child,
-				       unsigned int blksz)
-{
-	struct wl12xx_sdio_glue *glue = dev_get_drvdata(child->parent);
-	struct sdio_func *func = dev_to_sdio_func(glue->dev);
-
-	sdio_claim_host(func);
-	sdio_set_block_size(func, blksz);
-	sdio_release_host(func);
-}
-
-static int __must_check wl12xx_sdio_raw_read(struct device *child, int addr,
-					     void *buf, size_t len, bool fixed)
-{
-	int ret;
-	struct wl12xx_sdio_glue *glue = dev_get_drvdata(child->parent);
-	struct sdio_func *func = dev_to_sdio_func(glue->dev);
-
-	sdio_claim_host(func);
-
-	if (unlikely(addr == HW_ACCESS_ELP_CTRL_REG)) {
-		((u8 *)buf)[0] = sdio_f0_readb(func, addr, &ret);
-		dev_dbg(child->parent, "sdio read 52 addr 0x%x, byte 0x%02x\n",
-			addr, ((u8 *)buf)[0]);
-	} else {
-		if (fixed)
-			ret = sdio_readsb(func, buf, addr, len);
-		else
-			ret = sdio_memcpy_fromio(func, buf, addr, len);
-
-		dev_dbg(child->parent, "sdio read 53 addr 0x%x, %zu bytes\n",
-			addr, len);
-	}
-
-	sdio_release_host(func);
-
-	if (WARN_ON(ret))
-		dev_err(child->parent, "sdio read failed (%d)\n", ret);
-
-	if (unlikely(dump)) {
-		printk(KERN_DEBUG "wlcore_sdio: READ from 0x%04x\n", addr);
-		print_hex_dump(KERN_DEBUG, "wlcore_sdio: READ ",
-			       DUMP_PREFIX_OFFSET, 16, 1,
-			       buf, len, false);
-	}
-
-	return ret;
-}
-
-static int __must_check wl12xx_sdio_raw_write(struct device *child, int addr,
-					      void *buf, size_t len, bool fixed)
-{
-	int ret;
-	struct wl12xx_sdio_glue *glue = dev_get_drvdata(child->parent);
-	struct sdio_func *func = dev_to_sdio_func(glue->dev);
-
-	sdio_claim_host(func);
-
-	if (unlikely(dump)) {
-		printk(KERN_DEBUG "wlcore_sdio: WRITE to 0x%04x\n", addr);
-		print_hex_dump(KERN_DEBUG, "wlcore_sdio: WRITE ",
-				DUMP_PREFIX_OFFSET, 16, 1,
-				buf, len, false);
-	}
-
-	if (unlikely(addr == HW_ACCESS_ELP_CTRL_REG)) {
-		sdio_f0_writeb(func, ((u8 *)buf)[0], addr, &ret);
-		dev_dbg(child->parent, "sdio write 52 addr 0x%x, byte 0x%02x\n",
-			addr, ((u8 *)buf)[0]);
-	} else {
-		dev_dbg(child->parent, "sdio write 53 addr 0x%x, %zu bytes\n",
-			addr, len);
-
-		if (fixed)
-			ret = sdio_writesb(func, addr, buf, len);
-		else
-			ret = sdio_memcpy_toio(func, addr, buf, len);
-	}
-
-	sdio_release_host(func);
-
-	if (WARN_ON(ret))
-		dev_err(child->parent, "sdio write failed (%d)\n", ret);
-
-	return ret;
-}
-
 static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 {
 	int ret;
@@ -183,10 +96,10 @@ static int wl12xx_sdio_set_power(struct device *child, bool enable)
 }
 
 static struct wl1271_if_operations sdio_ops = {
-	.read		= wl12xx_sdio_raw_read,
-	.write		= wl12xx_sdio_raw_write,
+	// .read		= wl12xx_sdio_raw_read,
+	// .write		= wl12xx_sdio_raw_write,
 	.power		= wl12xx_sdio_set_power,
-	.set_block_size = wl1271_sdio_set_block_size,
+	// .set_block_size = wl1271_sdio_set_block_size,
 };
 
 #ifdef CONFIG_OF
@@ -388,48 +301,13 @@ static void wl1271_remove(struct sdio_func *func)
 #ifdef CONFIG_PM
 static int wl1271_suspend(struct device *dev)
 {
-	/* Tell MMC/SDIO core it's OK to power down the card
-	 * (if it isn't already), but not to remove it completely */
-	struct sdio_func *func = dev_to_sdio_func(dev);
-	struct wl12xx_sdio_glue *glue = sdio_get_drvdata(func);
-	struct wl1271 *wl = platform_get_drvdata(glue->core);
-	mmc_pm_flag_t sdio_flags;
-	int ret = 0;
-
-	if (!wl) {
-		dev_err(dev, "no wilink module was probed\n");
-		goto out;
-	}
-
-	dev_dbg(dev, "wl1271 suspend. wow_enabled: %d\n",
-		wl->wow_enabled);
-
-	/* check whether sdio should keep power */
-	if (wl->wow_enabled) {
-		sdio_flags = sdio_get_host_pm_caps(func);
-
-		if (!(sdio_flags & MMC_PM_KEEP_POWER)) {
-			dev_err(dev, "can't keep power while host "
-				     "is suspended\n");
-			ret = -EINVAL;
-			goto out;
-		}
-
-		/* keep power while host suspended */
-		ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
-		if (ret) {
-			dev_err(dev, "error while trying to keep power\n");
-			goto out;
-		}
-	}
-out:
-	return ret;
+	dev_info(dev, "wl1271 suspend\n");
+	return 0;	
 }
 
 static int wl1271_resume(struct device *dev)
 {
-	dev_dbg(dev, "wl1271 resume\n");
-
+	dev_info(dev, "wl1271 resume\n");
 	return 0;
 }
 

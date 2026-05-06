@@ -10,7 +10,7 @@ obj-m += s.o
 
 # ==================== Main wl3 Module ====================
 wl3-y := wl18xx.o main.o cmd.o io.o event.o tx.o rx.o ps.o acx.o ops.o wl18.o \
-         boot.o init.o debugfs.o scan.o sysfs.o vendor_cmd.o
+         boot.o init.o scan.o vendor_cmd.o
 
 obj-m += wl3.o
 

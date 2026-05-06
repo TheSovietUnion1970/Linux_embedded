@@ -12,7 +12,7 @@
 
 #include "wlcore.h"
 #include "debug.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 #include "vendor_cmd.h"
 
 #include "wl18.h"

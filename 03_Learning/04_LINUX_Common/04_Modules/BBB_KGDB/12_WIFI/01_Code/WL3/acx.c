@@ -17,7 +17,7 @@
 #include "wlcore.h"
 #include "debug.h"
 #include "wl12xx_80211.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 
 #include "common.h"
 

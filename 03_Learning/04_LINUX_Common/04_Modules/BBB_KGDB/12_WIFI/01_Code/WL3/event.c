@@ -14,7 +14,7 @@
 #include "ps.h"
 #include "scan.h"
 #include "wl12xx_80211.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 
 #include "common.h"
 #include "wl18xx.h"

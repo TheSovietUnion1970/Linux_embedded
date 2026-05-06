@@ -18,16 +18,6 @@
 #include "io.h"
 #include "tx.h"
 
-bool wl1271_set_block_size(struct wl1271 *wl)
-{
-	if (wl->if_ops->set_block_size) {
-		wl->if_ops->set_block_size(wl->dev, WL12XX_BUS_BLOCK_SIZE);
-		return true;
-	}
-
-	return false;
-}
-
 void wlcore_disable_interrupts(struct wl1271 *wl)
 {
 	disable_irq(wl->irq);
@@ -121,84 +111,6 @@ EXPORT_SYMBOL_GPL(wlcore_translate_addr);
  *                                    |    |
  *
  */
-int wlcore_set_partition(struct wl1271 *wl,
-			 const struct wlcore_partition_set *p)
-{
-	int ret;
-
-	/* copy partition info */
-	memcpy(&wl->curr_part, p, sizeof(*p));
-
-	wl1271_debug(DEBUG_IO, "mem_start %08X mem_size %08X",
-		     p->mem.start, p->mem.size);
-	wl1271_debug(DEBUG_IO, "reg_start %08X reg_size %08X",
-		     p->reg.start, p->reg.size);
-	wl1271_debug(DEBUG_IO, "mem2_start %08X mem2_size %08X",
-		     p->mem2.start, p->mem2.size);
-	wl1271_debug(DEBUG_IO, "mem3_start %08X mem3_size %08X",
-		     p->mem3.start, p->mem3.size);
-
-	//ret = V_sdio_raw_write(wl, HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
-	ret = wlcore_raw_write32(wl, HW_PART0_START_ADDR, p->mem.start);
-	if (ret < 0)
-		goto out;
-
-	ret = wlcore_raw_write32(wl, HW_PART0_SIZE_ADDR, p->mem.size);
-	if (ret < 0)
-		goto out;
-
-	ret = wlcore_raw_write32(wl, HW_PART1_START_ADDR, p->reg.start);
-	if (ret < 0)
-		goto out;
-
-	ret = wlcore_raw_write32(wl, HW_PART1_SIZE_ADDR, p->reg.size);
-	if (ret < 0)
-		goto out;
-
-	ret = wlcore_raw_write32(wl, HW_PART2_START_ADDR, p->mem2.start);
-	if (ret < 0)
-		goto out;
-
-	ret = wlcore_raw_write32(wl, HW_PART2_SIZE_ADDR, p->mem2.size);
-	if (ret < 0)
-		goto out;
-
-	/* wl12xx only: We don't need the size of the last partition,
-	 * as it is automatically calculated based on the total memory
-	 * size and the sizes of the previous partitions.
-	 *
-	 * wl18xx re-defines the HW_PART3 addresses for logger over
-	 * SDIO support. wl12xx is expecting the write to
-	 * HW_PART3_START_ADDR at offset 24. This creates conflict
-	 * between the addresses.
-	 * In order to fix this the expected value is written to
-	 * HW_PART3_SIZE_ADDR instead which is at offset 24 after changes.
-	 */
-	ret = wlcore_raw_write32(wl, HW_PART3_START_ADDR, p->mem3.start);
-	if (ret < 0)
-		goto out;
-
-	ret = wlcore_raw_write32(wl, HW_PART3_SIZE_ADDR, p->mem3.size);
-	if (ret < 0)
-		goto out;
-
-out:
-	return ret;
-}
-EXPORT_SYMBOL_GPL(wlcore_set_partition);
-
-void wl1271_io_reset(struct wl1271 *wl)
-{
-	if (wl->if_ops->reset)
-		wl->if_ops->reset(wl->dev);
-}
-
-void wl1271_io_init(struct wl1271 *wl)
-{
-	if (wl->if_ops->init)
-		wl->if_ops->init(wl->dev);
-}
-
 
 /* Vinh custom */
 int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)

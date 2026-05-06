@@ -20,14 +20,15 @@
 #include "wl12xx_80211.h"
 #include "io.h"
 #include "tx.h"
+#include "rx.h"
 #include "ps.h"
 #include "init.h"
-#include "debugfs.h"
+//#include "debugfs.h"
 #include "testmode.h"
 #include "vendor_cmd.h"
 #include "scan.h"
-#include "hw_ops.h"
-#include "sysfs.h"
+//#include "hw_ops.h"
+//#include "sysfs.h"
 
 #include "common.h"
 #include "wl18.h"
@@ -1275,12 +1276,12 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 	 * Check if the bus supports blocksize alignment and, if it
 	 * doesn't, make sure we don't have the quirk.
 	 */
-	if (!wl1271_set_block_size(wl))
-		wl->quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
-	// -> wl1271_sdio_set_block_size
+	// if (!wl1271_set_block_size(wl))
+	// 	wl->quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
+
+	VV_sdio_set_block_size(wl, WL12XX_BUS_BLOCK_SIZE);
 
 	/* TODO: make sure the lower driver has set things up correctly */
-
 	ret = wl1271_setup(wl);
 	if (ret < 0)
 		goto out;
@@ -5844,7 +5845,7 @@ int wlcore_free_hw(struct wl1271 *wl)
 	wl->fwlog_size = -1;
 	mutex_unlock(&wl->mutex);
 
-	wlcore_sysfs_free(wl);
+	//wlcore_sysfs_free(wl);
 
 	kfree(wl->buffer_32);
 	kfree(wl->mbox);
@@ -5998,7 +5999,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	if (ret)
 		goto out_irq;
 
-	ret = wlcore_sysfs_init(wl);
+	//ret = wlcore_sysfs_init(wl);
 	if (ret)
 		goto out_unreg;
 

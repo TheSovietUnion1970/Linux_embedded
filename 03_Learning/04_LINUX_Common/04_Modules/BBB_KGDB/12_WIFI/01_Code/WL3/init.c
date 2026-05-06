@@ -18,7 +18,7 @@
 #include "cmd.h"
 #include "tx.h"
 #include "io.h"
-#include "hw_ops.h"
+//#include "hw_ops.h"
 
 int wl1271_init_templates_config(struct wl1271 *wl)
 {
