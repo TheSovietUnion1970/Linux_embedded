@@ -28,22 +28,26 @@
 // #include "../wl12xx/reg.h"
 #include "reg.h"
 
-static u32 wlcore_rx_get_buf_size(struct wl1271 *wl,
-				  u32 rx_pkt_desc)
+static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
 {
-	if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
-		return (rx_pkt_desc & ALIGNED_RX_BUF_SIZE_MASK) >>
-		       ALIGNED_RX_BUF_SIZE_SHIFT;
+	// if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
+	// 	return (rx_pkt_desc & ALIGNED_RX_BUF_SIZE_MASK) >>
+	// 	       ALIGNED_RX_BUF_SIZE_SHIFT;
 
-	return (rx_pkt_desc & RX_BUF_SIZE_MASK) >> RX_BUF_SIZE_SHIFT_DIV;
+	// return (rx_pkt_desc & RX_BUF_SIZE_MASK) >> RX_BUF_SIZE_SHIFT_DIV;
+
+	return (rx_pkt_desc & ALIGNED_RX_BUF_SIZE_MASK) >>
+			ALIGNED_RX_BUF_SIZE_SHIFT;
 }
 
-static u32 wlcore_rx_get_align_buf_size(struct wl1271 *wl, u32 pkt_len)
+static u32 wlcore_rx_get_align_buf_size(u32 pkt_len)
 {
-	if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
-		return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
+	// if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
+	// 	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
 
-	return pkt_len;
+	// return pkt_len;
+
+	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
 }
 
 static void wl1271_rx_status(struct wl1271 *wl,
@@ -58,10 +62,10 @@ static void wl1271_rx_status(struct wl1271 *wl,
 	else
 		status->band = NL80211_BAND_5GHZ;
 
-	status->rate_idx = wlcore_rate_to_idx(wl, desc->rate, status->band);
+	status->rate_idx = wlcore_rate_to_idx(desc->rate, status->band);
 
 	/* 11n support */
-	if (desc->rate <= wl->hw_min_ht_rate)
+	if (desc->rate <= 15) // WL18XX_CONF_HW_RXTX_RATE_MCS0
 		status->encoding = RX_ENC_HT;
 
 	/*
@@ -104,7 +108,7 @@ static void wl1271_rx_status(struct wl1271 *wl,
 						status->band);
 }
 
-static u32 VV_get_rx_packet_len(struct wl1271 *wl, void *rx_data,
+static u32 VV_get_rx_packet_len(void *rx_data,
 				    u32 data_len)
 {
 	struct wl1271_rx_descriptor *desc = rx_data;
@@ -128,14 +132,14 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 	u16 seq_num;
 	u32 pkt_data_len;
 
-	/*
-	 * In PLT mode we seem to get frames and mac80211 warns about them,
-	 * workaround this by not retrieving them at all.
-	 */
-	if (unlikely(wl->plt))
-		return -EINVAL;
+	// /*
+	//  * In PLT mode we seem to get frames and mac80211 warns about them,
+	//  * workaround this by not retrieving them at all.
+	//  */
+	// if (unlikely(wl->plt))
+	// 	return -EINVAL;
 
-	pkt_data_len = VV_get_rx_packet_len(wl, data, length);
+	pkt_data_len = VV_get_rx_packet_len(data, length);
 	if (!pkt_data_len) {
 		wl1271_error("Invalid packet arrived from HW. length %d",
 			     length);
@@ -150,11 +154,11 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 	/* the data read starts with the descriptor */
 	desc = (struct wl1271_rx_descriptor *) data;
 
-	if (desc->packet_class == WL12XX_RX_CLASS_LOGGER) {
-		size_t len = length - sizeof(*desc);
-		wl12xx_copy_fwlog(wl, data + sizeof(*desc), len);
-		return 0;
-	}
+	// if (desc->packet_class == WL12XX_RX_CLASS_LOGGER) {
+	// 	size_t len = length - sizeof(*desc);
+	// 	wl12xx_copy_fwlog(wl, data + sizeof(*desc), len);
+	// 	return 0;
+	// }
 
 	/* discard corrupted packets */
 	if (desc->status & WL1271_RX_DESC_DECRYPT_FAIL) {
@@ -214,12 +218,12 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 }
 
 static enum wl_rx_buf_align
-VV_get_rx_buf_align(struct wl1271 *wl, u32 rx_desc)
+VV_get_rx_buf_align(u32 rx_desc)
 {
 	if (rx_desc & RX_BUF_PADDED_PAYLOAD)
 		return WLCORE_RX_BUF_PADDED;
 
-	return WLCORE_RX_BUF_ALIGNED;
+	return WLCORE_RX_BUF_ALIGNED; // this is the return
 }
 
 #include "wl18xx.h"
@@ -227,8 +231,8 @@ int wlcore_rx(struct wl1271 *wl)
 {
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
 	u32 buf_size;
-	u32 fw_rx_counter = VV_status_reg->fw_rx_counter % wl->num_rx_desc;
-	u32 drv_rx_counter = wl->rx_counter % wl->num_rx_desc;
+	u32 fw_rx_counter = VV_status_reg->fw_rx_counter % WL18XX_NUM_RX_DESCRIPTORS;
+	u32 drv_rx_counter = VV_rx_counter % WL18XX_NUM_RX_DESCRIPTORS;
 	u32 rx_counter;
 	u32 pkt_len, align_pkt_len;
 	u32 pkt_offset, des;
@@ -242,20 +246,20 @@ int wlcore_rx(struct wl1271 *wl)
 	if (hlid < WLCORE_MAX_LINKS)
 		VV_links[hlid].fw_rate_mbps =
 				VV_status_reg->tx_last_rate_mbps;
+	//printk("wl->quirks = 0x%x\n", wl->quirks);
 
 	while (drv_rx_counter != fw_rx_counter) {
 		buf_size = 0;
 		rx_counter = drv_rx_counter;
 		while (rx_counter != fw_rx_counter) {
 			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[rx_counter]);
-			pkt_len = wlcore_rx_get_buf_size(wl, des);
-			align_pkt_len = wlcore_rx_get_align_buf_size(wl,
-								     pkt_len);
+			pkt_len = wlcore_rx_get_buf_size(des);
+			align_pkt_len = wlcore_rx_get_align_buf_size(pkt_len);
 			if (buf_size + align_pkt_len > WL18XX_AGGR_BUFFER_SIZE)
 				break;
 			buf_size += align_pkt_len;
 			rx_counter++;
-			rx_counter %= wl->num_rx_desc;
+			rx_counter %= WL18XX_NUM_RX_DESCRIPTORS;
 		}
 
 		if (buf_size == 0) {
@@ -271,7 +275,7 @@ int wlcore_rx(struct wl1271 *wl)
 
 		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
 		// 		       buf_size, true);
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 
@@ -279,8 +283,9 @@ int wlcore_rx(struct wl1271 *wl)
 		pkt_offset = 0;
 		while (pkt_offset < buf_size) {
 			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
-			pkt_len = wlcore_rx_get_buf_size(wl, des);
-			rx_align = VV_get_rx_buf_align(wl, des);
+			pkt_len = wlcore_rx_get_buf_size(des);
+			rx_align = VV_get_rx_buf_align(des);
+			//printk("rx_align = %d\n", rx_align);
 
 			/*
 			 * the handle data call can only fail in memory-outage
@@ -291,7 +296,7 @@ int wlcore_rx(struct wl1271 *wl)
 						  VV_aggr_buf + pkt_offset,
 						  pkt_len, rx_align,
 						  &hlid) == 1) {
-				if (hlid < wl->num_links)
+				if (hlid < WL18XX_MAX_LINKS)
 					__set_bit(hlid, active_hlids);
 				else
 					WARN(1,
@@ -299,10 +304,10 @@ int wlcore_rx(struct wl1271 *wl)
 					     hlid);
 			}
 
-			wl->rx_counter++;
+			VV_rx_counter++;
 			drv_rx_counter++;
-			drv_rx_counter %= wl->num_rx_desc;
-			pkt_offset += wlcore_rx_get_align_buf_size(wl, pkt_len);
+			drv_rx_counter %= WL18XX_NUM_RX_DESCRIPTORS;
+			pkt_offset += wlcore_rx_get_align_buf_size(pkt_len);
 		}
 	}
 
@@ -312,8 +317,8 @@ int wlcore_rx(struct wl1271 *wl)
 	 */
 	if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
 		// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
-		// 		     wl->rx_counter);
-		ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), wl->rx_counter, 4, false);
+		// 		     VV_rx_counter);
+		ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), VV_rx_counter, 4, false);
 		if (ret < 0)
 			goto out;
 	}

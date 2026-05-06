@@ -89,7 +89,7 @@ static void wl1271_ps_filter_frames(struct wl1271 *wl, u8 hlid)
 			printk("TX_QUEUE - wl1271_ps_filter_frames\n");
 			filtered[i]++;
 
-			if (WARN_ON(wl12xx_is_dummy_packet(wl, skb)))
+			if (WARN_ON(wl12xx_is_dummy_packet(skb)))
 				continue;
 
 			info = IEEE80211_SKB_CB(skb);

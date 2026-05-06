@@ -299,10 +299,10 @@ struct wl1271 {
 	struct work_struct recovery_work;
 	bool watchdog_recovery;
 
-	/* Reg domain last configuration */
-	DECLARE_BITMAP(reg_ch_conf_last, 64);
-	/* Reg domain pending configuration */
-	DECLARE_BITMAP(reg_ch_conf_pending, 64);
+	// /* Reg domain last configuration */
+	// DECLARE_BITMAP(reg_ch_conf_last, 64);
+	// /* Reg domain pending configuration */
+	// DECLARE_BITMAP(reg_ch_conf_pending, 64);
 
 	/* Pointer that holds DMA-friendly block for the mailbox */
 	void *mbox;

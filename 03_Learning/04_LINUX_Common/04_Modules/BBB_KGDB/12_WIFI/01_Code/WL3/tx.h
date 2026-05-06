@@ -219,7 +219,7 @@ int wlcore_tx_get_mac80211_queue(struct wl12xx_vif *wlvif, int queue)
 	}
 }
 
-static inline int wl1271_tx_total_queue_count(struct wl1271 *wl)
+static inline int wl1271_tx_total_queue_count(void)
 {
 	int i, count = 0;
 
@@ -236,7 +236,7 @@ int wlcore_tx_complete(struct wl1271 *wl);
 void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 void wl12xx_tx_reset(struct wl1271 *wl);
 void wl1271_tx_flush(struct wl1271 *wl);
-u8 wlcore_rate_to_idx(struct wl1271 *wl, u8 rate, enum nl80211_band band);
+u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band);
 u32 wl1271_tx_enabled_rates_get(struct wl1271 *wl, u32 rate_set,
 				enum nl80211_band rate_band);
 u32 wl1271_tx_min_rate_get(struct wl1271 *wl, u32 rate_set);
@@ -244,7 +244,7 @@ u8 wl12xx_tx_get_hlid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta);
 void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid);
 //void wl1271_handle_tx_low_watermark(struct wl1271 *wl);
-bool wl12xx_is_dummy_packet(struct wl1271 *wl, struct sk_buff *skb);
+bool wl12xx_is_dummy_packet(struct sk_buff *skb);
 void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids);
 unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
 					  unsigned int packet_length);

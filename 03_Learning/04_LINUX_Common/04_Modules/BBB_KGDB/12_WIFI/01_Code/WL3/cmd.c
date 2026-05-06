@@ -1483,13 +1483,13 @@ void wlcore_set_pending_regdomain_ch(struct wl1271 *wl, u16 channel,
 {
 	int ch_bit_idx = 0;
 
-	if (!(wl->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
-		return;
+	// if (!(wl->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
+	// 	return;
 
 	ch_bit_idx = wlcore_get_reg_conf_ch_idx(band, channel);
 
 	if (ch_bit_idx >= 0 && ch_bit_idx <= WL1271_MAX_CHANNELS)
-		__set_bit_le(ch_bit_idx, (long *)wl->reg_ch_conf_pending);
+		__set_bit_le(ch_bit_idx, (long *)wifi_data.reg_ch_conf_pending);
 }
 
 int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
@@ -1497,16 +1497,16 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 	struct wl12xx_cmd_regdomain_dfs_config *cmd = NULL;
 	int ret = 0, i, b, ch_bit_idx;
 	__le32 tmp_ch_bitmap[2] __aligned(sizeof(unsigned long));
-	struct wiphy *wiphy = wl->hw->wiphy;
+	struct wiphy *wiphy = VV_work.hw->wiphy;
 	struct ieee80211_supported_band *band;
 	bool timeout = false;
 
-	if (!(wl->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
-		return 0;
+	// if (!(wl->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
+	// 	return 0;
 
 	wl1271_debug(DEBUG_CMD, "cmd reg domain config");
 
-	memcpy(tmp_ch_bitmap, wl->reg_ch_conf_pending, sizeof(tmp_ch_bitmap));
+	memcpy(tmp_ch_bitmap, wifi_data.reg_ch_conf_pending, sizeof(tmp_ch_bitmap));
 
 	for (b = NL80211_BAND_2GHZ; b <= NL80211_BAND_5GHZ; b++) {
 		band = wiphy->bands[b];
@@ -1531,7 +1531,7 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 		}
 	}
 
-	if (!memcmp(tmp_ch_bitmap, wl->reg_ch_conf_last, sizeof(tmp_ch_bitmap)))
+	if (!memcmp(tmp_ch_bitmap, wifi_data.reg_ch_conf_last, sizeof(tmp_ch_bitmap)))
 		goto out;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
@@ -1542,7 +1542,7 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 
 	cmd->ch_bit_map1 = tmp_ch_bitmap[0];
 	cmd->ch_bit_map2 = tmp_ch_bitmap[1];
-	cmd->dfs_region = wl->dfs_region;
+	cmd->dfs_region = wifi_data.dfs_region;
 
 	wl1271_debug(DEBUG_CMD,
 		     "cmd reg domain bitmap1: 0x%08x, bitmap2: 0x%08x",
@@ -1567,8 +1567,8 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 		goto out;
 	}
 
-	memcpy(wl->reg_ch_conf_last, tmp_ch_bitmap, sizeof(tmp_ch_bitmap));
-	memset(wl->reg_ch_conf_pending, 0, sizeof(wl->reg_ch_conf_pending));
+	memcpy(wifi_data.reg_ch_conf_last, tmp_ch_bitmap, sizeof(tmp_ch_bitmap));
+	memset(wifi_data.reg_ch_conf_pending, 0, sizeof(wifi_data.reg_ch_conf_pending));
 
 out:
 	kfree(cmd);

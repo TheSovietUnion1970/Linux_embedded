@@ -1505,6 +1505,8 @@ static int wl18xx_setup(struct wl1271 *wl)
 	wl->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
 	wl->static_data_priv_len = sizeof(struct wl18xx_static_data_priv);
 
+	wifi_data.band_rate_to_idx = wl18xx_band_rate_to_idx;
+
 	if (num_rx_desc_param != -1)
 		wl->num_rx_desc = num_rx_desc_param;
 

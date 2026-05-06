@@ -45,6 +45,7 @@ extern u8 VV_last_fw_rls_idx; // it's incremented every TX interrupt
         
 extern struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
         // ptr to skb per tx desc
+extern struct sk_buff *VV_dummy_packet;
 extern int VV_skb_tx_frames_cnt;
 extern u32 VV_last_updated_tmp_tx_blocks_freed;
 extern u8 *VV_aggr_buf;
@@ -52,6 +53,9 @@ extern u8 *VV_aggr_buf;
 /* session_id for starting sta role, configure the tx attributes (tx_attr = session_id << TX_HW_ATTR_OFST_SESSION_COUNTER;) */
 extern u8 VV_session_ids[WLCORE_MAX_LINKS];
 extern s64 VV_time_offset; /* Time-offset between host and chipset clocks */
+
+/* FW Rx counter */
+extern u32 VV_rx_counter;
 
 #define WL18XX_NUM_RX_DESCRIPTORS 32
 #define WL18XX_MAX_LINKS 16
@@ -402,6 +406,15 @@ struct Wifi_data {
 	struct VV_partition_set curr_part;
 	struct VV_partition_set *ptable;
 
+	const u8 **band_rate_to_idx;
+	/* Reg domain last configuration */
+	DECLARE_BITMAP(reg_ch_conf_last, 64);
+	/* Reg domain pending configuration */
+	DECLARE_BITMAP(reg_ch_conf_pending, 64);
+
+
+	/* the current dfs region */
+	enum nl80211_dfs_regions dfs_region;
 
     /* Temporary use */
     struct wl1271 *wl;

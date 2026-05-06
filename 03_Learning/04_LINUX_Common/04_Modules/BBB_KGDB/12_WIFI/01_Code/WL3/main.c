@@ -45,6 +45,7 @@ struct VV_wl18xx_fw_status *VV_status_reg;
 u32 VV_tx_allocated_blocks;
 u32 VV_tx_blocks_available;
 struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
+struct sk_buff *VV_dummy_packet;
 struct VV_link VV_links[WLCORE_MAX_LINKS];
 int VV_skb_tx_frames_cnt;
 u32 VV_last_updated_tmp_tx_blocks_freed;
@@ -60,6 +61,7 @@ struct VV_map VV_map;
 struct VV_vif* VV_vif_ptr[10];
 int VV_vif_ptr_id = 0;
 u8 *VV_aggr_buf;
+u32 VV_rx_counter;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -111,7 +113,7 @@ static void wl1271_reg_notify(struct wiphy *wiphy,
 
 	/* copy the current dfs region */
 	if (request)
-		wl->dfs_region = request->dfs_region;
+		wifi_data.dfs_region = request->dfs_region;
 
 	wlcore_regdomain_config(wl);
 }
@@ -343,7 +345,7 @@ static void wlcore_adjust_conf(struct wl1271 *wl)
 }
 
 #include "wl18xx.h"
-static int wlcore_fw_status(struct wl1271 *wl)
+static int wlcore_fw_status(void)
 {
 	struct wl12xx_vif *wlvif;
 	u32 old_tx_blk_count = VV_tx_blocks_available;
@@ -351,7 +353,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	int i;
 	int ret;
 
-	ret = VV_sdio_raw_read(wl->rtable[REG_RAW_FW_STATUS_ADDR],
+	ret = VV_sdio_raw_read(wifi_data.rtable[REG_RAW_FW_STATUS_ADDR],
 				   (void*)VV_status_reg,
 				   sizeof(struct VV_wl18xx_fw_status), false);
 	if (ret < 0)
@@ -369,7 +371,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	}
 
 	//printk("START\n");
-	for_each_set_bit(i, VV_map.links_map, wl->num_links) {
+	for_each_set_bit(i, VV_map.links_map, WL18XX_MAX_LINKS) {
 		//printk("wlcore_fw_status i = %d\n", i);
 		u8 diff;
 
@@ -441,7 +443,7 @@ static int wlcore_fw_status(struct wl1271 *wl)
 	VV_time_offset = (ktime_get_boottime_ns() >> 10) -
 		(s64)(VV_status_reg->fw_localtime);
 
-	wl->fw_fast_lnk_map = VV_status_reg->link_fast_bitmap;
+	//wl->fw_fast_lnk_map = VV_status_reg->link_fast_bitmap;
 
 	return 0;
 }
@@ -481,7 +483,7 @@ static void wl1271_netstack_work(struct work_struct *work)
 	} while (skb_queue_len(&VV_deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
 }
 
-void VV_get_last_tx_rate(struct wl1271 *wl, struct ieee80211_vif *vif,
+void VV_get_last_tx_rate(struct ieee80211_vif *vif,
 			     u8 band, struct ieee80211_tx_rate *rate, u8 hlid)
 {
 	u8 fw_rate = VV_links[hlid].fw_rate_idx;
@@ -534,7 +536,7 @@ void VV_get_last_tx_rate(struct wl1271 *wl, struct ieee80211_vif *vif,
 
 #define WL18XX_TX_STATUS_DESC_ID_MASK    0x7F
 #define WL18XX_TX_STATUS_STAT_BIT_IDX    7
-static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
+static void VV_tx_complete_packet(u8 tx_stat_byte)
 {
 	struct ieee80211_tx_info *info;
 	struct sk_buff *skb;
@@ -555,7 +557,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	info = IEEE80211_SKB_CB(skb);
 	tx_desc = (struct wl1271_tx_hw_descr *)skb->data;
 
-	if (wl12xx_is_dummy_packet(wl, skb)) {
+	if (wl12xx_is_dummy_packet(skb)) {
 		wl1271_free_tx_id(id);
 		return;
 	}
@@ -567,7 +569,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	 * first pass info->control.vif while it's valid, and then fill out
 	 * the info->status structures
 	 */
-	VV_get_last_tx_rate(wl, info->control.vif,
+	VV_get_last_tx_rate(info->control.vif,
 				info->band,
 				&info->status.rates[0],
 				tx_desc->hlid);
@@ -575,8 +577,8 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	info->status.rates[0].count = 1; /* no data about retries */
 	info->status.ack_signal = -1;
 
-	if (!tx_success)
-		wl->stats.retry_count++;
+	// if (!tx_success)
+	// 	wl->stats.retry_count++;
 
 	/*
 	 * TODO: update sequence number for encryption? seems to be
@@ -586,8 +588,8 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	/* remove private header from packet */
 	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
 
-	wl1271_debug(DEBUG_TX, "tx status id %u skb 0x%p success %d",
-		     id, skb, tx_success);
+	// wl1271_debug(DEBUG_TX, "tx status id %u skb 0x%p success %d",
+	// 	     id, skb, tx_success);
 
 	/* return the packet to the stack */
 	skb_queue_tail(&VV_deferred_tx_queue, skb);
@@ -597,7 +599,7 @@ static void VV_tx_complete_packet(struct wl1271 *wl, u8 tx_stat_byte)
 	wl1271_free_tx_id(id);
 }
 
-void VV_tx_immediate_complete(struct wl1271 *wl)
+void VV_tx_immediate_complete(void)
 {
 	u8 i, hlid;
 
@@ -634,8 +636,7 @@ void VV_tx_immediate_complete(struct wl1271 *wl)
 	     i = (i + 1) % WL18XX_FW_MAX_TX_STATUS_DESC) {
 		// VV_tx_complete_packet(wl,
 		// 	status_priv->released_tx_desc[i]);
-		VV_tx_complete_packet(wl,
-			VV_status_reg->released_tx_desc[i]);
+		VV_tx_complete_packet(VV_status_reg->released_tx_desc[i]);
 
 		//wl->tx_results_count++;
 	}
@@ -674,11 +675,11 @@ static int VV_irq_locked(struct wl1271 *wl)
 	while (!done && loopcount--) {
 		smp_mb__after_atomic();
 
-		ret = wlcore_fw_status(wl);
+		ret = wlcore_fw_status();
 		if (ret < 0)
 			goto err_ret;
 
-		VV_tx_immediate_complete(wl);
+		VV_tx_immediate_complete();
 
 		intr = VV_status_reg->intr;
 		intr &= WLCORE_ALL_INTR_MASK;
@@ -714,23 +715,18 @@ static int VV_irq_locked(struct wl1271 *wl)
 				goto err_ret;
 
 			/* Check if any tx blocks were freed */
-			//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
-				if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
-					if (!wl1271_tx_total_queue_count(wl))
-						run_tx_queue = false;
-					spin_unlock_irqrestore(&wl->wl_lock, flags);
-				}
+			if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
+				if (!wl1271_tx_total_queue_count())
+					run_tx_queue = false;
+				spin_unlock_irqrestore(&wl->wl_lock, flags);
+			}
 
-				/*
-				 * In order to avoid starvation of the TX path,
-				 * call the work function directly.
-				 */
-				if (run_tx_queue) {
-					ret = wlcore_tx_work_locked();
-					if (ret < 0)
-						goto err_ret;
-				}
-			//}
+			// Check if tx_queue in the current link is zero or not
+			if (run_tx_queue) {
+				ret = wlcore_tx_work_locked();
+				if (ret < 0)
+					goto err_ret;
+			}
 
 			/* check for tx results */
 			// ret = wlcore_hw_tx_delayed_compl(wl); // null
@@ -819,7 +815,7 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 	clear_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
 	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
 	if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
-		if (!wl1271_tx_total_queue_count(wl)) // counts of all Frames scheduled for transmission, not handled yet
+		if (!wl1271_tx_total_queue_count()) // counts of all Frames scheduled for transmission, not handled yet
 												// count += VV_tx_queue_count[i];
 			queue_tx_work = false;
 		spin_unlock_irqrestore(&wl->wl_lock, flags);
@@ -1340,7 +1336,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	wl->state = WLCORE_STATE_OFF;
 	wl->plt = false;
 	wl->plt_mode = PLT_OFF;
-	wl->rx_counter = 0;
+	VV_rx_counter = 0;
 	mutex_unlock(&wl->mutex);
 
 out:
@@ -1421,7 +1417,7 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl)
 	if (test_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags))
 		return 0;
 
-	q = wl1271_tx_get_queue(skb_get_queue_mapping(wl->dummy_packet));
+	q = wl1271_tx_get_queue(skb_get_queue_mapping(VV_dummy_packet));
 
 	spin_lock_irqsave(&wl->wl_lock, flags);
 	set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags);
@@ -1442,7 +1438,7 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl)
  */
 #define TOTAL_TX_DUMMY_PACKET_SIZE (ALIGN(1400, 512))
 
-static struct sk_buff *wl12xx_alloc_dummy_packet(struct wl1271 *wl)
+static struct sk_buff *wl12xx_alloc_dummy_packet(void)
 {
 	struct sk_buff *skb;
 	struct ieee80211_hdr_3addr *hdr;
@@ -1898,7 +1894,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 
 	wl->band = NL80211_BAND_2GHZ;
 
-	wl->rx_counter = 0;
+	VV_rx_counter = 0;
 	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	wl->channel_type = NL80211_CHAN_NO_HT;
 	VV_tx_blocks_available = 0;
@@ -1950,9 +1946,9 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 * FW channels must be re-calibrated after recovery,
 	 * save current Reg-Domain channel configuration and clear it.
 	 */
-	memcpy(wl->reg_ch_conf_pending, wl->reg_ch_conf_last,
-	       sizeof(wl->reg_ch_conf_pending));
-	memset(wl->reg_ch_conf_last, 0, sizeof(wl->reg_ch_conf_last));
+	memcpy(wifi_data.reg_ch_conf_pending, wifi_data.reg_ch_conf_last,
+	       sizeof(wifi_data.reg_ch_conf_pending));
+	memset(wifi_data.reg_ch_conf_last, 0, sizeof(wifi_data.reg_ch_conf_last));
 }
 
 static void wlcore_op_stop(struct ieee80211_hw *hw)
@@ -5362,18 +5358,18 @@ static const struct ieee80211_ops wl1271_ops = {
 };
 
 
-u8 wlcore_rate_to_idx(struct wl1271 *wl, u8 rate, enum nl80211_band band)
+u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band)
 {
 	u8 idx;
 
 	BUG_ON(band >= 2);
 
-	if (unlikely(rate >= wl->hw_tx_rate_tbl_size)) {
+	if (unlikely(rate >= 29)) { // WL18XX_CONF_HW_RXTX_RATE_MAX
 		wl1271_error("Illegal RX rate from HW: %d", rate);
 		return 0;
 	}
 
-	idx = wl->band_rate_to_idx[band][rate];
+	idx = wifi_data.band_rate_to_idx[band][rate];
 	if (unlikely(idx == CONF_HW_RXTX_RATE_UNSUPPORTED)) {
 		wl1271_error("Unsupported RX rate from HW: %d", rate);
 		return 0;
@@ -5738,7 +5734,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	}
 
 	wl->channel = 0;
-	wl->rx_counter = 0;
+	VV_rx_counter = 0;
 	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	wl->band = NL80211_BAND_2GHZ;
 	wl->channel_type = NL80211_CHAN_NO_HT;
@@ -5781,9 +5777,9 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	// get_order returns the number has the power of 2
 	// -> order = 4 -> 2^4 = 16 > 13
 
-	wl->dummy_packet = wl12xx_alloc_dummy_packet(wl);
-	printk("wl->dummy_packet: 0x%x\n", wl->dummy_packet);
-	if (!wl->dummy_packet) {
+	VV_dummy_packet = wl12xx_alloc_dummy_packet();
+	printk("VV_dummy_packet: 0x%x\n", VV_dummy_packet);
+	if (!VV_dummy_packet) {
 		ret = -ENOMEM;
 		goto err_aggr;
 	}
@@ -5817,7 +5813,7 @@ err_fwlog:
 	free_page((unsigned long)wl->fwlog);
 
 err_dummy_packet:
-	dev_kfree_skb(wl->dummy_packet);
+	dev_kfree_skb(VV_dummy_packet);
 
 err_aggr:
 	free_pages((unsigned long)VV_aggr_buf, order);
@@ -5850,7 +5846,7 @@ int wlcore_free_hw(struct wl1271 *wl)
 	kfree(wl->buffer_32);
 	kfree(wl->mbox);
 	free_page((unsigned long)wl->fwlog);
-	dev_kfree_skb(wl->dummy_packet);
+	dev_kfree_skb(VV_dummy_packet);
 	free_pages((unsigned long)VV_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));
 
 	//wl1271_debugfs_exit(wl);

@@ -107,9 +107,9 @@ static void wl1271_tx_ap_update_inconnection_sta(struct wl1271 *wl,
 	// 			msecs_to_jiffies(WLCORE_PEND_AUTH_ROC_TIMEOUT));
 }
 
-bool wl12xx_is_dummy_packet(struct wl1271 *wl, struct sk_buff *skb)
+bool wl12xx_is_dummy_packet(struct sk_buff *skb)
 {
-	return wl->dummy_packet == skb;
+	return VV_dummy_packet == skb;
 }
 EXPORT_SYMBOL(wl12xx_is_dummy_packet);
 
@@ -274,8 +274,8 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 	desc->start_time = cpu_to_le32(hosttime - VV_time_offset);
 
 	
-	//is_dummy = wl12xx_is_dummy_packet(wl, skb);
-	is_dummy = (wifi_data.wl->dummy_packet == skb);
+	is_dummy = wl12xx_is_dummy_packet(skb);
+	//is_dummy = (wifi_data.VV_dummy_packet == skb);
 	// if (is_dummy || !wlvif || wlvif->bss_type != BSS_TYPE_AP_BSS)
 	// 	desc->life_time = cpu_to_le16(TX_HW_MGMT_PKT_LIFETIME_TU);
 	// [TODO-wlvif]
@@ -609,7 +609,7 @@ static void wl1271_skb_queue_head(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	unsigned long flags;
 	int q = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
 
-	if (wl12xx_is_dummy_packet(wl, skb)) {
+	if (wl12xx_is_dummy_packet(skb)) {
 		set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags);
 	} else {
 		skb_queue_head(&VV_tx_queue[hlid][q], skb);
@@ -830,7 +830,7 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 		while ((skb = skb_dequeue(&VV_tx_queue[hlid][i]))) {
 			printk("TX_QUEUE - wl1271_tx_reset_link_queues\n");
 
-			if (!wl12xx_is_dummy_packet(wl, skb)) {
+			if (!wl12xx_is_dummy_packet(skb)) {
 				info = IEEE80211_SKB_CB(skb);
 				info->status.rates[0].idx = -1;
 				info->status.rates[0].count = 0;
@@ -881,7 +881,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 	struct ieee80211_tx_info *info;
 
 	/* only reset the queues if something bad happened */
-	if (wl1271_tx_total_queue_count(wl) != 0) {
+	if (wl1271_tx_total_queue_count() != 0) {
 		for (i = 0; i < wl->num_links; i++)
 			wl1271_tx_reset_link_queues(wl, i);
 
@@ -905,7 +905,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 		wl1271_free_tx_id(i);
 		wl1271_debug(DEBUG_TX, "freeing skb 0x%p", skb);
 
-		if (!wl12xx_is_dummy_packet(wl, skb)) {
+		if (!wl12xx_is_dummy_packet(skb)) {
 			/*
 			 * Remove private headers before passing the skb to
 			 * mac80211
@@ -944,7 +944,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 	mutex_lock(&wl->flush_mutex);
 
 	mutex_lock(&wl->mutex);
-	if (VV_skb_tx_frames_cnt == 0 && wl1271_tx_total_queue_count(wl) == 0) {
+	if (VV_skb_tx_frames_cnt == 0 && wl1271_tx_total_queue_count() == 0) {
 		mutex_unlock(&wl->mutex);
 		goto out;
 	}
@@ -954,17 +954,17 @@ void wl1271_tx_flush(struct wl1271 *wl)
 	while (!time_after(jiffies, timeout)) {
 		wl1271_debug(DEBUG_MAC80211, "flushing tx buffer: %d %d",
 			     VV_skb_tx_frames_cnt,
-			     wl1271_tx_total_queue_count(wl));
+			     wl1271_tx_total_queue_count());
 
 		/* force Tx and give the driver some time to flush data */
 		mutex_unlock(&wl->mutex);
-		if (wl1271_tx_total_queue_count(wl))
+		if (wl1271_tx_total_queue_count())
 			wl1271_tx_work(&VV_work.tx_work);
 		msleep(20);
 		mutex_lock(&wl->mutex);
 
 		if ((VV_skb_tx_frames_cnt == 0) &&
-		    (wl1271_tx_total_queue_count(wl) == 0)) {
+		    (wl1271_tx_total_queue_count() == 0)) {
 			wl1271_debug(DEBUG_MAC80211, "tx flush took %d ms",
 				     jiffies_to_msecs(jiffies - start_time));
 			goto out_wake;
