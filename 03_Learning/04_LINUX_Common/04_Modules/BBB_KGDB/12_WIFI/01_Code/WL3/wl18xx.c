@@ -1636,6 +1636,7 @@ static int wl18xx_probe(struct platform_device *pdev)
 	if (ret)
 		goto out_free;
 
+	wifi_data.cmd_box_addr = devm_kzalloc(wl->dev, 4, GFP_KERNEL);
 	return ret;
 
 out_free:

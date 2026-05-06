@@ -475,7 +475,7 @@ wlcore_scan_sched_scan_ssid_list(struct wl1271 *wl,
 		}
 	}
 
-	ret = VV_cmd_send(wl, CMD_CONNECTION_SCAN_SSID_CFG, cmd,
+	ret = VV_cmd_send(CMD_CONNECTION_SCAN_SSID_CFG, cmd,
 			      sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("cmd sched scan ssid list failed");

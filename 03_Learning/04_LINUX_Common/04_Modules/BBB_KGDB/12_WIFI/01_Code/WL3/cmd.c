@@ -32,7 +32,7 @@
 #define WL1271_WAIT_EVENT_FAST_POLL_COUNT 20
 
 #define WL18XX_CMD_MAX_SIZE          740
-int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len)
+int VV_cmd_send(u16 id, void *buf, size_t len, size_t res_len)
 {
 	struct wl1271_cmd_header *cmd;
 	unsigned long timeout;
@@ -45,22 +45,19 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 	cmd->id = cpu_to_le16(id);
 	cmd->status = 0;
 
-	//ret = wlcore_write(wl, wl->cmd_box_addr, buf, len, false);
-	ret = VV_sdio_raw_write1(wlcore_translate_addr(wl->cmd_box_addr), buf, len, false);
+	ret = VV_sdio_raw_write1(wlcore_translate_addr(*wifi_data.cmd_box_addr), buf, len, false);
 	if (ret < 0)
 		return ret;
 
 	memcpy(cmd_max, buf, len);
 	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
 
-	// wlcore_write(wl, wl->cmd_box_addr, priv->cmd_buf,
-	// 		    WL18XX_CMD_MAX_SIZE, false);
-	ret = VV_sdio_raw_write1(wlcore_translate_addr(wl->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+	ret = VV_sdio_raw_write1(wlcore_translate_addr(*wifi_data.cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
 
 
 	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
 	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 	if (ret < 0)
 		return ret;
 
@@ -70,7 +67,7 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 			return -ETIMEDOUT;
 		}
 		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 		if (ret < 0)
 			return ret;
 	}
@@ -79,14 +76,13 @@ int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len, size_t res_len
 	if (res_len == 0)
 		res_len = sizeof(struct wl1271_cmd_header);
 
-	//ret = wlcore_read(wl, wl->cmd_box_addr, cmd, res_len, false);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
 	if (ret < 0)
 		return ret;
 	status = le16_to_cpu(cmd->status);
 	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
 	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_ACK]), 
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_ACK]), 
 				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
 	if (ret < 0){
 		printk("[FAILED] - 1.VV_cmd_send\n");
@@ -112,7 +108,7 @@ int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
 	/* payload length, does not include any headers */
 	acx->len = cpu_to_le16(len - sizeof(*acx));
 
-	ret = VV_cmd_send(wl, CMD_CONFIGURE, acx, len, 0);
+	ret = VV_cmd_send(CMD_CONFIGURE, acx, len, 0);
 	if (ret < 0) {
 		wl1271_warning("CONFIGURE command NOK");
 		return ret;
@@ -223,7 +219,7 @@ int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
 	memcpy(cmd->mac_address, addr, ETH_ALEN);
 	cmd->role_type = role_type;
 
-	ret = VV_cmd_send(wl, CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
 	//printk("ret = %d\n", ret);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role enable");
@@ -258,7 +254,7 @@ int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id)
 	}
 	cmd->role_id = *role_id;
 
-	ret = VV_cmd_send(wl, CMD_ROLE_DISABLE, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_DISABLE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role disable");
 		goto out_free;
@@ -429,7 +425,7 @@ static int wl12xx_cmd_role_start_dev(struct wl1271 *wl,
 	wl1271_info("[START_DEV] role start: roleid=%d, hlid=%d, session=%d",
 		     cmd->role_id, cmd->device.hlid, cmd->device.session);
 
-	ret = VV_cmd_send(wl, CMD_ROLE_START, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role enable");
 		goto err_hlid;
@@ -469,7 +465,7 @@ static int wl12xx_cmd_role_stop_dev(struct wl1271 *wl,
 	cmd->disc_type = DISCONNECT_IMMEDIATE;
 	cmd->reason = cpu_to_le16(WLAN_REASON_UNSPECIFIED);
 
-	ret = VV_cmd_send(wl, CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role stop");
 		goto out_free;
@@ -541,7 +537,7 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	// 	     wlvif->role_id, cmd->sta.hlid, cmd->sta.session,
 	// 	     wlvif->basic_rate_set, wlvif->rate_set);
 
-	ret = VV_cmd_send(wl, CMD_ROLE_START, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role start sta");
 		goto err_hlid;
@@ -584,7 +580,7 @@ int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	cmd->disc_type = DISCONNECT_IMMEDIATE;
 	cmd->reason = cpu_to_le16(WLAN_REASON_UNSPECIFIED);
 
-	ret = VV_cmd_send(wl, CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role stop sta");
 		goto out_free;
@@ -614,7 +610,7 @@ int wl12xx_cmd_role_stop_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	cmd->role_id = wlvif->role_id;
 
-	ret = VV_cmd_send(wl, CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role stop ap");
 		goto out_free;
@@ -674,7 +670,7 @@ int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	wl1271_debug(DEBUG_CMD, "vif->bss_conf.bssid = %pM",
 		     vif->bss_conf.bssid);
 
-	ret = VV_cmd_send(wl, CMD_ROLE_START, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ROLE_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role enable");
 		goto err_hlid;
@@ -716,7 +712,7 @@ int wl1271_cmd_interrogate(struct wl1271 *wl, u16 id, void *buf,
 	/* response payload length, does not include any headers */
 	acx->len = cpu_to_le16(res_len - sizeof(*acx));
 
-	ret = VV_cmd_send(wl, CMD_INTERROGATE, acx, cmd_len, res_len);
+	ret = VV_cmd_send(CMD_INTERROGATE, acx, cmd_len, res_len);
 	if (ret < 0)
 		wl1271_error("INTERROGATE command failed");
 
@@ -748,7 +744,7 @@ int wl1271_cmd_data_path(struct wl1271 *wl, bool enable)
 		cmd_tx = CMD_DISABLE_TX;
 	}
 
-	ret = VV_cmd_send(wl, cmd_rx, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(cmd_rx, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("rx %s cmd for channel %d failed",
 			     enable ? "start" : "stop", cmd->channel);
@@ -758,7 +754,7 @@ int wl1271_cmd_data_path(struct wl1271 *wl, bool enable)
 	wl1271_debug(DEBUG_BOOT, "rx %s cmd channel %d",
 		     enable ? "start" : "stop", cmd->channel);
 
-	ret = VV_cmd_send(wl, cmd_tx, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(cmd_tx, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("tx %s cmd for channel %d failed",
 			     enable ? "start" : "stop", cmd->channel);
@@ -792,7 +788,7 @@ int wl1271_cmd_ps_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	ps_params->ps_mode = ps_mode;
 	ps_params->auto_ps_timeout = auto_ps_timeout;
 
-	ret = VV_cmd_send(wl, CMD_SET_PS_MODE, ps_params,
+	ret = VV_cmd_send(CMD_SET_PS_MODE, ps_params,
 			      sizeof(*ps_params), 0);
 	if (ret < 0) {
 		wl1271_error("cmd set_ps_mode failed");
@@ -835,7 +831,7 @@ int wl1271_cmd_template_set(struct wl1271 *wl, u8 role_id,
 	if (buf)
 		memcpy(cmd->template_data, buf, buf_len);
 
-	ret = VV_cmd_send(wl, CMD_SET_TEMPLATE, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SET_TEMPLATE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_warning("cmd set_template failed: %d", ret);
 		goto out_free;
@@ -1143,7 +1139,7 @@ int wl12xx_cmd_set_default_wep_key(struct wl1271 *wl, u8 id, u8 hlid)
 	cmd->key_action = cpu_to_le16(KEY_SET_ID);
 	cmd->key_type = KEY_WEP;
 
-	ret = VV_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_warning("cmd set_default_wep_key failed: %d", ret);
 		goto out;
@@ -1208,7 +1204,7 @@ int wl1271_cmd_set_sta_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	wl1271_dump(DEBUG_CRYPT, "TARGET KEY: ", cmd, sizeof(*cmd));
 
-	ret = VV_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_warning("could not set keys");
 		goto out;
@@ -1277,7 +1273,7 @@ int wl1271_cmd_set_ap_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	wl1271_dump(DEBUG_CRYPT, "TARGET AP KEY: ", cmd, sizeof(*cmd));
 
-	ret = VV_cmd_send(wl, CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_warning("could not set ap keys");
 		goto out;
@@ -1309,7 +1305,7 @@ int wl12xx_cmd_set_peer_state(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (wlvif->bss_type == BSS_TYPE_STA_BSS)
 		cmd->wmm = wlvif->wmm_enabled;
 
-	ret = VV_cmd_send(wl, CMD_SET_PEER_STATE, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SET_PEER_STATE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send set peer state command");
 		goto out_free;
@@ -1375,7 +1371,7 @@ int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	wl1271_debug(DEBUG_CMD, "new peer rates=0x%x queues=0x%x",
 		     cmd->supported_rates, sta->uapsd_queues);
 
-	ret = VV_cmd_send(wl, CMD_ADD_PEER, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_ADD_PEER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd add peer");
 		goto out_free;
@@ -1409,7 +1405,7 @@ int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	cmd->send_deauth_flag = 0;
 	cmd->role_id = wlvif->role_id;
 
-	ret = VV_cmd_send(wl, CMD_REMOVE_PEER, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_REMOVE_PEER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd remove peer");
 		goto out_free;
@@ -1548,7 +1544,7 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 		     "cmd reg domain bitmap1: 0x%08x, bitmap2: 0x%08x",
 		     cmd->ch_bit_map1, cmd->ch_bit_map2);
 
-	ret = VV_cmd_send(wl, CMD_DFS_CHANNEL_CONFIG, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_DFS_CHANNEL_CONFIG, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send reg domain dfs config");
 		goto out;
@@ -1594,7 +1590,7 @@ int wl12xx_cmd_config_fwlog(struct wl1271 *wl)
 	cmd->output = wl->conf.fwlog.output;
 	cmd->threshold = wl->conf.fwlog.threshold;
 
-	ret = VV_cmd_send(wl, CMD_CONFIG_FWLOGGER, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_CONFIG_FWLOGGER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send config firmware logger command");
 		goto out_free;
@@ -1620,7 +1616,7 @@ int wl12xx_cmd_start_fwlog(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = VV_cmd_send(wl, CMD_START_FWLOGGER, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_START_FWLOGGER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send start firmware logger command");
 		goto out_free;
@@ -1646,7 +1642,7 @@ int wl12xx_cmd_stop_fwlog(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = VV_cmd_send(wl, CMD_STOP_FWLOGGER, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_STOP_FWLOGGER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send stop firmware logger command");
 		goto out_free;
@@ -1692,7 +1688,7 @@ static int wl12xx_cmd_roc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 
-	ret = VV_cmd_send(wl, CMD_REMAIN_ON_CHANNEL, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_REMAIN_ON_CHANNEL, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send ROC command");
 		goto out_free;
@@ -1719,7 +1715,7 @@ static int wl12xx_cmd_croc(struct wl1271 *wl, u8 role_id)
 	}
 	cmd->role_id = role_id;
 
-	ret = VV_cmd_send(wl, CMD_CANCEL_REMAIN_ON_CHANNEL, cmd,
+	ret = VV_cmd_send(CMD_CANCEL_REMAIN_ON_CHANNEL, cmd,
 			      sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send ROC command");
@@ -1793,7 +1789,7 @@ int wl12xx_cmd_stop_channel_switch(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	cmd->role_id = wlvif->role_id;
 
-	ret = VV_cmd_send(wl, CMD_STOP_CHANNEL_SWICTH, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_STOP_CHANNEL_SWICTH, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to stop channel switch command");
 		goto out_free;
@@ -1899,7 +1895,7 @@ int wlcore_cmd_generic_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	cmd->enable = enable;
 	cmd->value = value;
 
-	ret = VV_cmd_send(wl, CMD_GENERIC_CFG, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_GENERIC_CFG, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send generic cfg command");
 		goto out_free;
@@ -1934,7 +1930,7 @@ int wl12xx_rocV(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
 		cmd.band = WLCORE_BAND_5GHZ;
 		break;
     }
-    ret = VV_cmd_send(wl, CMD_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
+    ret = VV_cmd_send(CMD_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
 	if (ret < 0)
 		goto out;
 
@@ -1955,7 +1951,7 @@ int wl12xx_crocV(struct wl1271 *wl, u8 role_id)
 	//ret = wl12xx_cmd_croc(wl, role_id);
     struct wl12xx_cmd_croc cmd;
     cmd.role_id = role_id;
-	ret = VV_cmd_send(wl, CMD_CANCEL_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
+	ret = VV_cmd_send(CMD_CANCEL_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
 	if (ret < 0)
 		goto out;
 

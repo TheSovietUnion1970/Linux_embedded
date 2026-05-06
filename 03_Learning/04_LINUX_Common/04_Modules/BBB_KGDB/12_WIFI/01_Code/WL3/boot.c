@@ -131,41 +131,6 @@ fail:
 	return -EINVAL;
 }
 
-// static int wlcore_boot_static_data(struct wl1271 *wl)
-// {
-// 	struct wl1271_static_data *static_data;
-// 	size_t len = sizeof(*static_data) + wl->static_data_priv_len;
-// 	int ret;
-
-// 	static_data = kmalloc(len, GFP_KERNEL);
-// 	if (!static_data) {
-// 		ret = -ENOMEM;
-// 		goto out;
-// 	}
-
-// 	//ret = wlcore_read(wl, wl->cmd_box_addr, static_data, len, false);
-// 	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->cmd_box_addr), (u32*)static_data, len, false);
-// 	if (ret < 0)
-// 		goto out_free;
-
-// 	ret = wlcore_boot_parse_fw_ver(wl, static_data);
-// 	if (ret < 0)
-// 		goto out_free;
-
-// 	ret = wlcore_validate_fw_ver(wl);
-// 	if (ret < 0)
-// 		goto out_free;
-
-// 	ret = wlcore_handle_static_data(wl, static_data);
-// 	if (ret < 0)
-// 		goto out_free;
-
-// out_free:
-// 	kfree(static_data);
-// out:
-// 	return ret;
-// }
-
 static int VV_boot_static_data(struct wl1271 *wl)
 {
 	struct wl1271_static_data *static_data;
@@ -178,8 +143,7 @@ static int VV_boot_static_data(struct wl1271 *wl)
 		goto out;
 	}
 
-	//ret = wlcore_read(wl, wl->cmd_box_addr, static_data, len, false);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->cmd_box_addr), (u32*)static_data, len, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.cmd_box_addr), (u32*)static_data, len, false);
 	if (ret < 0)
 		goto out_free;
 
@@ -535,14 +499,11 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	}
 
 	/* get hardware config command mail box */
-	//ret = wlcore_read_reg(wl, REG_COMMAND_MAILBOX_PTR, &wl->cmd_box_addr);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_COMMAND_MAILBOX_PTR]), &wl->cmd_box_addr, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data.cmd_box_addr, 4, false);
 	if (ret < 0)
 		return ret;
 
-	// wl1271_debug(DEBUG_MAILBOX, "cmd_box_addr 0x%x", wl->cmd_box_addr);
-	wl1271_info("cmd_box_addr 0x%x", wl->cmd_box_addr);
-	//printk("[ADD IF] - cmd_box_addr 0x%x", wl->cmd_box_addr);
+	wl1271_info("cmd_box_addr 0x%x", wifi_data.cmd_box_addr);
 
 	/* get hardware config event mail box */
 	//ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);

@@ -18,7 +18,7 @@ int VV_cmd_set_cac(struct wl1271 *wl, struct wl12xx_vif *wlvif, bool start)
 		cmd->band = WLCORE_BAND_5GHZ;
 	cmd->bandwidth = wlcore_get_native_channel_type(wlvif->channel_type);
 
-	ret = VV_cmd_send(wl,
+	ret = VV_cmd_send(
 			      start ? CMD_CAC_START : CMD_CAC_STOP,
 			      cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
@@ -54,7 +54,7 @@ int VV_cmd_smart_config_set_group_key(struct wl1271 *wl, u16 group_id,
 	cmd->group_id = cpu_to_le32(group_id);
 	memcpy(cmd->key, key, key_len);
 
-	ret = VV_cmd_send(wl, CMD_SMART_CONFIG_SET_GROUP_KEY, cmd,
+	ret = VV_cmd_send(CMD_SMART_CONFIG_SET_GROUP_KEY, cmd,
 			      sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send smart config set group key cmd");
@@ -80,7 +80,7 @@ int VV_cmd_smart_config_stop(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = VV_cmd_send(wl, CMD_SMART_CONFIG_STOP, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SMART_CONFIG_STOP, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send smart config stop command");
 		goto out_free;
@@ -108,7 +108,7 @@ int VV_cmd_smart_config_start(struct wl1271 *wl, u32 group_bitmap)
 
 	cmd->group_id_bitmask = cpu_to_le32(group_bitmap);
 
-	ret = VV_cmd_send(wl, CMD_SMART_CONFIG_START, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SMART_CONFIG_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send smart config start command");
 		goto out_free;

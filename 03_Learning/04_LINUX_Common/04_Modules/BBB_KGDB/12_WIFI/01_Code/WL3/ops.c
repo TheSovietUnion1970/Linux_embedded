@@ -16,7 +16,7 @@ int VV_scan_stop(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 scan_type)
 	stop->role_id = wlvif->role_id;
 	stop->scan_type = scan_type;
 
-	ret = VV_cmd_send(wl, CMD_STOP_SCAN, stop, sizeof(*stop), 0);
+	ret = VV_cmd_send(CMD_STOP_SCAN, stop, sizeof(*stop), 0);
 	if (ret < 0) {
 		printk("failed to send sched scan stop command");
 		goto out_free;
@@ -375,7 +375,7 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	//wl1271_dump(DEBUG_SCAN, "SCAN: ", cmd, sizeof(*cmd));
 
-	ret = VV_cmd_send(wl, CMD_SCAN, cmd, sizeof(*cmd), 0);
+	ret = VV_cmd_send(CMD_SCAN, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		printk("SCAN failed");
 		goto out;

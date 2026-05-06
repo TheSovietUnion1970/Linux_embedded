@@ -15,8 +15,7 @@
 
 struct acx_header;
 
-int VV_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
-		    size_t res_len);
+int VV_cmd_send(u16 id, void *buf, size_t len, size_t res_len);
 int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
 				  size_t len);;
 
