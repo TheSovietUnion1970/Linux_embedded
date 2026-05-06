@@ -12,6 +12,7 @@
 #define __IO_H__
 
 #include <linux/irqreturn.h>
+#include "common.h"
 
 #define HW_ACCESS_MEMORY_MAX_RANGE	0x1FFC0
 
@@ -42,13 +43,13 @@ static inline void wl1271_power_off(struct wl1271 *wl)
 {
 	int ret = 0;
 
-	if (!test_bit(WL1271_FLAG_GPIO_POWER, &wl->flags))
+	if (!test_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags))
 		return;
 
 	if (wl->if_ops->power)
 		ret = wl->if_ops->power(wl->dev, false);
 	if (!ret)
-		clear_bit(WL1271_FLAG_GPIO_POWER, &wl->flags);
+		clear_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
 }
 
 static inline int wl1271_power_on(struct wl1271 *wl)
@@ -58,7 +59,7 @@ static inline int wl1271_power_on(struct wl1271 *wl)
 	if (wl->if_ops->power)
 		ret = wl->if_ops->power(wl->dev, true);
 	if (ret == 0)
-		set_bit(WL1271_FLAG_GPIO_POWER, &wl->flags);
+		set_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
 
 	return ret;
 }

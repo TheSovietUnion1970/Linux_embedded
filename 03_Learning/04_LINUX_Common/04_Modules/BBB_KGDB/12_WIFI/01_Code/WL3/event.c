@@ -166,9 +166,9 @@ void wlcore_event_soft_gemini_sense(struct wl1271 *wl, u8 enable)
 	struct wl12xx_vif *wlvif;
 
 	if (enable) {
-		set_bit(WL1271_FLAG_SOFT_GEMINI, &wl->flags);
+		set_bit(WL1271_FLAG_SOFT_GEMINI, &wifi_data.flags);
 	} else {
-		clear_bit(WL1271_FLAG_SOFT_GEMINI, &wl->flags);
+		clear_bit(WL1271_FLAG_SOFT_GEMINI, &wifi_data.flags);
 		wl12xx_for_each_wlvif_sta(wl, wlvif) {
 			wl1271_recalc_rx_streaming(wl, wlvif);
 		}

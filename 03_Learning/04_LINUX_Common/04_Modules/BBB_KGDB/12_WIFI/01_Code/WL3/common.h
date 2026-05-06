@@ -399,6 +399,7 @@ struct Wifi_data {
 	struct device *dev;
     struct mutex mutex;
     spinlock_t lock;
+	unsigned long flags;
 
     struct ieee80211_vif *vif;
     struct list_head wifi_vif_list;

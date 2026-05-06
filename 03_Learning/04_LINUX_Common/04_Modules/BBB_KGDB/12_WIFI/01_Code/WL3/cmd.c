@@ -291,10 +291,10 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	VV_session_ids[link] = wlcore_get_new_session_id(wl, link);
 
 	/* these bits are used by op_tx */
-	spin_lock_irqsave(&wl->wl_lock, flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
 	__set_bit(link, VV_map.links_map);
 	__set_bit(link, wlvif->links_map);
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
 	/*
 	 * take the last "freed packets" value from the current FW status.
@@ -329,10 +329,10 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 		return;
 
 	/* these bits are used by op_tx */
-	spin_lock_irqsave(&wl->wl_lock, flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
 	__clear_bit(*hlid, VV_map.links_map);
 	__clear_bit(*hlid, wlvif->links_map);
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
 	// VV_links[*hlid].allocated_pkts = 0;
 	VV_allocated_pkts[*hlid] = 0;
@@ -363,7 +363,7 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 		if (wlvif->encryption_type == KEY_GEM)
 			sqn_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING_GEM;
 
-		if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
+		if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 			wlvif->total_freed_pkts += sqn_padding;
 	}
 

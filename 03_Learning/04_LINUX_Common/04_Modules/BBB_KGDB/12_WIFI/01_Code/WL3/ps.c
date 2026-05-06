@@ -99,12 +99,12 @@ static void wl1271_ps_filter_frames(struct wl1271 *wl, u8 hlid)
 		}
 	}
 
-	spin_lock_irqsave(&wl->wl_lock, flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		//wl->tx_queue_count[i] -= filtered[i];
 		VV_tx_queue_count[i] -= filtered[i];
 	}
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
 	//wl1271_handle_tx_low_watermark(wl);
 }

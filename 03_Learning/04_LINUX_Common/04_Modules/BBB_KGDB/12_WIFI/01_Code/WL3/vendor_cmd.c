@@ -12,7 +12,7 @@
 
 #include "wlcore.h"
 #include "debug.h"
-//#include "hw_ops.h"
+#include "common.h"
 #include "vendor_cmd.h"
 
 #include "wl18.h"
@@ -48,7 +48,7 @@ wlcore_vendor_cmd_smart_config_start(struct wiphy *wiphy,
 	if (!tb[WLCORE_VENDOR_ATTR_GROUP_ID])
 		return -EINVAL;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EINVAL;
@@ -67,7 +67,7 @@ wlcore_vendor_cmd_smart_config_start(struct wiphy *wiphy,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -83,7 +83,7 @@ wlcore_vendor_cmd_smart_config_stop(struct wiphy *wiphy,
 
 	wl1271_debug(DEBUG_CMD, "testmode cmd smart config stop");
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EINVAL;
@@ -101,7 +101,7 @@ wlcore_vendor_cmd_smart_config_stop(struct wiphy *wiphy,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -130,7 +130,7 @@ wlcore_vendor_cmd_smart_config_set_group_key(struct wiphy *wiphy,
 	    !tb[WLCORE_VENDOR_ATTR_GROUP_KEY])
 		return -EINVAL;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EINVAL;
@@ -151,7 +151,7 @@ wlcore_vendor_cmd_smart_config_set_group_key(struct wiphy *wiphy,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }

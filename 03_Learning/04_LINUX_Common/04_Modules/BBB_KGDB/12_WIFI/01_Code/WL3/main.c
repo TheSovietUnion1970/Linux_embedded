@@ -124,7 +124,7 @@ static int wl1271_set_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 {
 	int ret = 0;
 
-	/* we should hold wl->mutex */
+	/* we should hold wifi_data.mutex */
 	ret = wl1271_acx_ps_rx_streaming(wl, wlvif, enable);
 	if (ret < 0)
 		goto out;
@@ -154,7 +154,7 @@ int wl1271_recalc_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	if (period &&
 	    test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags) &&
 	    (wl->conf.rx_streaming.always ||
-	     test_bit(WL1271_FLAG_SOFT_GEMINI, &wl->flags)))
+	     test_bit(WL1271_FLAG_SOFT_GEMINI, &wifi_data.flags)))
 		ret = wl1271_set_rx_streaming(wl, wlvif, true);
 	else {
 		ret = wl1271_set_rx_streaming(wl, wlvif, false);
@@ -173,12 +173,12 @@ static void wl1271_rx_streaming_enable_work(struct work_struct *work)
 						rx_streaming_enable_work);
 	struct wl1271 *wl = wlvif->wl;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (test_bit(WLVIF_FLAG_RX_STREAMING_STARTED, &wlvif->flags) ||
 	    !test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags) ||
 	    (!wl->conf.rx_streaming.always &&
-	     !test_bit(WL1271_FLAG_SOFT_GEMINI, &wl->flags)))
+	     !test_bit(WL1271_FLAG_SOFT_GEMINI, &wifi_data.flags)))
 		goto out;
 
 	if (!wl->conf.rx_streaming.interval)
@@ -202,7 +202,7 @@ out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static void wl1271_rx_streaming_disable_work(struct work_struct *work)
@@ -213,7 +213,7 @@ static void wl1271_rx_streaming_disable_work(struct work_struct *work)
 						rx_streaming_disable_work);
 	struct wl1271 *wl = wlvif->wl;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (!test_bit(WLVIF_FLAG_RX_STREAMING_STARTED, &wlvif->flags))
 		goto out;
@@ -232,7 +232,7 @@ out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static void wl1271_rx_streaming_timer(struct timer_list *t)
@@ -243,7 +243,7 @@ static void wl1271_rx_streaming_timer(struct timer_list *t)
 	// ieee80211_queue_work(wl->hw, &wlvif->rx_streaming_disable_work);
 }
 
-/* wl->mutex must be taken */
+/* wifi_data.mutex must be taken */
 void wl12xx_rearm_tx_watchdog_locked(void)
 {
 	/* if the watchdog is not armed, don't do anything */
@@ -438,7 +438,7 @@ static int wlcore_fw_status(void)
 
 	/* if more blocks are available now, tx work can be scheduled */
 	// if (VV_tx_blocks_available > old_tx_blk_count)
-	// 	clear_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags);
+	// 	clear_bit(WL1271_FLAG_FW_TX_BUSY, &wifi_data.flags);
 
 	/* update the host-chipset time offset */
 	VV_time_offset = (ktime_get_boottime_ns() >> 10) -
@@ -785,41 +785,43 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 {
 	int ret;
 	unsigned long flags;
-	struct wl1271 *wl = cookie;
+	// struct wl1271 *wl = cookie;
+	(void*)(cookie);
 	bool queue_tx_work = true;
 
-	set_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags);
+	set_bit(WL1271_FLAG_IRQ_RUNNING, &wifi_data.flags);
 
-	if (test_bit(WL1271_FLAG_SUSPENDED, &wl->flags)) {
-		/* don't enqueue a work right now. mark it as pending */
-		set_bit(WL1271_FLAG_PENDING_WORK, &wl->flags);
-		wl1271_debug(DEBUG_IRQ, "should not enqueue work");
-		spin_lock_irqsave(&wl->wl_lock, flags);
-		disable_irq_nosync(wl->irq);
-		pm_wakeup_event(wl->dev, 0);
-		spin_unlock_irqrestore(&wl->wl_lock, flags);
-		goto out_handled;
-	}
+	// if (test_bit(WL1271_FLAG_SUSPENDED, &wifi_data.flags)) {
+	// 	printk("WL1271_FLAG_SUSPENDED\n");
+	// 	/* don't enqueue a work right now. mark it as pending */
+	// 	set_bit(WL1271_FLAG_PENDING_WORK, &wifi_data.flags);
+	// 	wl1271_debug(DEBUG_IRQ, "should not enqueue work");
+	// 	spin_lock_irqsave(&wifi_data.lock, flags);
+	// 	disable_irq_nosync(wl->irq);
+	// 	pm_wakeup_event(wl->dev, 0);
+	// 	spin_unlock_irqrestore(&wifi_data.lock, flags);
+	// 	goto out_handled;
+	// }
 
 	/* TX might be handled here, avoid redundant work */
-	set_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
+	set_bit(WL1271_FLAG_TX_PENDING, &wifi_data.flags);
 	cancel_work_sync(&VV_work.tx_work);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	//ret = wlcore_irq_locked(wl);
 	ret = VV_irq_locked();
-	if (ret)
-		wl12xx_queue_recovery_work(wl);
+	// if (ret)
+	// 	wl12xx_queue_recovery_work(wl);
 
 	/* In case TX was not handled in wlcore_irq_locked(), queue TX work */
-	clear_bit(WL1271_FLAG_TX_PENDING, &wl->flags);
-	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags)) {
-	if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
+	clear_bit(WL1271_FLAG_TX_PENDING, &wifi_data.flags);
+	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wifi_data.flags)) {
+	if (spin_trylock_irqsave(&wifi_data.lock, flags)) {
 		if (!wl1271_tx_total_queue_count()) // counts of all Frames scheduled for transmission, not handled yet
 												// count += VV_tx_queue_count[i];
 			queue_tx_work = false;
-		spin_unlock_irqrestore(&wl->wl_lock, flags);
+		spin_unlock_irqrestore(&wifi_data.lock, flags);
 	}
 
 	// VV_tx_queue_count is non-zero -> there are frames that not handled yet 
@@ -827,10 +829,10 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 		ieee80211_queue_work(VV_work.hw, &VV_work.tx_work);
 	//}
 
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 out_handled:
-	clear_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags);
+	clear_bit(WL1271_FLAG_IRQ_RUNNING, &wifi_data.flags);
 
 	return IRQ_HANDLED;
 }
@@ -898,10 +900,10 @@ void wl12xx_queue_recovery_work(struct wl1271 *wl)
 	/* Avoid a recursive recovery */
 	if (wl->state == WLCORE_STATE_ON) {
 		WARN_ON(!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY,
-				  &wl->flags));
+				  &wifi_data.flags));
 
 		wl->state = WLCORE_STATE_RESTARTING;
-		set_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags);
+		set_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags);
 		//ieee80211_queue_work(wl->hw, &wl->recovery_work);
 	}
 }
@@ -970,7 +972,7 @@ static void wlcore_save_freed_pkts(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (wlvif->encryption_type == KEY_GEM)
 		sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING_GEM;
 
-	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
+	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 		wl_sta->total_freed_pkts += sqn_recovery_padding;
 }
 
@@ -1032,7 +1034,7 @@ static void wl1271_recovery_work(struct work_struct *work)
 	struct ieee80211_vif *vif;
 	int error;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (wl->state == WLCORE_STATE_OFF || wl->plt)
 		goto out_unlock;
@@ -1046,16 +1048,16 @@ static void wl1271_recovery_work(struct work_struct *work)
 	/* ### */
 	wlcore_disable_interrupts_nosync(wl); // disable_irq_nosync(wl->irq);
 
-	if (!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags)) {
+	if (!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags)) {
 		if (wl->conf.fwlog.output == WL12XX_FWLOG_OUTPUT_HOST)
 			wl12xx_read_fwlog_panic(wl);
 		wlcore_print_recovery(wl);
 	}
 
 	BUG_ON(wl->conf.recovery.bug_on_recovery &&
-	       !test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags));
+	       !test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags));
 
-	clear_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags);
+	clear_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags);
 
 	if (wl->conf.recovery.no_recovery) {
 		wl1271_info("No recovery (chosen on module load). Fw will remain stuck.");
@@ -1066,7 +1068,7 @@ static void wl1271_recovery_work(struct work_struct *work)
 	//wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_FW_RESTART);
 	int i;
 	unsigned long flags;
-	spin_lock_irqsave(&wl->wl_lock, flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
 
 	//printk("nMAC addr = %d, nTx = %d\n", WLCORE_NUM_MAC_ADDRESSES, NUM_TX_QUEUES);
 	/* mark all possible queues as stopped */
@@ -1075,7 +1077,7 @@ static void wl1271_recovery_work(struct work_struct *work)
 						&wl->queue_stop_reasons[i]);
 	ieee80211_stop_queues(wl->hw); /* ### */
 
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
 
 	// /* reboot the chipset */
@@ -1115,7 +1117,7 @@ static void wl1271_recovery_work(struct work_struct *work)
 	 * to restart the HW.
 	 */
 	//wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FW_RESTART);
-	spin_lock_irqsave(&wl->wl_lock, flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
 	/* mark all possible queues as awake */
 	for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
 		test_and_clear_bit(WLCORE_QUEUE_STOP_REASON_FW_RESTART,
@@ -1125,12 +1127,12 @@ static void wl1271_recovery_work(struct work_struct *work)
 	 */
 	ieee80211_wake_queues(wl->hw); /* ### */
 
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
 out_unlock:
 	wl->watchdog_recovery = false;
-	clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags);
-	mutex_unlock(&wl->mutex);
+	clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wl1271_setup(struct wl1271 *wl)
@@ -1304,9 +1306,9 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	 * reading the interrupt status.
 	 */
 	wlcore_disable_interrupts(wl);
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 	if (!wl->plt) {
-		mutex_unlock(&wl->mutex);
+		mutex_unlock(&wifi_data.mutex);
 
 		/*
 		 * This will not necessarily enable interrupts as interrupts
@@ -1321,7 +1323,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 		goto out;
 	}
 
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	wl1271_flush_deferred_work(wl);
 	//cancel_work_sync(&wl->netstack_work);
@@ -1330,15 +1332,15 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	//cancel_work_sync(&wl->recovery_work);
 	cancel_delayed_work_sync(&VV_work.tx_watchdog_work);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 	wl1271_power_off(wl);
-	wl->flags = 0;
+	wifi_data.flags = 0;
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
 	wl->state = WLCORE_STATE_OFF;
 	wl->plt = false;
 	wl->plt_mode = PLT_OFF;
 	VV_rx_counter = 0;
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 out:
 	return ret;
@@ -1370,7 +1372,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 
 	hlid = wl12xx_tx_get_hlid(wl, wlvif, skb, control->sta); // sta.hlid
 
-	spin_lock_irqsave(&wl->wl_lock, flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
 
 	// Drop packet
 	/*
@@ -1402,11 +1404,11 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	 */
 	// If the TX work is not already busy or pending, schedule VV_work.tx_work (which eventually calls wlcore_tx_work_locked()
 	// -> This is what triggers the actual transmission.
-	if (!test_bit(WL1271_FLAG_TX_PENDING, &wl->flags))
+	if (!test_bit(WL1271_FLAG_TX_PENDING, &wifi_data.flags))
 		ieee80211_queue_work(wl->hw, &VV_work.tx_work);
 
 out:
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
 
 int wl1271_tx_dummy_packet(struct wl1271 *wl)
@@ -1415,19 +1417,19 @@ int wl1271_tx_dummy_packet(struct wl1271 *wl)
 	int q;
 
 	/* no need to queue a new dummy packet if one is already pending */
-	if (test_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags))
+	if (test_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wifi_data.flags))
 		return 0;
 
 	q = wl1271_tx_get_queue(skb_get_queue_mapping(VV_dummy_packet));
 
-	spin_lock_irqsave(&wl->wl_lock, flags);
-	set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wl->flags);
+	spin_lock_irqsave(&wifi_data.lock, flags);
+	set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wifi_data.flags);
 	//wl->tx_queue_count[q]++;
 	VV_tx_queue_count[q]++;
-	spin_unlock_irqrestore(&wl->wl_lock, flags);
+	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
 	/* The FW is low on RX memory blocks, so send the dummy packet asap */
-	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wl->flags))
+	//if (!test_bit(WL1271_FLAG_FW_TX_BUSY, &wifi_data.flags))
 	return wlcore_tx_work_locked();
 
 }
@@ -1850,7 +1852,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	printk("wlcore_op_stop_locked\n");
 	if (wl->state == WLCORE_STATE_OFF) {
 		if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS,
-					&wl->flags))
+					&wifi_data.flags))
 			wlcore_enable_interrupts(wl);
 
 		return;
@@ -1868,10 +1870,10 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 */
 	wlcore_disable_interrupts_nosync(wl); // disable_irq_nosync(wl->irq);
 
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	wlcore_synchronize_interrupts(wl); // synchronize_irq(wl->irq);
-	// if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
+	// if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 	// 	cancel_work_sync(&wl->recovery_work);
 	wl1271_flush_deferred_work(wl);
 	cancel_delayed_work_sync(&VV_work.scan_complete_work);
@@ -1881,7 +1883,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	cancel_delayed_work_sync(&VV_work.tx_watchdog_work);
 
 	/* let's notify MAC80211 about the remaining pending TX frames */
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 	wl12xx_tx_reset(wl);
 
 	wl1271_power_off(wl);
@@ -1890,7 +1892,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 * an interrupt storm. Now that the power is down, it is safe to
 	 * re-enable interrupts to balance the disable depth
 	 */
-	if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags))
+	if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 		wlcore_enable_interrupts(wl);
 
 	wl->band = NL80211_BAND_2GHZ;
@@ -1925,7 +1927,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 * mutex_lock, so that wl1271_op_add_interface does not accidentally
 	 * get executed before all these vars have been reset.
 	 */
-	wl->flags = 0;
+	wifi_data.flags = 0;
 
 	VV_last_updated_tmp_tx_blocks_freed = 0;
 
@@ -1958,11 +1960,11 @@ static void wlcore_op_stop(struct ieee80211_hw *hw)
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 stop");
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	wlcore_op_stop_locked(wl);
 
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static void wlcore_channel_switch_work(struct work_struct *work)
@@ -1980,7 +1982,7 @@ static void wlcore_channel_switch_work(struct work_struct *work)
 
 	wl1271_info("channel switch failed (role_id: %d).", wlvif->role_id);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -2003,7 +2005,7 @@ static void wlcore_channel_switch_work(struct work_struct *work)
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static void wlcore_connection_loss_work(struct work_struct *work)
@@ -2020,7 +2022,7 @@ static void wlcore_connection_loss_work(struct work_struct *work)
 
 	wl1271_info("Connection loss work (role_id: %d).", wlvif->role_id);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -2032,7 +2034,7 @@ static void wlcore_connection_loss_work(struct work_struct *work)
 	vif = wl12xx_wlvif_to_vif(wlvif);
 	ieee80211_connection_loss(vif);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static void wlcore_pending_auth_complete_work(struct work_struct *work)
@@ -2049,7 +2051,7 @@ static void wlcore_pending_auth_complete_work(struct work_struct *work)
 			     pending_auth_complete_work);
 	wl = wlvif->wl;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -2077,7 +2079,7 @@ static void wlcore_pending_auth_complete_work(struct work_struct *work)
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wl12xx_allocate_rate_policy(struct wl1271 *wl, u8 *idx)
@@ -2225,7 +2227,7 @@ static int wl12xx_init_fw(struct wl1271 *wl)
 		break;
 
 irq_disable:
-		mutex_unlock(&wl->mutex);
+		mutex_unlock(&wifi_data.mutex);
 		/* Unlocking the mutex in the middle of handling is
 		   inherently unsafe. In this case we deem it safe to do,
 		   because we need to let any possibly pending IRQ out of
@@ -2237,7 +2239,7 @@ irq_disable:
 		wl1271_flush_deferred_work(wl);
 		//cancel_work_sync(&wl->netstack_work);
 		cancel_work_sync(&VV_work.netstack_work);
-		mutex_lock(&wl->mutex);
+		mutex_lock(&wifi_data.mutex);
 power_off:
 		wl1271_power_off(wl);
 	}
@@ -2387,14 +2389,14 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
 					    wl12xx_vif_count_iter, NULL);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	/*
 	 * in some very corner case HW recovery scenarios its possible to
 	 * get here before __wl1271_op_remove_interface is complete, so
 	 * opt out if that is the case.
 	 */
-	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags) ||
+	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags) ||
 	    test_bit(WLVIF_FLAG_INITIALIZED, &wlvif->flags)) {
 		ret = -EBUSY;
 		goto out;
@@ -2492,7 +2494,7 @@ out:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out_unlock:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -2544,7 +2546,7 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 		ieee80211_remain_on_channel_expired(wl->hw);
 	}
 
-	if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags)) {
+	if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags)) {
 		/* disable active roles */
 		ret = pm_runtime_get_sync(wl->dev);
 		if (ret < 0) {
@@ -2607,8 +2609,8 @@ deinit:
 	 * Last AP, have more stations. Configure sleep auth according to STA.
 	 * Don't do thin on unintended recovery.
 	 */
-	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wl->flags) &&
-	    !test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wl->flags))
+	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags) &&
+	    !test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags))
 		goto unlock;
 
 	// if (wl->ap_count == 0 && is_ap) {
@@ -2628,7 +2630,7 @@ deinit:
 	// }
 
 unlock:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	// del_timer_sync(&wlvif->rx_streaming_timer);
 	// cancel_work_sync(&wlvif->rx_streaming_enable_work);
@@ -2638,7 +2640,7 @@ unlock:
 	// cancel_delayed_work_sync(&wlvif->channel_switch_work);
 	// cancel_delayed_work_sync(&wlvif->pending_auth_complete_work);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 }
 
 static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
@@ -2652,7 +2654,7 @@ static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
 					    wl12xx_vif_count_iter, NULL);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (wl->state == WLCORE_STATE_OFF ||
 	    !test_bit(WLVIF_FLAG_INITIALIZED, &wlvif->flags))
@@ -2673,7 +2675,7 @@ static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 	__wl1271_op_remove_interface(wl, vif, true);
 	// no need fw change as we use single role
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wlcore_join(struct wl1271 *wl, struct wl12xx_vif *wlvif)
@@ -2988,7 +2990,7 @@ static int wl1271_op_config(struct ieee80211_hw *hw, u32 changed)
 		     conf->flags & IEEE80211_CONF_IDLE ? "idle" : "in use",
 			 changed);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (changed & IEEE80211_CONF_CHANGE_POWER)
 		wl->power_level = conf->power_level;
@@ -3015,7 +3017,7 @@ out_sleep:
 	pm_runtime_put_autosuspend(wl->dev);
 
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -3045,7 +3047,7 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 	wl1271_debug(DEBUG_MAC80211, "mac80211 configure filter changed %x"
 		     " total %x", changed, *total);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	*total &= WL1271_SUPPORTED_FILTERS;
 	changed &= WL1271_SUPPORTED_FILTERS;
@@ -3104,7 +3106,7 @@ out_sleep:
 	pm_runtime_put_autosuspend(wl->dev);
 
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 	kfree(fp);
 }
 
@@ -3304,7 +3306,7 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 	// 	wl1271_tx_flush(wl);
 	// }
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EAGAIN;
@@ -3327,7 +3329,7 @@ out_wake_queues:
 	// if (might_change_spare)
 	// 	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
 
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -3495,7 +3497,7 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 		len = req->ssids[0].ssid_len;
 	}
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		/*
@@ -3525,7 +3527,7 @@ out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -4033,7 +4035,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
 	int ret;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	ret = pm_runtime_get_sync(wl->dev);
 	if (ret < 0) {
@@ -4059,7 +4061,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 	pm_runtime_put_autosuspend(wl->dev);
 
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
@@ -4078,7 +4080,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 		     cfg80211_get_chandef_type(&ctx->def),
 		     ctx->radar_enabled, ctx->def.chan->dfs_state);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -4109,7 +4111,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return 0;
 }
@@ -4242,7 +4244,7 @@ static void wlcore_roc_if_possible(struct wl1271 *wl,
 /*
  * when wl_sta is NULL, we treat this call as if coming from a
  * pending auth reply.
- * wl->mutex must be taken and the FW must be awake when the call
+ * wifi_data.mutex must be taken and the FW must be awake when the call
  * takes place.
  */
 void wlcore_update_inconn_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif,
@@ -4376,7 +4378,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 	wl1271_debug(DEBUG_MAC80211, "mac80211 sta %d state=%d->%d",
 		     sta->aid, old_state, new_state);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EBUSY;
@@ -4394,7 +4396,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 	if (new_state < old_state)
 		return 0;
 	return ret;
@@ -4429,7 +4431,7 @@ static int wlcore_roc_completed(struct wl1271 *wl)
 
 	wl1271_debug(DEBUG_MAC80211, "roc complete");
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EBUSY;
@@ -4447,7 +4449,7 @@ static int wlcore_roc_completed(struct wl1271 *wl)
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -4603,7 +4605,7 @@ static void wlcore_op_sta_statistics(struct ieee80211_hw *hw,
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 get_rssi");
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -4626,7 +4628,7 @@ out_sleep:
 	pm_runtime_put_autosuspend(wl->dev);
 
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static u32 wlcore_op_get_expected_throughput(struct ieee80211_hw *hw,
@@ -4693,7 +4695,7 @@ static int wl1271_op_conf_tx(struct ieee80211_hw *hw,
 	if (wlcore_is_p2p_mgmt(wlvif))
 		return 0;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 conf tx %d", queue);
 
@@ -4732,7 +4734,7 @@ out_sleep:
 	pm_runtime_put_autosuspend(wl->dev);
 
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
@@ -4757,7 +4759,7 @@ static void wl1271_op_cancel_hw_scan(struct ieee80211_hw *hw,
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 cancel hw scan");
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -4794,7 +4796,7 @@ out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	cancel_delayed_work_sync(&VV_work.scan_complete_work);
 }
@@ -4814,7 +4816,7 @@ static void wl1271_op_set_default_key_idx(struct ieee80211_hw *hw,
 	if (key_idx == -1)
 		return;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON)) {
 		ret = -EAGAIN;
@@ -4843,7 +4845,7 @@ out_sleep:
 	pm_runtime_put_autosuspend(wl->dev);
 
 out_unlock:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wlcore_op_add_chanctx(struct ieee80211_hw *hw,
@@ -4878,7 +4880,7 @@ static void wlcore_op_change_chanctx(struct ieee80211_hw *hw,
 		     "mac80211 change chanctx %d (type %d) changed 0x%x",
 		     channel, cfg80211_get_chandef_type(&ctx->def), changed);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	ret = pm_runtime_get_sync(wl->dev);
 	if (ret < 0) {
@@ -4910,7 +4912,7 @@ static void wlcore_op_change_chanctx(struct ieee80211_hw *hw,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int __wlcore_switch_vif_chan(struct wl1271 *wl,
@@ -4963,7 +4965,7 @@ wlcore_op_switch_vif_chanctx(struct ieee80211_hw *hw,
 		     "mac80211 switch chanctx n_vifs %d mode %d",
 		     n_vifs, mode);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	ret = pm_runtime_get_sync(wl->dev);
 	if (ret < 0) {
@@ -4982,7 +4984,7 @@ out_sleep:
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	return 0;
 }
@@ -5003,7 +5005,7 @@ static void wlcore_op_unassign_vif_chanctx(struct ieee80211_hw *hw,
 
 	wl1271_tx_flush(wl);
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wl->state != WLCORE_STATE_ON))
 		goto out;
@@ -5026,7 +5028,7 @@ static void wlcore_op_unassign_vif_chanctx(struct ieee80211_hw *hw,
 	pm_runtime_mark_last_busy(wl->dev);
 	pm_runtime_put_autosuspend(wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 /* === CUSTOM ====*/
@@ -5739,7 +5741,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	wl->band = NL80211_BAND_2GHZ;
 	wl->channel_type = NL80211_CHAN_NO_HT;
-	wl->flags = 0;
+	wifi_data.flags = 0;
 	wl->sg_enabled = true;
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
 	wl->recovery_count = 0;
@@ -5759,11 +5761,11 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++)
 		VV_skb_tx_frames[i] = NULL;
 
-	spin_lock_init(&wl->wl_lock);
+	spin_lock_init(&wifi_data.lock);
 
 	wl->state = WLCORE_STATE_OFF;
 	wl->fw_type = WL12XX_FW_TYPE_NONE;
-	mutex_init(&wl->mutex);
+	mutex_init(&wifi_data.mutex);
 	mutex_init(&wl->flush_mutex);
 	init_completion(&wl->nvs_loading_complete);
 
@@ -5838,9 +5840,9 @@ EXPORT_SYMBOL_GPL(wlcore_alloc_hw);
 int wlcore_free_hw(struct wl1271 *wl)
 {
 	/* Unblock any fwlog readers */
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 	wl->fwlog_size = -1;
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 
 	//wlcore_sysfs_free(wl);
 
