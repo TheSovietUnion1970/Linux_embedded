@@ -227,7 +227,7 @@ VV_get_rx_buf_align(u32 rx_desc)
 }
 
 #include "wl18xx.h"
-int wlcore_rx(struct wl1271 *wl)
+int wlcore_rx(void)
 {
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
 	u32 buf_size;
@@ -323,7 +323,7 @@ int wlcore_rx(struct wl1271 *wl)
 	// 		goto out;
 	// }
 
-	wl12xx_rearm_rx_streaming(wl, active_hlids);
+	//wl12xx_rearm_rx_streaming(wl, active_hlids);
 
 out:
 	return ret;

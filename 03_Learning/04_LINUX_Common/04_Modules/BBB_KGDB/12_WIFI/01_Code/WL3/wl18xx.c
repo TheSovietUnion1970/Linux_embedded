@@ -1639,6 +1639,8 @@ static int wl18xx_probe(struct platform_device *pdev)
 	wifi_data.cmd_box_addr = devm_kzalloc(wl->dev, 4, GFP_KERNEL);
 	wifi_data.mbox_ptr[0] = (u32*)devm_kzalloc(wl->dev, 4, GFP_KERNEL);
 	wifi_data.mbox_ptr[1] = (u32*)devm_kzalloc(wl->dev, 4, GFP_KERNEL);
+	wifi_data.mbox = devm_kzalloc(wl->dev, sizeof(struct wl18xx_event_mailbox), GFP_KERNEL | GFP_DMA);
+
 	return ret;
 
 out_free:

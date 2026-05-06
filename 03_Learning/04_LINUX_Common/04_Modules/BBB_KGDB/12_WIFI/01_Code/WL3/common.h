@@ -56,6 +56,7 @@ extern s64 VV_time_offset; /* Time-offset between host and chipset clocks */
 
 /* FW Rx counter */
 extern u32 VV_rx_counter;
+extern bool VV_scan_failed;
 
 #define WL18XX_NUM_RX_DESCRIPTORS 32
 #define WL18XX_MAX_LINKS 16
@@ -417,6 +418,8 @@ struct Wifi_data {
 	enum nl80211_dfs_regions dfs_region;
 	int* cmd_box_addr;
 	u32* mbox_ptr[2];
+	/* Pointer that holds DMA-friendly block for the mailbox */
+	void *mbox;
 
     /* Temporary use */
     struct wl1271 *wl;

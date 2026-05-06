@@ -62,6 +62,7 @@ struct VV_vif* VV_vif_ptr[10];
 int VV_vif_ptr_id = 0;
 u8 *VV_aggr_buf;
 u32 VV_rx_counter;
+bool VV_scan_failed;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -648,7 +649,7 @@ void VV_tx_immediate_complete(void)
 
 #define WL1271_IRQ_MAX_LOOPS 256
 
-static int VV_irq_locked(struct wl1271 *wl)
+static int VV_irq_locked(void)
 {
 	int ret = 0;
 	u32 intr;
@@ -658,20 +659,20 @@ static int VV_irq_locked(struct wl1271 *wl)
 	unsigned int defer_count;
 	unsigned long flags;
 
-	/*
-	 * In case edge triggered interrupt must be used, we cannot iterate
-	 * more than once without introducing race conditions with the hardirq.
-	 */
-	if (wl->irq_flags & (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING))
-		loopcount = 1;
+	// /*
+	//  * In case edge triggered interrupt must be used, we cannot iterate
+	//  * more than once without introducing race conditions with the hardirq.
+	//  */
+	// if (wl->irq_flags & (IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING))
+	// 	loopcount = 1;
 
-	ret = pm_runtime_get_sync(wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.wl->dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
+		pm_runtime_put_noidle(wifi_data.wl->dev);
 		goto out;
 	}
 
-	// loopcount = 1
+	loopcount = 1;
 	while (!done && loopcount--) {
 		smp_mb__after_atomic();
 
@@ -688,37 +689,37 @@ static int VV_irq_locked(struct wl1271 *wl)
 			continue;
 		}
 
-		if (unlikely(intr & WL1271_ACX_INTR_WATCHDOG)) {
-			wl1271_error("HW watchdog interrupt received! starting recovery.");
-			wl->watchdog_recovery = true;
-			ret = -EIO;
+		// if (unlikely(intr & WL1271_ACX_INTR_WATCHDOG)) {
+		// 	wl1271_error("HW watchdog interrupt received! starting recovery.");
+		// 	wl->watchdog_recovery = true;
+		// 	ret = -EIO;
 
-			/* restarting the chip. ignore any other interrupt. */
-			goto err_ret;
-		}
+		// 	/* restarting the chip. ignore any other interrupt. */
+		// 	goto err_ret;
+		// }
 
-		if (unlikely(intr & WL1271_ACX_SW_INTR_WATCHDOG)) {
-			wl1271_error("SW watchdog interrupt received! "
-				     "starting recovery.");
-			wl->watchdog_recovery = true;
-			ret = -EIO;
+		// if (unlikely(intr & WL1271_ACX_SW_INTR_WATCHDOG)) {
+		// 	wl1271_error("SW watchdog interrupt received! "
+		// 		     "starting recovery.");
+		// 	wl->watchdog_recovery = true;
+		// 	ret = -EIO;
 
-			/* restarting the chip. ignore any other interrupt. */
-			goto err_ret;
-		}
+		// 	/* restarting the chip. ignore any other interrupt. */
+		// 	goto err_ret;
+		// }
 
 		if (likely(intr & WL1271_ACX_INTR_DATA)) {
 			wl1271_debug(DEBUG_IRQ, "WL1271_ACX_INTR_DATA");
 
-			ret = wlcore_rx(wl);
+			ret = wlcore_rx();
 			if (ret < 0)
 				goto err_ret;
 
 			/* Check if any tx blocks were freed */
-			if (spin_trylock_irqsave(&wl->wl_lock, flags)) {
+			if (spin_trylock_irqsave(&wifi_data.lock, flags)) {
 				if (!wl1271_tx_total_queue_count())
 					run_tx_queue = false;
-				spin_unlock_irqrestore(&wl->wl_lock, flags);
+				spin_unlock_irqrestore(&wifi_data.lock, flags);
 			}
 
 			// Check if tx_queue in the current link is zero or not
@@ -742,24 +743,24 @@ static int VV_irq_locked(struct wl1271 *wl)
 
 				/* Pass all received frames to the network stack */
 				while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
-					ieee80211_rx_ni(wl->hw, skb);
+					ieee80211_rx_ni(VV_work.hw, skb);
 
 				/* Return sent skbs to the network stack */
 				while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
-					ieee80211_tx_status_ni(wl->hw, skb);
+					ieee80211_tx_status_ni(VV_work.hw, skb);
 			}
 		}
 
 		if (intr & WL1271_ACX_INTR_EVENT_A) {
 			wl1271_debug(DEBUG_IRQ, "WL1271_ACX_INTR_EVENT_A");
-			ret = wl1271_event_handle(wl, 0);
+			ret = wl1271_event_handle(0);
 			if (ret < 0)
 				goto err_ret;
 		}
 
 		if (intr & WL1271_ACX_INTR_EVENT_B) {
 			wl1271_debug(DEBUG_IRQ, "WL1271_ACX_INTR_EVENT_B");
-			ret = wl1271_event_handle(wl, 1);
+			ret = wl1271_event_handle(1);
 			if (ret < 0)
 				goto err_ret;
 		}
@@ -773,8 +774,8 @@ static int VV_irq_locked(struct wl1271 *wl)
 	}
 
 err_ret:
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.wl->dev);
+	pm_runtime_put_autosuspend(wifi_data.wl->dev);
 
 out:
 	return ret;
@@ -807,7 +808,7 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 	mutex_lock(&wl->mutex);
 
 	//ret = wlcore_irq_locked(wl);
-	ret = VV_irq_locked(wl);
+	ret = VV_irq_locked();
 	if (ret)
 		wl12xx_queue_recovery_work(wl);
 
@@ -823,7 +824,7 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	// VV_tx_queue_count is non-zero -> there are frames that not handled yet 
 	if (queue_tx_work)
-		ieee80211_queue_work(wl->hw, &VV_work.tx_work);
+		ieee80211_queue_work(VV_work.hw, &VV_work.tx_work);
 	//}
 
 	mutex_unlock(&wl->mutex);
@@ -5791,23 +5792,23 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 		goto err_dummy_packet;
 	}
 
-	wl->mbox_size = mbox_size;
-	wl->mbox = kmalloc(wl->mbox_size, GFP_KERNEL | GFP_DMA);
-	if (!wl->mbox) {
-		ret = -ENOMEM;
-		goto err_fwlog;
-	}
+	//wl->mbox_size = mbox_size;
+	// wl->mbox = kmalloc(wl->mbox_size, GFP_KERNEL | GFP_DMA);
+	// if (!wl->mbox) {
+	// 	ret = -ENOMEM;
+	// 	goto err_fwlog;
+	// }
 
-	wl->buffer_32 = kmalloc(sizeof(*wl->buffer_32), GFP_KERNEL);
-	if (!wl->buffer_32) {
-		ret = -ENOMEM;
-		goto err_mbox;
-	}
+	// wl->buffer_32 = kmalloc(sizeof(*wl->buffer_32), GFP_KERNEL);
+	// if (!wl->buffer_32) {
+	// 	ret = -ENOMEM;
+	// 	goto err_mbox;
+	// }
 
 	return hw;
 
-err_mbox:
-	kfree(wl->mbox);
+// err_mbox:
+// 	kfree(wl->mbox);
 
 err_fwlog:
 	free_page((unsigned long)wl->fwlog);
@@ -5843,8 +5844,8 @@ int wlcore_free_hw(struct wl1271 *wl)
 
 	//wlcore_sysfs_free(wl);
 
-	kfree(wl->buffer_32);
-	kfree(wl->mbox);
+	//kfree(wl->buffer_32);
+	// kfree(wl->mbox);
 	free_page((unsigned long)wl->fwlog);
 	dev_kfree_skb(VV_dummy_packet);
 	free_pages((unsigned long)VV_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));

@@ -307,6 +307,7 @@ EXPORT_SYMBOL_GPL(wlcore_event_inactive_sta);
 void wlcore_event_roc_complete(struct wl1271 *wl)
 {
 	wl1271_debug(DEBUG_EVENT, "REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID");
+	printk("wl->roc_vif = 0x%x\n", wl->roc_vif);
 	if (wl->roc_vif)
 		ieee80211_ready_on_channel(wl->hw);
 }
@@ -447,11 +448,12 @@ static const char *VV_radar_type_decode(u8 radar_type)
 	}
 }
 
-void VV_scan_completed(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static void VV_scan_completed(void)
 {
-	wl->scan.failed = false;
+	//wl->scan.failed = false;
+	VV_scan_failed = false;
 	cancel_delayed_work(&VV_work.scan_complete_work);
-	ieee80211_queue_delayed_work(wl->hw, &VV_work.scan_complete_work,
+	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(0));
 }
 
@@ -470,9 +472,9 @@ static void VV_event_time_sync(struct wl1271 *wl,
 }
 
 #include <linux/bitops.h>
-int VV_process_mailbox_events(struct wl1271 *wl)
+static int VV_process_mailbox_events(void)
 {
-	struct wl18xx_event_mailbox *mbox = wl->mbox;
+	struct wl18xx_event_mailbox *mbox = wifi_data.mbox;
 	u32 vector;
 
 	vector = le32_to_cpu(mbox->events_vector);
@@ -483,126 +485,28 @@ int VV_process_mailbox_events(struct wl1271 *wl)
 		wl1271_debug(DEBUG_EVENT, "scan results: %d",
 			     mbox->number_of_scan_results);
 
-		if (wl->scan_wlvif)
-			VV_scan_completed(wl, wl->scan_wlvif);
+		// if (wl->scan_wlvif)
+		// 	VV_scan_completed(wl, wl->scan_wlvif);
+		if (VV_vif_ptr[0])
+			VV_scan_completed();
 	}
-
-	if (vector & TIME_SYNC_EVENT_ID)
-		VV_event_time_sync(wl,
-			mbox->time_sync_tsf_high_msb,
-			mbox->time_sync_tsf_high_lsb,
-			mbox->time_sync_tsf_low_msb,
-			mbox->time_sync_tsf_low_lsb);
-
-	if (vector & RADAR_DETECTED_EVENT_ID) {
-		wl1271_info("radar event: channel %d type %s",
-			    mbox->radar_channel,
-			    VV_radar_type_decode(mbox->radar_type));
-
-		if (!wl->radar_debug_mode)
-			ieee80211_radar_detected(wl->hw);
-	}
-
-	if (vector & PERIODIC_SCAN_REPORT_EVENT_ID) {
-		printk("[EVENTS] - PERIODIC_SCAN_REPORT_EVENT (results %d)",
-			     mbox->number_of_sched_scan_results);
-
-		wlcore_scan_sched_scan_results(wl);
-	}
-
-	if (vector & PERIODIC_SCAN_COMPLETE_EVENT_ID)
-		wlcore_event_sched_scan_completed(wl, 1);
-
-	if (vector & RSSI_SNR_TRIGGER_0_EVENT_ID)
-		wlcore_event_rssi_trigger(wl, mbox->rssi_snr_trigger_metric);
-
-	if (vector & BA_SESSION_RX_CONSTRAINT_EVENT_ID)
-		wlcore_event_ba_rx_constraint(wl,
-				le16_to_cpu(mbox->rx_ba_role_id_bitmap),
-				le16_to_cpu(mbox->rx_ba_allowed_bitmap));
-
-	if (vector & BSS_LOSS_EVENT_ID)
-		wlcore_event_beacon_loss(wl,
-					 le16_to_cpu(mbox->bss_loss_bitmap));
-
-	if (vector & CHANNEL_SWITCH_COMPLETE_EVENT_ID)
-		// wlcore_event_channel_switch(wl,
-		// 	le16_to_cpu(mbox->channel_switch_role_id_bitmap),
-		// 	true);
-		printk("CHANNEL_SWITCH_COMPLETE_EVENT_ID\n");
-
-	if (vector & DUMMY_PACKET_EVENT_ID)
-		wlcore_event_dummy_packet(wl);
-
-	/*
-	 * "TX retries exceeded" has a different meaning according to mode.
-	 * In AP mode the offending station is disconnected.
-	 */
-	if (vector & MAX_TX_FAILURE_EVENT_ID)
-		wlcore_event_max_tx_failure(wl,
-				le16_to_cpu(mbox->tx_retry_exceeded_bitmap));
-
-	if (vector & INACTIVE_STA_EVENT_ID)
-		wlcore_event_inactive_sta(wl,
-				le16_to_cpu(mbox->inactive_sta_bitmap));
 
 	// 0x40000
 	if (vector & REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID)
-		wlcore_event_roc_complete(wl);
-
-	if (vector & SMART_CONFIG_SYNC_EVENT_ID)
-		VV_smart_config_sync_event(wl, mbox->sc_sync_channel,
-					       mbox->sc_sync_band);
-
-	if (vector & SMART_CONFIG_DECODE_EVENT_ID)
-		VV_smart_config_decode_event(wl,
-						 mbox->sc_ssid_len,
-						 mbox->sc_ssid,
-						 mbox->sc_pwd_len,
-						 mbox->sc_pwd);
-	if (vector & FW_LOGGER_INDICATION)
-		wlcore_event_fw_logger(wl);
-
-	if (vector & RX_BA_WIN_SIZE_CHANGE_EVENT_ID) {
-		struct wl12xx_vif *wlvif;
-		struct ieee80211_vif *vif;
-		struct ieee80211_sta *sta;
-		u8 link_id = mbox->rx_ba_link_id;
-		u8 win_size = mbox->rx_ba_win_size;
-		const u8 *addr;
-
-		wlvif = VV_links[link_id].wlvif;
-		vif = wl12xx_wlvif_to_vif(wlvif);
-
-		/* Update RX aggregation window size and call
-		 * MAC routine to stop active RX aggregations for this link
-		 */
-		if (wlvif->bss_type != BSS_TYPE_AP_BSS)
-			addr = vif->bss_conf.bssid;
-		else
-			addr = VV_links[link_id].addr;
-
-		sta = ieee80211_find_sta(vif, addr);
-		if (sta) {
-			sta->max_rx_aggregation_subframes = win_size;
-			ieee80211_stop_rx_ba_session(vif,
-						VV_links[link_id].ba_bitmap,
-						addr);
-		}
-	}
-
+		//wlcore_event_roc_complete(wl);
+		printk("REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID\n");
 	return 0;
 }
 
 #define WL18XX_INTR_TRIG_EVENT_ACK BIT(29)
-int VV_ack_event(struct wl1271 *wl)
+static int VV_ack_event(void)
 {
 	// return wlcore_write_reg(wl, REG_INTERRUPT_TRIG,
 	// 			WL18XX_INTR_TRIG_EVENT_ACK);
-	return VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	return VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
-int wl1271_event_handle(struct wl1271 *wl, u8 mbox_num)
+int wl1271_event_handle(u8 mbox_num)
 {
 	int ret;
 
@@ -612,15 +516,13 @@ int wl1271_event_handle(struct wl1271 *wl, u8 mbox_num)
 		return -EINVAL;
 
 	/* first we read the mbox descriptor */
-	// ret = wlcore_read(wl, *wifi_data.mbox_ptr[mbox_num], wl->mbox,
-	// 		  wl->mbox_size, false);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[mbox_num]), (u32*)wl->mbox, wl->mbox_size, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[mbox_num]), (u32*)wifi_data.mbox, sizeof(struct wl18xx_event_mailbox), false);
 	if (ret < 0)
 		return ret;
 
 	/* process the descriptor */
 	//ret = wl->ops->process_mailbox_events(wl);
-	ret = VV_process_mailbox_events(wl);
+	ret = VV_process_mailbox_events();
 	if (ret < 0)
 		return ret;
 
@@ -629,7 +531,7 @@ int wl1271_event_handle(struct wl1271 *wl, u8 mbox_num)
 	 * place.  Is there any better way?
 	 */
 	//ret = wl->ops->ack_event(wl);
-	ret = VV_ack_event(wl);
+	ret = VV_ack_event();
 
 	return ret;
 }

@@ -65,7 +65,8 @@ void wl1271_scan_complete_work(struct work_struct *work)
 		wl1271_cmd_build_ap_probe_req(wifi_data.wl, wlvif, wlvif->probereq);
 	}
 
-	if (wifi_data.wl->scan.failed) {
+	// if (wifi_data.wl->scan.failed) {
+	if (VV_scan_failed) {
 		wl1271_info("Scan completed due to error.");
 		wl12xx_queue_recovery_work(wifi_data.wl);
 	}
@@ -377,7 +378,8 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
 
 	/* we assume failure so that timeout scenarios are handled correctly */
-	wl->scan.failed = true;
+	//wl->scan.failed = true;
+	VV_scan_failed = true;
 	ieee80211_queue_delayed_work(wl->hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
 
