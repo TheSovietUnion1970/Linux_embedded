@@ -79,9 +79,9 @@ int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			struct ieee80211_sta *sta, u8 hlid);
 int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			   u8 hlid);
-void wlcore_set_pending_regdomain_ch(struct wl1271 *wl, u16 channel,
+void wlcore_set_pending_regdomain_ch(u16 channel,
 				     enum nl80211_band band);
-int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl);
+int wlcore_cmd_regdomain_config_locked(void);
 int wlcore_cmd_generic_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			   u8 feature, u8 enable, u8 value);
 int wl12xx_cmd_config_fwlog(struct wl1271 *wl);
@@ -95,8 +95,7 @@ int wl12xx_cmd_stop_channel_switch(struct wl1271 *wl,
 int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			 u8 *hlid);
 void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid);
-int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
-					 u32 mask, bool *timeout);
+int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout);
 u8 wlcore_get_native_channel_type(u8 nl_channel_type);
 
 /* Vinh custom */

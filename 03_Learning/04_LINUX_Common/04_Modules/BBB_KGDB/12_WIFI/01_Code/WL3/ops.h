@@ -254,7 +254,7 @@ enum {
 	TIME_SYNC_EVENT_ID                       = BIT(24),
 	FW_LOGGER_INDICATION			= BIT(25),
 };
-int VV_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event,
+int VV_wait_for_event(enum wlcore_wait_event event,
 			  bool *timeout);
 
               #define WL18XX_CHIP_VER		8

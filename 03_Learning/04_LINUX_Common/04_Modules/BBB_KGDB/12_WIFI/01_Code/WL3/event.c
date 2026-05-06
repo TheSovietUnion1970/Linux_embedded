@@ -612,9 +612,9 @@ int wl1271_event_handle(struct wl1271 *wl, u8 mbox_num)
 		return -EINVAL;
 
 	/* first we read the mbox descriptor */
-	// ret = wlcore_read(wl, wl->mbox_ptr[mbox_num], wl->mbox,
+	// ret = wlcore_read(wl, *wifi_data.mbox_ptr[mbox_num], wl->mbox,
 	// 		  wl->mbox_size, false);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->mbox_ptr[mbox_num]), (u32*)wl->mbox, wl->mbox_size, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[mbox_num]), (u32*)wl->mbox, wl->mbox_size, false);
 	if (ret < 0)
 		return ret;
 

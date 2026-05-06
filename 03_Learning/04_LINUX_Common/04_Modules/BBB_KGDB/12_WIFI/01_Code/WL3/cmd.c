@@ -121,8 +121,7 @@ int VV_cmd_configure(struct wl1271 *wl, u16 id, void *buf,
  * Poll the mailbox event field until any of the bits in the mask is set or a
  * timeout occurs (WL1271_EVENT_TIMEOUT in msecs)
  */
-int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
-					 u32 mask, bool *timeout)
+int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout)
 {
 	u32 *events_vector;
 	u32 event;
@@ -138,9 +137,9 @@ int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
 
 	timeout_time = jiffies + msecs_to_jiffies(WL1271_EVENT_TIMEOUT);
 
-	ret = pm_runtime_get_sync(wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.wl->dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
+		pm_runtime_put_noidle(wifi_data.wl->dev);
 		goto free_vector;
 	}
 
@@ -159,17 +158,17 @@ int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
 			usleep_range(1000, 5000);
 
 		/* read from both event fields */
-		// ret = wlcore_read(wl, wl->mbox_ptr[0], events_vector,
+		// ret = wlcore_read(wl, *wifi_data.mbox_ptr[0], events_vector,
 		// 		  sizeof(*events_vector), false);
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->mbox_ptr[0]), (u32*)events_vector, sizeof(*events_vector), false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[0]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 
 		event = *events_vector & mask;
 
-		// ret = wlcore_read(wl, wl->mbox_ptr[1], events_vector,
+		// ret = wlcore_read(wl, *wifi_data.mbox_ptr[1], events_vector,
 		// 		  sizeof(*events_vector), false);
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->mbox_ptr[1]), (u32*)events_vector, sizeof(*events_vector), false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[1]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 
@@ -177,8 +176,8 @@ int wlcore_cmd_wait_for_event_or_timeout(struct wl1271 *wl,
 	} while (!event);
 
 out:
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.wl->dev);
+	pm_runtime_put_autosuspend(wifi_data.wl->dev);
 free_vector:
 	kfree(events_vector);
 	return ret;
@@ -1414,7 +1413,7 @@ int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	// ret = wl->ops->wait_for_event(wl,
 	// 			      WLCORE_EVENT_PEER_REMOVE_COMPLETE,
 	// 			      &timeout);
-	ret = VV_wait_for_event(wl,
+	ret = VV_wait_for_event(
 				      WLCORE_EVENT_PEER_REMOVE_COMPLETE,
 				      &timeout);
 
@@ -1474,7 +1473,7 @@ static int wlcore_get_reg_conf_ch_idx(enum nl80211_band band, u16 ch)
 	return -1;
 }
 
-void wlcore_set_pending_regdomain_ch(struct wl1271 *wl, u16 channel,
+void wlcore_set_pending_regdomain_ch(u16 channel,
 				     enum nl80211_band band)
 {
 	int ch_bit_idx = 0;
@@ -1488,7 +1487,7 @@ void wlcore_set_pending_regdomain_ch(struct wl1271 *wl, u16 channel,
 		__set_bit_le(ch_bit_idx, (long *)wifi_data.reg_ch_conf_pending);
 }
 
-int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
+int wlcore_cmd_regdomain_config_locked(void)
 {
 	struct wl12xx_cmd_regdomain_dfs_config *cmd = NULL;
 	int ret = 0, i, b, ch_bit_idx;
@@ -1553,7 +1552,7 @@ int wlcore_cmd_regdomain_config_locked(struct wl1271 *wl)
 	// ret = wl->ops->wait_for_event(wl,
 	// 			      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
 	// 			      &timeout);
-	ret = VV_wait_for_event(wl,
+	ret = VV_wait_for_event(
 				      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
 				      &timeout);
 	if (ret < 0 || timeout) {

@@ -504,7 +504,7 @@ out:
 	return ret;
 }
 
-int VV_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event, bool *timeout)
+int VV_wait_for_event(enum wlcore_wait_event event, bool *timeout)
 {
 	u32 local_event;
 
@@ -521,7 +521,7 @@ int VV_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event, bool *tim
 		/* event not implemented */
 		return 0;
 	}
-	return wlcore_cmd_wait_for_event_or_timeout(wl, local_event, timeout);
+	return wlcore_cmd_wait_for_event_or_timeout(local_event, timeout);
 }
 
 int VV_identify_chip(struct wl1271 *wl)

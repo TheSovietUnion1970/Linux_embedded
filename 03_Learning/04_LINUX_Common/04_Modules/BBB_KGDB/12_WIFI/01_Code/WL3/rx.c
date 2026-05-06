@@ -50,7 +50,7 @@ static u32 wlcore_rx_get_align_buf_size(u32 pkt_len)
 	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
 }
 
-static void wl1271_rx_status(struct wl1271 *wl,
+static void wl1271_rx_status(
 			     struct wl1271_rx_descriptor *desc,
 			     struct ieee80211_rx_status *status,
 			     u8 beacon, u8 probe_rsp)
@@ -82,7 +82,7 @@ static void wl1271_rx_status(struct wl1271 *wl,
 	 * need to divide by two for now, but TI has been discussing about
 	 * changing it.  This needs to be rechecked.
 	 */
-	wl->noise = desc->rssi - (desc->snr >> 1);
+	//wl->noise = desc->rssi - (desc->snr >> 1);
 
 	status->freq = ieee80211_channel_to_frequency(desc->channel,
 						      status->band);
@@ -104,7 +104,7 @@ static void wl1271_rx_status(struct wl1271 *wl,
 		status->boottime_ns = ktime_get_boottime_ns();
 
 	if (beacon)
-		wlcore_set_pending_regdomain_ch(wl, (u16)desc->channel,
+		wlcore_set_pending_regdomain_ch((u16)desc->channel,
 						status->band);
 }
 
@@ -120,7 +120,7 @@ static u32 VV_get_rx_packet_len(void *rx_data,
 	return data_len - sizeof(*desc);
 }
 
-static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
+static int wl1271_rx_handle_data(u8 *data, u32 length,
 				 enum wl_rx_buf_align rx_align, u8 *hlid)
 {
 	struct wl1271_rx_descriptor *desc;
@@ -200,7 +200,7 @@ static int wl1271_rx_handle_data(struct wl1271 *wl, u8 *data, u32 length,
 	if (ieee80211_is_data_present(hdr->frame_control))
 		is_data = 1;
 
-	wl1271_rx_status(wl, desc, IEEE80211_SKB_RXCB(skb), beacon,
+	wl1271_rx_status(desc, IEEE80211_SKB_RXCB(skb), beacon,
 			 ieee80211_is_probe_resp(hdr->frame_control));
 	//wlcore_hw_set_rx_csum(wl, desc, skb);
 
@@ -292,7 +292,7 @@ int wlcore_rx(struct wl1271 *wl)
 			 * conditions, in that case the received frame will just
 			 * be dropped.
 			 */
-			if (wl1271_rx_handle_data(wl,
+			if (wl1271_rx_handle_data(
 						  VV_aggr_buf + pkt_offset,
 						  pkt_len, rx_align,
 						  &hlid) == 1) {
@@ -315,13 +315,13 @@ int wlcore_rx(struct wl1271 *wl)
 	 * Write the driver's packet counter to the FW. This is only required
 	 * for older hardware revisions
 	 */
-	if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-		// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
-		// 		     VV_rx_counter);
-		ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), VV_rx_counter, 4, false);
-		if (ret < 0)
-			goto out;
-	}
+	// if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
+	// 	// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
+	// 	// 		     VV_rx_counter);
+	// 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), VV_rx_counter, 4, false);
+	// 	if (ret < 0)
+	// 		goto out;
+	// }
 
 	wl12xx_rearm_rx_streaming(wl, active_hlids);
 

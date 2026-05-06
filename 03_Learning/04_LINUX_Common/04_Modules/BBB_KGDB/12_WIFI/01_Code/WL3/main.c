@@ -109,13 +109,13 @@ static void wl1271_reg_notify(struct wiphy *wiphy,
 			      struct regulatory_request *request)
 {
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 
 	/* copy the current dfs region */
 	if (request)
 		wifi_data.dfs_region = request->dfs_region;
 
-	wlcore_regdomain_config(wl);
+	wlcore_regdomain_config();
 }
 
 static int wl1271_set_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif,
@@ -3447,34 +3447,34 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 }
 EXPORT_SYMBOL_GPL(wlcore_set_key);
 
-void wlcore_regdomain_config(struct wl1271 *wl)
+void wlcore_regdomain_config(void)
 {
 	int ret;
 
-	if (!(wl->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
-		return;
+	// if (!(wl->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
+	// 	return;
 
-	mutex_lock(&wl->mutex);
+	mutex_lock(&wifi_data.mutex);
 
-	if (unlikely(wl->state != WLCORE_STATE_ON))
-		goto out;
+	// if (unlikely(wl->state != WLCORE_STATE_ON))
+	// 	goto out;
 
-	ret = pm_runtime_get_sync(wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.wl->dev);
 	if (ret < 0) {
-		pm_runtime_put_autosuspend(wl->dev);
+		pm_runtime_put_autosuspend(wifi_data.wl->dev);
 		goto out;
 	}
 
-	ret = wlcore_cmd_regdomain_config_locked(wl);
-	if (ret < 0) {
-		wl12xx_queue_recovery_work(wl);
-		goto out;
-	}
+	ret = wlcore_cmd_regdomain_config_locked();
+	// if (ret < 0) {
+	// 	wl12xx_queue_recovery_work(wl);
+	// 	goto out;
+	// }
 
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.wl->dev);
+	pm_runtime_put_autosuspend(wifi_data.wl->dev);
 out:
-	mutex_unlock(&wl->mutex);
+	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wl1271_op_hw_scan(struct ieee80211_hw *hw,

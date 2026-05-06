@@ -441,6 +441,7 @@ out_badnvs:
 }
 EXPORT_SYMBOL_GPL(wlcore_boot_upload_nvs);
 
+#include "wl18xx.h"
 int wlcore_boot_run_firmware(struct wl1271 *wl)
 {
 	int loop, ret;
@@ -507,14 +508,19 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 
 	/* get hardware config event mail box */
 	//ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_EVENT_MAILBOX_PTR]), &wl->mbox_ptr[0], 4, false);
+	// ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_EVENT_MAILBOX_PTR]), &wl->mbox_ptr[0], 4, false);
+	// if (ret < 0)
+	// 	return ret;
+	// wl->mbox_ptr[1] = wl->mbox_ptr[0] + wl->mbox_size;
+
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data.mbox_ptr[0], 4, false);
 	if (ret < 0)
 		return ret;
+	*(wifi_data.mbox_ptr[1]) = *(wifi_data.mbox_ptr[0]) + sizeof(struct wl18xx_event_mailbox);
 
-	wl->mbox_ptr[1] = wl->mbox_ptr[0] + wl->mbox_size;
-
-	wl1271_debug(DEBUG_MAILBOX, "MBOX ptrs: 0x%x 0x%x",
-		     wl->mbox_ptr[0], wl->mbox_ptr[1]);
+	// wl1271_debug(DEBUG_MAILBOX, "MBOX ptrs: 0x%x 0x%x",
+	// 	     wl->mbox_ptr[0], wl->mbox_ptr[1]);
+	//printk("Compare: 0x%x - 0x%x\n", wl->mbox_ptr[0], *wifi_data.mbox_ptr[0]);
 
 	// ret = wlcore_boot_static_data(wl);
 	ret = VV_boot_static_data(wl);

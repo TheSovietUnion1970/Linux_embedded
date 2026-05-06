@@ -70,7 +70,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 		wl12xx_queue_recovery_work(wifi_data.wl);
 	}
 
-	wlcore_cmd_regdomain_config_locked(wifi_data.wl);
+	wlcore_cmd_regdomain_config_locked();
 
 	pm_runtime_mark_last_busy(wifi_data.wl->dev);
 	pm_runtime_put_autosuspend(wifi_data.wl->dev);

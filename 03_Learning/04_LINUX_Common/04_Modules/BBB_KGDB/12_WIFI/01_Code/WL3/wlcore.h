@@ -499,7 +499,7 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		   struct ieee80211_vif *vif,
 		   struct ieee80211_sta *sta,
 		   struct ieee80211_key_conf *key_conf);
-void wlcore_regdomain_config(struct wl1271 *wl);
+void wlcore_regdomain_config(void);
 void wlcore_update_inconn_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      struct wl1271_station *wl_sta, bool in_conn);
 

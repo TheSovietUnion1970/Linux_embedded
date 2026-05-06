@@ -579,7 +579,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 	if (ret < 0)
 		return ret;
 
-	ret = wlcore_cmd_regdomain_config_locked(wl);
+	ret = wlcore_cmd_regdomain_config_locked();
 	if (ret < 0)
 		return ret;
 

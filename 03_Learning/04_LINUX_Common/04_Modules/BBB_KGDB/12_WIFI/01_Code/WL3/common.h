@@ -416,6 +416,7 @@ struct Wifi_data {
 	/* the current dfs region */
 	enum nl80211_dfs_regions dfs_region;
 	int* cmd_box_addr;
+	u32* mbox_ptr[2];
 
     /* Temporary use */
     struct wl1271 *wl;
