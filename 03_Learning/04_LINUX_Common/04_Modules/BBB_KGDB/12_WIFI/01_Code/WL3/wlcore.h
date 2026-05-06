@@ -184,23 +184,21 @@ struct wl1271 {
 	int irq_flags;
 	int wakeirq_flags;
 
-	spinlock_t wl_lock;
-
 	enum wlcore_state state;
 	enum wl12xx_fw_type fw_type;
 	bool plt;
 	enum plt_mode plt_mode;
 	u8 fem_manuf;
 	//u8 last_vif_count;
-	struct mutex mutex;
+	// struct mutex mutex;
 
-	unsigned long flags;
+	// unsigned long flags;
 
 	struct wlcore_partition_set curr_part;
 
 	struct wl1271_chip chip;
 
-	int cmd_box_addr;
+	//int cmd_box_addr;
 
 	u8 *fw;
 	size_t fw_len;
@@ -256,32 +254,26 @@ struct wl1271 {
 	unsigned long queue_stop_reasons[
 				NUM_TX_QUEUES * WLCORE_NUM_MAC_ADDRESSES];
 
-	/* Frames received, not handled yet by mac80211 */
-	struct sk_buff_head deferred_rx_queue;
-
-	/* Frames sent, not returned yet to mac80211 */
-	struct sk_buff_head deferred_tx_queue;
-
-	struct work_struct tx_work;
-	struct workqueue_struct *freezable_wq;
+	// struct work_struct tx_work;
+	// struct workqueue_struct *freezable_wq;
 
 	/* Pending TX frames */
-	unsigned long tx_frames_map[BITS_TO_LONGS(WLCORE_MAX_TX_DESCRIPTORS)];
-	struct sk_buff *tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
+	//unsigned long tx_frames_map[BITS_TO_LONGS(WLCORE_MAX_TX_DESCRIPTORS)];
+	//struct sk_buff *tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
 	//int tx_frames_cnt;
 
 	/* FW Rx counter */
-	u32 rx_counter;
+	//u32 rx_counter;
 
 	/* Intermediate buffer, used for packet aggregation */
-	u8 *aggr_buf;
-	u32 aggr_buf_size;
+	//u8 *aggr_buf;
+	//u32 aggr_buf_size;
 
 	/* Reusable dummy packet template */
-	struct sk_buff *dummy_packet;
+	//struct sk_buff *dummy_packet;
 
 	/* Network stack work  */
-	struct work_struct netstack_work;
+	//struct work_struct netstack_work;
 
 	/* FW log buffer */
 	u8 *fwlog;
@@ -304,17 +296,17 @@ struct wl1271 {
 	// /* Reg domain pending configuration */
 	// DECLARE_BITMAP(reg_ch_conf_pending, 64);
 
-	/* Pointer that holds DMA-friendly block for the mailbox */
-	void *mbox;
+	// /* Pointer that holds DMA-friendly block for the mailbox */
+	// void *mbox;
 
 	/* The mbox event mask */
 	u32 event_mask;
 	/* events to unmask only when ap interface is up */
 	u32 ap_event_mask;
 
-	/* Mailbox pointers */
-	u32 mbox_size;
-	u32 mbox_ptr[2];
+	// /* Mailbox pointers */
+	// u32 mbox_size;
+	// u32 mbox_ptr[2];
 
 	/* Are we currently scanning */
 	struct wl12xx_vif *scan_wlvif;
@@ -336,9 +328,9 @@ struct wl1271 {
 
 	struct wl1271_stats stats;
 
-	__le32 *buffer_32;
-	u32 buffer_cmd;
-	u32 buffer_busyword[WL1271_BUSY_WORD_CNT];
+	//__le32 *buffer_32;
+	//u32 buffer_cmd;
+	//u32 buffer_busyword[WL1271_BUSY_WORD_CNT];
 
 	/* Current chipset configuration */
 	struct wlcore_conf conf;
@@ -350,7 +342,7 @@ struct wl1271 {
 	int recovery_count;
 
 	/* Most recently reported noise in dBm */
-	s8 noise;
+	//s8 noise;
 
 	/* bands supported by this instance of wl12xx */
 	struct ieee80211_supported_band bands[WLCORE_NUM_BANDS];
@@ -359,7 +351,7 @@ struct wl1271 {
 	 * wowlan trigger was configured during suspend.
 	 * (currently, only "ANY" trigger is supported)
 	 */
-	bool wow_enabled;
+	//bool wow_enabled;
 	bool irq_wake_enabled;
 
 	/*
@@ -486,8 +478,6 @@ struct wl1271 {
 
 	void *last_valid_wlvif;
 
-	/* Fucking custom */
-	struct Wifi_data* wifi_data_ptr;
 };
 
 int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev);

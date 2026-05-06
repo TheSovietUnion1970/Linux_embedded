@@ -392,7 +392,7 @@ int VV_get_mac(struct wl1271 *wl)
 	u32 mac1, mac2;
 	int ret;
 
-	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -421,7 +421,7 @@ int VV_get_mac(struct wl1271 *wl)
 		//printk("MAC address from fuse not available, using random locally administered addresses.");
 	}
 
-	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_DOWN]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_DOWN]);
 
 out:
 	return ret;
@@ -459,7 +459,7 @@ int VV1_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	s8 rom = 0, metal = 0, pg_ver = 0, rdl_ver = 0, package_type = 0;
 	int ret;
 
-	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -498,7 +498,7 @@ int VV1_get_pg_ver(struct wl1271 *wl, s8 *ver)
 	if (ver)
 		*ver = pg_ver;
 
-	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_BOOT]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_BOOT]);
 
 out:
 	return ret;

@@ -176,7 +176,7 @@ int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed)
 	return ret;
 }
 
-int VV_set_partition_core(struct wl1271 *wl, struct VV_partition_set *p)
+int VV_set_partition_core(struct VV_partition_set *p)
 {
 	int ret;
 

@@ -1004,7 +1004,7 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 		    wl->chip.fw_ver_str);
 
 	/* change partitions momentarily so we can read the FW pc */
-	ret = VV_set_partition_core(wl, (struct VV_partition_set *)&wifi_data.ptable[PART_BOOT]);
+	ret = VV_set_partition_core((struct VV_partition_set *)&wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		return;
 
@@ -1021,7 +1021,7 @@ static void wlcore_print_recovery(struct wl1271 *wl)
 	wl1271_info("pc: 0x%x, hint_sts: 0x%08x count: %d",
 				pc, hint_sts, ++wl->recovery_count);
 
-	VV_set_partition_core(wl, (struct VV_partition_set *)&wifi_data.ptable[PART_WORK]);
+	VV_set_partition_core((struct VV_partition_set *)&wifi_data.ptable[PART_WORK]);
 }
 
 
@@ -1154,12 +1154,12 @@ err:
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
 
-int V_power_on(struct wl1271 *wl)
+static int V_power_on(void)
 {
 	int ret;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
 	struct mmc_card *card = func->card;
-	//printk("V_power_on -> 0x%x 0x%x %x\n", wl->dev->parent, func, card);
+	//printk("V_power_on -> 0x%x 0x%x %x\n", wifi_data.wl->dev->parent, func, card);
 
 	ret = pm_runtime_get_sync(&card->dev);
 	if (ret < 0) {
@@ -1179,12 +1179,12 @@ int V_power_on(struct wl1271 *wl)
 	return 0;
 }
 
-int V_power_off(struct wl1271 *wl)
+int V_power_off(void)
 {
 	int ret;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
 	struct mmc_card *card = func->card;
-	//printk("V_power_on -> 0x%x 0x%x %x\n", wl->dev->parent, func, card);
+	//printk("V_power_on -> 0x%x 0x%x %x\n", wifi_data.wl->dev->parent, func, card);
 
 	ret = pm_runtime_get_sync(&card->dev);
 	if (ret < 0) {
@@ -1204,47 +1204,25 @@ int V_power_off(struct wl1271 *wl)
 	return 0;
 }
 
-int V_sdio_raw_write(struct wl1271 *wl, int addr, u32 var, size_t len, bool fixed)
-{
-	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
-
-	sdio_claim_host(func);
-
-	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-	// 	addr, len);
-
-	if (fixed)
-		ret = sdio_writesb(func, addr, &var, len);
-	else
-		ret = sdio_memcpy_toio(func, addr, &var, len);
-	
-
-	sdio_release_host(func);
-
-	return ret;
-}
-
-static int wl12xx_set_power_on(struct wl1271 *wl)
+static int wl12xx_set_power_on(void)
 {
 	int ret;
-	//printk("wl12xx_set_power_on\n");
 
 	msleep(WL1271_PRE_POWER_ON_SLEEP);
-	ret = V_power_on(wl);
+	ret = V_power_on();
 	if (ret < 0)
 		goto out;
 	msleep(WL1271_POWER_ON_SLEEP);
 	// wl1271_io_reset(wl);
 	// wl1271_io_init(wl);
 
-	ret = VV_set_partition_core(wl, &wifi_data.ptable[PART_BOOT]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
 	/* ELP module wake up = Enhanced Low Power */
 	// ret = wlcore_fw_wakeup(wl);
-	V_sdio_raw_write(wl, HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
+	VV_sdio_raw_write(HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
 	if (ret < 0)
 		goto fail;
 
@@ -1252,7 +1230,7 @@ out:
 	return ret;
 
 fail:
-	V_power_off(wl);
+	V_power_off();
 	return ret;
 }
 
@@ -1260,7 +1238,7 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 {
 	int ret = 0;
 
-	ret = wl12xx_set_power_on(wl);
+	ret = wl12xx_set_power_on();
 	if (ret < 0)
 		goto out;
 
@@ -5918,8 +5896,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	/* VInh custom */
 	wifi_data.rtable = VV_rtable;
 	wifi_data.ptable = VV_ptable;
-	/* Fucking custom */
-	wl->wifi_data_ptr = &wifi_data;
+
 
 	BUG_ON(WL18XX_NUM_TX_DESCRIPTORS > WLCORE_MAX_TX_DESCRIPTORS);
 
@@ -5942,7 +5919,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 		wl->irq_flags |= IRQF_ONESHOT;
 
 	// V_
-	ret = wl12xx_set_power_on(wl);
+	ret = wl12xx_set_power_on();
 	if (ret < 0)
 		goto out_free_nvs;
 

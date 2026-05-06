@@ -28,6 +28,7 @@
 // #include "acx.h"
 // #include "tx.h"
 #include "wl18xx.h"
+#include "common.h"
 // #include "io.h"
 // #include "scan.h"
 // #include "event.h"
@@ -94,59 +95,6 @@ int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
 
 	return ret;
 }
-
-int VV_set_partition_18(struct wl1271 *wl, const struct VV_partition_set *p)
-{
-	int ret;
-
-	/* copy partition info */
-	//memcpy(&wl->curr_part, p, sizeof(*p));
-	memcpy(&wl->wifi_data_ptr->curr_part, p, sizeof(*p));
-
-	ret = VV_sdio_raw_write(HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
-	if (ret < 0)
-		goto out;
-
-	ret = VV_sdio_raw_write(HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
-	if (ret < 0)
-		goto out;
-
-out:
-	return ret;
-}
-
-// void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz)
-// {
-// 	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
-
-// 	sdio_claim_host(func);
-// 	sdio_set_block_size(func, blksz);
-// 	sdio_release_host(func);
-// }
 
 
 #define WL18XX_TX_HW_BLOCK_SPARE        1
@@ -803,7 +751,7 @@ static int wl18xx_set_clk(struct wl1271 *wl)
 	u16 clk_freq;
 	int ret;
 
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -922,7 +870,7 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 
 	udelay(500);
 
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_BOOT]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
@@ -956,7 +904,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	BUILD_BUG_ON(sizeof(struct wl18xx_mac_and_phy_params) >
 		WL18XX_PHY_INIT_MEM_SIZE);
 
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_BOOT]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
@@ -985,7 +933,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	 * its own clock.
 	 */
 
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_PHY_INIT]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
@@ -1015,7 +963,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		wl1271_info("using inverted interrupt logic: %d", ret);
 		// ret = VV_set_partition_18(wl,
 		// 			   &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
-		ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_TOP_PRCM_ELP_SOC]);
+		ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 		if (ret < 0)
 			goto out;
 
@@ -1028,7 +976,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		if (ret < 0)
 			goto out;
 
-		ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_PHY_INIT]);
+		ret = VV_set_partition_core(&wifi_data.ptable[PART_PHY_INIT]);
 	}
 
 out:
@@ -1047,7 +995,7 @@ static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 		goto out;
 	}
 
-	ret = VV_set_partition_18(wl, &wl->wifi_data_ptr->ptable[PART_PHY_INIT]);
+	ret = VV_set_partition_core(&wifi_data.ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
