@@ -1,0 +1,7 @@
+- DVFS
+- interrupt-driven
+- batch work
+
+- MIN busy-wait loop
+- MIN wakeups
+- MIN process, ctx sw

@@ -1,0 +1,42 @@
+WITHOUT rcu:
+	Reader 0: id=0, msg=Initial data, i=0
+	>>> Writer updated to version 1
+	Reader 2: id=0, msg=Initial data, i=0
+	Reader 5: id=1, msg=Updated version 1, i=0
+	Reader 6: id=1, msg=Updated version 1, i=0
+	Reader 8: id=1, msg=Updated version 1, i=0
+	Reader 4: id=1, msg=Updated version 1, i=0
+	Reader 7: id=1, msg=Updated version 1, i=0
+	Reader 3: id=0, msg=, i=0
+	Reader 9: id=1, msg=Updated version 1, i=0
+	Reader 1: id=0, msg=, i=0
+	Reader 0: id=1, msg=Updated version 1, i=1
+	Reader 2: id=1, msg=Updated version 1, i=1
+	Reader 5: id=1, msg=Updated version 1, i=1
+	Reader 4: id=1, msg=Updated version 1, i=1
+	Reader 7: id=1, msg=Updated version 1, i=1
+	Reader 3: id=1, msg=Updated version 1, i=1
+	Reader 9: id=1, msg=Updated version 1, i=1
+	Reader 6: id=1, msg=Updated version 1, i=1
+		-> Reader 2 failed to read the updated data
+		-> Reader 3 and 1 read corruped data
+	
+	
+WITH rcu:
+	Reader 0: id=0, msg=Initial data, i=0
+	Reader 1: id=0, msg=Initial data, i=0
+	Reader 3: id=0, msg=Initial data, i=0
+	Reader 4: id=0, msg=Initial data, i=0
+	Reader 2: id=0, msg=Initial data, i=0
+	Reader 5: id=0, msg=Initial data, i=0
+	>>> Writer updated to version 1
+	Reader 7: id=1, msg=Updated version 1, i=0
+	Reader 6: id=1, msg=Updated version 1, i=0
+	Reader 8: id=1, msg=Updated version 1, i=0
+	Reader 9: id=1, msg=Updated version 1, i=0
+	Reader 0: id=1, msg=Updated version 1, i=1
+	Reader 1: id=1, msg=Updated version 1, i=1
+	Reader 3: id=1, msg=Updated version 1, i=1
+	Reader 4: id=1, msg=Updated version 1, i=1
+	Reader 5: id=1, msg=Updated version 1, i=1
+	Reader 2: id=1, msg=Updated version 1, i=1
