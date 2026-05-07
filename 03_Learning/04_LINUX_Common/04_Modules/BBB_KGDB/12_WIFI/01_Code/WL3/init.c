@@ -455,27 +455,6 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 }
 
 /* vif-specific initialization */
-static int wl12xx_init_ap_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	int ret;
-
-	ret = wl1271_acx_ap_max_tx_retry(wl, wlvif);
-	if (ret < 0)
-		return ret;
-
-	/* initialize Tx power */
-	ret = wl1271_acx_tx_power(wl, wlvif, wlvif->power_level);
-	if (ret < 0)
-		return ret;
-
-	if (wl->radar_debug_mode)
-		wlcore_cmd_generic_cfg(wl, wlvif,
-				       WLCORE_CFG_FEATURE_RADAR_DEBUG,
-				       wl->radar_debug_mode, 0);
-
-	return 0;
-}
-
 int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 {
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);

@@ -73,38 +73,3 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	return ret;
 }
-
-static void wl1271_ps_filter_frames(struct wl1271 *wl, u8 hlid)
-{
-	int i;
-	struct sk_buff *skb;
-	struct ieee80211_tx_info *info;
-	unsigned long flags;
-	int filtered[NUM_TX_QUEUES];
-
-	/* filter all frames currently in the low level queues for this hlid */
-	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		filtered[i] = 0;
-		while ((skb = skb_dequeue(&VV_tx_queue[hlid][i]))) {
-			printk("TX_QUEUE - wl1271_ps_filter_frames\n");
-			filtered[i]++;
-
-			if (WARN_ON(wl12xx_is_dummy_packet(skb)))
-				continue;
-
-			info = IEEE80211_SKB_CB(skb);
-			info->flags |= IEEE80211_TX_STAT_TX_FILTERED;
-			info->status.rates[0].idx = -1;
-			ieee80211_tx_status_ni(wl->hw, skb);
-		}
-	}
-
-	spin_lock_irqsave(&wifi_data.lock, flags);
-	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		//wl->tx_queue_count[i] -= filtered[i];
-		VV_tx_queue_count[i] -= filtered[i];
-	}
-	spin_unlock_irqrestore(&wifi_data.lock, flags);
-
-	//wl1271_handle_tx_low_watermark(wl);
-}

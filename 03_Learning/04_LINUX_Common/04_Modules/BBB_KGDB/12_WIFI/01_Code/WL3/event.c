@@ -383,92 +383,14 @@ enum wlcore_vendor_attributes {
 	MAX_WLCORE_VENDOR_ATTR = NUM_WLCORE_VENDOR_ATTR - 1
 };
 
-static int VV_smart_config_sync_event(struct wl1271 *wl, u8 sync_channel,
-					  u8 sync_band)
-{
-	struct sk_buff *skb;
-	enum nl80211_band band;
-	int freq;
-
-	if (sync_band == WLCORE_BAND_5GHZ)
-		band = NL80211_BAND_5GHZ;
-	else
-		band = NL80211_BAND_2GHZ;
-
-	freq = ieee80211_channel_to_frequency(sync_channel, band);
-
-	wl1271_debug(DEBUG_EVENT,
-		     "SMART_CONFIG_SYNC_EVENT_ID, freq: %d (chan: %d band %d)",
-		     freq, sync_channel, sync_band);
-	skb = cfg80211_vendor_event_alloc(wl->hw->wiphy, NULL, 20,
-					  WLCORE_VENDOR_EVENT_SC_SYNC,
-					  GFP_KERNEL);
-
-	if (nla_put_u32(skb, WLCORE_VENDOR_ATTR_FREQ, freq)) {
-		kfree_skb(skb);
-		return -EMSGSIZE;
-	}
-	cfg80211_vendor_event(skb, GFP_KERNEL);
-	return 0;
-}
-
-static int VV_smart_config_decode_event(struct wl1271 *wl,
-					    u8 ssid_len, u8 *ssid,
-					    u8 pwd_len, u8 *pwd)
-{
-	struct sk_buff *skb;
-
-	wl1271_debug(DEBUG_EVENT, "SMART_CONFIG_DECODE_EVENT_ID");
-	wl1271_dump_ascii(DEBUG_EVENT, "SSID:", ssid, ssid_len);
-
-	skb = cfg80211_vendor_event_alloc(wl->hw->wiphy, NULL,
-					  ssid_len + pwd_len + 20,
-					  WLCORE_VENDOR_EVENT_SC_DECODE,
-					  GFP_KERNEL);
-
-	if (nla_put(skb, WLCORE_VENDOR_ATTR_SSID, ssid_len, ssid) ||
-	    nla_put(skb, WLCORE_VENDOR_ATTR_PSK, pwd_len, pwd)) {
-		kfree_skb(skb);
-		return -EMSGSIZE;
-	}
-	cfg80211_vendor_event(skb, GFP_KERNEL);
-	return 0;
-}
-
-static const char *VV_radar_type_decode(u8 radar_type)
-{
-	switch (radar_type) {
-	case RADAR_TYPE_REGULAR:
-		return "REGULAR";
-	case RADAR_TYPE_CHIRP:
-		return "CHIRP";
-	case RADAR_TYPE_NONE:
-	default:
-		return "N/A";
-	}
-}
-
 static void VV_scan_completed(void)
 {
 	//wl->scan.failed = false;
+	printk("VV_scan_completed\n");
 	VV_scan_failed = false;
 	cancel_delayed_work(&VV_work.scan_complete_work);
 	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(0));
-}
-
-static void VV_event_time_sync(struct wl1271 *wl,
-				   u16 tsf_high_msb, u16 tsf_high_lsb,
-				   u16 tsf_low_msb, u16 tsf_low_lsb)
-{
-	u32 clock_low;
-	u32 clock_high;
-
-	clock_high = (tsf_high_msb << 16) | tsf_high_lsb;
-	clock_low = (tsf_low_msb << 16) | tsf_low_lsb;
-
-	wl1271_info("TIME_SYNC_EVENT_ID: clock_high %u, clock low %u",
-		    clock_high, clock_low);
 }
 
 #include <linux/bitops.h>

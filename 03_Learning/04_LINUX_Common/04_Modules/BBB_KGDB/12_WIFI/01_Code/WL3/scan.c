@@ -83,47 +83,6 @@ out:
 
 }
 
-static void wlcore_started_vifs_iter(void *data, u8 *mac,
-				     struct ieee80211_vif *vif)
-{
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
-	bool active = false;
-	int *count = (int *)data;
-
-	/*
-	 * count active interfaces according to interface type.
-	 * checking only bss_conf.idle is bad for some cases, e.g.
-	 * we don't want to count sta in p2p_find as active interface.
-	 */
-	switch (wlvif->bss_type) {
-	case BSS_TYPE_STA_BSS:
-		if (test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags))
-			active = true;
-		break;
-
-	case BSS_TYPE_AP_BSS:
-		if (wlvif->wl->active_sta_count > 0)
-			active = true;
-		break;
-
-	default:
-		break;
-	}
-
-	if (active)
-		(*count)++;
-}
-
-static int wlcore_count_started_vifs(struct wl1271 *wl)
-{
-	int count = 0;
-
-	ieee80211_iterate_active_interfaces_atomic(wl->hw,
-					IEEE80211_IFACE_ITER_RESUME_ALL,
-					wlcore_started_vifs_iter, &count);
-	return count;
-}
-
 static int
 wlcore_scan_get_channels(struct wl1271 *wl,
 			 struct ieee80211_channel *req_channels[],
@@ -379,12 +338,13 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 
 	/* we assume failure so that timeout scenarios are handled correctly */
 	//wl->scan.failed = true;
+	printk("SCHEDULE SCAN\n");
 	VV_scan_failed = true;
 	ieee80211_queue_delayed_work(wl->hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
 
 	//wl->ops->scan_start(wl, wlvif, req); // wl18xx_scan_send
-	int ret = VV_scan_send(wl, wlvif, req);
+	(void)VV_scan_send(wl, wlvif, req);
 
 	return 0;
 }

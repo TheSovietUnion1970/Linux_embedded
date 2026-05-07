@@ -1077,7 +1077,7 @@ static int wl18xx_boot(struct wl1271 *wl)
 		FW_LOGGER_INDICATION |
 		RX_BA_WIN_SIZE_CHANGE_EVENT_ID;
 
-	wl->ap_event_mask = MAX_TX_FAILURE_EVENT_ID;
+	//wl->ap_event_mask = MAX_TX_FAILURE_EVENT_ID;
 
 	ret = wlcore_boot_run_firmware(wl);
 	if (ret < 0)

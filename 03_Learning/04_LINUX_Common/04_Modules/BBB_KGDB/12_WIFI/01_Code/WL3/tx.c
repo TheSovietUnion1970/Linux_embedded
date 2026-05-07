@@ -31,25 +31,6 @@
  */
 #include "reg.h"
 
-static int wl1271_set_default_wep_key(struct wl1271 *wl,
-				      struct wl12xx_vif *wlvif, u8 id)
-{
-	int ret;
-	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
-
-	if (is_ap)
-		ret = wl12xx_cmd_set_default_wep_key(wl, id,
-						     wlvif->ap.bcast_hlid);
-	else
-		ret = wl12xx_cmd_set_default_wep_key(wl, id, wlvif->sta.hlid);
-
-	if (ret < 0)
-		return ret;
-
-	wl1271_debug(DEBUG_CRYPT, "default wep key idx: %d", (int)id);
-	return 0;
-}
-
 static int wl1271_alloc_tx_id(struct sk_buff *skb)
 {
 	int id;
@@ -76,64 +57,11 @@ void wl1271_free_tx_id(int id)
 }
 EXPORT_SYMBOL(wl1271_free_tx_id);
 
-static void wl1271_tx_ap_update_inconnection_sta(struct wl1271 *wl,
-						 struct wl12xx_vif *wlvif,
-						 struct sk_buff *skb)
-{
-	struct ieee80211_hdr *hdr;
-
-	hdr = (struct ieee80211_hdr *)(skb->data +
-				       sizeof(struct wl1271_tx_hw_descr));
-	if (!ieee80211_is_auth(hdr->frame_control))
-		return;
-
-	/*
-	 * add the station to the known list before transmitting the
-	 * authentication response. this way it won't get de-authed by FW
-	 * when transmitting too soon.
-	 */
-	wl1271_acx_set_inconnection_sta(wl, wlvif, hdr->addr1);
-
-	/*
-	 * ROC for 1 second on the AP channel for completing the connection.
-	 * Note the ROC will be continued by the update_sta_state callbacks
-	 * once the station reaches the associated state.
-	 */
-	wlcore_update_inconn_sta(wl, wlvif, NULL, true);
-	wlvif->pending_auth_reply_time = jiffies;
-	// cancel_delayed_work(&wlvif->pending_auth_complete_work);
-	// ieee80211_queue_delayed_work(wl->hw,
-	// 			&wlvif->pending_auth_complete_work,
-	// 			msecs_to_jiffies(WLCORE_PEND_AUTH_ROC_TIMEOUT));
-}
-
 bool wl12xx_is_dummy_packet(struct sk_buff *skb)
 {
 	return VV_dummy_packet == skb;
 }
 EXPORT_SYMBOL(wl12xx_is_dummy_packet);
-
-static u8 wl12xx_tx_get_hlid_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-				struct sk_buff *skb, struct ieee80211_sta *sta)
-{
-	if (sta) {
-		struct wl1271_station *wl_sta;
-
-		wl_sta = (struct wl1271_station *)sta->drv_priv;
-		return wl_sta->hlid;
-	} else {
-		struct ieee80211_hdr *hdr;
-
-		if (!test_bit(WLVIF_FLAG_AP_STARTED, &wlvif->flags))
-			return wl->system_hlid;
-
-		hdr = (struct ieee80211_hdr *)skb->data;
-		if (is_multicast_ether_addr(ieee80211_get_DA(hdr)))
-			return wlvif->ap.bcast_hlid;
-		else
-			return wlvif->ap.global_hlid;
-	}
-}
 
 u8 wl12xx_tx_get_hlid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta)
@@ -353,7 +281,7 @@ static int wl1271_prepare_tx_frame(struct sk_buff *skb, u32 buf_offset, u8 hlid)
 	int ret = 0;
 	u32 total_len;
 	// bool is_dummy;
-	bool is_gem = false;
+	//bool is_gem = false;
 
 	// skb is taken from VV_skb_dequeue1
 
@@ -505,54 +433,6 @@ static bool VV_lnk_low_prio(u8 hlid)
 }
 
 int test = 0;
-static struct sk_buff *VV_skb_dequeue(struct wl1271 *wl)
-{
-	unsigned long flags;
-	struct wl12xx_vif *wlvif = wl->last_valid_wlvif;
-	struct sk_buff *skb = NULL;
-	int ac;
-	u8 low_prio_hlid = WL12XX_INVALID_LINK_ID;
-
-	// Find ac has data (the least allocated blks and V0>VI>...)
-	ac = wlcore_select_ac();
-	if (ac < 0){
-		//printk("FAILED - ac\n");
-		return skb;
-	}
-
-	/* Do a new pass over the wlvif list. But no need to continue
-	 * after last_wlvif. The previous pass should have found it. */
-	if (!skb) {
-		//printk("[0] - wlvif = 0x%x\n", wlvif);
-		wl12xx_for_each_wlvif(wl, wlvif) {
-			//printk("[1] - START LOOP\n");
-			if (!VV_lnk_high_prio(HW_LINK_ID)) {
-				if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
-					!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
-					VV_lnk_low_prio(HW_LINK_ID)) // wl18xx_lnk_low_prio
-					/* we found the first non-empty low priority queue */
-					low_prio_hlid = HW_LINK_ID;
-
-				skb = NULL;
-			}
-			else skb = wlcore_lnk_dequeue(HW_LINK_ID, ac);
-
-			wlvif->last_tx_hlid = HW_LINK_ID;
-
-	// // test
-	// if (!test) skb = NULL;
-	// test = 1;
-
-			if (skb) {
-				break;
-			}
-		}
-	}
-
-	printk("[2] - skb = 0x%x, wlvif = 0x%x, low_prio_hlid = %x\n", skb, wlvif, low_prio_hlid);
-	return skb;
-}
-
 static struct sk_buff *VV_skb_dequeue1(void)
 {
 	unsigned long flags;
@@ -601,30 +481,6 @@ static struct sk_buff *VV_skb_dequeue1(void)
 
 	printk("[2] - skb = 0x%x, VV_vif_ptr[%d] = 0x%x, low_prio_hlid = %x\n", skb, i, VV_vif_ptr[i], low_prio_hlid);
 	return skb;
-}
-
-static void wl1271_skb_queue_head(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-				  struct sk_buff *skb, u8 hlid)
-{
-	unsigned long flags;
-	int q = wl1271_tx_get_queue(skb_get_queue_mapping(skb));
-
-	if (wl12xx_is_dummy_packet(skb)) {
-		set_bit(WL1271_FLAG_DUMMY_PACKET_PENDING, &wifi_data.flags);
-	} else {
-		skb_queue_head(&VV_tx_queue[hlid][q], skb);
-
-		/* make sure we dequeue the same packet next time */
-		wlvif->last_tx_hlid = (hlid + wl->num_links - 1) %
-				      wl->num_links;
-	}
-
-	spin_lock_irqsave(&wifi_data.lock, flags);
-	//wl->tx_queue_count[q]++;
-	VV_tx_queue_count[q]++;
-	// if (wlvif)
-	// 	wlvif->tx_queue_count[q]++;
-	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
 
 static bool wl1271_tx_is_data_present(struct sk_buff *skb)
@@ -690,7 +546,7 @@ int wlcore_tx_work_locked(void)
 	u32 buf_offset = 0, last_len = 0;
 	bool sent_packets = false;
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
-	int ret = 0;
+	//int ret = 0;
 	int bus_ret = 0;
 	u8 hlid = HW_LINK_ID;
 
@@ -794,27 +650,6 @@ void wl1271_tx_work(struct work_struct *work)
 	pm_runtime_put_autosuspend(wifi_data.wl->dev);
 out:
 	mutex_unlock(&wifi_data.mutex);
-}
-
-static u8 wl1271_tx_get_rate_flags(u8 rate_class_index)
-{
-	u8 flags = 0;
-
-	/*
-	 * TODO: use wl12xx constants when this code is moved to wl12xx, as
-	 * only it uses Tx-completion.
-	 */
-	if (rate_class_index <= 8)
-		flags |= IEEE80211_TX_RC_MCS;
-
-	/*
-	 * TODO: use wl12xx constants when this code is moved to wl12xx, as
-	 * only it uses Tx-completion.
-	 */
-	if (rate_class_index == 0)
-		flags |= IEEE80211_TX_RC_SHORT_GI;
-
-	return flags;
 }
 
 void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)

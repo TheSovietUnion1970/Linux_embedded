@@ -560,8 +560,8 @@ int VV_identify_chip(struct wl1271 *wl)
 		goto out;
 	}
 
-	wl->fw_mem_block_size = 272;
-	wl->fwlog_end = 0x40000000;
+	//wl->fw_mem_block_size = 272;
+	//wl->fwlog_end = 0x40000000;
 
 	wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
 	wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;

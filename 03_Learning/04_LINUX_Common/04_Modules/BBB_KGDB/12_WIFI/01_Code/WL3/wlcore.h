@@ -174,7 +174,7 @@ struct wl1271 {
 	struct device *dev;
 	struct platform_device *pdev;
 
-	void *if_priv;
+	//void *if_priv;
 
 	struct wl1271_if_operations *if_ops;
 
@@ -214,7 +214,7 @@ struct wl1271 {
 	/* we have up to 2 MAC addresses */
 	struct mac_address addresses[WLCORE_NUM_MAC_ADDRESSES];
 	int channel;
-	u8 system_hlid;
+	//u8 system_hlid;
 
 	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
 	//unsigned long roles_map[BITS_TO_LONGS(WL12XX_MAX_ROLES)];
@@ -224,12 +224,12 @@ struct wl1271 {
 	unsigned long klv_templates_map[
 			BITS_TO_LONGS(WLCORE_MAX_KLV_TEMPLATES)];
 
-	u8 session_ids[WLCORE_MAX_LINKS];
+	//u8 session_ids[WLCORE_MAX_LINKS];
 
 	struct list_head wlvif_list;
 
 	u8 sta_count;
-	u8 ap_count;
+	//u8 ap_count;
 
 	struct wl1271_acx_mem_map *target_mem_map;
 
@@ -247,7 +247,7 @@ struct wl1271 {
 	//u32 tx_packets_count;
 
 	/* Time-offset between host and chipset clocks */
-	s64 time_offset;
+	//s64 time_offset;
 
 	/* Frames scheduled for transmission, not handled yet */
 	//int tx_queue_count[NUM_TX_QUEUES];
@@ -282,10 +282,10 @@ struct wl1271 {
 	ssize_t fwlog_size;
 
 	/* FW log end marker */
-	u32 fwlog_end;
+	//u32 fwlog_end;
 
 	/* FW memory block size */
-	u32 fw_mem_block_size;
+	//u32 fw_mem_block_size;
 
 	/* Hardware recovery work */
 	struct work_struct recovery_work;
@@ -302,7 +302,7 @@ struct wl1271 {
 	/* The mbox event mask */
 	u32 event_mask;
 	/* events to unmask only when ap interface is up */
-	u32 ap_event_mask;
+	//u32 ap_event_mask;
 
 	// /* Mailbox pointers */
 	// u32 mbox_size;
@@ -321,7 +321,7 @@ struct wl1271 {
 	/* The current band */
 	enum nl80211_band band;
 
-	struct completion *elp_compl;
+	//struct completion *elp_compl;
 
 	/* in dBm */
 	int power_level;
@@ -474,7 +474,7 @@ struct wl1271 {
 	u32 dynamic_fw_traces;
 
 	/* time sync zone master */
-	u8 zone_master_mac_addr[ETH_ALEN];
+	//u8 zone_master_mac_addr[ETH_ALEN];
 
 	void *last_valid_wlvif;
 
