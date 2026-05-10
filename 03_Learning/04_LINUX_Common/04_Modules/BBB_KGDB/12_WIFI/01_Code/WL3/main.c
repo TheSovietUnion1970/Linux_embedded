@@ -1218,7 +1218,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
 	wl->state = WLCORE_STATE_OFF;
 	wl->plt = false;
-	wl->plt_mode = PLT_OFF;
+	//wl->plt_mode = PLT_OFF;
 	VV_rx_counter = 0;
 	mutex_unlock(&wifi_data.mutex);
 
@@ -2181,8 +2181,8 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	u32 rate;
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 	skb = ieee80211_ap_probereq_get(wl->hw, vif);
-	rate = wl1271_tx_min_rate_get(wl, wlvif->bitrate_masks[wlvif->band]);
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	rate = wl1271_tx_min_rate_get(wlvif->bitrate_masks[wlvif->band]);
+	ret = wl1271_cmd_template_set(wlvif->role_id,
 						CMD_TEMPL_CFG_PROBE_REQ_2_4,
 						skb->data, skb->len, 0, rate);
 	wlvif->probereq = skb;
@@ -2874,7 +2874,7 @@ static int wlcore_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	/* revert back to minimum rates for the current band */
 	wl1271_set_band_rate(wl, wlvif);
-	wlvif->basic_rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
+	wlvif->basic_rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
 	//printk("wlvif->basic_rate = %d\n", wlvif->basic_rate);
 
 	ret = wl1271_acx_sta_rate_policies(wl, wlvif);
@@ -4486,7 +4486,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
 	if (res) {
 		wl->wakeirq = res->start;
-		wl->wakeirq_flags = res->flags & IRQF_TRIGGER_MASK;
+		//wl->wakeirq_flags = res->flags & IRQF_TRIGGER_MASK;
 		ret = dev_pm_set_dedicated_wake_irq(wl->dev, wl->wakeirq);
 		if (ret)
 			wl->wakeirq = -ENODEV;

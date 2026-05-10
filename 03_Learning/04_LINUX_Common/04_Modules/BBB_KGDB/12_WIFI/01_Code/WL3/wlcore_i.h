@@ -174,10 +174,10 @@ struct wl_fw_status {
 struct wl1271_scan {
 	struct cfg80211_scan_request *req;
 	unsigned long scanned_ch[BITS_TO_LONGS(WL1271_MAX_CHANNELS)];
-	bool failed;
+	//bool failed;
 	u8 state;
-	u8 ssid[IEEE80211_MAX_SSID_LEN+1];
-	size_t ssid_len;
+	//u8 ssid[IEEE80211_MAX_SSID_LEN+1];
+	//size_t ssid_len;
 };
 
 struct wl1271_if_operations {

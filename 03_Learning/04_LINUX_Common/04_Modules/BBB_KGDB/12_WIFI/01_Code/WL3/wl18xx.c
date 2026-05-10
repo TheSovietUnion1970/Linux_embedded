@@ -1441,15 +1441,15 @@ static int wl18xx_setup(struct wl1271 *wl)
 	//WL18XX_NUM_TX_DESCRIPTORS = WL18XX_NUM_TX_DESCRIPTORS;
 	wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
 	wl->num_links = WL18XX_MAX_LINKS;
-	wl->max_ap_stations = WL18XX_MAX_AP_STATIONS;
+	//wl->max_ap_stations = WL18XX_MAX_AP_STATIONS;
 	wl->iface_combinations = wl18xx_iface_combinations;
 	wl->n_iface_combinations = ARRAY_SIZE(wl18xx_iface_combinations);
 	wl->num_mac_addr = WL18XX_NUM_MAC_ADDRESSES;
-	wl->band_rate_to_idx = wl18xx_band_rate_to_idx;
-	wl->hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
-	wl->hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
+	//wl->band_rate_to_idx = wl18xx_band_rate_to_idx;
+	//wl->hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
+	//wl->hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
 	// wl->fw_status_len = sizeof(struct wl18xx_fw_status);
-	wl->fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
+	//wl->fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
 	wl->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
 	wl->static_data_priv_len = sizeof(struct wl18xx_static_data_priv);
 

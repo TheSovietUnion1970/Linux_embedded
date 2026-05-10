@@ -26,31 +26,33 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 	size_t max_size;
 
 	/* send empty templates for fw memory reservation */
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
-				      wl->scan_templ_id_2_4, NULL,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
+				      CMD_TEMPL_CFG_PROBE_REQ_2_4, NULL,
 				      WL1271_CMD_TEMPL_MAX_SIZE,
 				      0, WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
-				      wl->scan_templ_id_5,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
+				      CMD_TEMPL_CFG_PROBE_REQ_5,
 				      NULL, WL1271_CMD_TEMPL_MAX_SIZE, 0,
 				      WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
 	if (wl->quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL) {
-		ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
-					      wl->sched_scan_templ_id_2_4,
+		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
+					    //   wl->sched_scan_templ_id_2_4,
+						  CMD_TEMPL_PROBE_REQ_2_4_PERIODIC,
 					      NULL,
 					      WL1271_CMD_TEMPL_MAX_SIZE,
 					      0, WL1271_RATE_AUTOMATIC);
 		if (ret < 0)
 			return ret;
 
-		ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
-					      wl->sched_scan_templ_id_5,
+		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
+					      // wl->sched_scan_templ_id_5,
+						  CMD_TEMPL_PROBE_REQ_5_PERIODIC,
 					      NULL,
 					      WL1271_CMD_TEMPL_MAX_SIZE,
 					      0, WL1271_RATE_AUTOMATIC);
@@ -58,21 +60,21 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 			return ret;
 	}
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_NULL_DATA, NULL,
 				      sizeof(struct wl12xx_null_data_template),
 				      0, WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_PS_POLL, NULL,
 				      sizeof(struct wl12xx_ps_poll_template),
 				      0, WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_QOS_NULL_DATA, NULL,
 				      sizeof
 				      (struct ieee80211_qos_hdr),
@@ -80,14 +82,14 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_PROBE_RESPONSE, NULL,
 				      WL1271_CMD_TEMPL_DFLT_SIZE,
 				      0, WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_BEACON, NULL,
 				      WL1271_CMD_TEMPL_DFLT_SIZE,
 				      0, WL1271_RATE_AUTOMATIC);
@@ -96,7 +98,7 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 
 	max_size = sizeof(struct wl12xx_arp_rsp_template) +
 		   WL1271_EXTRA_SPACE_MAX;
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_ARP_RSP, NULL,
 				      max_size,
 				      0, WL1271_RATE_AUTOMATIC);
@@ -107,21 +109,21 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 	 * Put very large empty placeholders for all templates. These
 	 * reserve memory for later.
 	 */
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_AP_PROBE_RESPONSE, NULL,
 				      WL1271_CMD_TEMPL_MAX_SIZE,
 				      0, WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_AP_BEACON, NULL,
 				      WL1271_CMD_TEMPL_MAX_SIZE,
 				      0, WL1271_RATE_AUTOMATIC);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+	ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 				      CMD_TEMPL_DEAUTH_AP, NULL,
 				      sizeof
 				      (struct wl12xx_disconn_template),
@@ -130,7 +132,7 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 		return ret;
 
 	for (i = 0; i < WLCORE_MAX_KLV_TEMPLATES; i++) {
-		ret = wl1271_cmd_template_set(wl, WL12XX_INVALID_ROLE_ID,
+		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
 					      CMD_TEMPL_KLV, NULL,
 					      sizeof(struct ieee80211_qos_hdr),
 					      i, WL1271_RATE_AUTOMATIC);
@@ -157,8 +159,8 @@ static int wl1271_ap_init_deauth_template(struct wl1271 *wl,
 	tmpl->header.frame_ctl = cpu_to_le16(IEEE80211_FTYPE_MGMT |
 					     IEEE80211_STYPE_DEAUTH);
 
-	rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
+	ret = wl1271_cmd_template_set(wlvif->role_id,
 				      CMD_TEMPL_DEAUTH_AP,
 				      tmpl, sizeof(*tmpl), 0, rate);
 
@@ -190,8 +192,8 @@ static int wl1271_ap_init_null_template(struct wl1271 *wl,
 	memcpy(nullfunc->addr2, vif->addr, ETH_ALEN);
 	memcpy(nullfunc->addr3, vif->addr, ETH_ALEN);
 
-	rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
+	ret = wl1271_cmd_template_set(wlvif->role_id,
 				      CMD_TEMPL_NULL_DATA, nullfunc,
 				      sizeof(*nullfunc), 0, rate);
 
@@ -223,8 +225,8 @@ static int wl1271_ap_init_qos_null_template(struct wl1271 *wl,
 	memcpy(qosnull->addr2, vif->addr, ETH_ALEN);
 	memcpy(qosnull->addr3, vif->addr, ETH_ALEN);
 
-	rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
+	ret = wl1271_cmd_template_set(wlvif->role_id,
 				      CMD_TEMPL_QOS_NULL_DATA, qosnull,
 				      sizeof(*qosnull), 0, rate);
 
@@ -407,7 +409,7 @@ static int wl1271_set_ba_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	/* Reset the BA RX indicators */
 	wlvif->ba_allowed = true;
-	wl->ba_rx_session_count = 0;
+	//wl->ba_rx_session_count = 0;
 
 	/* BA is supported in STA/AP modes */
 	if (wlvif->bss_type != BSS_TYPE_AP_BSS &&

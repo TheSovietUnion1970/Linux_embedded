@@ -799,7 +799,7 @@ out:
 	return ret;
 }
 
-int wl1271_cmd_template_set(struct wl1271 *wl, u8 role_id,
+int wl1271_cmd_template_set(u8 role_id,
 			    u16 template_id, void *buf, size_t buf_len,
 			    int index, u32 rates)
 {
@@ -819,12 +819,14 @@ int wl1271_cmd_template_set(struct wl1271 *wl, u8 role_id,
 	}
 
 	/* during initialization wlvif is NULL */
-	cmd->role_id = role_id;
+	cmd->role_id = role_id; // role_id here is link id
 	cmd->len = cpu_to_le16(buf_len);
 	cmd->template_type = template_id;
 	cmd->enabled_rates = cpu_to_le32(rates);
-	cmd->short_retry_limit = wl->conf.tx.tmpl_short_retry_limit;
-	cmd->long_retry_limit = wl->conf.tx.tmpl_long_retry_limit;
+		// .tmpl_short_retry_limit      = 10,
+		// .tmpl_long_retry_limit       = 10,
+	cmd->short_retry_limit = 10;
+	cmd->long_retry_limit = 10;
 	cmd->index = index;
 
 	if (buf)
@@ -864,7 +866,7 @@ int wl12xx_cmd_build_null_data(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		ptr = skb->data;
 	}
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	ret = wl1271_cmd_template_set(wlvif->role_id,
 				      CMD_TEMPL_NULL_DATA, ptr, size, 0,
 				      wlvif->basic_rate);
 
@@ -888,7 +890,7 @@ int wl12xx_cmd_build_klv_null_data(struct wl1271 *wl,
 	if (!skb)
 		goto out;
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_KLV,
+	ret = wl1271_cmd_template_set(wlvif->role_id, CMD_TEMPL_KLV,
 				      skb->data, skb->len,
 				    //   wlvif->sta.klv_template_id,
 					  STA_KLV_TEMPLATE_IDX,
@@ -915,7 +917,7 @@ int wl1271_cmd_build_ps_poll(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		goto out;
 
 	//wlvif->basic_rate_set here is 1
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+	ret = wl1271_cmd_template_set(wlvif->role_id,
 				      CMD_TEMPL_PS_POLL, skb->data,
 				      skb->len, 0, wlvif->basic_rate_set);
 
@@ -924,7 +926,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_build_probe_req(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl12xx_cmd_build_probe_req(struct wl12xx_vif *wlvif,
 			       u8 role_id, u8 band,
 			       const u8 *ssid, size_t ssid_len,
 			       const u8 *ie0, size_t ie0_len, const u8 *ie1,
@@ -934,12 +936,12 @@ int wl12xx_cmd_build_probe_req(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	struct sk_buff *skb;
 	int ret;
 	u32 rate;
-	u16 template_id_2_4 = wl->scan_templ_id_2_4;
-	u16 template_id_5 = wl->scan_templ_id_5;
+	u16 template_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
+	u16 template_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
 
 	wl1271_debug(DEBUG_SCAN, "build probe request band %d", band);
 
-	skb = ieee80211_probereq_get(wl->hw, vif->addr, ssid, ssid_len,
+	skb = ieee80211_probereq_get(VV_work.hw, vif->addr, ssid, ssid_len,
 				     ie0_len + ie1_len);
 	if (!skb) {
 		ret = -ENOMEM;
@@ -950,19 +952,20 @@ int wl12xx_cmd_build_probe_req(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (ie1_len)
 		skb_put_data(skb, ie1, ie1_len);
 
-	if (sched_scan &&
-	    (wl->quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL)) {
-		template_id_2_4 = wl->sched_scan_templ_id_2_4;
-		template_id_5 = wl->sched_scan_templ_id_5;
-	}
+	// if (sched_scan &&
+	//     (wl->quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL)) {
+	// 	template_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
+	// 	template_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
+	// }
 
-	rate = wl1271_tx_min_rate_get(wl, wlvif->bitrate_masks[band]);
+	rate = wl1271_tx_min_rate_get(wlvif->bitrate_masks[band]);
+	printk("rate = %d from %d\n", rate, wlvif->bitrate_masks[band]);
 	if (band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(wl, role_id,
+		ret = wl1271_cmd_template_set(role_id,
 					      template_id_2_4,
 					      skb->data, skb->len, 0, rate);
 	else
-		ret = wl1271_cmd_template_set(wl, role_id,
+		ret = wl1271_cmd_template_set(role_id,
 					      template_id_5,
 					      skb->data, skb->len, 0, rate);
 
@@ -987,13 +990,13 @@ struct sk_buff *wl1271_cmd_build_ap_probe_req(struct wl1271 *wl,
 
 	wl1271_debug(DEBUG_SCAN, "set ap probe request template");
 
-	rate = wl1271_tx_min_rate_get(wl, wlvif->bitrate_masks[wlvif->band]);
+	rate = wl1271_tx_min_rate_get(wlvif->bitrate_masks[wlvif->band]);
 	if (wlvif->band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+		ret = wl1271_cmd_template_set(wlvif->role_id,
 					      CMD_TEMPL_CFG_PROBE_REQ_2_4,
 					      skb->data, skb->len, 0, rate);
 	else
-		ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+		ret = wl1271_cmd_template_set(wlvif->role_id,
 					      CMD_TEMPL_CFG_PROBE_REQ_5,
 					      skb->data, skb->len, 0, rate);
 
@@ -1087,7 +1090,7 @@ int wl1271_cmd_build_arp_rsp(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	memcpy(hdr->addr2, vif->addr, ETH_ALEN);
 	eth_broadcast_addr(hdr->addr3);
 
-	ret = wl1271_cmd_template_set(wl, wlvif->role_id, CMD_TEMPL_ARP_RSP,
+	ret = wl1271_cmd_template_set(wlvif->role_id, CMD_TEMPL_ARP_RSP,
 				      skb->data, skb->len, 0,
 				      wlvif->basic_rate);
 out:
@@ -1113,7 +1116,7 @@ int wl1271_build_qos_null_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 	/* FIXME: not sure what priority to use here */
 	template.qos_ctrl = cpu_to_le16(0);
 
-	return wl1271_cmd_template_set(wl, wlvif->role_id,
+	return wl1271_cmd_template_set(wlvif->role_id,
 				       CMD_TEMPL_QOS_NULL_DATA, &template,
 				       sizeof(template), 0,
 				       wlvif->basic_rate);

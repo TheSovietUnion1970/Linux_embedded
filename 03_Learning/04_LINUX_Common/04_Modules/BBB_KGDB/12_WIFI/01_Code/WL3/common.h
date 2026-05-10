@@ -500,7 +500,7 @@ extern struct Wifi_data wifi_data;
     //-> PS-poll frame by CLI in pow-save mode -> AP: 'I'm awake'
         // ieee80211_pspoll_get(wl->hw, vif) -> standard PS-Poll frame
 
-        // ret = wl1271_cmd_template_set(wl, wlvif->role_id,
+        // ret = wl1271_cmd_template_set(wlvif->role_id,
         // 			      CMD_TEMPL_PS_POLL, skb->data,
         // 			      skb->len, 0, wlvif->basic_rate_set);
         // -> PS-Poll frame to the firmware - template with ID CMD_TEMPL_PS_POLL
@@ -563,7 +563,7 @@ extern struct Wifi_data wifi_data;
 	// 	cfg->passive[1] || cfg->active[1] || cfg->dfs ||    -> 5GHz
 	// 	cfg->passive[2] || cfg->active[2];                  -> not supported
 
-// ret = wl12xx_cmd_build_probe_req(wl, wlvif,
+// ret = wl12xx_cmd_build_probe_req(wlvif,
 //             cmd->role_id, band,
 //             req->ssids ? req->ssids[0].ssid : NULL,
 //             req->ssids ? req->ssids[0].ssid_len : 0,

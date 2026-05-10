@@ -182,19 +182,19 @@ struct wl1271 {
 	int wakeirq;
 
 	int irq_flags;
-	int wakeirq_flags;
+	//int wakeirq_flags;
 
 	enum wlcore_state state;
 	enum wl12xx_fw_type fw_type;
 	bool plt;
-	enum plt_mode plt_mode;
-	u8 fem_manuf;
+	//enum plt_mode plt_mode;
+	//u8 fem_manuf;
 	//u8 last_vif_count;
 	// struct mutex mutex;
 
 	// unsigned long flags;
 
-	struct wlcore_partition_set curr_part;
+	//struct wlcore_partition_set curr_part;
 
 	struct wl1271_chip chip;
 
@@ -219,10 +219,10 @@ struct wl1271 {
 	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
 	//unsigned long roles_map[BITS_TO_LONGS(WL12XX_MAX_ROLES)];
 	unsigned long roc_map[BITS_TO_LONGS(WL12XX_MAX_ROLES)];
-	unsigned long rate_policies_map[
-			BITS_TO_LONGS(WL12XX_MAX_RATE_POLICIES)];
-	unsigned long klv_templates_map[
-			BITS_TO_LONGS(WLCORE_MAX_KLV_TEMPLATES)];
+	// unsigned long rate_policies_map[
+	// 		BITS_TO_LONGS(WL12XX_MAX_RATE_POLICIES)];
+	// unsigned long klv_templates_map[
+	// 		BITS_TO_LONGS(WLCORE_MAX_KLV_TEMPLATES)];
 
 	//u8 session_ids[WLCORE_MAX_LINKS];
 
@@ -363,28 +363,28 @@ struct wl1271 {
 	int active_link_count;
 
 	/* Fast/slow links bitmap according to FW */
-	unsigned long fw_fast_lnk_map;
+	//unsigned long fw_fast_lnk_map;
 
 	/* AP-mode - a bitmap of links currently in PS mode according to FW */
-	unsigned long ap_fw_ps_map;
+	//unsigned long ap_fw_ps_map;
 
 	/* AP-mode - a bitmap of links currently in PS mode in mac80211 */
-	unsigned long ap_ps_map;
+	//unsigned long ap_ps_map;
 
 	/* Quirks of specific hardware revisions */
 	unsigned int quirks;
 
 	/* number of currently active RX BA sessions */
-	int ba_rx_session_count;
+	//int ba_rx_session_count;
 
 	/* Maximum number of supported RX BA sessions */
-	int ba_rx_session_count_max;
+	//int ba_rx_session_count_max;
 
 	/* AP-mode - number of currently connected stations */
 	int active_sta_count;
 
 	/* Flag determining whether AP should broadcast OFDM-only rates */
-	bool ofdm_only_ap;
+	//bool ofdm_only_ap;
 
 	/* last wlvif we transmitted from */
 	struct wl12xx_vif *last_wlvif;
@@ -398,15 +398,15 @@ struct wl1271 {
 	/* pointer to the lower driver register table */
 	const int *rtable;
 	/* name of the firmwares to load - for PLT, single role, multi-role */
-	const char *plt_fw_name;
+	//const char *plt_fw_name;
 	const char *sr_fw_name;
-	const char *mr_fw_name;
+	//const char *mr_fw_name;
 
 	u8 scan_templ_id_2_4;
 	u8 scan_templ_id_5;
-	u8 sched_scan_templ_id_2_4;
-	u8 sched_scan_templ_id_5;
-	u8 max_channels_5;
+	// u8 sched_scan_templ_id_2_4;
+	// u8 sched_scan_templ_id_5;
+	//u8 max_channels_5;
 
 	/* per-chip-family private structure */
 	void *priv;
@@ -418,27 +418,27 @@ struct wl1271 {
 	/* number of links the HW supports */
 	u8 num_links;
 	/* max stations a single AP can support */
-	u8 max_ap_stations;
+	//u8 max_ap_stations;
 
 	/* translate HW Tx rates to standard rate-indices */
-	const u8 **band_rate_to_idx;
+	//const u8 **band_rate_to_idx;
 
 	/* size of table for HW rates that can be received from chip */
-	u8 hw_tx_rate_tbl_size;
+	//u8 hw_tx_rate_tbl_size;
 
 	/* this HW rate and below are considered HT rates for this chip */
-	u8 hw_min_ht_rate;
+	//u8 hw_min_ht_rate;
 
 	/* HW HT (11n) capabilities */
 	struct ieee80211_sta_ht_cap ht_cap[WLCORE_NUM_BANDS];
 
 	/* the current dfs region */
 	enum nl80211_dfs_regions dfs_region;
-	bool radar_debug_mode;
+	//bool radar_debug_mode;
 
 	/* size of the private FW status data */
-	size_t fw_status_len;
-	size_t fw_status_priv_len;
+	//size_t fw_status_len;
+	//size_t fw_status_priv_len;
 
 	/* RX Data filter rule state - enabled/disabled */
 	unsigned long rx_filter_enabled[BITS_TO_LONGS(WL1271_MAX_RX_FILTERS)];

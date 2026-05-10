@@ -149,14 +149,6 @@ enum {
 	SCAN_TYPE_TRACKING	= 2,
 };
 
-bool
-wlcore_set_scan_chan_params(struct wl1271 *wl,
-			    struct wlcore_scan_channels *cfg,
-			    struct ieee80211_channel *channels[],
-			    u32 n_channels,
-			    u32 n_ssids,
-			    int scan_type);
-
 int
 wlcore_scan_sched_scan_ssid_list(struct wl1271 *wl,
 				 struct wl12xx_vif *wlvif,

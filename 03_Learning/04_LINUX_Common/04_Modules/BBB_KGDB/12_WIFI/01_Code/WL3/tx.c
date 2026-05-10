@@ -822,7 +822,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl1271_tx_flush);
 
-u32 wl1271_tx_min_rate_get(struct wl1271 *wl, u32 rate_set)
+u32 wl1271_tx_min_rate_get(u32 rate_set)
 {
 	if (WARN_ON(!rate_set))
 		return 0;

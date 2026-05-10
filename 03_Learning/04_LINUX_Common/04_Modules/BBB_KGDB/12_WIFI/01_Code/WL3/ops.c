@@ -29,7 +29,7 @@ out_free:
 
 
 static int
-VV_scan_get_channels(struct wl1271 *wl,
+VV_scan_get_channels(
 			 struct ieee80211_channel *req_channels[],
 			 u32 n_channels,
 			 u32 n_ssids,
@@ -45,49 +45,23 @@ VV_scan_get_channels(struct wl1271 *wl,
 	u32 min_dwell_time_active, max_dwell_time_active;
 	u32 dwell_time_passive, dwell_time_dfs;
 
-	// /* configure dwell times according to scan type */
-	// if (scan_type == SCAN_TYPE_SEARCH) {
-	// 	struct conf_scan_settings *c = &wl->conf.scan;
-	// 	bool active_vif_exists = !!wlcore_count_started_vifs(wl);
-
-	// 	min_dwell_time_active = active_vif_exists ?
-	// 		c->min_dwell_time_active :
-	// 		c->min_dwell_time_active_long;
-	// 	max_dwell_time_active = active_vif_exists ?
-	// 		c->max_dwell_time_active :
-	// 		c->max_dwell_time_active_long;
-	// 	dwell_time_passive = c->dwell_time_passive;
-	// 	dwell_time_dfs = c->dwell_time_dfs;
-	// } else {
-	// 	struct conf_sched_scan_settings *c = &wl->conf.sched_scan;
-	// 	u32 delta_per_probe;
-
-	// 	if (band == NL80211_BAND_5GHZ)
-	// 		delta_per_probe = c->dwell_time_delta_per_probe_5;
-	// 	else
-	// 		delta_per_probe = c->dwell_time_delta_per_probe;
-
-	// 	min_dwell_time_active = c->base_dwell_time +
-	// 		 n_ssids * c->num_probe_reqs * delta_per_probe;
-
-	// 	max_dwell_time_active = min_dwell_time_active +
-	// 				c->max_dwell_time_delta;
-	// 	dwell_time_passive = c->dwell_time_passive;
-	// 	dwell_time_dfs = c->dwell_time_dfs;
-	// }
-	// min_dwell_time_active = DIV_ROUND_UP(min_dwell_time_active, 1000);
-	// max_dwell_time_active = DIV_ROUND_UP(max_dwell_time_active, 1000);
-	// dwell_time_passive = DIV_ROUND_UP(dwell_time_passive, 1000);
-	// dwell_time_dfs = DIV_ROUND_UP(dwell_time_dfs, 1000);
-
 	// [TODO]
 	min_dwell_time_active = 25;
 	max_dwell_time_active = 50;
 	dwell_time_passive = 100;
 	dwell_time_dfs = 150;
 
-	//printk("i start = %d, j start = %d\n", i, start);
+	// always: n_channel <= max_channel
+	// j is used to prevent overflow of stuct buffer, but overflow 
+	// rarely happens as n_channel <= max_channel
 
+	// req_channels - i - n_channel   : from ptr
+	// channels     - j - max_channels: from macro
+
+	// from multiple req_channels[i] -> only conditional channels[j]
+	// multiple req_channels[i] is scaned for passive0, active0, ... active1
+
+	printk("START LOOP\n");
 	for (i = 0, j = start;
 	     i < n_channels && j < max_channels;
 	     i++) {
@@ -96,12 +70,15 @@ VV_scan_get_channels(struct wl1271 *wl,
 		if (force_passive)
 			flags |= IEEE80211_CHAN_NO_IR;
 
+		//printk("band = %d\n", req_channels[i]->band);
 		if ((req_channels[i]->band == band) &&
 		    !(flags & IEEE80211_CHAN_DISABLED) &&
 		    (!!(flags & IEEE80211_CHAN_RADAR) == radar) &&
 		    /* if radar is set, we ignore the passive flag */
 		    (radar ||
-		     !!(flags & IEEE80211_CHAN_NO_IR) == passive)) {
+		     !!(flags & IEEE80211_CHAN_NO_IR) == passive)) 
+		{
+			printk("%d is selected, channel = %d\n", i, req_channels[i]->hw_value);
 			if (flags & IEEE80211_CHAN_RADAR) {
 				channels[j].flags |= SCAN_CHANNEL_FLAGS_DFS;
 
@@ -120,6 +97,10 @@ VV_scan_get_channels(struct wl1271 *wl,
 			channels[j].tx_power_att = req_channels[i]->max_power;
 			channels[j].channel = req_channels[i]->hw_value;
 
+
+			// channel 12-14 as passive = listen only (DFS(special passive-like scan))
+			// In many countries/regions (especially Europe, Japan, etc.), 
+			// channels 12 and 13 (and sometimes 14) have strict regulatory restrictions
 			if (n_pactive_ch &&
 			    (band == NL80211_BAND_2GHZ) &&
 			    (channels[j].channel >= 12) &&
@@ -128,46 +109,24 @@ VV_scan_get_channels(struct wl1271 *wl,
 			    !force_passive) {
 				/* pactive channels treated as DFS */
 				channels[j].flags = SCAN_CHANNEL_FLAGS_DFS;
-
+				
 				/*
 				 * n_pactive_ch is counted down from the end of
 				 * the passive channel list
 				 */
 				(*n_pactive_ch)++;
-				// wl1271_debug(DEBUG_SCAN, "n_pactive_ch = %d",
-				// 	     *n_pactive_ch);
 			}
-
-			// channels.flags
-			// channels.passive_duration
-			// channels.min_duration
-			// channels.max_duration
-			// channels.tx_power_att
-			// channels.channel
-
-			// -> 3 types: active, passive, DFS
-
-			// wl1271_debug(DEBUG_SCAN, "freq %d, ch. %d, flags 0x%x, power %d, min/max_dwell %d/%d%s%s",
-			// 	     req_channels[i]->center_freq,
-			// 	     req_channels[i]->hw_value,
-			// 	     req_channels[i]->flags,
-			// 	     req_channels[i]->max_power,
-			// 	     min_dwell_time_active,
-			// 	     max_dwell_time_active,
-			// 	     flags & IEEE80211_CHAN_RADAR ?
-			// 		", DFS" : "",
-			// 	     flags & IEEE80211_CHAN_NO_IR ?
-			// 		", NO-IR" : "");
 			j++;
 		}
 	}
-	//printk("i end = %d, j end = %d\n", i, j);
+	// update channels		: flags, passive_duration, min_duration, max_duration, tx_power_att, channel
+	// from   req_channels  : flags, band, max_power, hw_value
 
 	return j - start;
 }
 
-bool
-VV_set_scan_chan_params(struct wl1271 *wl,
+static bool
+VV_set_scan_chan_params(
 			    struct VV_scan_channels *cfg,
 			    struct ieee80211_channel *channels[],
 			    u32 n_channels,
@@ -176,8 +135,11 @@ VV_set_scan_chan_params(struct wl1271 *wl,
 {
 	u8 n_pactive_ch = 0;
 
+	printk("[SCAN] - %d, %d, %d\n", n_channels, n_ssids, scan_type);
+
+
 	cfg->passive[0] =
-		VV_scan_get_channels(wl,
+		VV_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -188,7 +150,7 @@ VV_set_scan_chan_params(struct wl1271 *wl,
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->active[0] =
-		VV_scan_get_channels(wl,
+		VV_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -200,18 +162,18 @@ VV_set_scan_chan_params(struct wl1271 *wl,
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->passive[1] =
-		VV_scan_get_channels(wl,
+		VV_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
 					 cfg->channels_5,
 					 NL80211_BAND_5GHZ,
 					 false, true, 0,
-					 wl->max_channels_5,
+					 WL18XX_MAX_CHANNELS_5GHZ,
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->dfs =
-		VV_scan_get_channels(wl,
+		VV_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -219,11 +181,11 @@ VV_set_scan_chan_params(struct wl1271 *wl,
 					 NL80211_BAND_5GHZ,
 					 true, true,
 					 cfg->passive[1],
-					 wl->max_channels_5,
+					 WL18XX_MAX_CHANNELS_5GHZ,
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->active[1] =
-		VV_scan_get_channels(wl,
+		VV_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -231,7 +193,7 @@ VV_set_scan_chan_params(struct wl1271 *wl,
 					 NL80211_BAND_5GHZ,
 					 false, false,
 					 cfg->passive[1] + cfg->dfs,
-					 wl->max_channels_5,
+					 WL18XX_MAX_CHANNELS_5GHZ,
 					 &n_pactive_ch,
 					 scan_type);
 
@@ -267,7 +229,7 @@ static void VV_adjust_channels(struct VV_cmd_scan_params *cmd,
 	/* channels_4 are not supported, so no need to copy them */
 }
 
-int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int VV_scan_send(struct wl12xx_vif *wlvif,
 			    struct cfg80211_scan_request *req)
 {
 	struct VV_cmd_scan_params *cmd;
@@ -286,7 +248,8 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	else
 		cmd->role_id = wlvif->role_id;
 
-	if (WARN_ON(cmd->role_id == WL12XX_INVALID_ROLE_ID)) {
+	if (cmd->role_id == WL12XX_INVALID_ROLE_ID) {
+		printk("INVALID - role_id\n");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -304,7 +267,8 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	cmd->urgency = 0;
 	cmd->protect = 0;
 
-	cmd->n_probe_reqs = wl->conf.scan.num_probe_reqs;
+	// .num_probe_reqs			= 2,
+	cmd->n_probe_reqs = 2;
 	cmd->terminate_after = 0;
 
 	/* configure channels */
@@ -316,10 +280,12 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		goto out;
 	}
 
-	//printk("[SCAN] - n_channels = %d, n_ssids = %d\n",  req->n_channels, req->n_ssids);
-	VV_set_scan_chan_params(wl, cmd_channels, req->channels,
+	VV_set_scan_chan_params(cmd_channels, req->channels,
 				    req->n_channels, req->n_ssids,
 				    SCAN_TYPE_SEARCH);
+	// returning cmd_channels->passive[0], active[0]      -> 2.4 GHz
+						//	 ->passive[1], dfs, active[1] -> 5 GHz
+	// FROM un-ordered req->channels
 	VV_adjust_channels(cmd, cmd_channels); // cpy cmd_channels->active|passive|dtfs -> cmd
 
 	/*
@@ -341,7 +307,7 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	/* TODO: per-band ies? */
 	if (cmd->active[0]) {
 		u8 band = NL80211_BAND_2GHZ;
-		ret = wl12xx_cmd_build_probe_req(wl, wlvif,
+		ret = wl12xx_cmd_build_probe_req(wlvif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -358,7 +324,7 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	if (cmd->active[1] || cmd->dfs) {
 		u8 band = NL80211_BAND_5GHZ;
-		ret = wl12xx_cmd_build_probe_req(wl, wlvif,
+		ret = wl12xx_cmd_build_probe_req(wlvif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -368,7 +334,7 @@ int VV_scan_send(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				 0,
 				 false);
 		if (ret < 0) {
-			//("5GHz PROBE request template failed");
+			printk("5GHz PROBE request template failed");
 			goto out;
 		}
 	}
@@ -534,7 +500,7 @@ int VV_identify_chip(struct wl1271 *wl)
 		// 		 wl->chip.id);
 		wl->sr_fw_name = WL18XX_FW_NAME;
 		/* wl18xx uses the same firmware for PLT */
-		wl->plt_fw_name = WL18XX_FW_NAME;
+		//wl->plt_fw_name = WL18XX_FW_NAME;
 		wl->quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
 			      WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN |
 			      WLCORE_QUIRK_NO_SCHED_SCAN_WHILE_CONN |
@@ -563,12 +529,12 @@ int VV_identify_chip(struct wl1271 *wl)
 	//wl->fw_mem_block_size = 272;
 	//wl->fwlog_end = 0x40000000;
 
-	wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
-	wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
-	wl->sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
-	wl->sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
-	wl->max_channels_5 = WL18XX_MAX_CHANNELS_5GHZ;
-	wl->ba_rx_session_count_max = WL18XX_RX_BA_MAX_SESSIONS;
+	// wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
+	// wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
+	//wl->sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
+	//wl->sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
+	//wl->max_channels_5 = WL18XX_MAX_CHANNELS_5GHZ;
+	//wl->ba_rx_session_count_max = WL18XX_RX_BA_MAX_SESSIONS;
 out:
 	return ret;
 }
