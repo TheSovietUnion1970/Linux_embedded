@@ -422,10 +422,19 @@ struct Wifi_data {
 	/* Pointer that holds DMA-friendly block for the mailbox */
 	void *mbox;
 
+	u8 scan_state;
+
     /* Temporary use */
     struct wl1271 *wl;
 };
 extern struct Wifi_data wifi_data;
+
+static inline
+struct ieee80211_vif *VV_wlvif_to_vif(int idx)
+{
+	return container_of((void *)VV_vif_ptr[idx], struct ieee80211_vif, drv_priv);
+}
+
 #endif
 //extern struct VV_wl18xx_fw_status VV_status_reg;
 

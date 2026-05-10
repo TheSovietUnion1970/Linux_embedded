@@ -17,12 +17,12 @@
 #include "acx.h"
 #include "tx.h"
 #include "ops.h"
-
+#include "common.h"
 void wl1271_scan_complete_work(struct work_struct *work)
 {
 	//struct delayed_work *dwork;
 	//struct wl1271 *wl;
-	struct wl12xx_vif *wlvif;
+	//struct wl12xx_vif *wlvif;
 	struct cfg80211_scan_info info = {
 		.aborted = false,
 	};
@@ -31,17 +31,18 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	//dwork = to_delayed_work(work);
 	//wl = container_of(dwork, struct wl1271, scan_complete_work);
 
-	printk("[WORK] Scan complete state: %d\n", wifi_data.wl->scan.state);
+	printk("[WORK] Scan complete state: %d\n", wifi_data.scan_state);
 
 	mutex_lock(&wifi_data.mutex);
 
 	if (unlikely(wifi_data.wl->state != WLCORE_STATE_ON))
 		goto out;
 
-	if (wifi_data.wl->scan.state == WL1271_SCAN_STATE_IDLE)
+	if (wifi_data.scan_state == WL1271_SCAN_STATE_IDLE)
 		goto out;
 
-	wlvif = wifi_data.wl->scan_wlvif;
+	//wlvif = wifi_data.wl->scan_wlvif;
+
 
 	/*
 	 * Rearm the tx watchdog just before idling scan. This
@@ -49,10 +50,10 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	 */
 	wl12xx_rearm_tx_watchdog_locked();
 
-	wifi_data.wl->scan.state = WL1271_SCAN_STATE_IDLE;
-	memset(wifi_data.wl->scan.scanned_ch, 0, sizeof(wifi_data.wl->scan.scanned_ch));
-	wifi_data.wl->scan.req = NULL;
-	wifi_data.wl->scan_wlvif = NULL;
+	wifi_data.scan_state = WL1271_SCAN_STATE_IDLE;
+	//memset(wifi_data.wl->scan.scanned_ch, 0, sizeof(wifi_data.wl->scan.scanned_ch));
+	//wifi_data.wl->scan.req = NULL;
+	//wifi_data.wl->scan_wlvif = NULL;
 
 	ret = pm_runtime_get_sync(wifi_data.wl->dev);
 	if (ret < 0) {
@@ -60,9 +61,9 @@ void wl1271_scan_complete_work(struct work_struct *work)
 		goto out;
 	}
 
-	if (test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags)) {
+	if (test_bit(WLVIF_FLAG_STA_ASSOCIATED, &VV_vif_ptr[0]->flags)) {
 		/* restore hardware connection monitoring template */
-		wl1271_cmd_build_ap_probe_req(wifi_data.wl, wlvif, wlvif->probereq);
+		wl1271_cmd_build_ap_probe_req(VV_vif_ptr[0]->probereq);
 	}
 
 	// if (wifi_data.wl->scan.failed) {
@@ -76,7 +77,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	pm_runtime_mark_last_busy(wifi_data.wl->dev);
 	pm_runtime_put_autosuspend(wifi_data.wl->dev);
 
-	ieee80211_scan_completed(wifi_data.wl->hw, &info);
+	ieee80211_scan_completed(VV_work.hw, &info);
 
 out:
 	mutex_unlock(&wifi_data.mutex);
@@ -233,10 +234,10 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	 */
 	BUG_ON(req->n_channels > WL1271_MAX_CHANNELS);
 
-	if (wl->scan.state != WL1271_SCAN_STATE_IDLE)
+	if (wifi_data.scan_state != WL1271_SCAN_STATE_IDLE)
 		return -EBUSY;
 
-	wl->scan.state = WL1271_SCAN_STATE_2GHZ_ACTIVE;
+	wifi_data.scan_state = WL1271_SCAN_STATE_2GHZ_ACTIVE;
 
 	// if (ssid_len && ssid) {
 	// 	wl->scan.ssid_len = ssid_len;
@@ -245,17 +246,18 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	// 	wl->scan.ssid_len = 0;
 	// }
 
-	wl->scan_wlvif = wlvif;
-	wl->scan.req = req;
-	memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
+	//wl->scan_wlvif = wlvif;
+	//wl->scan.req = req;
+	//memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
 
 	/* we assume failure so that timeout scenarios are handled correctly */
 	//wl->scan.failed = true;
-	printk("SCHEDULE SCAN\n");
+
 	VV_scan_failed = true;
-	ieee80211_queue_delayed_work(wl->hw, &VV_work.scan_complete_work,
+	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
 
+	printk("SCHEDULE SCAN - wlvif = 0x%x\n", wlvif);
 	(void)VV_scan_send(wlvif, req); 
 	// Config cmd for CMD_SCAN, template for probe req if active[0], dtf, active[1] > 0
 	

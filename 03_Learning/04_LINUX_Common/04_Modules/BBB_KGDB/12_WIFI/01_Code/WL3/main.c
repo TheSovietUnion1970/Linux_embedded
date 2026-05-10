@@ -211,7 +211,7 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 	 * if a scan is in progress, we might not have any Tx for a long
 	 * time
 	 */
-	if (wifi_data.wl->scan.state != WL1271_SCAN_STATE_IDLE) {
+	if (wifi_data.scan_state != WL1271_SCAN_STATE_IDLE) {
 		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms due to scan",
 			     wifi_data.wl->conf.tx.tx_watchdog_timeout);
 		wl12xx_rearm_tx_watchdog_locked();
@@ -1929,8 +1929,9 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 
 	wl1271_info("down");
 
-	if (wl->scan.state != WL1271_SCAN_STATE_IDLE &&
-	    wl->scan_wlvif == wlvif) {
+	if (wifi_data.scan_state != WL1271_SCAN_STATE_IDLE )
+	    // && wl->scan_wlvif == wlvif) 
+		{
 		struct cfg80211_scan_info info = {
 			.aborted = true,
 		};
@@ -1941,10 +1942,11 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 		 */
 		wl12xx_rearm_tx_watchdog_locked();
 
-		wl->scan.state = WL1271_SCAN_STATE_IDLE;
-		memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
-		wl->scan_wlvif = NULL;
-		wl->scan.req = NULL;
+		wifi_data.scan_state = WL1271_SCAN_STATE_IDLE;
+		//memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
+		// wl->scan_wlvif = NULL;
+		//wifi_data.VV_scan_vif = NULL;
+		//wl->scan.req = NULL;
 		ieee80211_scan_completed(wl->hw, &info);
 	}
 

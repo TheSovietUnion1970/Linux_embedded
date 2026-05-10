@@ -171,14 +171,14 @@ struct wl_fw_status {
 };
 
 #define WL1271_MAX_CHANNELS 64
-struct wl1271_scan {
-	struct cfg80211_scan_request *req;
-	unsigned long scanned_ch[BITS_TO_LONGS(WL1271_MAX_CHANNELS)];
-	//bool failed;
-	u8 state;
-	//u8 ssid[IEEE80211_MAX_SSID_LEN+1];
-	//size_t ssid_len;
-};
+// struct wl1271_scan {
+// 	//struct cfg80211_scan_request *req;
+// 	//unsigned long scanned_ch[BITS_TO_LONGS(WL1271_MAX_CHANNELS)];
+// 	//bool failed;
+// 	u8 state;
+// 	//u8 ssid[IEEE80211_MAX_SSID_LEN+1];
+// 	//size_t ssid_len;
+// };
 
 struct wl1271_if_operations {
 	int __must_check (*read)(struct device *child, int addr, void *buf,

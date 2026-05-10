@@ -975,28 +975,26 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl12xx_cmd_build_probe_req);
 
-struct sk_buff *wl1271_cmd_build_ap_probe_req(struct wl1271 *wl,
-					      struct wl12xx_vif *wlvif,
-					      struct sk_buff *skb)
+struct sk_buff *wl1271_cmd_build_ap_probe_req(struct sk_buff *skb)
 {
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
+	struct ieee80211_vif *vif = VV_wlvif_to_vif(0);
 	int ret;
 	u32 rate;
 
 	if (!skb)
-		skb = ieee80211_ap_probereq_get(wl->hw, vif);
+		skb = ieee80211_ap_probereq_get(VV_work.hw, vif);
 	if (!skb)
 		goto out;
 
 	wl1271_debug(DEBUG_SCAN, "set ap probe request template");
 
-	rate = wl1271_tx_min_rate_get(wlvif->bitrate_masks[wlvif->band]);
-	if (wlvif->band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(wlvif->role_id,
+	rate = wl1271_tx_min_rate_get(VV_vif_ptr[0]->bitrate_masks[VV_vif_ptr[0]->band]);
+	if (VV_vif_ptr[0]->band == NL80211_BAND_2GHZ)
+		ret = wl1271_cmd_template_set(VV_vif_ptr[0]->role_id,
 					      CMD_TEMPL_CFG_PROBE_REQ_2_4,
 					      skb->data, skb->len, 0, rate);
 	else
-		ret = wl1271_cmd_template_set(wlvif->role_id,
+		ret = wl1271_cmd_template_set(VV_vif_ptr[0]->role_id,
 					      CMD_TEMPL_CFG_PROBE_REQ_5,
 					      skb->data, skb->len, 0, rate);
 
