@@ -36,7 +36,7 @@
 #define WL18XX_CONF_VERSION	(WLCORE_CONF_VERSION | 0x0007)
 #define WL18XX_CONF_MASK	0x0000ffff
 #define WL18XX_CONF_SIZE	(WLCORE_CONF_SIZE + \
-				 sizeof(struct wl18xx_priv_conf))
+				 sizeof(struct wifi_priv_conf))
 
 #define NUM_OF_CHANNELS_11_ABG 150
 #define NUM_OF_CHANNELS_11_P 7
@@ -140,7 +140,7 @@ struct conf_ap_sleep_settings {
 } __packed;
 
 
-struct wl18xx_priv_conf {
+struct wifi_priv_conf {
 	/* Module params structures */
 	struct wl18xx_ht_settings ht;
 
@@ -241,17 +241,8 @@ enum wl18xx_sg_params {
 };
 
 
-struct wl18xx_priv {
-	/* buffer for sending commands to FW */
-	u8 cmd_buf[WL18XX_CMD_MAX_SIZE];
-
-	struct wl18xx_priv_conf conf;
-
-	/* Index of last released Tx desc in FW */
-	//u8 last_fw_rls_idx;
-
-	/* number of keys requiring extra spare mem-blocks */
-	int extra_spare_key_count;
+struct wifi_priv {
+	struct wifi_priv_conf conf;
 };
 
 #define WL18XX_FW_MAX_TX_STATUS_DESC 33

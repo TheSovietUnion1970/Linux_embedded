@@ -93,7 +93,7 @@ static int wl1271_tx_allocate(struct sk_buff *skb, u32 buf_offset, u8 hlid)
 	if (buf_offset + total_len > WL18XX_AGGR_BUFFER_SIZE)
 		return -EAGAIN;
 
-	//struct wl18xx_priv *priv = wifi_data->priv;
+	//struct wifi_priv *priv = wifi_data->priv;
 	/* If we have keys requiring extra spare, indulge them */
 	spare_blocks = WL18XX_TX_HW_BLOCK_SPARE;
 

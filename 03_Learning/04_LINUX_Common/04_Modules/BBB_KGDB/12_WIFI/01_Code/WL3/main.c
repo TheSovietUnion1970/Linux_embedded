@@ -3512,8 +3512,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	wifi_data = hw->priv;
 	memset(wifi_data, 0, sizeof(*wifi_data));
 
-
-	
+	// point to conf
 	wifi_data->priv = kzalloc(priv_size, GFP_KERNEL);
 	if (!wifi_data->priv) {
 		wl1271_error("could not alloc wl priv");
@@ -3525,8 +3524,6 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	INIT_LIST_HEAD(&wifi_data->wifi_vif_list);
 
 	wifi_data->hw = hw;
-
-	//memset(&VV_tx_queue[0][0], 0, sizeof(VV_tx_queue));
 
 	/*
 	 * wifi_data->num_links is not configured yet, so just use WLCORE_MAX_LINKS.
@@ -3541,13 +3538,10 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	skb_queue_head_init(&VV_deferred_rx_queue);
 	skb_queue_head_init(&VV_deferred_tx_queue);
 
-	//INIT_WORK(&wifi_data->netstack_work, wl1271_netstack_work);
 	INIT_WORK(&VV_work.netstack_work, wl1271_netstack_work);
 
 	INIT_WORK(&VV_work.tx_work, wl1271_tx_work);
-	//INIT_WORK(&wifi_data->recovery_work, wl1271_recovery_work);
 	INIT_DELAYED_WORK(&VV_work.scan_complete_work, wl1271_scan_complete_work);
-	//INIT_DELAYED_WORK(&wifi_data->roc_complete_work, wlcore_roc_complete_work);
 	INIT_DELAYED_WORK(&VV_work.tx_watchdog_work, wl12xx_tx_watchdog_work);
 
 	VV_work.freezable_wq = create_freezable_workqueue("wl12xx_wq");
@@ -3558,26 +3552,13 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 
 	wifi_data->channel = 0;
 	VV_rx_counter = 0;
-	//wifi_data->power_level = WL1271_DEFAULT_POWER_LEVEL;
-	//wifi_data->band = NL80211_BAND_2GHZ;
-	//wifi_data->channel_type = NL80211_CHAN_NO_HT;
 	wifi_data->flags = 0;
-	//wifi_data->sg_enabled = true;
 	wifi_data->sleep_auth = WL1271_PSM_ILLEGAL;
-	//wifi_data->recovery_count = 0;
-	//wifi_data->hw_pg_ver = -1;
-	//wifi_data->ap_ps_map = 0;
-	//wifi_data->ap_fw_ps_map = 0;
 	wifi_data->quirks = 0;
-	//wifi_data->system_hlid = WL12XX_SYSTEM_HLID;
-	//wifi_data->active_sta_count = 0;
-	//wifi_data->active_link_count = 0;
-	//wifi_data->fwlog_size = 0;
 
 	/* The system link is always allocated */
 	__set_bit(WL12XX_SYSTEM_HLID, VV_map.links_map);
 
-	//memset(wifi_data->tx_frames_map, 0, sizeof(wifi_data->tx_frames_map));
 	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++)
 		VV_skb_tx_frames[i] = NULL;
 
@@ -3601,39 +3582,12 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	// -> order = 4 -> 2^4 = 16 > 13
 
 	VV_dummy_packet = wl12xx_alloc_dummy_packet();
-	//printk("VV_dummy_packet: 0x%x\n", VV_dummy_packet);
 	if (!VV_dummy_packet) {
 		ret = -ENOMEM;
 		goto err_aggr;
 	}
 
-	/* Allocate one page for the FW log */
-	// wifi_data->fwlog = (u8 *)get_zeroed_page(GFP_KERNEL);
-	// if (!wifi_data->fwlog) {
-	// 	ret = -ENOMEM;
-	// 	goto err_dummy_packet;
-	// }
-
-	//wifi_data->mbox_size = mbox_size;
-	// wifi_data->mbox = kmalloc(wifi_data->mbox_size, GFP_KERNEL | GFP_DMA);
-	// if (!wifi_data->mbox) {
-	// 	ret = -ENOMEM;
-	// 	goto err_fwlog;
-	// }
-
-	// wifi_data->buffer_32 = kmalloc(sizeof(*wifi_data->buffer_32), GFP_KERNEL);
-	// if (!wifi_data->buffer_32) {
-	// 	ret = -ENOMEM;
-	// 	goto err_mbox;
-	// }
-
 	return hw;
-
-// err_mbox:
-// 	kfree(wifi_data->mbox);
-
-// err_fwlog:
-// 	free_page((unsigned long)wifi_data->fwlog);
 
 err_dummy_packet:
 	dev_kfree_skb(VV_dummy_packet);

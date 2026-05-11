@@ -590,7 +590,7 @@ static struct wlcore_conf wl18xx_conf = {
 	},
 };
 
-static struct wl18xx_priv_conf wl18xx_default_priv_conf = {
+static struct wifi_priv_conf wl18xx_default_priv_conf = {
 	.ht = {
 		.mode				= HT_MODE_WIDE,
 	},
@@ -963,7 +963,7 @@ out:
 
 static int wl18xx_set_mac_and_phy(void)
 {
-	struct wl18xx_priv *priv = wifi_data->priv;
+	struct wifi_priv *priv = wifi_data->priv;
 	struct wl18xx_mac_and_phy_params *params;
 	int ret;
 
@@ -1128,10 +1128,7 @@ static int wl18xx_set_host_cfg_bitmap(u32 extra_mem_blk)
 static int wl18xx_hw_init(void)
 {
 	int ret;
-	struct wl18xx_priv *priv = wifi_data->priv;
-
-	/* (re)init private structures. Relevant on recovery as well. */
-	priv->extra_spare_key_count = 0;
+	struct wifi_priv *priv = wifi_data->priv;
 
 	/* set the default amount of spare blocks in the bitmap */
 	ret = wl18xx_set_host_cfg_bitmap(WL18XX_TX_HW_BLOCK_SPARE);
@@ -1143,7 +1140,7 @@ static int wl18xx_hw_init(void)
 
 static bool wl18xx_is_mimo_supported(void)
 {
-	struct wl18xx_priv *priv = wifi_data->priv;
+	struct wifi_priv *priv = wifi_data->priv;
 
 	/* only support MIMO with multiple antennas, and when SISO
 	 * is not forced through config
@@ -1154,7 +1151,7 @@ static bool wl18xx_is_mimo_supported(void)
 }
 
 static int wl18xx_load_conf_file(struct device *dev, struct wlcore_conf *conf,
-				 struct wl18xx_priv_conf *priv_conf,
+				 struct wifi_priv_conf *priv_conf,
 				 const char *file)
 {
 	struct wlcore_conf_file *conf_file;
@@ -1205,7 +1202,7 @@ static int wl18xx_conf_init(struct device *dev)
 {
 	struct platform_device *pdev = wifi_data->pdev;
 	struct wlcore_platdev_data *pdata = dev_get_platdata(&pdev->dev);
-	struct wl18xx_priv *priv = wifi_data->priv;
+	struct wifi_priv *priv = wifi_data->priv;
 
 	if (wl18xx_load_conf_file(dev, &wifi_data->conf, &priv->conf,
 				  pdata->family->cfg_name) < 0) {
@@ -1353,7 +1350,7 @@ wlcore_set_ht_cap(enum nl80211_band band,
 
 static int wl18xx_setup(void)
 {
-	struct wl18xx_priv *priv = wifi_data->priv;
+	struct wifi_priv *priv = wifi_data->priv;
 	int ret;
 
 	BUILD_BUG_ON(WL18XX_MAX_LINKS > WLCORE_MAX_LINKS);
@@ -1491,7 +1488,7 @@ static int wl18xx_probe(struct platform_device *pdev)
 
 	printk("Hello - wl18xx_probe\n");
 
-	hw = wlcore_alloc_hw(sizeof(struct wl18xx_priv),
+	hw = wlcore_alloc_hw(sizeof(struct wifi_priv),
 			     WL18XX_AGGR_BUFFER_SIZE,
 			     sizeof(struct wl18xx_event_mailbox));
 	if (IS_ERR(hw)) {

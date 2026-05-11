@@ -515,7 +515,7 @@ struct Wifi_data {
 	const char *sr_fw_name;
 
 	/* per-chip-family private structure */
-	void *priv;
+	void *priv; // pointing to conf
 
 	/* HW HT (11n) capabilities */
 	struct ieee80211_sta_ht_cap ht_cap[WLCORE_NUM_BANDS];
