@@ -41,18 +41,6 @@ struct wl18xx_cmd_smart_config_set_group_key {
 
 	u8 key[16];
 } __packed;
-int VV_cmd_smart_config_set_group_key(struct wl1271 *wl, u16 group_id,
-					  u8 key_len, u8 *key);
-int VV_cmd_smart_config_stop(struct wl1271 *wl);
-
-
-
-struct VV_cmd_smart_config_start {
-	struct wl1271_cmd_header header;
-
-	__le32 group_id_bitmask;
-} __packed;
-int VV_cmd_smart_config_start(struct wl1271 *wl, u32 group_bitmap);
 
 
 /* Target's information element */

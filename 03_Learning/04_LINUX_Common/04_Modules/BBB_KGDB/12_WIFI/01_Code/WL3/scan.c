@@ -21,16 +21,10 @@
 
 void wl1271_scan_complete_work(struct work_struct *work)
 {
-	//struct delayed_work *dwork;
-	//struct wl1271 *wl;
-	//struct wl12xx_vif *wlvif;
 	struct cfg80211_scan_info info = {
 		.aborted = false,
 	};
 	int ret;
-
-	//dwork = to_delayed_work(work);
-	//wl = container_of(dwork, struct wl1271, scan_complete_work);
 
 	printk("[WORK] Scan complete state: %d\n", wifi_data.scan_state);
 
@@ -42,7 +36,6 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	if (wifi_data.scan_state == WL1271_SCAN_STATE_IDLE)
 		goto out;
 
-	//wlvif = wifi_data.scan_wlvif;
 
 
 	/*
@@ -85,7 +78,7 @@ out:
 
 }
 
-int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
+int wlcore_scan(struct ieee80211_vif *vif,
 		const u8 *ssid, size_t ssid_len,
 		struct cfg80211_scan_request *req)
 {
@@ -102,20 +95,6 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 
 	wifi_data.scan_state = WL1271_SCAN_STATE_2GHZ_ACTIVE;
 
-	// if (ssid_len && ssid) {
-	// 	wifi_data.scan.ssid_len = ssid_len;
-	// 	memcpy(wifi_data.scan.ssid, ssid, ssid_len);
-	// } else {
-	// 	wifi_data.scan.ssid_len = 0;
-	// }
-
-	//wifi_data.scan_wlvif = wlvif;
-	//wifi_data.scan.req = req;
-	//memset(wifi_data.scan.scanned_ch, 0, sizeof(wifi_data.scan.scanned_ch));
-
-	/* we assume failure so that timeout scenarios are handled correctly */
-	//wifi_data.scan.failed = true;
-
 	VV_scan_failed = true;
 	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
@@ -127,115 +106,5 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 
 	return 0;
 }
-/* Returns the scan type to be used or a negative value on error */
-int
-wlcore_scan_sched_scan_ssid_list(struct wl1271 *wl,
-				 struct wl12xx_vif *wlvif,
-				 struct cfg80211_sched_scan_request *req)
-{
-	struct wl1271_cmd_sched_scan_ssid_list *cmd = NULL;
-	struct cfg80211_match_set *sets = req->match_sets;
-	struct cfg80211_ssid *ssids = req->ssids;
-	int ret = 0, type, i, j, n_match_ssids = 0;
 
-	wl1271_debug((DEBUG_CMD | DEBUG_SCAN), "cmd sched scan ssid list");
 
-	/* count the match sets that contain SSIDs */
-	for (i = 0; i < req->n_match_sets; i++)
-		if (sets[i].ssid.ssid_len > 0)
-			n_match_ssids++;
-
-	/* No filter, no ssids or only bcast ssid */
-	if (!n_match_ssids &&
-	    (!req->n_ssids ||
-	     (req->n_ssids == 1 && req->ssids[0].ssid_len == 0))) {
-		type = SCAN_SSID_FILTER_ANY;
-		goto out;
-	}
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	cmd->role_id = wlvif->role_id;
-	if (!n_match_ssids) {
-		/* No filter, with ssids */
-		type = SCAN_SSID_FILTER_DISABLED;
-
-		for (i = 0; i < req->n_ssids; i++) {
-			cmd->ssids[cmd->n_ssids].type = (ssids[i].ssid_len) ?
-				SCAN_SSID_TYPE_HIDDEN : SCAN_SSID_TYPE_PUBLIC;
-			cmd->ssids[cmd->n_ssids].len = ssids[i].ssid_len;
-			memcpy(cmd->ssids[cmd->n_ssids].ssid, ssids[i].ssid,
-			       ssids[i].ssid_len);
-			cmd->n_ssids++;
-		}
-	} else {
-		type = SCAN_SSID_FILTER_LIST;
-
-		/* Add all SSIDs from the filters */
-		for (i = 0; i < req->n_match_sets; i++) {
-			/* ignore sets without SSIDs */
-			if (!sets[i].ssid.ssid_len)
-				continue;
-
-			cmd->ssids[cmd->n_ssids].type = SCAN_SSID_TYPE_PUBLIC;
-			cmd->ssids[cmd->n_ssids].len = sets[i].ssid.ssid_len;
-			memcpy(cmd->ssids[cmd->n_ssids].ssid,
-			       sets[i].ssid.ssid, sets[i].ssid.ssid_len);
-			cmd->n_ssids++;
-		}
-		if ((req->n_ssids > 1) ||
-		    (req->n_ssids == 1 && req->ssids[0].ssid_len > 0)) {
-			/*
-			 * Mark all the SSIDs passed in the SSID list as HIDDEN,
-			 * so they're used in probe requests.
-			 */
-			for (i = 0; i < req->n_ssids; i++) {
-				if (!req->ssids[i].ssid_len)
-					continue;
-
-				for (j = 0; j < cmd->n_ssids; j++)
-					if ((req->ssids[i].ssid_len ==
-					     cmd->ssids[j].len) &&
-					    !memcmp(req->ssids[i].ssid,
-						   cmd->ssids[j].ssid,
-						   req->ssids[i].ssid_len)) {
-						cmd->ssids[j].type =
-							SCAN_SSID_TYPE_HIDDEN;
-						break;
-					}
-				/* Fail if SSID isn't present in the filters */
-				if (j == cmd->n_ssids) {
-					ret = -EINVAL;
-					goto out_free;
-				}
-			}
-		}
-	}
-
-	ret = VV_cmd_send(CMD_CONNECTION_SCAN_SSID_CFG, cmd,
-			      sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("cmd sched scan ssid list failed");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-out:
-	if (ret < 0)
-		return ret;
-	return type;
-}
-EXPORT_SYMBOL_GPL(wlcore_scan_sched_scan_ssid_list);
-
-void wlcore_scan_sched_scan_results(struct wl1271 *wl)
-{
-	wl1271_debug(DEBUG_SCAN, "got periodic scan results");
-
-	ieee80211_sched_scan_results(wifi_data.hw);
-}
-EXPORT_SYMBOL_GPL(wlcore_scan_sched_scan_results);

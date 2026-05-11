@@ -52,22 +52,6 @@ static inline void wl1271_power_off(void)
 		clear_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
 }
 
-static inline int wl1271_power_on(struct wl1271 *wl)
-{
-	int ret = 0;
-
-	if (wifi_data.if_ops->power)
-		ret = wifi_data.if_ops->power(wifi_data.dev, true);
-	if (ret == 0)
-		set_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
-
-	return ret;
-}
-
-/* Functions from wl1271_main.c */
-
-int wl1271_tx_dummy_packet(struct wl1271 *wl);
-
 /* Vinh custom */
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>

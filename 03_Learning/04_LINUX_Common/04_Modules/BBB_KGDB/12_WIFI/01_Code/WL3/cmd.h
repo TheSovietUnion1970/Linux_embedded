@@ -25,17 +25,12 @@ int wl12xx_cmd_role_disable(u8 *role_id);
 int wl12xx_cmd_role_start_sta(struct wl12xx_vif *wlvif);
 int wl12xx_cmd_role_stop_sta(struct wl12xx_vif *wlvif);
 
-int wl12xx_cmd_role_stop_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-
 int wl1271_cmd_interrogate(u16 id, void *buf,
 			   size_t cmd_len, size_t res_len);
 
 int wl1271_cmd_data_path(bool enable);
 int wl1271_cmd_ps_mode(struct wl12xx_vif *wlvif,
 		       u8 ps_mode, u16 auto_ps_timeout);
-int wl1271_cmd_read_memory(struct wl1271 *wl, u32 addr, void *answer,
-			   size_t len);
 int wl1271_cmd_template_set(u8 role_id,
 			    u16 template_id, void *buf, size_t buf_len,
 			    int index, u32 rates);
@@ -51,7 +46,6 @@ int wl1271_cmd_build_arp_rsp(struct wl12xx_vif *wlvif);
 int wl1271_build_qos_null_data(struct ieee80211_vif *vif);
 int wl12xx_cmd_build_klv_null_data(
 				   struct wl12xx_vif *wlvif);
-int wl12xx_cmd_set_default_wep_key(struct wl1271 *wl, u8 id, u8 hlid);
 int wl1271_cmd_set_sta_key(struct wl12xx_vif *wlvif,
 			   u16 action, u8 id, u8 key_type,
 			   u8 key_size, const u8 *key, const u8 *addr,
@@ -64,20 +58,10 @@ int wl12xx_cmd_set_peer_state(struct wl12xx_vif *wlvif,
 			      u8 hlid);
 int wl12xx_roc(struct wl12xx_vif *wlvif, u8 role_id,
 	       enum nl80211_band band, u8 channel);
-int wl12xx_croc(struct wl1271 *wl, u8 role_id);
-int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			struct ieee80211_sta *sta, u8 hlid);
-int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			   u8 hlid);
 void wlcore_set_pending_regdomain_ch(u16 channel,
 				     enum nl80211_band band);
 int wlcore_cmd_regdomain_config_locked(void);
 int wl12xx_cmd_config_fwlog(void);
-int wl12xx_cmd_start_fwlog(struct wl1271 *wl);
-int wl12xx_cmd_stop_fwlog(struct wl1271 *wl);
-int wl12xx_cmd_channel_switch(struct wl1271 *wl,
-			      struct wl12xx_vif *wlvif,
-			      struct ieee80211_channel_switch *ch_switch);
 int wl12xx_cmd_stop_channel_switch(
 				   struct wl12xx_vif *wlvif);
 int wl12xx_allocate_link(struct wl12xx_vif *wlvif,
@@ -576,31 +560,6 @@ enum wl1271_psd_type {
 	WL1271_PSD_SAPSD = 3
 };
 
-struct wl12xx_cmd_add_peer {
-	struct wl1271_cmd_header header;
-
-	u8 addr[ETH_ALEN];
-	u8 hlid;
-	u8 aid;
-	u8 psd_type[NUM_ACCESS_CATEGORIES_COPY];
-	__le32 supported_rates;
-	u8 bss_index;
-	u8 sp_len;
-	u8 wmm;
-	u8 session_id;
-	u8 role_id;
-	u8 padding[3];
-} __packed;
-
-struct wl12xx_cmd_remove_peer {
-	struct wl1271_cmd_header header;
-
-	u8 hlid;
-	u8 reason_opcode;
-	u8 send_deauth_flag;
-	u8 role_id;
-} __packed;
-
 /*
  * Continuous mode - packets are transferred to the host periodically
  * via the data path.
@@ -661,13 +620,6 @@ struct wl12xx_cmd_config_fwlog {
 	u8 padding[3];
 } __packed;
 
-struct wl12xx_cmd_start_fwlog {
-	struct wl1271_cmd_header header;
-} __packed;
-
-struct wl12xx_cmd_stop_fwlog {
-	struct wl1271_cmd_header header;
-} __packed;
 
 struct wl12xx_cmd_stop_channel_switch {
 	struct wl1271_cmd_header header;

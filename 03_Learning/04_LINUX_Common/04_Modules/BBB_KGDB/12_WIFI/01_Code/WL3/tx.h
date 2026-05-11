@@ -232,10 +232,9 @@ static inline int wl1271_tx_total_queue_count(void)
 
 void wl1271_tx_work(struct work_struct *work);
 int wlcore_tx_work_locked(void);
-int wlcore_tx_complete(struct wl1271 *wl);
 void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif);
 void wl12xx_tx_reset(void);
-void wl1271_tx_flush(struct wl1271 *wl);
+void wl1271_tx_flush(void);
 u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band);
 u32 wl1271_tx_enabled_rates_get(u32 rate_set,
 				enum nl80211_band rate_band);
@@ -243,47 +242,20 @@ u32 wl1271_tx_min_rate_get(u32 rate_set);
 u8 wl12xx_tx_get_hlid(struct wl12xx_vif *wlvif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta);
 void wl1271_tx_reset_link_queues(u8 hlid);
-//void wl1271_handle_tx_low_watermark(struct wl1271 *wl);
 bool wl12xx_is_dummy_packet(struct sk_buff *skb);
-void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids);
-unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
-					  unsigned int packet_length);
 void wl1271_free_tx_id(int id);
-void wlcore_stop_queue_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			      u8 queue, enum wlcore_queue_stop_reason reason);
-void wlcore_stop_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
-		       enum wlcore_queue_stop_reason reason);
-void wlcore_wake_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
-		       enum wlcore_queue_stop_reason reason);
-void wlcore_stop_queues(struct wl1271 *wl,
+void wlcore_stop_queues(
 			enum wlcore_queue_stop_reason reason);
-void wlcore_wake_queues(struct wl1271 *wl,
+void wlcore_wake_queues(
 			enum wlcore_queue_stop_reason reason);
-bool wlcore_is_queue_stopped_by_reason(struct wl1271 *wl,
-				       struct wl12xx_vif *wlvif, u8 queue,
-				       enum wlcore_queue_stop_reason reason);
 bool
-wlcore_is_queue_stopped_by_reason_locked(struct wl1271 *wl,
+wlcore_is_queue_stopped_by_reason_locked(
 					 struct wl12xx_vif *wlvif,
 					 u8 queue,
 					 enum wlcore_queue_stop_reason reason);
-bool wlcore_is_queue_stopped_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-				    u8 queue);
 
 /* from main.c */
 void wl1271_free_sta(struct wl12xx_vif *wlvif, u8 hlid);
 void wl12xx_rearm_tx_watchdog_locked(void);
-
-/* Vinh custom */
-void VV_wake_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
-		       enum wlcore_queue_stop_reason reason);
-void VV_stop_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
-		       enum wlcore_queue_stop_reason reason);
-void VV_wake_all_queues(struct wl1271 *wl,
-			enum wlcore_queue_stop_reason reason);
-void VV_stop_all_queues(struct wl1271 *wl,
-			enum wlcore_queue_stop_reason reason);
-bool VV_stopped_by_reason(struct wl1271 *wl, u8 queue,
-			enum wlcore_queue_stop_reason reason);
 
 #endif

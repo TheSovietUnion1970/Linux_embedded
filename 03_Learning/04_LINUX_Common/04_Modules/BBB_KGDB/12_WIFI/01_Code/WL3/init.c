@@ -143,98 +143,6 @@ static int wl1271_init_templates_config(void)
 	return 0;
 }
 
-static int wl1271_ap_init_deauth_template(struct wl1271 *wl,
-					  struct wl12xx_vif *wlvif)
-{
-	struct wl12xx_disconn_template *tmpl;
-	int ret;
-	u32 rate;
-
-	tmpl = kzalloc(sizeof(*tmpl), GFP_KERNEL);
-	if (!tmpl) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	tmpl->header.frame_ctl = cpu_to_le16(IEEE80211_FTYPE_MGMT |
-					     IEEE80211_STYPE_DEAUTH);
-
-	rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
-	ret = wl1271_cmd_template_set(wlvif->role_id,
-				      CMD_TEMPL_DEAUTH_AP,
-				      tmpl, sizeof(*tmpl), 0, rate);
-
-out:
-	kfree(tmpl);
-	return ret;
-}
-
-static int wl1271_ap_init_null_template(struct wl1271 *wl,
-					struct ieee80211_vif *vif)
-{
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
-	struct ieee80211_hdr_3addr *nullfunc;
-	int ret;
-	u32 rate;
-
-	nullfunc = kzalloc(sizeof(*nullfunc), GFP_KERNEL);
-	if (!nullfunc) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	nullfunc->frame_control = cpu_to_le16(IEEE80211_FTYPE_DATA |
-					      IEEE80211_STYPE_NULLFUNC |
-					      IEEE80211_FCTL_FROMDS);
-
-	/* nullfunc->addr1 is filled by FW */
-
-	memcpy(nullfunc->addr2, vif->addr, ETH_ALEN);
-	memcpy(nullfunc->addr3, vif->addr, ETH_ALEN);
-
-	rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
-	ret = wl1271_cmd_template_set(wlvif->role_id,
-				      CMD_TEMPL_NULL_DATA, nullfunc,
-				      sizeof(*nullfunc), 0, rate);
-
-out:
-	kfree(nullfunc);
-	return ret;
-}
-
-static int wl1271_ap_init_qos_null_template(struct wl1271 *wl,
-					    struct ieee80211_vif *vif)
-{
-	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
-	struct ieee80211_qos_hdr *qosnull;
-	int ret;
-	u32 rate;
-
-	qosnull = kzalloc(sizeof(*qosnull), GFP_KERNEL);
-	if (!qosnull) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	qosnull->frame_control = cpu_to_le16(IEEE80211_FTYPE_DATA |
-					     IEEE80211_STYPE_QOS_NULLFUNC |
-					     IEEE80211_FCTL_FROMDS);
-
-	/* qosnull->addr1 is filled by FW */
-
-	memcpy(qosnull->addr2, vif->addr, ETH_ALEN);
-	memcpy(qosnull->addr3, vif->addr, ETH_ALEN);
-
-	rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
-	ret = wl1271_cmd_template_set(wlvif->role_id,
-				      CMD_TEMPL_QOS_NULL_DATA, qosnull,
-				      sizeof(*qosnull), 0, rate);
-
-out:
-	kfree(qosnull);
-	return ret;
-}
-
 static int wl12xx_init_rx_config(void)
 {
 	int ret;
@@ -487,10 +395,6 @@ int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 	ret = wl1271_set_ba_policies(wlvif);
 	if (ret < 0)
 		return ret;
-
-	// ret = wlcore_hw_init_vif(wl, wlvif);
-	// if (ret < 0)
-	// 	return ret;
 
 	return 0;
 }

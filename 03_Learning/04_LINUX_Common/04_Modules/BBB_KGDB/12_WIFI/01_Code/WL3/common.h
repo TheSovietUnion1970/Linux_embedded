@@ -453,7 +453,7 @@ struct Wifi_data {
 
 	enum wlcore_state state;
 	enum wl12xx_fw_type fw_type;
-	bool plt;
+	//bool plt;
 
 	u8 *fw;
 	size_t fw_len;

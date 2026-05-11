@@ -16,8 +16,6 @@ struct VV_cmd_scan_stop {
 	u8 scan_type;
 	u8 padding[2];
 } __packed;
-int VV_scan_stop(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 scan_type);
-
 
 #define SCAN_MAX_BANDS 3
 #define MAX_CHANNELS_2GHZ	14
@@ -131,9 +129,7 @@ struct VV_cmd_scan_params {
 int VV_scan_send(struct wl12xx_vif *wlvif,
 			    struct cfg80211_scan_request *req);
 
-int VV_get_mac(struct wl1271 *wl);
-
-int VV1_get_pg_ver(struct wl1271 *wl, s8 *ver);
+int VV_get_mac(void);
 
 #define WL18XX_TRACE_LOSS_GAPS_TX 10
 #define WL18XX_TRACE_LOSS_GAPS_RX 18
@@ -264,6 +260,6 @@ int VV_wait_for_event(enum wlcore_wait_event event,
 #define WL18XX_MINOR_VER	58
 #define WL18XX_RX_BA_MAX_SESSIONS 13
 #define WL18XX_FW_NAME "ti-connectivity/wl18xx-fw-4.bin"
-int VV_identify_chip(struct wl1271 *wl);
+int VV_identify_chip(void);
 
 #endif

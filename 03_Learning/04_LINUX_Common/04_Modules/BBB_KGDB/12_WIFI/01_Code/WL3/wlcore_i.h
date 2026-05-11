@@ -491,18 +491,7 @@ static inline bool wlcore_is_p2p_mgmt(struct wl12xx_vif *wlvif)
 #define wl12xx_for_each_wlvif_ap(wl, wlvif)	\
 		wl12xx_for_each_wlvif_bss_type(wl, wlvif, BSS_TYPE_AP_BSS)
 
-//int wl1271_plt_start(struct wl1271 *wl, const enum plt_mode plt_mode);
-int wl1271_plt_stop(struct wl1271 *wl);
-int wl1271_recalc_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-void wl12xx_queue_recovery_work(struct wl1271 *wl);
-int wl1271_rx_filter_alloc_field(struct wl12xx_rx_filter *filter,
-				 u16 offset, u8 flags,
-				 const u8 *pattern, u8 len);
-void wl1271_rx_filter_free(struct wl12xx_rx_filter *filter);
-struct wl12xx_rx_filter *wl1271_rx_filter_alloc(void);
-int wl1271_rx_filter_get_fields_size(struct wl12xx_rx_filter *filter);
-void wl1271_rx_filter_flatten_fields(struct wl12xx_rx_filter *filter,
-				     u8 *buf);
+void wl12xx_queue_recovery_work(void);
 
 #define JOIN_TIMEOUT 5000 /* 5000 milliseconds to join */
 

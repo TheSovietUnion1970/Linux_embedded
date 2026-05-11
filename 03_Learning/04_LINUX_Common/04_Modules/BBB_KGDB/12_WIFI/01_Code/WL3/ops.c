@@ -1,33 +1,5 @@
 #include "ops.h"
 
-int VV_scan_stop(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 scan_type)
-{
-	struct VV_cmd_scan_stop *stop;
-	int ret;
-
-	//wl1271_debug(DEBUG_CMD, "cmd periodic scan stop");
-
-	stop = kzalloc(sizeof(*stop), GFP_KERNEL);
-	if (!stop) {
-		printk("failed to alloc memory to send sched scan stop");
-		return -ENOMEM;
-	}
-
-	stop->role_id = wlvif->role_id;
-	stop->scan_type = scan_type;
-
-	ret = VV_cmd_send(CMD_STOP_SCAN, stop, sizeof(*stop), 0);
-	if (ret < 0) {
-		printk("failed to send sched scan stop command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(stop);
-	return ret;
-}
-
-
 static int
 VV_scan_get_channels(
 			 struct ieee80211_channel *req_channels[],
@@ -353,7 +325,7 @@ out:
 	return ret;
 }
 
-int VV_get_mac(struct wl1271 *wl)
+int VV_get_mac(void)
 {
 	u32 mac1, mac2;
 	int ret;
@@ -362,12 +334,10 @@ int VV_get_mac(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_1, &mac1);
 	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
 	if (ret < 0)
 		goto out;
 
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_BD_ADDR_2, &mac2);
 	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
 	if (ret < 0)
 		goto out;
@@ -419,57 +389,6 @@ static const char *VV_rdl_name(enum wl18xx_rdl_num rdl_num)
 	}
 }
 
-int VV1_get_pg_ver(struct wl1271 *wl, s8 *ver)
-{
-	u32 fuse;
-	s8 rom = 0, metal = 0, pg_ver = 0, rdl_ver = 0, package_type = 0;
-	int ret;
-
-	ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
-	if (ret < 0)
-		goto out;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
-	if (ret < 0)
-		goto out;
-
-	package_type = (fuse >> WL18XX_PACKAGE_TYPE_OFFSET) & 1;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_1_3, &fuse);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_DATA_1_3), &fuse, 4, false);
-	if (ret < 0)
-		goto out;
-
-	pg_ver = (fuse & WL18XX_PG_VER_MASK) >> WL18XX_PG_VER_OFFSET;
-	rom = (fuse & WL18XX_ROM_VER_MASK) >> WL18XX_ROM_VER_OFFSET;
-
-	if ((rom <= 0xE) && (package_type == WL18XX_PACKAGE_TYPE_WSP))
-		metal = (fuse & WL18XX_METAL_VER_MASK) >>
-			WL18XX_METAL_VER_OFFSET;
-	else
-		metal = (fuse & WL18XX_NEW_METAL_VER_MASK) >>
-			WL18XX_NEW_METAL_VER_OFFSET;
-
-	//ret = wlcore_read32(wl, WL18XX_REG_FUSE_DATA_2_3, &fuse);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_DATA_2_3), &fuse, 4, false);
-	if (ret < 0)
-		goto out;
-
-	rdl_ver = (fuse & WL18XX_RDL_VER_MASK) >> WL18XX_RDL_VER_OFFSET;
-
-	printk("wl18xx HW: %s, PG %d.%d (ROM 0x%x)",
-		    VV_rdl_name(rdl_ver), pg_ver, metal, rom);
-
-	if (ver)
-		*ver = pg_ver;
-
-	ret = VV_set_partition_core(&wifi_data.ptable[PART_BOOT]);
-
-out:
-	return ret;
-}
-
 int VV_wait_for_event(enum wlcore_wait_event event, bool *timeout)
 {
 	u32 local_event;
@@ -491,7 +410,7 @@ int VV_wait_for_event(enum wlcore_wait_event event, bool *timeout)
 }
 
 static inline void
-wlcore_set_min_fw_ver(struct wl1271 *wl, unsigned int chip,
+wlcore_set_min_fw_ver(unsigned int chip,
 		      unsigned int iftype_sr, unsigned int major_sr,
 		      unsigned int subtype_sr, unsigned int minor_sr,
 		      unsigned int iftype_mr, unsigned int major_mr,
@@ -510,7 +429,7 @@ wlcore_set_min_fw_ver(struct wl1271 *wl, unsigned int chip,
 	wifi_data.min_mr_fw_ver[FW_VER_MINOR] = minor_mr;
 }
 
-int VV_identify_chip(struct wl1271 *wl)
+int VV_identify_chip(void)
 {
 	int ret = 0;
 
@@ -528,7 +447,7 @@ int VV_identify_chip(struct wl1271 *wl)
 			      WLCORE_QUIRK_REGDOMAIN_CONF |
 			      WLCORE_QUIRK_DUAL_PROBE_TMPL;
 
-		wlcore_set_min_fw_ver(wl, WL18XX_CHIP_VER,
+		wlcore_set_min_fw_ver(WL18XX_CHIP_VER,
 				      WL18XX_IFTYPE_VER,  WL18XX_MAJOR_VER,
 				      WL18XX_SUBTYPE_VER, WL18XX_MINOR_VER,
 				      /* there's no separate multi-role FW */
@@ -545,16 +464,6 @@ int VV_identify_chip(struct wl1271 *wl)
 		ret = -ENODEV;
 		goto out;
 	}
-
-	//wifi_data.fw_mem_block_size = 272;
-	//wifi_data.fwlog_end = 0x40000000;
-
-	// wifi_data.scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
-	// wifi_data.scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
-	//wifi_data.sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
-	//wifi_data.sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
-	//wifi_data.max_channels_5 = WL18XX_MAX_CHANNELS_5GHZ;
-	//wifi_data.ba_rx_session_count_max = WL18XX_RX_BA_MAX_SESSIONS;
 out:
 	return ret;
 }

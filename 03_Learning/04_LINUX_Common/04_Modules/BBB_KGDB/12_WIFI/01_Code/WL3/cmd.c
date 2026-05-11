@@ -497,8 +497,6 @@ int wl12xx_cmd_role_start_sta(struct wl12xx_vif *wlvif)
 	memcpy(cmd->sta.ssid, wlvif->ssid, wlvif->ssid_len);
 	memcpy(cmd->sta.bssid, vif->bss_conf.bssid, ETH_ALEN);
 
-	// supported_rates = CONF_TX_ENABLED_RATES | CONF_TX_MCS_RATES |
-	// 		  wlcore_hw_sta_get_ap_rate_mask(wl, wlvif);
 	supported_rates = CONF_TX_ENABLED_RATES | CONF_TX_MCS_RATES | wlvif->rate_set;
 	if (wlvif->p2p)
 		supported_rates &= ~CONF_TX_CCK_RATES;
@@ -579,101 +577,6 @@ out_free:
 out:
 	return ret;
 }
-
-int wl12xx_cmd_role_stop_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	struct wl12xx_cmd_role_stop *cmd;
-	int ret;
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	wl1271_debug(DEBUG_CMD, "cmd role stop ap %d", wlvif->role_id);
-
-	cmd->role_id = wlvif->role_id;
-
-	ret = VV_cmd_send(CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role stop ap");
-		goto out_free;
-	}
-
-	wl12xx_free_link(wlvif, &wlvif->ap.bcast_hlid);
-	wl12xx_free_link(wlvif, &wlvif->ap.global_hlid);
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
-int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
-	struct wl12xx_cmd_role_start *cmd;
-	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
-	int ret;
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	wl1271_debug(DEBUG_CMD, "cmd role start ibss %d", wlvif->role_id);
-
-	cmd->role_id = wlvif->role_id;
-	if (wlvif->band == NL80211_BAND_5GHZ)
-		cmd->band = WLCORE_BAND_5GHZ;
-	cmd->channel = wlvif->channel;
-	cmd->ibss.basic_rate_set = cpu_to_le32(wlvif->basic_rate_set);
-	cmd->ibss.beacon_interval = cpu_to_le16(wlvif->beacon_int);
-	cmd->ibss.dtim_interval = bss_conf->dtim_period;
-	cmd->ibss.ssid_type = WL12XX_SSID_TYPE_ANY;
-	cmd->ibss.ssid_len = wlvif->ssid_len;
-	memcpy(cmd->ibss.ssid, wlvif->ssid, wlvif->ssid_len);
-	memcpy(cmd->ibss.bssid, vif->bss_conf.bssid, ETH_ALEN);
-	cmd->sta.local_rates = cpu_to_le32(wlvif->rate_set);
-
-	if (wlvif->sta.hlid == WL12XX_INVALID_LINK_ID) {
-		ret = wl12xx_allocate_link(wlvif, &wlvif->sta.hlid);
-		if (ret)
-			goto out_free;
-	}
-	cmd->ibss.hlid = wlvif->sta.hlid;
-	cmd->ibss.remote_rates = cpu_to_le32(wlvif->rate_set);
-
-	wl1271_debug(DEBUG_CMD, "role start: roleid=%d, hlid=%d, session=%d "
-		     "basic_rate_set: 0x%x, remote_rates: 0x%x",
-		     wlvif->role_id, cmd->sta.hlid, cmd->sta.session,
-		     wlvif->basic_rate_set, wlvif->rate_set);
-
-	wl1271_debug(DEBUG_CMD, "vif->bss_conf.bssid = %pM",
-		     vif->bss_conf.bssid);
-
-	ret = VV_cmd_send(CMD_ROLE_START, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role enable");
-		goto err_hlid;
-	}
-
-	goto out_free;
-
-err_hlid:
-	/* clear links on error. */
-	wl12xx_free_link(wlvif, &wlvif->sta.hlid);
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
 
 /**
  * wl1271_cmd_interrogate - read acx from firmware
@@ -1076,37 +979,6 @@ int wl1271_build_qos_null_data(struct ieee80211_vif *vif)
 				       wlvif->basic_rate);
 }
 
-int wl12xx_cmd_set_default_wep_key(struct wl1271 *wl, u8 id, u8 hlid)
-{
-	struct wl1271_cmd_set_keys *cmd;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_CMD, "cmd set_default_wep_key %d", id);
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	cmd->hlid = hlid;
-	cmd->key_id = id;
-	cmd->lid_key_type = WEP_DEFAULT_LID_TYPE;
-	cmd->key_action = cpu_to_le16(KEY_SET_ID);
-	cmd->key_type = KEY_WEP;
-
-	ret = VV_cmd_send(CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_warning("cmd set_default_wep_key failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(cmd);
-
-	return ret;
-}
-
 int wl1271_cmd_set_sta_key(struct wl12xx_vif *wlvif,
 		       u16 action, u8 id, u8 key_type,
 		       u8 key_size, const u8 *key, const u8 *addr,
@@ -1274,121 +1146,6 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			struct ieee80211_sta *sta, u8 hlid)
-{
-	struct wl12xx_cmd_add_peer *cmd;
-	int i, ret;
-	u32 sta_rates;
-
-	wl1271_debug(DEBUG_CMD, "cmd add peer %d", (int)hlid);
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	memcpy(cmd->addr, sta->addr, ETH_ALEN);
-	cmd->bss_index = WL1271_AP_BSS_INDEX;
-	cmd->aid = sta->aid;
-	cmd->hlid = hlid;
-	cmd->sp_len = sta->max_sp;
-	cmd->wmm = sta->wme ? 1 : 0;
-	cmd->session_id = VV_session_ids[hlid];
-	cmd->role_id = wlvif->role_id;
-
-	for (i = 0; i < NUM_ACCESS_CATEGORIES_COPY; i++)
-		if (sta->wme && (sta->uapsd_queues & BIT(i)))
-			cmd->psd_type[NUM_ACCESS_CATEGORIES_COPY-1-i] =
-					WL1271_PSD_UPSD_TRIGGER;
-		else
-			cmd->psd_type[NUM_ACCESS_CATEGORIES_COPY-1-i] =
-					WL1271_PSD_LEGACY;
-
-
-	sta_rates = sta->supp_rates[wlvif->band];
-	if (sta->ht_cap.ht_supported)
-		sta_rates |=
-			(sta->ht_cap.mcs.rx_mask[0] << HW_HT_RATES_OFFSET) |
-			(sta->ht_cap.mcs.rx_mask[1] << HW_MIMO_RATES_OFFSET);
-
-	cmd->supported_rates =
-		cpu_to_le32(wl1271_tx_enabled_rates_get(sta_rates,
-							wlvif->band));
-
-	if (!cmd->supported_rates) {
-		wl1271_debug(DEBUG_CMD,
-			     "peer has no supported rates yet, configuring basic rates: 0x%x",
-			     wlvif->basic_rate_set);
-		cmd->supported_rates = cpu_to_le32(wlvif->basic_rate_set);
-	}
-
-	wl1271_debug(DEBUG_CMD, "new peer rates=0x%x queues=0x%x",
-		     cmd->supported_rates, sta->uapsd_queues);
-
-	ret = VV_cmd_send(CMD_ADD_PEER, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to initiate cmd add peer");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
-int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			   u8 hlid)
-{
-	struct wl12xx_cmd_remove_peer *cmd;
-	int ret;
-	bool timeout = false;
-
-	wl1271_debug(DEBUG_CMD, "cmd remove peer %d", (int)hlid);
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	cmd->hlid = hlid;
-	/* We never send a deauth, mac80211 is in charge of this */
-	cmd->reason_opcode = 0;
-	cmd->send_deauth_flag = 0;
-	cmd->role_id = wlvif->role_id;
-
-	ret = VV_cmd_send(CMD_REMOVE_PEER, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to initiate cmd remove peer");
-		goto out_free;
-	}
-
-	// ret = wifi_data.ops->wait_for_event(wl,
-	// 			      WLCORE_EVENT_PEER_REMOVE_COMPLETE,
-	// 			      &timeout);
-	ret = VV_wait_for_event(
-				      WLCORE_EVENT_PEER_REMOVE_COMPLETE,
-				      &timeout);
-
-	/*
-	 * We are ok with a timeout here. The event is sometimes not sent
-	 * due to a firmware bug. In case of another error (like SDIO timeout)
-	 * queue a recovery.
-	 */
-	if (ret)
-		wl12xx_queue_recovery_work(wl);
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
 static int wlcore_get_reg_conf_ch_idx(enum nl80211_band band, u16 ch)
 {
 	/*
@@ -1506,9 +1263,6 @@ int wlcore_cmd_regdomain_config_locked(void)
 		goto out;
 	}
 
-	// ret = wifi_data.ops->wait_for_event(wl,
-	// 			      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
-	// 			      &timeout);
 	ret = VV_wait_for_event(
 				      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
 				      &timeout);
@@ -1549,58 +1303,6 @@ int wl12xx_cmd_config_fwlog(void)
 	ret = VV_cmd_send(CMD_CONFIG_FWLOGGER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to send config firmware logger command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
-int wl12xx_cmd_start_fwlog(struct wl1271 *wl)
-{
-	struct wl12xx_cmd_start_fwlog *cmd;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_CMD, "cmd start firmware logger");
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	ret = VV_cmd_send(CMD_START_FWLOGGER, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send start firmware logger command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
-int wl12xx_cmd_stop_fwlog(struct wl1271 *wl)
-{
-	struct wl12xx_cmd_stop_fwlog *cmd;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_CMD, "cmd stop firmware logger");
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	ret = VV_cmd_send(CMD_STOP_FWLOGGER, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send stop firmware logger command");
 		goto out_free;
 	}
 
@@ -1657,34 +1359,6 @@ out:
 	return ret;
 }
 
-static int wl12xx_cmd_croc(struct wl1271 *wl, u8 role_id)
-{
-	struct wl12xx_cmd_croc *cmd;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_CMD, "cmd croc (%d)", role_id);
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd) {
-		ret = -ENOMEM;
-		goto out;
-	}
-	cmd->role_id = role_id;
-
-	ret = VV_cmd_send(CMD_CANCEL_REMAIN_ON_CHANNEL, cmd,
-			      sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send ROC command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-
-out:
-	return ret;
-}
-
 int wl12xx_roc(struct wl12xx_vif *wlvif, u8 role_id,
 	       enum nl80211_band band, u8 channel)
 {
@@ -1702,30 +1376,6 @@ int wl12xx_roc(struct wl12xx_vif *wlvif, u8 role_id,
 		goto out;
 
 	__set_bit(role_id, wifi_data.roc_map);
-out:
-	return ret;
-}
-
-int wl12xx_croc(struct wl1271 *wl, u8 role_id)
-{
-	int ret = 0;
-
-	if (WARN_ON(!test_bit(role_id, wifi_data.roc_map)))
-		return 0;
-
-	ret = wl12xx_cmd_croc(wl, role_id);
-	if (ret < 0)
-		goto out;
-
-	__clear_bit(role_id, wifi_data.roc_map);
-
-	/*
-	 * Rearm the tx watchdog when removing the last ROC. This prevents
-	 * recoveries due to just finished ROCs - when Tx hasn't yet had
-	 * a chance to get out.
-	 */
-	if (find_first_bit(wifi_data.roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES)
-		wl12xx_rearm_tx_watchdog_locked();
 out:
 	return ret;
 }

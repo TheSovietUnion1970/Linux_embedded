@@ -63,19 +63,4 @@ struct wl1271;
 int wl1271_event_unmask(void);
 int wl1271_event_handle(u8 mbox);
 
-void wlcore_event_soft_gemini_sense(struct wl1271 *wl, u8 enable);
-void wlcore_event_sched_scan_completed(struct wl1271 *wl,
-				       u8 status);
-void wlcore_event_ba_rx_constraint(struct wl1271 *wl,
-				   unsigned long roles_bitmap,
-				   unsigned long allowed_bitmap);
-void wlcore_event_channel_switch(struct wl1271 *wl,
-				 unsigned long roles_bitmap,
-				 bool success);
-void wlcore_event_beacon_loss(struct wl1271 *wl, unsigned long roles_bitmap);
-void wlcore_event_dummy_packet(struct wl1271 *wl);
-void wlcore_event_max_tx_failure(struct wl1271 *wl, unsigned long sta_bitmap);
-void wlcore_event_inactive_sta(struct wl1271 *wl, unsigned long sta_bitmap);
-void wlcore_event_roc_complete(struct wl1271 *wl);
-void wlcore_event_rssi_trigger(struct wl1271 *wl, s8 *metric_arr);
 #endif

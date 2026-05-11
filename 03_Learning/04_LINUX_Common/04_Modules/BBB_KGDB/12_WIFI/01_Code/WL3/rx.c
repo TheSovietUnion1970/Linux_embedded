@@ -132,13 +132,6 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 	u16 seq_num;
 	u32 pkt_data_len;
 
-	// /*
-	//  * In PLT mode we seem to get frames and mac80211 warns about them,
-	//  * workaround this by not retrieving them at all.
-	//  */
-	// if (unlikely(wifi_data.plt))
-	// 	return -EINVAL;
-
 	pkt_data_len = VV_get_rx_packet_len(data, length);
 	if (!pkt_data_len) {
 		wl1271_error("Invalid packet arrived from HW. length %d",
@@ -153,12 +146,6 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 
 	/* the data read starts with the descriptor */
 	desc = (struct wl1271_rx_descriptor *) data;
-
-	// if (desc->packet_class == WL12XX_RX_CLASS_LOGGER) {
-	// 	size_t len = length - sizeof(*desc);
-	// 	wl12xx_copy_fwlog(wl, data + sizeof(*desc), len);
-	// 	return 0;
-	// }
 
 	/* discard corrupted packets */
 	if (desc->status & WL1271_RX_DESC_DECRYPT_FAIL) {
@@ -202,7 +189,6 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 
 	wl1271_rx_status(desc, IEEE80211_SKB_RXCB(skb), beacon,
 			 ieee80211_is_probe_resp(hdr->frame_control));
-	//wlcore_hw_set_rx_csum(wl, desc, skb);
 
 	seq_num = (le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_SEQ) >> 4;
 	wl1271_debug(DEBUG_RX, "rx skb 0x%p: %d B %s seq %d hlid %d", skb,
@@ -269,12 +255,7 @@ int wlcore_rx(void)
 
 		/* Read all available packets at once */
 		des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
-		// ret = wlcore_hw_prepare_read(wl, des, buf_size);
-		// if (ret < 0)
-		// 	goto out;
-
-		// ret = wlcore_read_data(wl, REG_SLV_MEM_DATA, VV_aggr_buf,
-		// 		       buf_size, true);
+		
 		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
@@ -315,15 +296,6 @@ int wlcore_rx(void)
 	 * Write the driver's packet counter to the FW. This is only required
 	 * for older hardware revisions
 	 */
-	// if (wifi_data.quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
-	// 	// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
-	// 	// 		     VV_rx_counter);
-	// 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), VV_rx_counter, 4, false);
-	// 	if (ret < 0)
-	// 		goto out;
-	// }
-
-	//wl12xx_rearm_rx_streaming(wl, active_hlids);
 
 out:
 	return ret;
