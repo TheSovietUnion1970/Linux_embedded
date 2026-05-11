@@ -24,7 +24,7 @@ void wlcore_disable_interrupts(void)
 }
 EXPORT_SYMBOL_GPL(wlcore_disable_interrupts);
 
-void wlcore_disable_interrupts_nosync(struct wl1271 *wl)
+void wlcore_disable_interrupts_nosync(void)
 {
 	disable_irq_nosync(wifi_data.irq);
 }
@@ -36,7 +36,7 @@ void wlcore_enable_interrupts(void)
 }
 EXPORT_SYMBOL_GPL(wlcore_enable_interrupts);
 
-void wlcore_synchronize_interrupts(struct wl1271 *wl)
+void wlcore_synchronize_interrupts(void)
 {
 	synchronize_irq(wifi_data.irq);
 }

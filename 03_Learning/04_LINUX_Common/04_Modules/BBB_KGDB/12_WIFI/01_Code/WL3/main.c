@@ -76,7 +76,7 @@ static int no_recovery     = -1;
 static void __wl1271_op_remove_interface(
 					 struct ieee80211_vif *vif,
 					 bool reset_tx_queues);
-static void wlcore_op_stop_locked(struct wl1271 *wl);
+static void wlcore_op_stop_locked(void);
 
 static int wl12xx_set_authorized(struct wl12xx_vif *wlvif)
 {
@@ -1225,7 +1225,7 @@ void wl1271_rx_filter_flatten_fields(struct wl12xx_rx_filter *filter,
 	}
 }
 
-static void wlcore_op_stop_locked(struct wl1271 *wl)
+static void wlcore_op_stop_locked(void)
 {
 	int i;
 	printk("wlcore_op_stop_locked\n");
@@ -1247,11 +1247,11 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 * Use the nosync variant to disable interrupts, so the mutex could be
 	 * held while doing so without deadlocking.
 	 */
-	wlcore_disable_interrupts_nosync(wl); // disable_irq_nosync(wifi_data.irq);
+	wlcore_disable_interrupts_nosync(); // disable_irq_nosync(wifi_data.irq);
 
 	mutex_unlock(&wifi_data.mutex);
 
-	wlcore_synchronize_interrupts(wl); // synchronize_irq(wifi_data.irq);
+	wlcore_synchronize_interrupts(); // synchronize_irq(wifi_data.irq);
 	// if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 	// 	cancel_work_sync(&wifi_data.recovery_work);
 	wl1271_flush_deferred_work();
@@ -1263,7 +1263,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 
 	/* let's notify MAC80211 about the remaining pending TX frames */
 	mutex_lock(&wifi_data.mutex);
-	wl12xx_tx_reset(wl);
+	wl12xx_tx_reset();
 
 	wl1271_power_off();
 	/*
@@ -1341,7 +1341,7 @@ static void wlcore_op_stop(struct ieee80211_hw *hw)
 
 	mutex_lock(&wifi_data.mutex);
 
-	wlcore_op_stop_locked(wl);
+	wlcore_op_stop_locked();
 
 	mutex_unlock(&wifi_data.mutex);
 }

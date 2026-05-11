@@ -665,7 +665,7 @@ void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif)
 	wlvif->last_tx_hlid = 0;
 }
 /* caller must hold wifi_data.mutex and TX must be stopped */
-void wl12xx_tx_reset(struct wl1271 *wl)
+void wl12xx_tx_reset(void)
 {
 	int i;
 	struct sk_buff *skb;

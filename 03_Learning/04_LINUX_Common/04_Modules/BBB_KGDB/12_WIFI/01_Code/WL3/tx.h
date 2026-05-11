@@ -234,7 +234,7 @@ void wl1271_tx_work(struct work_struct *work);
 int wlcore_tx_work_locked(void);
 int wlcore_tx_complete(struct wl1271 *wl);
 void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif);
-void wl12xx_tx_reset(struct wl1271 *wl);
+void wl12xx_tx_reset(void);
 void wl1271_tx_flush(struct wl1271 *wl);
 u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band);
 u32 wl1271_tx_enabled_rates_get(u32 rate_set,
