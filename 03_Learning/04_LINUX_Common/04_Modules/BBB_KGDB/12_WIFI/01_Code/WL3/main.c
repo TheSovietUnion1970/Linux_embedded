@@ -59,6 +59,7 @@ s64 VV_time_offset;
 struct Wifi_data wifi_data;
 struct VV_map VV_map;
 struct VV_vif* VV_vif_ptr[10];
+struct VV_chip* VV_chip;
 int VV_vif_ptr_id = 0;
 u8 *VV_aggr_buf;
 u32 VV_rx_counter;
@@ -169,6 +170,7 @@ void wl12xx_rearm_tx_watchdog_locked(void)
 {
 	/* if the watchdog is not armed, don't do anything */
 	// If there are no blocks currently allocated for TX -> no need to transmit
+	// so no need to check TX data is stuck
 	printk("[WORK] TX watchdog: %d\n", VV_tx_allocated_blocks);
 	if (VV_tx_allocated_blocks == 0)
 		return;
@@ -218,24 +220,25 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 		goto out;
 	}
 
-	/*
-	* AP might cache a frame for a long time for a sleeping station,
-	* so rearm the timer if there's an AP interface with stations. If
-	* Tx is genuinely stuck we will most hopefully discover it when all
-	* stations are removed due to inactivity.
-	*/
-	if (wifi_data.wl->active_sta_count) {
-		wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms. AP has "
-			     " %d stations",
-			      wifi_data.wl->conf.tx.tx_watchdog_timeout,
-			      wifi_data.wl->active_sta_count);
-		wl12xx_rearm_tx_watchdog_locked();
-		goto out;
-	}
+	// /*
+	// * AP might cache a frame for a long time for a sleeping station,
+	// * so rearm the timer if there's an AP interface with stations. If
+	// * Tx is genuinely stuck we will most hopefully discover it when all
+	// * stations are removed due to inactivity.
+	// */
+	// if (wifi_data.wl->active_sta_count) {
+	// 	wl1271_debug(DEBUG_TX, "No Tx (in FW) for %d ms. AP has "
+	// 		     " %d stations",
+	// 		      wifi_data.wl->conf.tx.tx_watchdog_timeout,
+	// 		      wifi_data.wl->active_sta_count);
+	// 	wl12xx_rearm_tx_watchdog_locked();
+	// 	goto out;
+	// }
 
 	wl1271_error("Tx stuck (in FW) for %d ms. Starting recovery",
 		     wifi_data.wl->conf.tx.tx_watchdog_timeout);
-	wl12xx_queue_recovery_work(wifi_data.wl);
+	// wl12xx_queue_recovery_work(wifi_data.wl);
+	printk("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
 
 out:
 	mutex_unlock(&wifi_data.mutex);
@@ -828,54 +831,6 @@ void wl12xx_queue_recovery_work(struct wl1271 *wl)
 	// }
 }
 
-size_t wl12xx_copy_fwlog(struct wl1271 *wl, u8 *memblock, size_t maxlen)
-{
-	size_t len;
-
-	/* Make sure we have enough room */
-	len = min_t(size_t, maxlen, PAGE_SIZE - wl->fwlog_size);
-
-	/* Fill the FW log file, consumed by the sysfs fwlog entry */
-	memcpy(wl->fwlog + wl->fwlog_size, memblock, len);
-	wl->fwlog_size += len;
-
-	return len;
-}
-
-static void wl12xx_read_fwlog_panic(struct wl1271 *wl)
-{
-	u32 end_of_log = 0;
-	int error;
-
-	if (wl->quirks & WLCORE_QUIRK_FWLOG_NOT_IMPLEMENTED)
-		return;
-
-	wl1271_info("Reading FW panic log");
-
-	/*
-	 * Make sure the chip is awake and the logger isn't active.
-	 * Do not send a stop fwlog command if the fw is hanged or if
-	 * dbgpins are used (due to some fw bug).
-	 */
-	error = pm_runtime_get_sync(wl->dev);
-	if (error < 0) {
-		pm_runtime_put_noidle(wl->dev);
-		return;
-	}
-	if (!wl->watchdog_recovery &&
-	    wl->conf.fwlog.output != WL12XX_FWLOG_OUTPUT_DBG_PINS)
-		wl12xx_cmd_stop_fwlog(wl);
-
-	/* Traverse the memory blocks linked list */
-	do {
-		end_of_log = wlcore_event_fw_logger(wl);
-		if (end_of_log == 0) {
-			msleep(100);
-			end_of_log = wlcore_event_fw_logger(wl);
-		}
-	} while (end_of_log != 0);
-}
-
 static void wlcore_save_freed_pkts(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				   u8 hlid, struct ieee80211_sta *sta)
 {
@@ -894,147 +849,6 @@ static void wlcore_save_freed_pkts(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 		wl_sta->total_freed_pkts += sqn_recovery_padding;
-}
-
-static void wlcore_print_recovery(struct wl1271 *wl)
-{
-	u32 pc = 0;
-	u32 hint_sts = 0;
-	int ret;
-
-	wl1271_info("Hardware recovery in progress. FW ver: %s",
-		    wl->chip.fw_ver_str);
-
-	/* change partitions momentarily so we can read the FW pc */
-	ret = VV_set_partition_core((struct VV_partition_set *)&wifi_data.ptable[PART_BOOT]);
-	if (ret < 0)
-		return;
-
-	//ret = wlcore_read_reg(wl, REG_PC_ON_RECOVERY, &pc);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_PC_ON_RECOVERY]), &pc, 4, false);
-	if (ret < 0)
-		return;
-
-	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &hint_sts);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &hint_sts, 4, false);
-	if (ret < 0)
-		return;
-
-	wl1271_info("pc: 0x%x, hint_sts: 0x%08x count: %d",
-				pc, hint_sts, ++wl->recovery_count);
-
-	VV_set_partition_core((struct VV_partition_set *)&wifi_data.ptable[PART_WORK]);
-}
-
-
-static void wl1271_recovery_work(struct work_struct *work)
-{
-	//printk("[WORK] - wl1271_recovery_work\n");
-	struct wl1271 *wl =
-		container_of(work, struct wl1271, recovery_work);
-	//struct wl12xx_vif *wlvif;
-	//struct ieee80211_vif *vif;
-	int error;
-
-	mutex_lock(&wifi_data.mutex);
-
-	if (wl->state == WLCORE_STATE_OFF || wl->plt)
-		goto out_unlock;
-
-	error = pm_runtime_get_sync(wl->dev);
-	if (error < 0) {
-		wl1271_warning("Enable for recovery failed");
-		pm_runtime_put_noidle(wl->dev);
-	}
-
-	/* ### */
-	wlcore_disable_interrupts_nosync(wl); // disable_irq_nosync(wl->irq);
-
-	if (!test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags)) {
-		if (wl->conf.fwlog.output == WL12XX_FWLOG_OUTPUT_HOST)
-			wl12xx_read_fwlog_panic(wl);
-		wlcore_print_recovery(wl);
-	}
-
-	BUG_ON(wl->conf.recovery.bug_on_recovery &&
-	       !test_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags));
-
-	clear_bit(WL1271_FLAG_INTENDED_FW_RECOVERY, &wifi_data.flags);
-
-	if (wl->conf.recovery.no_recovery) {
-		wl1271_info("No recovery (chosen on module load). Fw will remain stuck.");
-		goto out_unlock;
-	}
-
-	/* Prevent spurious TX during FW restart */
-	//wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_FW_RESTART);
-	int i;
-	unsigned long flags;
-	spin_lock_irqsave(&wifi_data.lock, flags);
-
-	//printk("nMAC addr = %d, nTx = %d\n", WLCORE_NUM_MAC_ADDRESSES, NUM_TX_QUEUES);
-	/* mark all possible queues as stopped */
-	for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
-			test_and_set_bit(WLCORE_QUEUE_STOP_REASON_FW_RESTART,
-						&wl->queue_stop_reasons[i]);
-	ieee80211_stop_queues(wl->hw); /* ### */
-
-	spin_unlock_irqrestore(&wifi_data.lock, flags);
-
-
-	// /* reboot the chipset */
-	// while (!list_empty(&wl->wlvif_list)) {
-	// 	wlvif = list_first_entry(&wl->wlvif_list,
-	// 			       struct wl12xx_vif, list);
-	// 	vif = wl12xx_wlvif_to_vif(wlvif);
-
-	// 	if (wlvif->bss_type == BSS_TYPE_STA_BSS &&
-	// 	    test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags)) {
-	// 		// wlcore_save_freed_pkts_addr(wl, wlvif, wlvif->sta.hlid,
-	// 		// 			    vif->bss_conf.bssid);
-	// 		struct ieee80211_sta *sta;
-	// 		if (WARN_ON(wlvif->sta.hlid == WL12XX_INVALID_LINK_ID ||
-	// 				is_zero_ether_addr(vif->bss_conf.bssid)))
-	// 			return;
-
-	// 		rcu_read_lock();
-	// 		sta = ieee80211_find_sta(vif, vif->bss_conf.bssid);
-	// 		if (sta)
-	// 			wlcore_save_freed_pkts(wl, wlvif, wlvif->sta.hlid, sta);
-	// 		rcu_read_unlock();
-
-	// 	}
-
-	// 	__wl1271_op_remove_interface(wl, vif, false);
-	// }
-
-	wlcore_op_stop_locked(wl); // = wlcore_op_stop
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
-
-	ieee80211_restart_hw(wl->hw); /* ### */
-
-	/*
-	 * Its safe to enable TX now - the queues are stopped after a request
-	 * to restart the HW.
-	 */
-	//wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FW_RESTART);
-	spin_lock_irqsave(&wifi_data.lock, flags);
-	/* mark all possible queues as awake */
-	for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
-		test_and_clear_bit(WLCORE_QUEUE_STOP_REASON_FW_RESTART,
-						&wl->queue_stop_reasons[i]);
-	/* use the global version to make sure all vifs in mac80211 we don't
-	 * know are woken up.
-	 */
-	ieee80211_wake_queues(wl->hw); /* ### */
-
-	spin_unlock_irqrestore(&wifi_data.lock, flags);
-
-out_unlock:
-	wl->watchdog_recovery = false;
-	clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags);
-	mutex_unlock(&wifi_data.mutex);
 }
 
 static int wl1271_setup(struct wl1271 *wl)
@@ -1481,11 +1295,11 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 		wlcore_enable_interrupts(wl);
 
-	wl->band = NL80211_BAND_2GHZ;
+	//wl->band = NL80211_BAND_2GHZ;
 
 	VV_rx_counter = 0;
-	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
-	wl->channel_type = NL80211_CHAN_NO_HT;
+	//wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
+	//wl->channel_type = NL80211_CHAN_NO_HT;
 	VV_tx_blocks_available = 0;
 	VV_tx_allocated_blocks = 0;
 	//wl->tx_results_count = 0;
@@ -1499,8 +1313,8 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	memset(wl->roc_map, 0, sizeof(wl->roc_map));
 	memset(VV_session_ids, 0, sizeof(VV_session_ids));
 	memset(wl->rx_filter_enabled, 0, sizeof(wl->rx_filter_enabled));
-	wl->active_sta_count = 0;
-	wl->active_link_count = 0;
+	//wl->active_sta_count = 0;
+	//wl->active_link_count = 0;
 
 	/* The system link is always allocated */
 	//VV_links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
@@ -1620,10 +1434,11 @@ static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 	 * mac80211 configures some values globally, while we treat them
 	 * per-interface. thus, on init, we have to copy them from wl
 	 */
-	wlvif->band = wl->band;
-	wlvif->channel = wl->channel;
-	wlvif->power_level = wl->power_level;
-	wlvif->channel_type = wl->channel_type;
+	wlvif->band = NL80211_BAND_2GHZ;
+	// wlvif->channel = wl->channel;
+	wlvif->channel = 0;
+	wlvif->power_level = WL1271_DEFAULT_POWER_LEVEL;
+	wlvif->channel_type = NL80211_CHAN_NO_HT;
 
 	INIT_LIST_HEAD(&wlvif->list);
 	//INIT_LIST_HEAD(&VV_vif.list_id);
@@ -1678,11 +1493,11 @@ power_off:
 		goto out;
 	}
 
-	wl1271_info("firmware booted (%s)", wl->chip.fw_ver_str);
+	wl1271_info("firmware booted (%s)", VV_chip->fw_ver_str);
 
 	/* update hw/fw version info in wiphy struct */
-	wiphy->hw_version = wl->chip.id;
-	strncpy(wiphy->fw_version, wl->chip.fw_ver_str,
+	wiphy->hw_version = VV_chip->id;
+	strncpy(wiphy->fw_version, VV_chip->fw_ver_str,
 		sizeof(wiphy->fw_version));
 
 	/*
@@ -2176,29 +1991,7 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	// The firmware uses this template when it needs to send a Probe Request (for scanning, roaming, reconnecting, etc.).
 	// The template is stored in firmware memory instead of from CPU building
 	dev_kfree_skb(wlvif->probereq);
-	// wlvif->probereq = wl1271_cmd_build_ap_probe_req(wl,
-	// 						wlvif,
-	// 						NULL);
-	struct sk_buff *skb;
-	u32 rate;
-	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
-	skb = ieee80211_ap_probereq_get(wl->hw, vif);
-	rate = wl1271_tx_min_rate_get(wlvif->bitrate_masks[wlvif->band]);
-	ret = wl1271_cmd_template_set(wlvif->role_id,
-						CMD_TEMPL_CFG_PROBE_REQ_2_4,
-						skb->data, skb->len, 0, rate);
-	wlvif->probereq = skb;
-
-
-	ieoffset = offsetof(struct ieee80211_mgmt,
-			    u.probe_req.variable);
-	// wl1271_ssid_set(wlvif, wlvif->probereq, ieoffset);
-	u8 ssid_len;
-	const u8 *ptr = cfg80211_find_ie(WLAN_EID_SSID, skb->data + ieoffset,
-					 skb->len - ieoffset);
-	ssid_len = ptr[1];
-	wlvif->ssid_len = ssid_len;
-	memcpy(wlvif->ssid, ptr+2, ssid_len);
+	//wlvif->probereq = wl1271_cmd_build_ap_probe_req(NULL);
 
 
 	// synch_fail_thold + bss_lose_timeout
@@ -3190,14 +2983,14 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 
 
 	wl12xx_free_link(wl, wlvif, &hlid);
-	wl->active_sta_count--;
+	//wl->active_sta_count--;
 
-	/*
-	 * rearm the tx watchdog when the last STA is freed - give the FW a
-	 * chance to return STA-buffered packets before complaining.
-	 */
-	if (wl->active_sta_count == 0)
-		wl12xx_rearm_tx_watchdog_locked();
+	// /*
+	//  * rearm the tx watchdog when the last STA is freed - give the FW a
+	//  * chance to return STA-buffered packets before complaining.
+	//  */
+	// if (wl->active_sta_count == 0)
+	// 	wl12xx_rearm_tx_watchdog_locked();
 }
 
 static void wlcore_roc_if_possible(struct wl1271 *wl,
@@ -3939,8 +3732,8 @@ static int wl12xx_get_hw_info(struct wl1271 *wl)
 {
 	int ret;
 
-	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &wl->chip.id);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &wl->chip.id, 4, false);
+	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &VV_chip->id);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &VV_chip->id, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -3948,9 +3741,9 @@ static int wl12xx_get_hw_info(struct wl1271 *wl)
 	wl->fuse_nic_addr = 0;
 
 	//ret = wl->ops->get_pg_ver(wl, &wl->hw_pg_ver);
-	ret = VV1_get_pg_ver(wl, &wl->hw_pg_ver);
-	if (ret < 0)
-		goto out;
+	// ret = VV1_get_pg_ver(wl, &wl->hw_pg_ver);
+	// if (ret < 0)
+	// 	goto out;
 
 	// if (wl->ops->get_mac)
 	// 	ret = wl->ops->get_mac(wl);
@@ -4253,21 +4046,21 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 
 	wl->channel = 0;
 	VV_rx_counter = 0;
-	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
-	wl->band = NL80211_BAND_2GHZ;
-	wl->channel_type = NL80211_CHAN_NO_HT;
+	//wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
+	//wl->band = NL80211_BAND_2GHZ;
+	//wl->channel_type = NL80211_CHAN_NO_HT;
 	wifi_data.flags = 0;
-	wl->sg_enabled = true;
+	//wl->sg_enabled = true;
 	wl->sleep_auth = WL1271_PSM_ILLEGAL;
-	wl->recovery_count = 0;
-	wl->hw_pg_ver = -1;
+	//wl->recovery_count = 0;
+	//wl->hw_pg_ver = -1;
 	//wl->ap_ps_map = 0;
 	//wl->ap_fw_ps_map = 0;
 	wl->quirks = 0;
 	//wl->system_hlid = WL12XX_SYSTEM_HLID;
-	wl->active_sta_count = 0;
-	wl->active_link_count = 0;
-	wl->fwlog_size = 0;
+	//wl->active_sta_count = 0;
+	//wl->active_link_count = 0;
+	//wl->fwlog_size = 0;
 
 	/* The system link is always allocated */
 	__set_bit(WL12XX_SYSTEM_HLID, VV_map.links_map);
@@ -4303,11 +4096,11 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	}
 
 	/* Allocate one page for the FW log */
-	wl->fwlog = (u8 *)get_zeroed_page(GFP_KERNEL);
-	if (!wl->fwlog) {
-		ret = -ENOMEM;
-		goto err_dummy_packet;
-	}
+	// wl->fwlog = (u8 *)get_zeroed_page(GFP_KERNEL);
+	// if (!wl->fwlog) {
+	// 	ret = -ENOMEM;
+	// 	goto err_dummy_packet;
+	// }
 
 	//wl->mbox_size = mbox_size;
 	// wl->mbox = kmalloc(wl->mbox_size, GFP_KERNEL | GFP_DMA);
@@ -4356,14 +4149,14 @@ int wlcore_free_hw(struct wl1271 *wl)
 {
 	/* Unblock any fwlog readers */
 	mutex_lock(&wifi_data.mutex);
-	wl->fwlog_size = -1;
+	//wl->fwlog_size = -1;
 	mutex_unlock(&wifi_data.mutex);
 
 	//wlcore_sysfs_free(wl);
 
 	//kfree(wl->buffer_32);
 	// kfree(wl->mbox);
-	free_page((unsigned long)wl->fwlog);
+	//free_page((unsigned long)wl->fwlog);
 	dev_kfree_skb(VV_dummy_packet);
 	free_pages((unsigned long)VV_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));
 
@@ -4542,12 +4335,14 @@ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 	//const char *nvs_name;
 	int ret = 0;
 
-	if (!wl->ops || !wl->ptable || !pdev_data)
+	if (!wl->ops || !wifi_data.ptable || !pdev_data)
 		return -EINVAL;
 
 	wl->dev = &pdev->dev;
 	wl->pdev = pdev;
 	platform_set_drvdata(pdev, wl);
+
+	VV_chip = (struct VV_chip*)devm_kzalloc(wl->dev, sizeof(struct VV_chip), GFP_KERNEL);
 
 	wlcore_nvs_cb(NULL, wl);
 

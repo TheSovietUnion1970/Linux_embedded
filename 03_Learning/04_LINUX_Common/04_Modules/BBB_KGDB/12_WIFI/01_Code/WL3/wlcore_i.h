@@ -102,12 +102,12 @@ enum {
 	NUM_FW_VER
 };
 
-struct wl1271_chip {
-	u32 id;
-	char fw_ver_str[ETHTOOL_FWVERS_LEN];
-	unsigned int fw_ver[NUM_FW_VER];
-	char phy_fw_ver_str[ETHTOOL_FWVERS_LEN];
-};
+// struct wl1271_chip {
+// 	u32 id;
+// 	char fw_ver_str[ETHTOOL_FWVERS_LEN];
+// 	unsigned int fw_ver[NUM_FW_VER];
+// 	char phy_fw_ver_str[ETHTOOL_FWVERS_LEN];
+// };
 
 #define NUM_TX_QUEUES              4
 
@@ -495,7 +495,6 @@ static inline bool wlcore_is_p2p_mgmt(struct wl12xx_vif *wlvif)
 int wl1271_plt_stop(struct wl1271 *wl);
 int wl1271_recalc_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 void wl12xx_queue_recovery_work(struct wl1271 *wl);
-size_t wl12xx_copy_fwlog(struct wl1271 *wl, u8 *memblock, size_t maxlen);
 int wl1271_rx_filter_alloc_field(struct wl12xx_rx_filter *filter,
 				 u16 offset, u8 flags,
 				 const u8 *pattern, u8 len);

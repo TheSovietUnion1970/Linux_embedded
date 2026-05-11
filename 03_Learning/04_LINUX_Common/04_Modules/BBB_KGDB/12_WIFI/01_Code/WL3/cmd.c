@@ -317,7 +317,7 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 
 	*hlid = link;
 
-	wl->active_link_count++;
+	//wl->active_link_count++;
 	return 0;
 }
 
@@ -370,8 +370,8 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	VV_links[*hlid].total_freed_pkts = 0;
 
 	*hlid = WL12XX_INVALID_LINK_ID;
-	wl->active_link_count--;
-	WARN_ON_ONCE(wl->active_link_count < 0);
+	//wl->active_link_count--;
+	//WARN_ON_ONCE(wl->active_link_count < 0);
 }
 
 u8 wlcore_get_native_channel_type(u8 nl_channel_type)
@@ -974,36 +974,6 @@ out:
 	return ret;
 }
 EXPORT_SYMBOL_GPL(wl12xx_cmd_build_probe_req);
-
-struct sk_buff *wl1271_cmd_build_ap_probe_req(struct sk_buff *skb)
-{
-	struct ieee80211_vif *vif = VV_wlvif_to_vif(0);
-	int ret;
-	u32 rate;
-
-	if (!skb)
-		skb = ieee80211_ap_probereq_get(VV_work.hw, vif);
-	if (!skb)
-		goto out;
-
-	wl1271_debug(DEBUG_SCAN, "set ap probe request template");
-
-	rate = wl1271_tx_min_rate_get(VV_vif_ptr[0]->bitrate_masks[VV_vif_ptr[0]->band]);
-	if (VV_vif_ptr[0]->band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(VV_vif_ptr[0]->role_id,
-					      CMD_TEMPL_CFG_PROBE_REQ_2_4,
-					      skb->data, skb->len, 0, rate);
-	else
-		ret = wl1271_cmd_template_set(VV_vif_ptr[0]->role_id,
-					      CMD_TEMPL_CFG_PROBE_REQ_5,
-					      skb->data, skb->len, 0, rate);
-
-	if (ret < 0)
-		wl1271_error("Unable to set ap probe request template.");
-
-out:
-	return skb;
-}
 
 int wl1271_cmd_build_arp_rsp(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {

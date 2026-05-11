@@ -668,7 +668,7 @@ static struct wl18xx_priv_conf wl18xx_default_priv_conf = {
 	},
 };
 
-static const struct wlcore_partition_set wl18xx_ptable[PART_TABLE_LEN] = {
+static const struct VV_partition_set wl18xx_ptable[PART_TABLE_LEN] = {
 	[PART_TOP_PRCM_ELP_SOC] = {
 		.mem  = { .start = 0x00A00000, .size  = 0x00012000 },
 		.reg  = { .start = 0x00807000, .size  = 0x00005000 },
@@ -1168,33 +1168,6 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 	return 0;
 }
 
-static int VV_acx_dynamic_fw_traces(struct wl1271 *wl)
-{
-	struct acx_dynamic_fw_traces_cfg *acx;
-	int ret;
-
-	wl1271_debug(DEBUG_ACX, "acx dynamic fw traces config %d",
-		     wl->dynamic_fw_traces);
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	acx->dynamic_fw_traces = cpu_to_le32(wl->dynamic_fw_traces);
-
-	ret = VV_cmd_configure(wl, ACX_DYNAMIC_TRACES_CFG,
-				   acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("acx config dynamic fw traces failed: %d", ret);
-		goto out;
-	}
-out:
-	kfree(acx);
-	return ret;
-}
-
 static int wl18xx_hw_init(struct wl1271 *wl)
 {
 	int ret;
@@ -1210,9 +1183,9 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 
 	/* set the dynamic fw traces bitmap */
 	// ret = wl18xx_acx_dynamic_fw_traces(wl);
-	ret = VV_acx_dynamic_fw_traces(wl);
-	if (ret < 0)
-		return ret;
+	// ret = VV_acx_dynamic_fw_traces(wl);
+	// if (ret < 0)
+	// 	return ret;
 
 	// if (checksum_param) {
 	// 	ret = wl18xx_acx_set_checksum_state(wl);
@@ -1439,8 +1412,8 @@ static int wl18xx_setup(struct wl1271 *wl)
 	wl->rtable = wl18xx_rtable;
 
 	//WL18XX_NUM_TX_DESCRIPTORS = WL18XX_NUM_TX_DESCRIPTORS;
-	wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
-	wl->num_links = WL18XX_MAX_LINKS;
+	//wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
+	//wl->num_links = WL18XX_MAX_LINKS;
 	//wl->max_ap_stations = WL18XX_MAX_AP_STATIONS;
 	wl->iface_combinations = wl18xx_iface_combinations;
 	wl->n_iface_combinations = ARRAY_SIZE(wl18xx_iface_combinations);
@@ -1450,13 +1423,13 @@ static int wl18xx_setup(struct wl1271 *wl)
 	//wl->hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
 	// wl->fw_status_len = sizeof(struct wl18xx_fw_status);
 	//wl->fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
-	wl->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
+	//wl->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
 	wl->static_data_priv_len = sizeof(struct wl18xx_static_data_priv);
 
 	wifi_data.band_rate_to_idx = wl18xx_band_rate_to_idx;
 
-	if (num_rx_desc_param != -1)
-		wl->num_rx_desc = num_rx_desc_param;
+	// if (num_rx_desc_param != -1)
+	// 	wl->num_rx_desc = num_rx_desc_param;
 
 	ret = wl18xx_conf_init(wl, wl->dev);
 	if (ret < 0)
@@ -1578,7 +1551,8 @@ static int wl18xx_probe(struct platform_device *pdev)
 
 	wl = hw->priv;
 	wl->ops = &wl18xx_ops;
-	wl->ptable = wl18xx_ptable;
+	wifi_data.ptable = wl18xx_ptable;
+
 	ret = wlcore_probe(wl, pdev);
 	printk("[MERGE] - wl->dev: 0x%x, parent = 0x%x\n", wl->dev, wl->dev->parent);
 	if (ret)

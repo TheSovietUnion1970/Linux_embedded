@@ -46,20 +46,20 @@ static int wlcore_boot_parse_fw_ver(struct wl1271 *wl,
 {
 	int ret;
 
-	strncpy(wl->chip.fw_ver_str, static_data->fw_version,
-		sizeof(wl->chip.fw_ver_str));
+	strncpy(VV_chip->fw_ver_str, static_data->fw_version,
+		sizeof(VV_chip->fw_ver_str));
 
 	/* make sure the string is NULL-terminated */
-	wl->chip.fw_ver_str[sizeof(wl->chip.fw_ver_str) - 1] = '\0';
+	VV_chip->fw_ver_str[sizeof(VV_chip->fw_ver_str) - 1] = '\0';
 
-	ret = sscanf(wl->chip.fw_ver_str + 4, "%u.%u.%u.%u.%u",
-		     &wl->chip.fw_ver[0], &wl->chip.fw_ver[1],
-		     &wl->chip.fw_ver[2], &wl->chip.fw_ver[3],
-		     &wl->chip.fw_ver[4]);
+	ret = sscanf(VV_chip->fw_ver_str + 4, "%u.%u.%u.%u.%u",
+		     &VV_chip->fw_ver[0], &VV_chip->fw_ver[1],
+		     &VV_chip->fw_ver[2], &VV_chip->fw_ver[3],
+		     &VV_chip->fw_ver[4]);
 
 	if (ret != 5) {
 		wl1271_warning("fw version incorrect value");
-		memset(wl->chip.fw_ver, 0, sizeof(wl->chip.fw_ver));
+		memset(VV_chip->fw_ver, 0, sizeof(VV_chip->fw_ver));
 		ret = -EINVAL;
 		goto out;
 	}
@@ -73,7 +73,7 @@ out:
 
 static int wlcore_validate_fw_ver(struct wl1271 *wl)
 {
-	unsigned int *fw_ver = wl->chip.fw_ver;
+	unsigned int *fw_ver = VV_chip->fw_ver;
 	unsigned int *min_ver = (wl->fw_type == WL12XX_FW_TYPE_MULTI) ?
 		wl->min_mr_fw_ver : wl->min_sr_fw_ver;
 	char min_fw_str[32] = "";
@@ -201,7 +201,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 
 	/* 10.1 set partition limit and chunk num */
 	chunk_num = 0;
-	partition_limit = wl->ptable[PART_DOWN].mem.size;
+	partition_limit = wifi_data.ptable[PART_DOWN].mem.size;
 
 	while (chunk_num < fw_data_len / CHUNK_SIZE) {
 		/* 10.2 update partition, if needed */
@@ -209,7 +209,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 		if (addr > partition_limit) {
 			addr = dest + chunk_num * CHUNK_SIZE;
 			partition_limit = chunk_num * CHUNK_SIZE +
-				wl->ptable[PART_DOWN].mem.size;
+				wifi_data.ptable[PART_DOWN].mem.size;
 			partition.mem.start = addr;
 			ret = VV_set_partition_core(&partition);
 			if (ret < 0)
@@ -300,7 +300,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 
 	wl1271_debug(DEBUG_BOOT, "chip id after firmware boot: 0x%x", chip_id);
 
-	if (chip_id != wl->chip.id) {
+	if (chip_id != VV_chip->id) {
 		wl1271_error("chip id doesn't match after firmware boot");
 		return -EIO;
 	}

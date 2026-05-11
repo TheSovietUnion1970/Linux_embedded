@@ -383,6 +383,14 @@ struct VV_map {
 };
 extern struct VV_map VV_map;
 
+struct VV_chip {
+	u32 id;
+	char fw_ver_str[ETHTOOL_FWVERS_LEN];
+	unsigned int fw_ver[NUM_FW_VER];
+	char phy_fw_ver_str[ETHTOOL_FWVERS_LEN];
+};
+extern struct VV_chip* VV_chip;
+
 struct VV_partition {
 	u32 size;
 	u32 start;

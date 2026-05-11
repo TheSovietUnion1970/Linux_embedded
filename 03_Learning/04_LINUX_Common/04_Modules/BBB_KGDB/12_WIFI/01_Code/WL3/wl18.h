@@ -5,6 +5,8 @@
 #include "debug.h"
 #include "acx.h"
 
+#include "common.h"
+
 enum {
 	ACX_NS_IPV6_FILTER		 = 0x0050,
 	ACX_PEER_HT_OPERATION_MODE_CFG	 = 0x0051,

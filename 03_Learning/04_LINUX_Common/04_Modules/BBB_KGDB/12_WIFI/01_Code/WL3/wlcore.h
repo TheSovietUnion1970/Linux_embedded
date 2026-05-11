@@ -157,15 +157,6 @@ enum wlcore_registers {
 	REG_TABLE_LEN,
 };
 
-struct wl1271_stats {
-	void *fw_stats;
-	unsigned long fw_stats_update;
-	size_t fw_stats_len;
-
-	unsigned int retry_count;
-	unsigned int excessive_retries;
-};
-
 struct wl1271 {
 	bool initialized;
 	struct ieee80211_hw *hw;
@@ -196,7 +187,7 @@ struct wl1271 {
 
 	//struct wlcore_partition_set curr_part;
 
-	struct wl1271_chip chip;
+	//struct wl1271_chip chip;
 
 	//int cmd_box_addr;
 
@@ -205,7 +196,7 @@ struct wl1271 {
 	void *nvs;
 	size_t nvs_len;
 
-	s8 hw_pg_ver;
+	//s8 hw_pg_ver;
 
 	/* address read from the fuse ROM */
 	u32 fuse_oui_addr;
@@ -276,10 +267,10 @@ struct wl1271 {
 	//struct work_struct netstack_work;
 
 	/* FW log buffer */
-	u8 *fwlog;
+	//u8 *fwlog;
 
 	/* Number of valid bytes in the FW log buffer */
-	ssize_t fwlog_size;
+	//ssize_t fwlog_size;
 
 	/* FW log end marker */
 	//u32 fwlog_end;
@@ -288,8 +279,8 @@ struct wl1271 {
 	//u32 fw_mem_block_size;
 
 	/* Hardware recovery work */
-	struct work_struct recovery_work;
-	bool watchdog_recovery;
+	//struct work_struct recovery_work;
+	//bool watchdog_recovery;
 
 	// /* Reg domain last configuration */
 	// DECLARE_BITMAP(reg_ch_conf_last, 64);
@@ -319,14 +310,14 @@ struct wl1271 {
 	struct wl12xx_vif *sched_vif;
 
 	/* The current band */
-	enum nl80211_band band;
+	//enum nl80211_band band;
 
 	//struct completion *elp_compl;
 
 	/* in dBm */
-	int power_level;
+	//int power_level;
 
-	struct wl1271_stats stats;
+	//struct wl1271_stats stats;
 
 	//__le32 *buffer_32;
 	//u32 buffer_cmd;
@@ -335,11 +326,11 @@ struct wl1271 {
 	/* Current chipset configuration */
 	struct wlcore_conf conf;
 
-	bool sg_enabled;
+	//bool sg_enabled;
 
 	bool enable_11a;
 
-	int recovery_count;
+	//int recovery_count;
 
 	/* Most recently reported noise in dBm */
 	//s8 noise;
@@ -360,7 +351,7 @@ struct wl1271 {
 	 */
 
 	/* number of currently active links */
-	int active_link_count;
+	//int active_link_count;
 
 	/* Fast/slow links bitmap according to FW */
 	//unsigned long fw_fast_lnk_map;
@@ -381,7 +372,7 @@ struct wl1271 {
 	//int ba_rx_session_count_max;
 
 	/* AP-mode - number of currently connected stations */
-	int active_sta_count;
+	//int active_sta_count;
 
 	/* Flag determining whether AP should broadcast OFDM-only rates */
 	//bool ofdm_only_ap;
@@ -394,7 +385,7 @@ struct wl1271 {
 
 	struct wlcore_ops *ops;
 	/* pointer to the lower driver partition table */
-	const struct wlcore_partition_set *ptable;
+	//const struct wlcore_partition_set *ptable;
 	/* pointer to the lower driver register table */
 	const int *rtable;
 	/* name of the firmwares to load - for PLT, single role, multi-role */
@@ -402,8 +393,8 @@ struct wl1271 {
 	const char *sr_fw_name;
 	//const char *mr_fw_name;
 
-	u8 scan_templ_id_2_4;
-	u8 scan_templ_id_5;
+	//u8 scan_templ_id_2_4;
+	//u8 scan_templ_id_5;
 	// u8 sched_scan_templ_id_2_4;
 	// u8 sched_scan_templ_id_5;
 	//u8 max_channels_5;
@@ -414,9 +405,9 @@ struct wl1271 {
 	/* number of TX descriptors the HW supports. */
 	//u32 num_tx_desc;
 	/* number of RX descriptors the HW supports. */
-	u32 num_rx_desc;
+	//u32 num_rx_desc;
 	/* number of links the HW supports */
-	u8 num_links;
+	//u8 num_links;
 	/* max stations a single AP can support */
 	//u8 max_ap_stations;
 
@@ -447,7 +438,7 @@ struct wl1271 {
 	size_t static_data_priv_len;
 
 	/* the current channel type */
-	enum nl80211_channel_type channel_type;
+	//enum nl80211_channel_type channel_type;
 
 	/* mutex for protecting the tx_flush function */
 	struct mutex flush_mutex;
@@ -471,7 +462,7 @@ struct wl1271 {
 	u8 n_iface_combinations;
 
 	/* dynamic fw traces */
-	u32 dynamic_fw_traces;
+	//u32 dynamic_fw_traces;
 
 	/* time sync zone master */
 	//u8 zone_master_mac_addr[ETH_ALEN];

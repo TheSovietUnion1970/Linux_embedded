@@ -494,10 +494,10 @@ int VV_identify_chip(struct wl1271 *wl)
 {
 	int ret = 0;
 
-	switch (wl->chip.id) {
+	switch (VV_chip->id) {
 	case CHIP_ID_185x_PG20:
 		// wl1271_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
-		// 		 wl->chip.id);
+		// 		 VV_chip->id);
 		wl->sr_fw_name = WL18XX_FW_NAME;
 		/* wl18xx uses the same firmware for PLT */
 		//wl->plt_fw_name = WL18XX_FW_NAME;
@@ -516,12 +516,12 @@ int VV_identify_chip(struct wl1271 *wl)
 		break;
 	case CHIP_ID_185x_PG10:
 		printk("chip id 0x%x (185x PG10) is deprecated",
-			       wl->chip.id);
+			       VV_chip->id);
 		ret = -ENODEV;
 		goto out;
 
 	default:
-		printk("unsupported chip id: 0x%x", wl->chip.id);
+		printk("unsupported chip id: 0x%x", VV_chip->id);
 		ret = -ENODEV;
 		goto out;
 	}

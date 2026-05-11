@@ -490,42 +490,6 @@ static bool wl1271_tx_is_data_present(struct sk_buff *skb)
 	return ieee80211_is_data_present(hdr->frame_control);
 }
 
-void wl12xx_rearm_rx_streaming(struct wl1271 *wl, unsigned long *active_hlids)
-{
-	struct wl12xx_vif *wlvif;
-	u32 timeout;
-	u8 hlid;
-
-	if (!wl->conf.rx_streaming.interval)
-		return;
-
-	if (!wl->conf.rx_streaming.always &&
-	    !test_bit(WL1271_FLAG_SOFT_GEMINI, &wifi_data.flags))
-		return;
-
-	timeout = wl->conf.rx_streaming.duration;
-	wl12xx_for_each_wlvif_sta(wl, wlvif) {
-		bool found = false;
-		for_each_set_bit(hlid, active_hlids, wl->num_links) {
-			if (test_bit(hlid, wlvif->links_map)) {
-				found  = true;
-				break;
-			}
-		}
-
-		if (!found)
-			continue;
-
-		/* enable rx streaming */
-		// if (!test_bit(WLVIF_FLAG_RX_STREAMING_STARTED, &wlvif->flags))
-			// ieee80211_queue_work(wl->hw,
-			// 		     &wlvif->rx_streaming_enable_work);
-
-		// mod_timer(&wlvif->rx_streaming_timer,
-		// 	  jiffies + msecs_to_jiffies(timeout));
-	}
-}
-
 /*
  * Returns failure values only in case of failed bus ops within this function.
  * wl1271_prepare_tx_frame retvals won't be returned in order to avoid
@@ -692,7 +656,7 @@ void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	int i;
 
 	/* TX failure */
-	for_each_set_bit(i, wlvif->links_map, wl->num_links) {
+	for_each_set_bit(i, wlvif->links_map, WL18XX_MAX_LINKS) {
 		if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
 		    i != wlvif->ap.bcast_hlid && i != wlvif->ap.global_hlid) {
 			/* this calls wl12xx_free_link */
@@ -717,7 +681,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 
 	/* only reset the queues if something bad happened */
 	if (wl1271_tx_total_queue_count() != 0) {
-		for (i = 0; i < wl->num_links; i++)
+		for (i = 0; i < WL18XX_MAX_LINKS; i++)
 			wl1271_tx_reset_link_queues(wl, i);
 
 		for (i = 0; i < NUM_TX_QUEUES; i++)
@@ -811,7 +775,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 		       WL1271_TX_FLUSH_TIMEOUT / 1000);
 
 	/* forcibly flush all Tx buffers on our queues */
-	for (i = 0; i < wl->num_links; i++)
+	for (i = 0; i < WL18XX_MAX_LINKS; i++)
 		wl1271_tx_reset_link_queues(wl, i);
 
 out_wake:

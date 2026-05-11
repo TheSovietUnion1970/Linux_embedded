@@ -18,6 +18,7 @@
 #include "tx.h"
 #include "ops.h"
 #include "common.h"
+
 void wl1271_scan_complete_work(struct work_struct *work)
 {
 	//struct delayed_work *dwork;
@@ -61,10 +62,10 @@ void wl1271_scan_complete_work(struct work_struct *work)
 		goto out;
 	}
 
-	if (test_bit(WLVIF_FLAG_STA_ASSOCIATED, &VV_vif_ptr[0]->flags)) {
-		/* restore hardware connection monitoring template */
-		wl1271_cmd_build_ap_probe_req(VV_vif_ptr[0]->probereq);
-	}
+	// if (test_bit(WLVIF_FLAG_STA_ASSOCIATED, &VV_vif_ptr[0]->flags)) {
+	// 	/* restore hardware connection monitoring template */
+	// 	wl1271_cmd_build_ap_probe_req(VV_vif_ptr[0]->probereq);
+	// }
 
 	// if (wifi_data.wl->scan.failed) {
 	if (VV_scan_failed) {
