@@ -43,13 +43,13 @@ static inline void wl1271_power_off(void)
 {
 	int ret = 0;
 
-	if (!test_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags))
+	if (!test_bit(WL1271_FLAG_GPIO_POWER, &wifi_data->flags))
 		return;
 
-	if (wifi_data.if_ops->power)
-		ret = wifi_data.if_ops->power(wifi_data.dev, false);
+	if (wifi_data->if_ops->power)
+		ret = wifi_data->if_ops->power(wifi_data->dev, false);
 	if (!ret)
-		clear_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
+		clear_bit(WL1271_FLAG_GPIO_POWER, &wifi_data->flags);
 }
 
 /* Vinh custom */

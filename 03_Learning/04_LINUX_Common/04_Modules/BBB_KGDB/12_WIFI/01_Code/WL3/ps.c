@@ -16,7 +16,7 @@ int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
 		       enum wl1271_cmd_ps_mode mode)
 {
 	int ret;
-	u16 timeout = wifi_data.conf.conn.dynamic_ps_timeout;
+	u16 timeout = wifi_data->conf.conn.dynamic_ps_timeout;
 
 	switch (mode) {
 	case STATION_AUTO_PS_MODE:
@@ -25,8 +25,8 @@ int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
 			     mode, timeout);
 
 		ret = wl1271_acx_wake_up_conditions(wlvif,
-					    wifi_data.conf.conn.wake_up_event,
-					    wifi_data.conf.conn.listen_interval);
+					    wifi_data->conf.conn.wake_up_event,
+					    wifi_data->conf.conn.listen_interval);
 		if (ret < 0) {
 			wl1271_error("couldn't set wake up conditions");
 			return ret;

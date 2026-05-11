@@ -224,7 +224,7 @@ static inline int wl1271_tx_total_queue_count(void)
 	int i, count = 0;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++)
-		//count += wifi_data.tx_queue_count[i];
+		//count += wifi_data->tx_queue_count[i];
 		count += VV_tx_queue_count[i];
 
 	return count;

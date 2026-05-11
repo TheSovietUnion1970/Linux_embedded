@@ -147,7 +147,7 @@ struct wl_fw_status {
 
 		/*
 		 * Cumulative counter of freed packets per HLID
-		 * (length of the array is wifi_data.num_links)
+		 * (length of the array is wifi_data->num_links)
 		 */
 		u8 *tx_lnk_free_pkts;
 
@@ -476,7 +476,7 @@ static inline bool wlcore_is_p2p_mgmt(struct wl12xx_vif *wlvif)
 }
 
 #define wl12xx_for_each_wlvif(wlvif) \
-		list_for_each_entry(wlvif, &wifi_data.wlvif_list, list)
+		list_for_each_entry(wlvif, &wifi_data->wlvif_list, list)
 
 void wl12xx_queue_recovery_work(void);
 

@@ -30,7 +30,7 @@
 
 static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
 {
-	// if (wifi_data.quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
+	// if (wifi_data->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
 	// 	return (rx_pkt_desc & ALIGNED_RX_BUF_SIZE_MASK) >>
 	// 	       ALIGNED_RX_BUF_SIZE_SHIFT;
 
@@ -42,7 +42,7 @@ static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
 
 static u32 wlcore_rx_get_align_buf_size(u32 pkt_len)
 {
-	// if (wifi_data.quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
+	// if (wifi_data->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
 	// 	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
 
 	// return pkt_len;
@@ -82,7 +82,7 @@ static void wl1271_rx_status(
 	 * need to divide by two for now, but TI has been discussing about
 	 * changing it.  This needs to be rechecked.
 	 */
-	//wifi_data.noise = desc->rssi - (desc->snr >> 1);
+	//wifi_data->noise = desc->rssi - (desc->snr >> 1);
 
 	status->freq = ieee80211_channel_to_frequency(desc->channel,
 						      status->band);
@@ -197,7 +197,7 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 		     seq_num, *hlid);
 
 	skb_queue_tail(&VV_deferred_rx_queue, skb);
-	//queue_work(VV_work.freezable_wq, &wifi_data.netstack_work);
+	//queue_work(VV_work.freezable_wq, &wifi_data->netstack_work);
 	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
 
 	return is_data;
@@ -232,7 +232,7 @@ int wlcore_rx(void)
 	if (hlid < WLCORE_MAX_LINKS)
 		VV_links[hlid].fw_rate_mbps =
 				VV_status_reg->tx_last_rate_mbps;
-	//printk("wifi_data.quirks = 0x%x\n", wifi_data.quirks);
+	//printk("wifi_data->quirks = 0x%x\n", wifi_data->quirks);
 
 	while (drv_rx_counter != fw_rx_counter) {
 		buf_size = 0;
@@ -256,7 +256,7 @@ int wlcore_rx(void)
 		/* Read all available packets at once */
 		des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
 		
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 

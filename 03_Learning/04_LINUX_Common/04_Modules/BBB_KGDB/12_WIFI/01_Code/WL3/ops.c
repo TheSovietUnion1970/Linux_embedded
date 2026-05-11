@@ -330,7 +330,7 @@ int VV_get_mac(void)
 	u32 mac1, mac2;
 	int ret;
 
-	ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = VV_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -343,21 +343,21 @@ int VV_get_mac(void)
 		goto out;
 
 	/* these are the two parts of the BD_ADDR */
-	wifi_data.fuse_oui_addr = ((mac2 & 0xffff) << 8) +
+	wifi_data->fuse_oui_addr = ((mac2 & 0xffff) << 8) +
 		((mac1 & 0xff000000) >> 24);
-	wifi_data.fuse_nic_addr = (mac1 & 0xffffff);
+	wifi_data->fuse_nic_addr = (mac1 & 0xffffff);
 
-	if (!wifi_data.fuse_oui_addr && !wifi_data.fuse_nic_addr) {
+	if (!wifi_data->fuse_oui_addr && !wifi_data->fuse_nic_addr) {
 		u8 mac[ETH_ALEN];
 
 		eth_random_addr(mac);
 
-		wifi_data.fuse_oui_addr = (mac[0] << 16) + (mac[1] << 8) + mac[2];
-		wifi_data.fuse_nic_addr = (mac[3] << 16) + (mac[4] << 8) + mac[5];
+		wifi_data->fuse_oui_addr = (mac[0] << 16) + (mac[1] << 8) + mac[2];
+		wifi_data->fuse_nic_addr = (mac[3] << 16) + (mac[4] << 8) + mac[5];
 		//printk("MAC address from fuse not available, using random locally administered addresses.");
 	}
 
-	ret = VV_set_partition_core(&wifi_data.ptable[PART_DOWN]);
+	ret = VV_set_partition_core(&wifi_data->ptable[PART_DOWN]);
 
 out:
 	return ret;
@@ -416,17 +416,17 @@ wlcore_set_min_fw_ver(unsigned int chip,
 		      unsigned int iftype_mr, unsigned int major_mr,
 		      unsigned int subtype_mr, unsigned int minor_mr)
 {
-	wifi_data.min_sr_fw_ver[FW_VER_CHIP] = chip;
-	wifi_data.min_sr_fw_ver[FW_VER_IF_TYPE] = iftype_sr;
-	wifi_data.min_sr_fw_ver[FW_VER_MAJOR] = major_sr;
-	wifi_data.min_sr_fw_ver[FW_VER_SUBTYPE] = subtype_sr;
-	wifi_data.min_sr_fw_ver[FW_VER_MINOR] = minor_sr;
+	wifi_data->min_sr_fw_ver[FW_VER_CHIP] = chip;
+	wifi_data->min_sr_fw_ver[FW_VER_IF_TYPE] = iftype_sr;
+	wifi_data->min_sr_fw_ver[FW_VER_MAJOR] = major_sr;
+	wifi_data->min_sr_fw_ver[FW_VER_SUBTYPE] = subtype_sr;
+	wifi_data->min_sr_fw_ver[FW_VER_MINOR] = minor_sr;
 
-	wifi_data.min_mr_fw_ver[FW_VER_CHIP] = chip;
-	wifi_data.min_mr_fw_ver[FW_VER_IF_TYPE] = iftype_mr;
-	wifi_data.min_mr_fw_ver[FW_VER_MAJOR] = major_mr;
-	wifi_data.min_mr_fw_ver[FW_VER_SUBTYPE] = subtype_mr;
-	wifi_data.min_mr_fw_ver[FW_VER_MINOR] = minor_mr;
+	wifi_data->min_mr_fw_ver[FW_VER_CHIP] = chip;
+	wifi_data->min_mr_fw_ver[FW_VER_IF_TYPE] = iftype_mr;
+	wifi_data->min_mr_fw_ver[FW_VER_MAJOR] = major_mr;
+	wifi_data->min_mr_fw_ver[FW_VER_SUBTYPE] = subtype_mr;
+	wifi_data->min_mr_fw_ver[FW_VER_MINOR] = minor_mr;
 }
 
 int VV_identify_chip(void)
@@ -437,10 +437,10 @@ int VV_identify_chip(void)
 	case CHIP_ID_185x_PG20:
 		// wl1271_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
 		// 		 VV_chip->id);
-		wifi_data.sr_fw_name = WL18XX_FW_NAME;
+		wifi_data->sr_fw_name = WL18XX_FW_NAME;
 		/* wl18xx uses the same firmware for PLT */
-		//wifi_data.plt_fw_name = WL18XX_FW_NAME;
-		wifi_data.quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
+		//wifi_data->plt_fw_name = WL18XX_FW_NAME;
+		wifi_data->quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
 			      WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN |
 			      WLCORE_QUIRK_NO_SCHED_SCAN_WHILE_CONN |
 			      WLCORE_QUIRK_TX_PAD_LAST_FRAME |

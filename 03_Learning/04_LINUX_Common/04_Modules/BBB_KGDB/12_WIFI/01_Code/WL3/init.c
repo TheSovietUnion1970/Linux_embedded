@@ -40,9 +40,9 @@ static int wl1271_init_templates_config(void)
 	if (ret < 0)
 		return ret;
 
-	if (wifi_data.quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL) {
+	if (wifi_data->quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL) {
 		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
-					    //   wifi_data.sched_scan_templ_id_2_4,
+					    //   wifi_data->sched_scan_templ_id_2_4,
 						  CMD_TEMPL_PROBE_REQ_2_4_PERIODIC,
 					      NULL,
 					      WL1271_CMD_TEMPL_MAX_SIZE,
@@ -51,7 +51,7 @@ static int wl1271_init_templates_config(void)
 			return ret;
 
 		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
-					      // wifi_data.sched_scan_templ_id_5,
+					      // wifi_data->sched_scan_templ_id_5,
 						  CMD_TEMPL_PROBE_REQ_5_PERIODIC,
 					      NULL,
 					      WL1271_CMD_TEMPL_MAX_SIZE,
@@ -167,7 +167,7 @@ static int wl12xx_init_phy_vif_config(
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_rts_threshold(wlvif, wifi_data.hw->wiphy->rts_threshold);
+	ret = wl1271_acx_rts_threshold(wlvif, wifi_data->hw->wiphy->rts_threshold);
 	if (ret < 0)
 		return ret;
 
@@ -199,7 +199,7 @@ static int wl1271_init_pta(void)
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_sg_enable(true); // wifi_data.sg_enabled = true
+	ret = wl1271_acx_sg_enable(true); // wifi_data->sg_enabled = true
 	if (ret < 0)
 		return ret;
 
@@ -233,7 +233,7 @@ static int wl12xx_init_fwlog(void)
 {
 	int ret;
 
-	if (wifi_data.quirks & WLCORE_QUIRK_FWLOG_NOT_IMPLEMENTED)
+	if (wifi_data->quirks & WLCORE_QUIRK_FWLOG_NOT_IMPLEMENTED)
 		return 0;
 
 	ret = wl12xx_cmd_config_fwlog();
@@ -278,7 +278,7 @@ static int wl1271_set_ba_policies(struct wl12xx_vif *wlvif)
 {
 	/* Reset the BA RX indicators */
 	wlvif->ba_allowed = true;
-	//wifi_data.ba_rx_session_count = 0;
+	//wifi_data->ba_rx_session_count = 0;
 
 	/* BA is supported in STA/AP modes */
 	if (wlvif->bss_type != BSS_TYPE_AP_BSS &&
@@ -335,7 +335,7 @@ int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 	int ret, i;
 
 	/* consider all existing roles before configuring psm. */
-	u8 sta_auth = wifi_data.conf.conn.sta_sleep_auth;
+	u8 sta_auth = wifi_data->conf.conn.sta_sleep_auth;
 	/* Configure for power according to debugfs */
 	if (sta_auth != WL1271_PSM_ILLEGAL)
 		ret = wl1271_acx_sleep_auth(sta_auth);
@@ -358,16 +358,16 @@ int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 	wl12xx_init_phy_vif_config(wlvif);
 
 	/* Default TID/AC configuration */
-	BUG_ON(wifi_data.conf.tx.tid_conf_count != wifi_data.conf.tx.ac_conf_count);
-	for (i = 0; i < wifi_data.conf.tx.tid_conf_count; i++) {
-		conf_ac = &wifi_data.conf.tx.ac_conf[i];
+	BUG_ON(wifi_data->conf.tx.tid_conf_count != wifi_data->conf.tx.ac_conf_count);
+	for (i = 0; i < wifi_data->conf.tx.tid_conf_count; i++) {
+		conf_ac = &wifi_data->conf.tx.ac_conf[i];
 		ret = wl1271_acx_ac_cfg(wlvif, conf_ac->ac,
 					conf_ac->cw_min, conf_ac->cw_max,
 					conf_ac->aifsn, conf_ac->tx_op_limit);
 		if (ret < 0)
 			return ret;
 
-		conf_tid = &wifi_data.conf.tx.tid_conf[i];
+		conf_tid = &wifi_data->conf.tx.tid_conf[i];
 		ret = wl1271_acx_tid_cfg(wlvif,
 					 conf_tid->queue_id,
 					 conf_tid->channel_type,
@@ -404,7 +404,7 @@ int wl1271_hw_init(void)
 	int ret;
 
 	/* Chip-specific hw init */
-	ret = wifi_data.ops->hw_init();
+	ret = wifi_data->ops->hw_init();
 	if (ret < 0)
 		return ret;
 
@@ -461,7 +461,7 @@ int wl1271_hw_init(void)
 		goto out_free_memmap;
 
 	/* Default fragmentation threshold */
-	ret = wl1271_acx_frag_threshold(wifi_data.hw->wiphy->frag_threshold);
+	ret = wl1271_acx_frag_threshold(wifi_data->hw->wiphy->frag_threshold);
 	if (ret < 0)
 		goto out_free_memmap;
 
@@ -487,8 +487,8 @@ int wl1271_hw_init(void)
 	return 0;
 
  out_free_memmap:
-	kfree(wifi_data.target_mem_map);
-	wifi_data.target_mem_map = NULL;
+	kfree(wifi_data->target_mem_map);
+	wifi_data->target_mem_map = NULL;
 
 	return ret;
 }

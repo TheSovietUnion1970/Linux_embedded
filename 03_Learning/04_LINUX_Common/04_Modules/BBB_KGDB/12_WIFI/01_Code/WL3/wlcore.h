@@ -13,7 +13,7 @@
 #include "wlcore_i.h"
 #include "event.h"
 #include "boot.h"
-extern struct Wifi_data wifi_data;
+// extern struct Wifi_data wifi_data;
 
 /* The maximum number of Tx descriptors in all chip families */
 #define WLCORE_MAX_TX_DESCRIPTORS 32

@@ -549,7 +549,7 @@ struct Wifi_data {
 
 	void *last_valid_wlvif;
 };
-extern struct Wifi_data wifi_data;
+extern struct Wifi_data* wifi_data;
 
 static inline
 struct ieee80211_vif *VV_wlvif_to_vif(int idx)
@@ -629,7 +629,7 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
 // wlcore_set_assoc:
     // wl1271_cmd_build_ps_poll(wl, wlvif, wlvif->aid):
     //-> PS-poll frame by CLI in pow-save mode -> AP: 'I'm awake'
-        // ieee80211_pspoll_get(wifi_data.hw, vif) -> standard PS-Poll frame
+        // ieee80211_pspoll_get(wifi_data->hw, vif) -> standard PS-Poll frame
 
         // ret = wl1271_cmd_template_set(wlvif->role_id,
         // 			      CMD_TEMPL_PS_POLL, skb->data,
@@ -708,7 +708,7 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
 // wlcore_scan:
     // delayed work: scan_complete_work
     
-    // wifi_data.ops->scan_start(wl, wlvif, req) = wl18xx_scan_send
+    // wifi_data->ops->scan_start(wl, wlvif, req) = wl18xx_scan_send
         // -> cpy cmd_channels->active|passive|dtfs -> cmd
         // -> wl12xx_cmd_build_probe_req - 2 + 5 GHz
         // <- CMD_SCAN
@@ -748,7 +748,7 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
     // wl1271_flush_deferred_work -> flush RX + TX status to stack
     // wl12xx_tx_reset + wl1271_power_off
 
-// wifi_data.recovery_work = wl1271_recovery_work
+// wifi_data->recovery_work = wl1271_recovery_work
     // disable_irq_nosync + ieee80211_stop_queues
     // __wl1271_op_remove_interface
     // wlcore_op_stop_locked = wlcore_op_stop
@@ -761,13 +761,13 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
     // wl12xx_set_power_on
     // wl1271_sdio_set_block_size
     // wl1271_setup
-        // alloc(wifi_data.fw_status);
-        // alloc(wifi_data.raw_fw_status);
-        // alloc(wifi_data.tx_res_if);
+        // alloc(wifi_data->fw_status);
+        // alloc(wifi_data->raw_fw_status);
+        // alloc(wifi_data->tx_res_if);
     // wl12xx_fetch_firmware:
-        // wifi_data.fw_type
-        // wifi_data.fw_len 
-        // wifi_data.fw 
+        // wifi_data->fw_type
+        // wifi_data->fw_len 
+        // wifi_data->fw 
 
 // wl18xx_set_clk:
     // configures the internal clock/PLL system of the wl18xx WiFi chip.
@@ -891,13 +891,13 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
 
 
 // wl18xx_lnk_high_prio:
-    // wifi_data.fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
+    // wifi_data->fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
     // if (suspend_bitmap = hlid = bit 1) -> choose wl18xx_lnk_low_prio 
     // else thold = tx_fast_link_prio_threshold or tx_slow_link_prio_threshold
     // CHECK lnk->allocated_pkts (usually 0) < thold
 
 // wl18xx_lnk_low_prio:
-    // wifi_data.fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
+    // wifi_data->fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
     // if (suspend_bitmap = hlid = bit 1) -> thold = tx_suspend_threshold 
     // else thold = tx_fast_stop_threshold or tx_slow_stop_threshold
     // CHECK lnk->allocated_pkts (usually 0) < thold

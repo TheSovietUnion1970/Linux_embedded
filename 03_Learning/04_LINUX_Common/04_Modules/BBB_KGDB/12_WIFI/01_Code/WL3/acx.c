@@ -74,7 +74,7 @@ int wl1271_acx_sleep_auth(u8 sleep_auth)
 		goto out;
 	}
 
-	wifi_data.sleep_auth = sleep_auth;
+	wifi_data->sleep_auth = sleep_auth;
 out:
 	kfree(auth);
 	return ret;
@@ -170,7 +170,7 @@ int wl1271_acx_rx_msdu_life_time(void)
 		goto out;
 	}
 
-	acx->lifetime = cpu_to_le32(wifi_data.conf.rx.rx_msdu_life_time);
+	acx->lifetime = cpu_to_le32(wifi_data->conf.rx.rx_msdu_life_time);
 	ret = VV_cmd_configure(DOT11_RX_MSDU_LIFE_TIME,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
@@ -259,8 +259,8 @@ int wl1271_acx_service_period_timeout(
 	wl1271_debug(DEBUG_ACX, "acx service period timeout");
 
 	rx_timeout->role_id = wlvif->role_id;
-	rx_timeout->ps_poll_timeout = cpu_to_le16(wifi_data.conf.rx.ps_poll_timeout);
-	rx_timeout->upsd_timeout = cpu_to_le16(wifi_data.conf.rx.upsd_timeout);
+	rx_timeout->ps_poll_timeout = cpu_to_le16(wifi_data->conf.rx.ps_poll_timeout);
+	rx_timeout->upsd_timeout = cpu_to_le16(wifi_data->conf.rx.upsd_timeout);
 
 	ret = VV_cmd_configure(ACX_SERVICE_PERIOD_TIMEOUT,
 				   rx_timeout, sizeof(*rx_timeout));
@@ -286,7 +286,7 @@ int wl1271_acx_rts_threshold(struct wl12xx_vif *wlvif,
 	 * default value.
 	 */
 	if (rts_threshold > IEEE80211_MAX_RTS_THRESHOLD)
-		rts_threshold = wifi_data.conf.rx.rts_threshold;
+		rts_threshold = wifi_data->conf.rx.rts_threshold;
 
 	wl1271_debug(DEBUG_ACX, "acx rts threshold: %d", rts_threshold);
 
@@ -313,7 +313,7 @@ out:
 int wl1271_acx_dco_itrim_params(void)
 {
 	struct acx_dco_itrim_params *dco;
-	struct conf_itrim_settings *c = &wifi_data.conf.itrim;
+	struct conf_itrim_settings *c = &wifi_data->conf.itrim;
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx dco itrim parameters");
@@ -349,7 +349,7 @@ int wl1271_acx_beacon_filter_opt(struct wl12xx_vif *wlvif,
 		     enable_filter);
 
 	if (enable_filter &&
-	    wifi_data.conf.conn.bcn_filt_mode == CONF_BCN_FILT_MODE_DISABLED)
+	    wifi_data->conf.conn.bcn_filt_mode == CONF_BCN_FILT_MODE_DISABLED)
 		goto out;
 
 	beacon_filter = kzalloc(sizeof(*beacon_filter), GFP_KERNEL);
@@ -398,8 +398,8 @@ int wl1271_acx_beacon_filter_table(
 	/* configure default beacon pass-through rules */
 	ie_table->role_id = wlvif->role_id;
 	ie_table->num_ie = 0;
-	for (i = 0; i < wifi_data.conf.conn.bcn_filt_ie_count; i++) {
-		struct conf_bcn_filt_rule *r = &(wifi_data.conf.conn.bcn_filt_ie[i]);
+	for (i = 0; i < wifi_data->conf.conn.bcn_filt_ie_count; i++) {
+		struct conf_bcn_filt_rule *r = &(wifi_data->conf.conn.bcn_filt_ie[i]);
 		ie_table->table[idx++] = r->ie;
 		ie_table->table[idx++] = r->rule;
 
@@ -455,8 +455,8 @@ int wl1271_acx_conn_monit_params(struct wl12xx_vif *wlvif,
 	}
 
 	if (enable) {
-		threshold = wifi_data.conf.conn.synch_fail_thold;
-		timeout = wifi_data.conf.conn.bss_lose_timeout;
+		threshold = wifi_data->conf.conn.synch_fail_thold;
+		timeout = wifi_data->conf.conn.bss_lose_timeout;
 	}
 
 	acx->role_id = wlvif->role_id;
@@ -491,7 +491,7 @@ int wl1271_acx_sg_enable(bool enable)
 	}
 
 	if (enable)
-		pta->enable = wifi_data.conf.sg.state;
+		pta->enable = wifi_data->conf.sg.state;
 	else
 		pta->enable = CONF_SG_DISABLE;
 
@@ -509,7 +509,7 @@ out:
 int wl12xx_acx_sg_cfg(void)
 {
 	struct acx_bt_wlan_coex_param *param;
-	struct conf_sg_settings *c = &wifi_data.conf.sg;
+	struct conf_sg_settings *c = &wifi_data->conf.sg;
 	int i, ret;
 
 	wl1271_debug(DEBUG_ACX, "acx sg cfg");
@@ -549,8 +549,8 @@ int wl1271_acx_cca_threshold(void)
 		goto out;
 	}
 
-	detection->rx_cca_threshold = cpu_to_le16(wifi_data.conf.rx.rx_cca_threshold);
-	detection->tx_energy_detection = wifi_data.conf.tx.tx_energy_detection;
+	detection->rx_cca_threshold = cpu_to_le16(wifi_data->conf.rx.rx_cca_threshold);
+	detection->tx_energy_detection = wifi_data->conf.tx.tx_energy_detection;
 
 	ret = VV_cmd_configure(ACX_CCA_THRESHOLD,
 				   detection, sizeof(*detection));
@@ -576,10 +576,10 @@ int wl1271_acx_bcn_dtim_options(struct wl12xx_vif *wlvif)
 	}
 
 	bb->role_id = wlvif->role_id;
-	bb->beacon_rx_timeout = cpu_to_le16(wifi_data.conf.conn.beacon_rx_timeout);
-	bb->broadcast_timeout = cpu_to_le16(wifi_data.conf.conn.broadcast_timeout);
-	bb->rx_broadcast_in_ps = wifi_data.conf.conn.rx_broadcast_in_ps;
-	bb->ps_poll_threshold = wifi_data.conf.conn.ps_poll_threshold;
+	bb->beacon_rx_timeout = cpu_to_le16(wifi_data->conf.conn.beacon_rx_timeout);
+	bb->broadcast_timeout = cpu_to_le16(wifi_data->conf.conn.broadcast_timeout);
+	bb->rx_broadcast_in_ps = wifi_data->conf.conn.rx_broadcast_in_ps;
+	bb->ps_poll_threshold = wifi_data->conf.conn.ps_poll_threshold;
 
 	ret = VV_cmd_configure(ACX_BCN_DTIM_OPTIONS, bb, sizeof(*bb));
 	if (ret < 0) {
@@ -707,7 +707,7 @@ out:
 int wl1271_acx_sta_rate_policies(struct wl12xx_vif *wlvif)
 {
 	struct acx_rate_policy *acx;
-	struct conf_tx_rate_class *c = &wifi_data.conf.tx.sta_rc_conf;
+	struct conf_tx_rate_class *c = &wifi_data->conf.tx.sta_rc_conf;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_ACX, "acx rate policies");
@@ -858,7 +858,7 @@ int wl1271_acx_frag_threshold(u32 frag_threshold)
 	 * default value.
 	 */
 	if (frag_threshold > IEEE80211_MAX_FRAG_THRESHOLD)
-		frag_threshold = wifi_data.conf.tx.frag_threshold;
+		frag_threshold = wifi_data->conf.tx.frag_threshold;
 
 	wl1271_debug(DEBUG_ACX, "acx frag threshold: %d", frag_threshold);
 
@@ -895,8 +895,8 @@ int wl1271_acx_tx_config_options(void)
 		goto out;
 	}
 
-	acx->tx_compl_timeout = cpu_to_le16(wifi_data.conf.tx.tx_compl_timeout);
-	acx->tx_compl_threshold = cpu_to_le16(wifi_data.conf.tx.tx_compl_threshold);
+	acx->tx_compl_timeout = cpu_to_le16(wifi_data->conf.tx.tx_compl_timeout);
+	acx->tx_compl_threshold = cpu_to_le16(wifi_data->conf.tx.tx_compl_threshold);
 	ret = VV_cmd_configure(ACX_TX_CONFIG_OPT, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of tx options failed: %d", ret);
@@ -923,7 +923,7 @@ int wl12xx_acx_mem_cfg(void)
 		goto out;
 	}
 
-	mem = &wifi_data.conf.mem;
+	mem = &wifi_data->conf.mem;
 
 	/* memory config */
 	mem_conf->num_stations = mem->num_stations;
@@ -935,7 +935,7 @@ int wl12xx_acx_mem_cfg(void)
 	mem_conf->tx_free_req = mem->min_req_tx_blocks;
 	mem_conf->rx_free_req = mem->min_req_rx_blocks;
 	mem_conf->tx_min = mem->tx_min;
-	mem_conf->fwlog_blocks = wifi_data.conf.fwlog.mem_blocks;
+	mem_conf->fwlog_blocks = wifi_data->conf.fwlog.mem_blocks;
 
 	ret = VV_cmd_configure(ACX_MEM_CFG, mem_conf,
 				   sizeof(*mem_conf));
@@ -954,26 +954,26 @@ int wl1271_acx_init_mem_config(void)
 {
 	int ret;
 
-	wifi_data.target_mem_map = kzalloc(sizeof(struct wl1271_acx_mem_map),
+	wifi_data->target_mem_map = kzalloc(sizeof(struct wl1271_acx_mem_map),
 				     GFP_KERNEL);
-	if (!wifi_data.target_mem_map) {
+	if (!wifi_data->target_mem_map) {
 		wl1271_error("couldn't allocate target memory map");
 		return -ENOMEM;
 	}
 
 	/* we now ask for the firmware built memory map */
-	ret = wl1271_acx_mem_map((void *)wifi_data.target_mem_map,
+	ret = wl1271_acx_mem_map((void *)wifi_data->target_mem_map,
 				 sizeof(struct wl1271_acx_mem_map));
 	if (ret < 0) {
 		wl1271_error("couldn't retrieve firmware memory map");
-		kfree(wifi_data.target_mem_map);
-		wifi_data.target_mem_map = NULL;
+		kfree(wifi_data->target_mem_map);
+		wifi_data->target_mem_map = NULL;
 		return ret;
 	}
 
 	/* initialize TX block book keeping */
 	VV_tx_blocks_available =
-		le32_to_cpu(wifi_data.target_mem_map->num_tx_mem_blocks);
+		le32_to_cpu(wifi_data->target_mem_map->num_tx_mem_blocks);
 	// wl1271_debug(DEBUG_TX, "available tx blocks: %d",
 	// 	     VV_tx_blocks_available);
 	printk("[INIT] available tx blocks: %d", VV_tx_blocks_available);
@@ -995,10 +995,10 @@ int wl1271_acx_init_rx_interrupt(void)
 		goto out;
 	}
 
-	rx_conf->threshold = cpu_to_le16(wifi_data.conf.rx.irq_pkt_threshold);
-	rx_conf->timeout = cpu_to_le16(wifi_data.conf.rx.irq_timeout);
-	rx_conf->mblk_threshold = cpu_to_le16(wifi_data.conf.rx.irq_blk_threshold);
-	rx_conf->queue_type = wifi_data.conf.rx.queue_type;
+	rx_conf->threshold = cpu_to_le16(wifi_data->conf.rx.irq_pkt_threshold);
+	rx_conf->timeout = cpu_to_le16(wifi_data->conf.rx.irq_timeout);
+	rx_conf->mblk_threshold = cpu_to_le16(wifi_data->conf.rx.irq_blk_threshold);
+	rx_conf->queue_type = wifi_data->conf.rx.queue_type;
 
 	ret = VV_cmd_configure(ACX_RX_CONFIG_OPT, rx_conf,
 				   sizeof(*rx_conf));
@@ -1020,7 +1020,7 @@ int wl1271_acx_bet_enable(struct wl12xx_vif *wlvif,
 
 	wl1271_debug(DEBUG_ACX, "acx bet enable");
 
-	if (enable && wifi_data.conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
+	if (enable && wifi_data->conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
 		goto out;
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
@@ -1031,7 +1031,7 @@ int wl1271_acx_bet_enable(struct wl12xx_vif *wlvif,
 
 	acx->role_id = wlvif->role_id;
 	acx->enable = enable ? CONF_BET_MODE_ENABLE : CONF_BET_MODE_DISABLE;
-	acx->max_consecutive = wifi_data.conf.conn.bet_max_consecutive;
+	acx->max_consecutive = wifi_data->conf.conn.bet_max_consecutive;
 
 	ret = VV_cmd_configure(ACX_BET_ENABLE, acx, sizeof(*acx));
 	if (ret < 0) {
@@ -1080,7 +1080,7 @@ out:
 int wl1271_acx_pm_config(void)
 {
 	struct wl1271_acx_pm_config *acx = NULL;
-	struct  conf_pm_config_settings *c = &wifi_data.conf.pm_config;
+	struct  conf_pm_config_settings *c = &wifi_data->conf.pm_config;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_ACX, "acx pm config");
@@ -1149,7 +1149,7 @@ int wl1271_acx_keep_alive_config(struct wl12xx_vif *wlvif,
 	}
 
 	acx->role_id = wlvif->role_id;
-	acx->period = cpu_to_le32(wifi_data.conf.conn.keep_alive_interval);
+	acx->period = cpu_to_le32(wifi_data->conf.conn.keep_alive_interval);
 	acx->index = index;
 	acx->tpl_validation = tpl_valid;
 	acx->trigger = ACX_KEEP_ALIVE_NO_TX;
@@ -1183,7 +1183,7 @@ int wl1271_acx_rssi_snr_trigger(struct wl12xx_vif *wlvif,
 	wlvif->last_rssi_event = -1;
 
 	acx->role_id = wlvif->role_id;
-	acx->pacing = cpu_to_le16(wifi_data.conf.roam_trigger.trigger_pacing);
+	acx->pacing = cpu_to_le16(wifi_data->conf.roam_trigger.trigger_pacing);
 	acx->metric = WL1271_ACX_TRIG_METRIC_RSSI_BEACON;
 	acx->type = WL1271_ACX_TRIG_TYPE_EDGE;
 	if (enable)
@@ -1211,7 +1211,7 @@ int wl1271_acx_rssi_snr_avg_weights(
 				    struct wl12xx_vif *wlvif)
 {
 	struct wl1271_acx_rssi_snr_avg_weights *acx = NULL;
-	struct conf_roam_trigger_settings *c = &wifi_data.conf.roam_trigger;
+	struct conf_roam_trigger_settings *c = &wifi_data->conf.roam_trigger;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_ACX, "acx rssi snr avg weights");
@@ -1292,9 +1292,9 @@ int wl12xx_acx_set_ba_initiator_policy(
 
 	/* set for the current role */
 	acx->role_id = wlvif->role_id;
-	acx->tid_bitmap = wifi_data.conf.ht.tx_ba_tid_bitmap;
-	acx->win_size = wifi_data.conf.ht.tx_ba_win_size;
-	acx->inactivity_timeout = wifi_data.conf.ht.inactivity_timeout;
+	acx->tid_bitmap = wifi_data->conf.ht.tx_ba_tid_bitmap;
+	acx->win_size = wifi_data->conf.ht.tx_ba_win_size;
+	acx->inactivity_timeout = wifi_data->conf.ht.inactivity_timeout;
 
 	ret = VV_cmd_configure(
 				   ACX_BA_SESSION_INIT_POLICY,
@@ -1325,7 +1325,7 @@ int wl1271_acx_ps_rx_streaming(struct wl12xx_vif *wlvif,
 		goto out;
 	}
 
-	conf_queues = wifi_data.conf.rx_streaming.queues;
+	conf_queues = wifi_data->conf.rx_streaming.queues;
 	if (enable)
 		enable_queues = conf_queues;
 	else
@@ -1343,8 +1343,8 @@ int wl1271_acx_ps_rx_streaming(struct wl12xx_vif *wlvif,
 		rx_streaming->role_id = wlvif->role_id;
 		rx_streaming->tid = i;
 		rx_streaming->enable = enable_queues & BIT(i);
-		rx_streaming->period = wifi_data.conf.rx_streaming.interval;
-		rx_streaming->timeout = wifi_data.conf.rx_streaming.interval;
+		rx_streaming->period = wifi_data->conf.rx_streaming.interval;
+		rx_streaming->timeout = wifi_data->conf.rx_streaming.interval;
 
 		ret = VV_cmd_configure(ACX_PS_RX_STREAMING,
 					   rx_streaming,
@@ -1372,21 +1372,21 @@ int wl1271_acx_fm_coex(void)
 		goto out;
 	}
 
-	acx->enable = wifi_data.conf.fm_coex.enable;
-	acx->swallow_period = wifi_data.conf.fm_coex.swallow_period;
-	acx->n_divider_fref_set_1 = wifi_data.conf.fm_coex.n_divider_fref_set_1;
-	acx->n_divider_fref_set_2 = wifi_data.conf.fm_coex.n_divider_fref_set_2;
+	acx->enable = wifi_data->conf.fm_coex.enable;
+	acx->swallow_period = wifi_data->conf.fm_coex.swallow_period;
+	acx->n_divider_fref_set_1 = wifi_data->conf.fm_coex.n_divider_fref_set_1;
+	acx->n_divider_fref_set_2 = wifi_data->conf.fm_coex.n_divider_fref_set_2;
 	acx->m_divider_fref_set_1 =
-		cpu_to_le16(wifi_data.conf.fm_coex.m_divider_fref_set_1);
+		cpu_to_le16(wifi_data->conf.fm_coex.m_divider_fref_set_1);
 	acx->m_divider_fref_set_2 =
-		cpu_to_le16(wifi_data.conf.fm_coex.m_divider_fref_set_2);
+		cpu_to_le16(wifi_data->conf.fm_coex.m_divider_fref_set_2);
 	acx->coex_pll_stabilization_time =
-		cpu_to_le32(wifi_data.conf.fm_coex.coex_pll_stabilization_time);
+		cpu_to_le32(wifi_data->conf.fm_coex.coex_pll_stabilization_time);
 	acx->ldo_stabilization_time =
-		cpu_to_le16(wifi_data.conf.fm_coex.ldo_stabilization_time);
+		cpu_to_le16(wifi_data->conf.fm_coex.ldo_stabilization_time);
 	acx->fm_disturbed_band_margin =
-		wifi_data.conf.fm_coex.fm_disturbed_band_margin;
-	acx->swallow_clk_diff = wifi_data.conf.fm_coex.swallow_clk_diff;
+		wifi_data->conf.fm_coex.fm_disturbed_band_margin;
+	acx->swallow_clk_diff = wifi_data->conf.fm_coex.swallow_clk_diff;
 
 	ret = VV_cmd_configure(ACX_FM_COEX_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
@@ -1402,7 +1402,7 @@ out:
 int wl12xx_acx_set_rate_mgmt_params(void)
 {
 	struct wl12xx_acx_set_rate_mgmt_params *acx = NULL;
-	struct conf_rate_policy_settings *conf = &wifi_data.conf.rate;
+	struct conf_rate_policy_settings *conf = &wifi_data->conf.rate;
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx set rate mgmt params");
@@ -1444,7 +1444,7 @@ out:
 int wl12xx_acx_config_hangover(void)
 {
 	struct wl12xx_acx_config_hangover *acx;
-	struct conf_hangover_settings *conf = &wifi_data.conf.hangover;
+	struct conf_hangover_settings *conf = &wifi_data->conf.hangover;
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx config hangover");

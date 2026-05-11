@@ -30,8 +30,8 @@ int wl1271_event_unmask(void)
 {
 	int ret;
 
-	wl1271_debug(DEBUG_EVENT, "unmasking event_mask 0x%x", wifi_data.event_mask);
-	ret = wl1271_acx_event_mbox_mask(~(wifi_data.event_mask));
+	wl1271_debug(DEBUG_EVENT, "unmasking event_mask 0x%x", wifi_data->event_mask);
+	ret = wl1271_acx_event_mbox_mask(~(wifi_data->event_mask));
 	if (ret < 0)
 		return ret;
 
@@ -58,18 +58,18 @@ enum wlcore_vendor_attributes {
 
 static void VV_scan_completed(void)
 {
-	//wifi_data.scan.failed = false;
+	//wifi_data->scan.failed = false;
 	printk("VV_scan_completed\n");
 	VV_scan_failed = false;
 	cancel_delayed_work(&VV_work.scan_complete_work);
-	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.scan_complete_work,
+	ieee80211_queue_delayed_work(wifi_data->hw, &VV_work.scan_complete_work,
 				     msecs_to_jiffies(0));
 }
 
 #include <linux/bitops.h>
 static int VV_process_mailbox_events(void)
 {
-	struct wl18xx_event_mailbox *mbox = wifi_data.mbox;
+	struct wl18xx_event_mailbox *mbox = wifi_data->mbox;
 	u32 vector;
 
 	vector = le32_to_cpu(mbox->events_vector);
@@ -93,7 +93,7 @@ static int VV_process_mailbox_events(void)
 #define WL18XX_INTR_TRIG_EVENT_ACK BIT(29)
 static int VV_ack_event(void)
 {
-	return VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	return VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
 int wl1271_event_handle(u8 mbox_num)
@@ -106,7 +106,7 @@ int wl1271_event_handle(u8 mbox_num)
 		return -EINVAL;
 
 	/* first we read the mbox descriptor */
-	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[mbox_num]), (u32*)wifi_data.mbox, sizeof(struct wl18xx_event_mailbox), false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data->mbox_ptr[mbox_num]), (u32*)wifi_data->mbox, sizeof(struct wl18xx_event_mailbox), false);
 	if (ret < 0)
 		return ret;
 
