@@ -16,7 +16,7 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		       enum wl1271_cmd_ps_mode mode)
 {
 	int ret;
-	u16 timeout = wl->conf.conn.dynamic_ps_timeout;
+	u16 timeout = wifi_data.conf.conn.dynamic_ps_timeout;
 
 	switch (mode) {
 	case STATION_AUTO_PS_MODE:
@@ -24,9 +24,9 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		wl1271_debug(DEBUG_PSM, "entering psm (mode=%d,timeout=%u)",
 			     mode, timeout);
 
-		ret = wl1271_acx_wake_up_conditions(wl, wlvif,
-					    wl->conf.conn.wake_up_event,
-					    wl->conf.conn.listen_interval);
+		ret = wl1271_acx_wake_up_conditions(wlvif,
+					    wifi_data.conf.conn.wake_up_event,
+					    wifi_data.conf.conn.listen_interval);
 		if (ret < 0) {
 			wl1271_error("couldn't set wake up conditions");
 			return ret;
@@ -44,7 +44,7 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		 */
 		if ((wlvif->band == NL80211_BAND_2GHZ) &&
 		    (wlvif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
-			ret = wl1271_acx_bet_enable(wl, wlvif, true);
+			ret = wl1271_acx_bet_enable(wlvif, true);
 			if (ret < 0)
 				return ret;
 		}
@@ -55,7 +55,7 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		/* disable beacon early termination */
 		if ((wlvif->band == NL80211_BAND_2GHZ) &&
 		    (wlvif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
-			ret = wl1271_acx_bet_enable(wl, wlvif, false);
+			ret = wl1271_acx_bet_enable(wlvif, false);
 			if (ret < 0)
 				return ret;
 		}

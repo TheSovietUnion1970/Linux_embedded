@@ -785,19 +785,6 @@ struct wl1271_acx_ps_rx_streaming {
 	u8 padding[3];
 } __packed;
 
-struct wl1271_acx_ap_max_tx_retry {
-	struct acx_header header;
-
-	u8 role_id;
-	u8 padding_1;
-
-	/*
-	 * the number of frames transmission failures before
-	 * issuing the aging event.
-	 */
-	__le16 max_tx_retry;
-} __packed;
-
 struct wl1271_acx_config_ps {
 	struct acx_header header;
 
@@ -1026,96 +1013,75 @@ enum {
 };
 
 
-int wl1271_acx_wake_up_conditions(struct wl1271 *wl,
+int wl1271_acx_wake_up_conditions(
 				  struct wl12xx_vif *wlvif,
 				  u8 wake_up_event, u8 listen_interval);
-int wl1271_acx_sleep_auth(struct wl1271 *wl, u8 sleep_auth);
-int wl1271_acx_tx_power(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_sleep_auth(u8 sleep_auth);
+int wl1271_acx_tx_power(struct wl12xx_vif *wlvif,
 			int power);
-int wl1271_acx_feature_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl1271_acx_mem_map(struct wl1271 *wl,
+int wl1271_acx_feature_cfg(struct wl12xx_vif *wlvif);
+int wl1271_acx_mem_map(
 		       struct acx_header *mem_map, size_t len);
-int wl1271_acx_rx_msdu_life_time(struct wl1271 *wl);
-int wl1271_acx_slot(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_rx_msdu_life_time(void);
+int wl1271_acx_slot(struct wl12xx_vif *wlvif,
 		    enum acx_slot_type slot_time);
-int wl1271_acx_group_address_tbl(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_group_address_tbl(struct wl12xx_vif *wlvif,
 				 bool enable, void *mc_list, u32 mc_list_len);
-int wl1271_acx_service_period_timeout(struct wl1271 *wl,
+int wl1271_acx_service_period_timeout(
 				      struct wl12xx_vif *wlvif);
-int wl1271_acx_rts_threshold(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_rts_threshold(struct wl12xx_vif *wlvif,
 			     u32 rts_threshold);
-int wl1271_acx_dco_itrim_params(struct wl1271 *wl);
-int wl1271_acx_beacon_filter_opt(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_dco_itrim_params(void);
+int wl1271_acx_beacon_filter_opt(struct wl12xx_vif *wlvif,
 				 bool enable_filter);
-int wl1271_acx_beacon_filter_table(struct wl1271 *wl,
+int wl1271_acx_beacon_filter_table(
 				   struct wl12xx_vif *wlvif);
-int wl1271_acx_conn_monit_params(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_conn_monit_params(struct wl12xx_vif *wlvif,
 				 bool enable);
-int wl1271_acx_sg_enable(struct wl1271 *wl, bool enable);
-int wl12xx_acx_sg_cfg(struct wl1271 *wl);
-int wl1271_acx_cca_threshold(struct wl1271 *wl);
-int wl1271_acx_bcn_dtim_options(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl1271_acx_aid(struct wl1271 *wl, struct wl12xx_vif *wlvif, u16 aid);
-int wl1271_acx_event_mbox_mask(struct wl1271 *wl, u32 event_mask);
-int wl1271_acx_set_preamble(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_sg_enable(bool enable);
+int wl12xx_acx_sg_cfg(void);
+int wl1271_acx_cca_threshold(void);
+int wl1271_acx_bcn_dtim_options(struct wl12xx_vif *wlvif);
+int wl1271_acx_aid(struct wl12xx_vif *wlvif, u16 aid);
+int wl1271_acx_event_mbox_mask(u32 event_mask);
+int wl1271_acx_set_preamble(struct wl12xx_vif *wlvif,
 			    enum acx_preamble_type preamble);
-int wl1271_acx_cts_protect(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_cts_protect(struct wl12xx_vif *wlvif,
 			   enum acx_ctsprotect_type ctsprotect);
-int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl1271_acx_ap_rate_policy(struct wl1271 *wl, struct conf_tx_rate_class *c,
-		      u8 idx);
-int wl1271_acx_ac_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_sta_rate_policies(struct wl12xx_vif *wlvif);
+int wl1271_acx_ac_cfg(struct wl12xx_vif *wlvif,
 		      u8 ac, u8 cw_min, u16 cw_max, u8 aifsn, u16 txop);
-int wl1271_acx_tid_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_tid_cfg(struct wl12xx_vif *wlvif,
 		       u8 queue_id, u8 channel_type,
 		       u8 tsid, u8 ps_scheme, u8 ack_policy,
 		       u32 apsd_conf0, u32 apsd_conf1);
-int wl1271_acx_frag_threshold(struct wl1271 *wl, u32 frag_threshold);
-int wl1271_acx_tx_config_options(struct wl1271 *wl);
-int wl12xx_acx_mem_cfg(struct wl1271 *wl);
-int wl1271_acx_init_mem_config(struct wl1271 *wl);
-int wl1271_acx_init_rx_interrupt(struct wl1271 *wl);
-int wl1271_acx_smart_reflex(struct wl1271 *wl);
-int wl1271_acx_bet_enable(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_frag_threshold(u32 frag_threshold);
+int wl1271_acx_tx_config_options(void);
+int wl12xx_acx_mem_cfg(void);
+int wl1271_acx_init_mem_config(void);
+int wl1271_acx_init_rx_interrupt(void);
+int wl1271_acx_bet_enable(struct wl12xx_vif *wlvif,
 			  bool enable);
-int wl1271_acx_arp_ip_filter(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_arp_ip_filter(struct wl12xx_vif *wlvif,
 			     u8 enable, __be32 address);
-int wl1271_acx_pm_config(struct wl1271 *wl);
-int wl1271_acx_keep_alive_mode(struct wl1271 *wl, struct wl12xx_vif *vif,
+int wl1271_acx_pm_config(void);
+int wl1271_acx_keep_alive_mode(struct wl12xx_vif *vif,
 			       bool enable);
-int wl1271_acx_keep_alive_config(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_keep_alive_config(struct wl12xx_vif *wlvif,
 				 u8 index, u8 tpl_valid);
-int wl1271_acx_rssi_snr_trigger(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_rssi_snr_trigger(struct wl12xx_vif *wlvif,
 				bool enable, s16 thold, u8 hyst);
-int wl1271_acx_rssi_snr_avg_weights(struct wl1271 *wl,
+int wl1271_acx_rssi_snr_avg_weights(
 				    struct wl12xx_vif *wlvif);
-int wl1271_acx_set_ht_capabilities(struct wl1271 *wl,
-				    struct ieee80211_sta_ht_cap *ht_cap,
-				    bool allow_ht_operation, u8 hlid);
-int wl1271_acx_set_ht_information(struct wl1271 *wl,
+int wl1271_acx_set_ht_information(
 				   struct wl12xx_vif *wlvif,
 				   u16 ht_operation_mode);
-int wl12xx_acx_set_ba_initiator_policy(struct wl1271 *wl,
+int wl12xx_acx_set_ba_initiator_policy(
 				       struct wl12xx_vif *wlvif);
-// int wl12xx_acx_set_ba_receiver_session(struct wl1271 *wl, u8 tid_index,
-// 				       u16 ssn, bool enable, u8 peer_hlid,
-// 				       u8 win_size);
-int wl12xx_acx_tsf_info(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			u64 *mactime);
-int wl1271_acx_ps_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_ps_rx_streaming(struct wl12xx_vif *wlvif,
 			       bool enable);
-int wl1271_acx_ap_max_tx_retry(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl12xx_acx_config_ps(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl1271_acx_set_inconnection_sta(struct wl1271 *wl,
-				    struct wl12xx_vif *wlvif, u8 *addr);
-int wl1271_acx_fm_coex(struct wl1271 *wl);
-int wl12xx_acx_set_rate_mgmt_params(struct wl1271 *wl);
-int wl12xx_acx_config_hangover(struct wl1271 *wl);
-int wlcore_acx_average_rssi(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			    s8 *avg_rssi);
+int wl1271_acx_fm_coex(void);
+int wl12xx_acx_set_rate_mgmt_params(void);
+int wl12xx_acx_config_hangover(void);
 
-int wl1271_acx_default_rx_filter_enable(struct wl1271 *wl, bool enable,
-					enum rx_filter_action action);
-int wl1271_acx_set_rx_filter(struct wl1271 *wl, u8 index, bool enable,
-			     struct wl12xx_rx_filter *filter);
 #endif /* __WL1271_ACX_H__ */

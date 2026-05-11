@@ -373,17 +373,17 @@ int VV_get_mac(struct wl1271 *wl)
 		goto out;
 
 	/* these are the two parts of the BD_ADDR */
-	wl->fuse_oui_addr = ((mac2 & 0xffff) << 8) +
+	wifi_data.fuse_oui_addr = ((mac2 & 0xffff) << 8) +
 		((mac1 & 0xff000000) >> 24);
-	wl->fuse_nic_addr = (mac1 & 0xffffff);
+	wifi_data.fuse_nic_addr = (mac1 & 0xffffff);
 
-	if (!wl->fuse_oui_addr && !wl->fuse_nic_addr) {
+	if (!wifi_data.fuse_oui_addr && !wifi_data.fuse_nic_addr) {
 		u8 mac[ETH_ALEN];
 
 		eth_random_addr(mac);
 
-		wl->fuse_oui_addr = (mac[0] << 16) + (mac[1] << 8) + mac[2];
-		wl->fuse_nic_addr = (mac[3] << 16) + (mac[4] << 8) + mac[5];
+		wifi_data.fuse_oui_addr = (mac[0] << 16) + (mac[1] << 8) + mac[2];
+		wifi_data.fuse_nic_addr = (mac[3] << 16) + (mac[4] << 8) + mac[5];
 		//printk("MAC address from fuse not available, using random locally administered addresses.");
 	}
 
@@ -490,6 +490,26 @@ int VV_wait_for_event(enum wlcore_wait_event event, bool *timeout)
 	return wlcore_cmd_wait_for_event_or_timeout(local_event, timeout);
 }
 
+static inline void
+wlcore_set_min_fw_ver(struct wl1271 *wl, unsigned int chip,
+		      unsigned int iftype_sr, unsigned int major_sr,
+		      unsigned int subtype_sr, unsigned int minor_sr,
+		      unsigned int iftype_mr, unsigned int major_mr,
+		      unsigned int subtype_mr, unsigned int minor_mr)
+{
+	wifi_data.min_sr_fw_ver[FW_VER_CHIP] = chip;
+	wifi_data.min_sr_fw_ver[FW_VER_IF_TYPE] = iftype_sr;
+	wifi_data.min_sr_fw_ver[FW_VER_MAJOR] = major_sr;
+	wifi_data.min_sr_fw_ver[FW_VER_SUBTYPE] = subtype_sr;
+	wifi_data.min_sr_fw_ver[FW_VER_MINOR] = minor_sr;
+
+	wifi_data.min_mr_fw_ver[FW_VER_CHIP] = chip;
+	wifi_data.min_mr_fw_ver[FW_VER_IF_TYPE] = iftype_mr;
+	wifi_data.min_mr_fw_ver[FW_VER_MAJOR] = major_mr;
+	wifi_data.min_mr_fw_ver[FW_VER_SUBTYPE] = subtype_mr;
+	wifi_data.min_mr_fw_ver[FW_VER_MINOR] = minor_mr;
+}
+
 int VV_identify_chip(struct wl1271 *wl)
 {
 	int ret = 0;
@@ -498,10 +518,10 @@ int VV_identify_chip(struct wl1271 *wl)
 	case CHIP_ID_185x_PG20:
 		// wl1271_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
 		// 		 VV_chip->id);
-		wl->sr_fw_name = WL18XX_FW_NAME;
+		wifi_data.sr_fw_name = WL18XX_FW_NAME;
 		/* wl18xx uses the same firmware for PLT */
-		//wl->plt_fw_name = WL18XX_FW_NAME;
-		wl->quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
+		//wifi_data.plt_fw_name = WL18XX_FW_NAME;
+		wifi_data.quirks |= WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN |
 			      WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN |
 			      WLCORE_QUIRK_NO_SCHED_SCAN_WHILE_CONN |
 			      WLCORE_QUIRK_TX_PAD_LAST_FRAME |
@@ -526,15 +546,15 @@ int VV_identify_chip(struct wl1271 *wl)
 		goto out;
 	}
 
-	//wl->fw_mem_block_size = 272;
-	//wl->fwlog_end = 0x40000000;
+	//wifi_data.fw_mem_block_size = 272;
+	//wifi_data.fwlog_end = 0x40000000;
 
-	// wl->scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
-	// wl->scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
-	//wl->sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
-	//wl->sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
-	//wl->max_channels_5 = WL18XX_MAX_CHANNELS_5GHZ;
-	//wl->ba_rx_session_count_max = WL18XX_RX_BA_MAX_SESSIONS;
+	// wifi_data.scan_templ_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
+	// wifi_data.scan_templ_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
+	//wifi_data.sched_scan_templ_id_2_4 = CMD_TEMPL_PROBE_REQ_2_4_PERIODIC;
+	//wifi_data.sched_scan_templ_id_5 = CMD_TEMPL_PROBE_REQ_5_PERIODIC;
+	//wifi_data.max_channels_5 = WL18XX_MAX_CHANNELS_5GHZ;
+	//wifi_data.ba_rx_session_count_max = WL18XX_RX_BA_MAX_SESSIONS;
 out:
 	return ret;
 }

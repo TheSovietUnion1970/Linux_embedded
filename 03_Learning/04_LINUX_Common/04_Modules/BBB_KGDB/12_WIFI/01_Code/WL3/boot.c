@@ -21,27 +21,25 @@
 #include "common.h"
 #include "wl18.h"
 
-static int wl1271_boot_set_ecpu_ctrl(struct wl1271 *wl, u32 flag)
+static int wl1271_boot_set_ecpu_ctrl(u32 flag)
 {
 	u32 cpu_ctrl;
 	int ret;
 
 	/* 10.5.0 run the firmware (I) */
-	//ret = wlcore_read_reg(wl, REG_ECPU_CONTROL, &cpu_ctrl);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* 10.5.1 run the firmware (II) */
 	cpu_ctrl |= flag;
-	//ret = wlcore_write_reg(wl, REG_ECPU_CONTROL, cpu_ctrl);
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
 
 out:
 	return ret;
 }
 
-static int wlcore_boot_parse_fw_ver(struct wl1271 *wl,
+static int wlcore_boot_parse_fw_ver(
 				    struct wl1271_static_data *static_data)
 {
 	int ret;
@@ -71,11 +69,11 @@ out:
 	return ret;
 }
 
-static int wlcore_validate_fw_ver(struct wl1271 *wl)
+static int wlcore_validate_fw_ver(void)
 {
 	unsigned int *fw_ver = VV_chip->fw_ver;
-	unsigned int *min_ver = (wl->fw_type == WL12XX_FW_TYPE_MULTI) ?
-		wl->min_mr_fw_ver : wl->min_sr_fw_ver;
+	unsigned int *min_ver = (wifi_data.fw_type == WL12XX_FW_TYPE_MULTI) ?
+		wifi_data.min_mr_fw_ver : wifi_data.min_sr_fw_ver;
 	char min_fw_str[32] = "";
 	int off = 0;
 	int i;
@@ -131,10 +129,10 @@ fail:
 	return -EINVAL;
 }
 
-static int VV_boot_static_data(struct wl1271 *wl)
+static int VV_boot_static_data(void)
 {
 	struct wl1271_static_data *static_data;
-	size_t len = sizeof(*static_data) + wl->static_data_priv_len;
+	size_t len = sizeof(*static_data) + wifi_data.static_data_priv_len;
 	int ret;
 
 	static_data = kmalloc(len, GFP_KERNEL);
@@ -147,15 +145,15 @@ static int VV_boot_static_data(struct wl1271 *wl)
 	if (ret < 0)
 		goto out_free;
 
-	ret = wlcore_boot_parse_fw_ver(wl, static_data);
+	ret = wlcore_boot_parse_fw_ver(static_data);
 	if (ret < 0)
 		goto out_free;
 
-	ret = wlcore_validate_fw_ver(wl);
+	ret = wlcore_validate_fw_ver();
 	if (ret < 0)
 		goto out_free;
 
-	ret = VV_handle_static_data(wl, static_data);
+	ret = VV_handle_static_data(static_data);
 	if (ret < 0)
 		goto out_free;
 
@@ -192,7 +190,7 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 		return -ENOMEM;
 	}
 
-	// memcpy(&partition, &wl->ptable[PART_DOWN], sizeof(partition));
+	// memcpy(&partition, &wifi_data.ptable[PART_DOWN], sizeof(partition));
 	memcpy(&partition, &wifi_data.ptable[PART_DOWN], sizeof(partition));
 	partition.mem.start = dest;
 	ret = VV_set_partition_core(&partition);
@@ -250,7 +248,7 @@ int wlcore_boot_upload_firmware(struct wl1271 *wl)
 	int ret = 0;
 	u8 *fw;
 
-	fw = wl->fw;
+	fw = wifi_data.fw;
 	chunks = be32_to_cpup((__be32 *) fw);
 	fw += sizeof(u32);
 
@@ -279,7 +277,7 @@ int wlcore_boot_upload_firmware(struct wl1271 *wl)
 EXPORT_SYMBOL_GPL(wlcore_boot_upload_firmware);
 
 #include "wl18xx.h"
-int wlcore_boot_run_firmware(struct wl1271 *wl)
+int wlcore_boot_run_firmware(void)
 {
 	int loop, ret;
 	u32 chip_id, intr;
@@ -289,12 +287,11 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_boot_set_ecpu_ctrl(wl, ECPU_CONTROL_HALT);
+	ret = wl1271_boot_set_ecpu_ctrl(ECPU_CONTROL_HALT);
 	if (ret < 0)
 		return ret;
 
-	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &chip_id);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
 	if (ret < 0)
 		return ret;
 
@@ -309,8 +306,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	loop = 0;
 	while (loop++ < INIT_LOOP) {
 		udelay(INIT_LOOP_DELAY);
-		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
+		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
 		if (ret < 0)
 			return ret;
 
@@ -323,7 +319,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 		else if (intr & WL1271_ACX_INTR_INIT_COMPLETE) {
 			// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
 			// 		       WL1271_ACX_INTR_INIT_COMPLETE);
-			ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
+			ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
 			if (ret < 0)
 				return ret;
 			break;
@@ -337,30 +333,18 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	}
 
 	/* get hardware config command mail box */
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data.cmd_box_addr, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data.cmd_box_addr, 4, false);
 	if (ret < 0)
 		return ret;
 
 	wl1271_info("cmd_box_addr 0x%x", wifi_data.cmd_box_addr);
 
-	/* get hardware config event mail box */
-	//ret = wlcore_read_reg(wl, REG_EVENT_MAILBOX_PTR, &wl->mbox_ptr[0]);
-	// ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_EVENT_MAILBOX_PTR]), &wl->mbox_ptr[0], 4, false);
-	// if (ret < 0)
-	// 	return ret;
-	// wl->mbox_ptr[1] = wl->mbox_ptr[0] + wl->mbox_size;
-
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data.mbox_ptr[0], 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data.mbox_ptr[0], 4, false);
 	if (ret < 0)
 		return ret;
 	*(wifi_data.mbox_ptr[1]) = *(wifi_data.mbox_ptr[0]) + sizeof(struct wl18xx_event_mailbox);
 
-	// wl1271_debug(DEBUG_MAILBOX, "MBOX ptrs: 0x%x 0x%x",
-	// 	     wl->mbox_ptr[0], wl->mbox_ptr[1]);
-	//printk("Compare: 0x%x - 0x%x\n", wl->mbox_ptr[0], *wifi_data.mbox_ptr[0]);
-
-	// ret = wlcore_boot_static_data(wl);
-	ret = VV_boot_static_data(wl);
+	ret = VV_boot_static_data();
 	if (ret < 0) {
 		wl1271_error("error getting static data");
 		return ret;
@@ -372,7 +356,7 @@ int wlcore_boot_run_firmware(struct wl1271 *wl)
 	 */
 
 	/* unmask required mbox events  */
-	ret = wl1271_event_unmask(wl);
+	ret = wl1271_event_unmask();
 	if (ret < 0) {
 		wl1271_error("EVENT mask setting failed");
 		return ret;

@@ -30,7 +30,7 @@
 
 static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
 {
-	// if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
+	// if (wifi_data.quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
 	// 	return (rx_pkt_desc & ALIGNED_RX_BUF_SIZE_MASK) >>
 	// 	       ALIGNED_RX_BUF_SIZE_SHIFT;
 
@@ -42,7 +42,7 @@ static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
 
 static u32 wlcore_rx_get_align_buf_size(u32 pkt_len)
 {
-	// if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
+	// if (wifi_data.quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
 	// 	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
 
 	// return pkt_len;
@@ -82,7 +82,7 @@ static void wl1271_rx_status(
 	 * need to divide by two for now, but TI has been discussing about
 	 * changing it.  This needs to be rechecked.
 	 */
-	//wl->noise = desc->rssi - (desc->snr >> 1);
+	//wifi_data.noise = desc->rssi - (desc->snr >> 1);
 
 	status->freq = ieee80211_channel_to_frequency(desc->channel,
 						      status->band);
@@ -136,7 +136,7 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 	//  * In PLT mode we seem to get frames and mac80211 warns about them,
 	//  * workaround this by not retrieving them at all.
 	//  */
-	// if (unlikely(wl->plt))
+	// if (unlikely(wifi_data.plt))
 	// 	return -EINVAL;
 
 	pkt_data_len = VV_get_rx_packet_len(data, length);
@@ -211,7 +211,7 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 		     seq_num, *hlid);
 
 	skb_queue_tail(&VV_deferred_rx_queue, skb);
-	//queue_work(VV_work.freezable_wq, &wl->netstack_work);
+	//queue_work(VV_work.freezable_wq, &wifi_data.netstack_work);
 	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
 
 	return is_data;
@@ -246,7 +246,7 @@ int wlcore_rx(void)
 	if (hlid < WLCORE_MAX_LINKS)
 		VV_links[hlid].fw_rate_mbps =
 				VV_status_reg->tx_last_rate_mbps;
-	//printk("wl->quirks = 0x%x\n", wl->quirks);
+	//printk("wifi_data.quirks = 0x%x\n", wifi_data.quirks);
 
 	while (drv_rx_counter != fw_rx_counter) {
 		buf_size = 0;
@@ -315,7 +315,7 @@ int wlcore_rx(void)
 	 * Write the driver's packet counter to the FW. This is only required
 	 * for older hardware revisions
 	 */
-	// if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
+	// if (wifi_data.quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
 	// 	// ret = wlcore_write32(wl, WL12XX_REG_RX_DRIVER_COUNTER,
 	// 	// 		     VV_rx_counter);
 	// 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL12XX_REG_RX_DRIVER_COUNTER), VV_rx_counter, 4, false);
@@ -329,48 +329,3 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_PM
-int wl1271_rx_filter_enable(struct wl1271 *wl,
-			    int index, bool enable,
-			    struct wl12xx_rx_filter *filter)
-{
-	int ret;
-
-	if (!!test_bit(index, wl->rx_filter_enabled) == enable) {
-		wl1271_warning("Request to enable an already "
-			     "enabled rx filter %d", index);
-		return 0;
-	}
-
-	ret = wl1271_acx_set_rx_filter(wl, index, enable, filter);
-
-	if (ret) {
-		wl1271_error("Failed to %s rx data filter %d (err=%d)",
-			     enable ? "enable" : "disable", index, ret);
-		return ret;
-	}
-
-	if (enable)
-		__set_bit(index, wl->rx_filter_enabled);
-	else
-		__clear_bit(index, wl->rx_filter_enabled);
-
-	return 0;
-}
-
-int wl1271_rx_filter_clear_all(struct wl1271 *wl)
-{
-	int i, ret = 0;
-
-	for (i = 0; i < WL1271_MAX_RX_FILTERS; i++) {
-		if (!test_bit(i, wl->rx_filter_enabled))
-			continue;
-		ret = wl1271_rx_filter_enable(wl, i, 0, NULL);
-		if (ret)
-			goto out;
-	}
-
-out:
-	return ret;
-}
-#endif /* CONFIG_PM */

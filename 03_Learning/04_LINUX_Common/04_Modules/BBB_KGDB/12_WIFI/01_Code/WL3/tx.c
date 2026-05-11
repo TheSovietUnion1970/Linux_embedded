@@ -35,12 +35,12 @@ static int wl1271_alloc_tx_id(struct sk_buff *skb)
 {
 	int id;
 
-	// id = find_first_zero_bit(wl->tx_frames_map, WL18XX_NUM_TX_DESCRIPTORS);
+	// id = find_first_zero_bit(wifi_data.tx_frames_map, WL18XX_NUM_TX_DESCRIPTORS);
 	id = find_first_zero_bit(VV_map.tx_frames_map, WL18XX_NUM_TX_DESCRIPTORS);
 	if (id >= WL18XX_NUM_TX_DESCRIPTORS)
 		return -EBUSY;
 
-	// __set_bit(id, wl->tx_frames_map);
+	// __set_bit(id, wifi_data.tx_frames_map);
 	__set_bit(id, VV_map.tx_frames_map);
 	VV_skb_tx_frames[id] = skb;
 	VV_skb_tx_frames_cnt++;
@@ -49,7 +49,7 @@ static int wl1271_alloc_tx_id(struct sk_buff *skb)
 
 void wl1271_free_tx_id(int id)
 {
-	// if (__test_and_clear_bit(id, wl->tx_frames_map)) {
+	// if (__test_and_clear_bit(id, wifi_data.tx_frames_map)) {
 	if (__test_and_clear_bit(id, VV_map.tx_frames_map)) {
 		VV_skb_tx_frames[id] = NULL;
 		VV_skb_tx_frames_cnt--;
@@ -83,8 +83,8 @@ u8 wl12xx_tx_get_hlid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 unsigned int wlcore_calc_packet_alignment(struct wl1271 *wl,
 					  unsigned int packet_length)
 {
-	if ((wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) ||
-	    !(wl->quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN))
+	if ((wifi_data.quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) ||
+	    !(wifi_data.quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN))
 		{
 			//printk("wlcore_calc_packet_alignment - IF\n");
 			return ALIGN(packet_length, WL1271_TX_ALIGN_TO);
@@ -113,7 +113,7 @@ static int wl1271_tx_allocate(struct sk_buff *skb, u32 buf_offset, u8 hlid)
 		return -EAGAIN;
 
 	// spare_blocks = wlcore_hw_get_spare_blocks(wl, is_gem);
-	//struct wl18xx_priv *priv = wl->priv;
+	//struct wl18xx_priv *priv = wifi_data.priv;
 	/* If we have keys requiring extra spare, indulge them */
 	spare_blocks = WL18XX_TX_HW_BLOCK_SPARE;
 
@@ -215,7 +215,7 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 
 	u8 session_id = VV_session_ids[hlid];
 
-	// if ((wl->quirks & WLCORE_QUIRK_AP_ZERO_SESSION_ID) &&
+	// if ((wifi_data.quirks & WLCORE_QUIRK_AP_ZERO_SESSION_ID) &&
 	// 	(wlvif->bss_type == BSS_TYPE_AP_BSS))
 	// 	session_id = 0;
 
@@ -261,7 +261,7 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 	desc->length = cpu_to_le16(skb->len);
 
 	/* if only the last frame is to be padded, we unset this bit on Tx */
-	// if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME){
+	// if (wifi_data.quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME){
 	// 	printk("TX PADD - IF\n");
 	// 	desc->wl18xx_mem.ctrl = WL18XX_TX_CTRL_NOT_PADDED;
 	// }
@@ -270,7 +270,7 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 	// 	desc->wl18xx_mem.ctrl = 0;	
 	// }
 
-	// if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME)
+	// if (wifi_data.quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME)
 	desc->wl18xx_mem.ctrl = WL18XX_TX_CTRL_NOT_PADDED;
 }
 
@@ -331,7 +331,7 @@ u32 wl1271_tx_enabled_rates_get(struct wl1271 *wl, u32 rate_set,
 	u32 enabled_rates = 0;
 	int bit;
 
-	band = wl->hw->wiphy->bands[rate_band];
+	band = wifi_data.hw->wiphy->bands[rate_band];
 	for (bit = 0; bit < band->n_bitrates; bit++) {
 		if (rate_set & 0x1)
 			enabled_rates |= band->bitrates[bit].hw_value;
@@ -366,12 +366,12 @@ static int wlcore_select_ac(void)
 	 */
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		ac = wl1271_tx_get_queue(i);
-		//if (wl->tx_queue_count[ac] &&
+		//if (wifi_data.tx_queue_count[ac] &&
 		if (VV_tx_queue_count[ac] &&
-		    // wl->tx_allocated_pkts[ac] < min_pkts) {
+		    // wifi_data.tx_allocated_pkts[ac] < min_pkts) {
 			VV_tx_allocated_pkts[ac] < min_pkts) {
 			q = ac;
-			// min_pkts = wl->tx_allocated_pkts[q];
+			// min_pkts = wifi_data.tx_allocated_pkts[q];
 			min_pkts = VV_tx_allocated_pkts[q];
 		}
 	}
@@ -404,8 +404,8 @@ static bool VV_lnk_high_prio(u8 hlid)
 		return false; // false if using default hlink 0
 
 	/* the priority thresholds are taken from FW */
-	// if (test_bit(hlid, &wl->fw_fast_lnk_map) &&
-	//     !test_bit(hlid, &wl->ap_fw_ps_map))
+	// if (test_bit(hlid, &wifi_data.fw_fast_lnk_map) &&
+	//     !test_bit(hlid, &wifi_data.ap_fw_ps_map))
 	if (test_bit(hlid, (unsigned long*)&VV_status_reg->link_fast_bitmap))
 		thold = VV_status_reg->tx_fast_link_prio_threshold;
 	else
@@ -523,7 +523,7 @@ int wlcore_tx_work_locked(void)
 		// if (!wl12xx_is_dummy_packet(wl, skb))
 		// 	wlvif = wl12xx_vif_to_data(info->control.vif);
 		// else
-		// 	hlid = wl->system_hlid;
+		// 	hlid = wifi_data.system_hlid;
 		wlvif = wl12xx_vif_to_data(info->control.vif);
 		// [TOTO-wlvif]
 		if (wlvif != VV_vif_ptr[0]){
@@ -546,7 +546,7 @@ int wlcore_tx_work_locked(void)
 
 	if (buf_offset) {
 		// buf_offset = wlcore_hw_pre_pkt_send(wl, buf_offset, last_len);
-		//if (wl->quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) 
+		//if (wifi_data.quirks & WLCORE_QUIRK_TX_PAD_LAST_FRAME) 
 		struct wl1271_tx_hw_descr *last_desc;
 
 		/* get the last TX HW descriptor written to the aggr buf */
@@ -572,7 +572,7 @@ int wlcore_tx_work_locked(void)
 		 * Interrupt the firmware with the new packets. This is only
 		 * required for older hardware revisions
 		 */
-		// if (wl->quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
+		// if (wifi_data.quirks & WLCORE_QUIRK_END_OF_TRANSACTION) {
 		// 	printk("WLCORE_QUIRK_END_OF_TRANSACTION\n");
 		// 	// bus_ret = wlcore_write32(wl, WL12XX_HOST_WR_ACCESS,
 		// 	// 		     VV_tx_packets_count);
@@ -597,21 +597,21 @@ void wl1271_tx_work(struct work_struct *work)
 	int ret;
 
 	mutex_lock(&wifi_data.mutex);
-	ret = pm_runtime_get_sync(wifi_data.wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wifi_data.wl->dev);
+		pm_runtime_put_noidle(wifi_data.dev);
 		goto out;
 	}
 
 	ret = wlcore_tx_work_locked();
 	if (ret < 0) {
-		pm_runtime_put_noidle(wifi_data.wl->dev);
-		wl12xx_queue_recovery_work(wifi_data.wl);
+		pm_runtime_put_noidle(wifi_data.dev);
+		printk("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
 		goto out;
 	}
 
-	pm_runtime_mark_last_busy(wifi_data.wl->dev);
-	pm_runtime_put_autosuspend(wifi_data.wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.dev);
+	pm_runtime_put_autosuspend(wifi_data.dev);
 out:
 	mutex_unlock(&wifi_data.mutex);
 }
@@ -633,7 +633,7 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 				info = IEEE80211_SKB_CB(skb);
 				info->status.rates[0].idx = -1;
 				info->status.rates[0].count = 0;
-				ieee80211_tx_status_ni(wl->hw, skb);
+				ieee80211_tx_status_ni(wifi_data.hw, skb);
 			}
 
 			total[i]++;
@@ -642,7 +642,7 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 
 	spin_lock_irqsave(&wifi_data.lock, flags);
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		//wl->tx_queue_count[i] -= total[i];
+		//wifi_data.tx_queue_count[i] -= total[i];
 		VV_tx_queue_count[i] -= total[i];
 	}
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
@@ -685,7 +685,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 			wl1271_tx_reset_link_queues(wl, i);
 
 		for (i = 0; i < NUM_TX_QUEUES; i++)
-			//wl->tx_queue_count[i] = 0;
+			//wifi_data.tx_queue_count[i] = 0;
 			VV_tx_queue_count[i] = 0;
 	}
 
@@ -711,7 +711,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 			 */
 			info = IEEE80211_SKB_CB(skb);
 			skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
-			if ((wl->quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
+			if ((wifi_data.quirks & WLCORE_QUIRK_TKIP_HEADER_SPACE) &&
 			    info->control.hw_key &&
 			    info->control.hw_key->cipher ==
 			    WLAN_CIPHER_SUITE_TKIP) {
@@ -724,7 +724,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 			info->status.rates[0].idx = -1;
 			info->status.rates[0].count = 0;
 
-			ieee80211_tx_status_ni(wl->hw, skb);
+			ieee80211_tx_status_ni(wifi_data.hw, skb);
 		}
 	}
 }
@@ -740,7 +740,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 	timeout = start_time + usecs_to_jiffies(WL1271_TX_FLUSH_TIMEOUT);
 
 	/* only one flush should be in progress, for consistent queue state */
-	mutex_lock(&wl->flush_mutex);
+	mutex_lock(&wifi_data.flush_mutex);
 
 	mutex_lock(&wifi_data.mutex);
 	if (VV_skb_tx_frames_cnt == 0 && wl1271_tx_total_queue_count() == 0) {
@@ -782,7 +782,7 @@ out_wake:
 	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH);
 	mutex_unlock(&wifi_data.mutex);
 out:
-	mutex_unlock(&wl->flush_mutex);
+	mutex_unlock(&wifi_data.flush_mutex);
 }
 EXPORT_SYMBOL_GPL(wl1271_tx_flush);
 
@@ -799,16 +799,16 @@ void wlcore_stop_queue_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      u8 queue, enum wlcore_queue_stop_reason reason)
 {
 	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
-	bool stopped = !!wl->queue_stop_reasons[hwq]; // equal to 0 -> true
+	bool stopped = !!wifi_data.queue_stop_reasons[hwq]; // equal to 0 -> true
 
 	/* queue should not be stopped for this reason */
-	WARN_ON_ONCE(test_and_set_bit(reason, &wl->queue_stop_reasons[hwq]));
+	WARN_ON_ONCE(test_and_set_bit(reason, &wifi_data.queue_stop_reasons[hwq]));
 
 	//printk("stopped = %d - reason = %d\n", stopped, reason);
 	if (stopped)
 		return;
 
-	ieee80211_stop_queue(wl->hw, hwq);
+	ieee80211_stop_queue(wifi_data.hw, hwq);
 }
 
 void wlcore_stop_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
@@ -830,12 +830,12 @@ void wlcore_wake_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
 	spin_lock_irqsave(&wifi_data.lock, flags);
 
 	/* queue should not be clear for this reason */
-	WARN_ON_ONCE(!test_and_clear_bit(reason, &wl->queue_stop_reasons[hwq]));
+	WARN_ON_ONCE(!test_and_clear_bit(reason, &wifi_data.queue_stop_reasons[hwq]));
 
-	if (wl->queue_stop_reasons[hwq])
+	if (wifi_data.queue_stop_reasons[hwq])
 		goto out;
 
-	ieee80211_wake_queue(wl->hw, hwq);
+	ieee80211_wake_queue(wifi_data.hw, hwq);
 
 out:
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
@@ -852,12 +852,12 @@ void wlcore_stop_queues(struct wl1271 *wl,
 	/* mark all possible queues as stopped */
         for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
                 WARN_ON_ONCE(test_and_set_bit(reason,
-					      &wl->queue_stop_reasons[i]));
+					      &wifi_data.queue_stop_reasons[i]));
 
 	/* use the global version to make sure all vifs in mac80211 we don't
 	 * know are stopped.
 	 */
-	ieee80211_stop_queues(wl->hw);
+	ieee80211_stop_queues(wifi_data.hw);
 
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
@@ -873,12 +873,12 @@ void wlcore_wake_queues(struct wl1271 *wl,
 	/* mark all possible queues as awake */
         for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
 		WARN_ON_ONCE(!test_and_clear_bit(reason,
-						 &wl->queue_stop_reasons[i]));
+						 &wifi_data.queue_stop_reasons[i]));
 
 	/* use the global version to make sure all vifs in mac80211 we don't
 	 * know are woken up.
 	 */
-	ieee80211_wake_queues(wl->hw);
+	ieee80211_wake_queues(wifi_data.hw);
 
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
@@ -907,11 +907,11 @@ void VV_wake_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
 
 	spin_lock_irqsave(&wifi_data.lock, flags);
 
-	clear_bit(reason, &wl->queue_stop_reasons[hwq]);
+	clear_bit(reason, &wifi_data.queue_stop_reasons[hwq]);
 
 	// if 4 reason bits are all clear -> wake up
-	if (!wl->queue_stop_reasons[hwq])
-		ieee80211_wake_queue(wl->hw, hwq);
+	if (!wifi_data.queue_stop_reasons[hwq])
+		ieee80211_wake_queue(wifi_data.hw, hwq);
 
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
@@ -940,15 +940,15 @@ void VV_stop_queue(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 queue,
 	spin_lock_irqsave(&wifi_data.lock, flags);
 
 	// if all 4 bits are clear -> no need to stop
-	if (!wl->queue_stop_reasons[hwq]){
+	if (!wifi_data.queue_stop_reasons[hwq]){
 
 	}
 	// if there is one or more set -> call stop
 	else {
-		ieee80211_stop_queue(wl->hw, hwq);
+		ieee80211_stop_queue(wifi_data.hw, hwq);
 	}
 
-	set_bit(reason, &wl->queue_stop_reasons[hwq]);
+	set_bit(reason, &wifi_data.queue_stop_reasons[hwq]);
 
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
@@ -963,12 +963,12 @@ void VV_wake_all_queues(struct wl1271 *wl,
 
 	/* mark all possible queues as awake */
 	for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
-		clear_bit(reason, &wl->queue_stop_reasons[i]);
+		clear_bit(reason, &wifi_data.queue_stop_reasons[i]);
 
 	/* use the global version to make sure all vifs in mac80211 we don't
 	 * know are woken up.
 	 */
-	ieee80211_wake_queues(wl->hw);
+	ieee80211_wake_queues(wifi_data.hw);
 
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
@@ -983,12 +983,12 @@ void VV_stop_all_queues(struct wl1271 *wl,
 
 	/* mark all possible queues as stopped */
     for (i = 0; i < WLCORE_NUM_MAC_ADDRESSES * NUM_TX_QUEUES; i++)
-        set_bit(reason, &wl->queue_stop_reasons[i]);
+        set_bit(reason, &wifi_data.queue_stop_reasons[i]);
 
 	/* use the global version to make sure all vifs in mac80211 we don't
 	 * know are stopped.
 	 */
-	ieee80211_stop_queues(wl->hw);
+	ieee80211_stop_queues(wifi_data.hw);
 
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 }
@@ -1016,7 +1016,7 @@ bool VV_stopped_by_reason(struct wl1271 *wl, u8 queue,
 		hwq = HW_QUEUE_BASE + 3;
 	}
 
-	if (test_bit(reason, &wl->queue_stop_reasons[hwq])){
+	if (test_bit(reason, &wifi_data.queue_stop_reasons[hwq])){
 		spin_unlock_irqrestore(&wifi_data.lock, flags);
 		return true;
 	}
@@ -1047,7 +1047,7 @@ bool wlcore_is_queue_stopped_by_reason_locked(struct wl1271 *wl,
 	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
 
 	assert_spin_locked(&wifi_data.lock);
-	return test_bit(reason, &wl->queue_stop_reasons[hwq]);
+	return test_bit(reason, &wifi_data.queue_stop_reasons[hwq]);
 }
 
 bool wlcore_is_queue_stopped_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
@@ -1056,5 +1056,5 @@ bool wlcore_is_queue_stopped_locked(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
 
 	assert_spin_locked(&wifi_data.lock);
-	return !!wl->queue_stop_reasons[hwq];
+	return !!wifi_data.queue_stop_reasons[hwq];
 }

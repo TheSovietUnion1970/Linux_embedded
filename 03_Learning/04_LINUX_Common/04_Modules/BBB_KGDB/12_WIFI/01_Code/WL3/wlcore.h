@@ -13,6 +13,7 @@
 #include "wlcore_i.h"
 #include "event.h"
 #include "boot.h"
+extern struct Wifi_data wifi_data;
 
 /* The maximum number of Tx descriptors in all chip families */
 #define WLCORE_MAX_TX_DESCRIPTORS 32
@@ -484,35 +485,9 @@ void wlcore_regdomain_config(void);
 void wlcore_update_inconn_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      struct wl1271_station *wl_sta, bool in_conn);
 
-static inline void
-wlcore_set_ht_cap(struct wl1271 *wl, enum nl80211_band band,
-		  struct ieee80211_sta_ht_cap *ht_cap)
-{
-	memcpy(&wl->ht_cap[band], ht_cap, sizeof(*ht_cap));
-}
-
 /* Tell wlcore not to care about this element when checking the version */
 #define WLCORE_FW_VER_IGNORE	-1
 
-static inline void
-wlcore_set_min_fw_ver(struct wl1271 *wl, unsigned int chip,
-		      unsigned int iftype_sr, unsigned int major_sr,
-		      unsigned int subtype_sr, unsigned int minor_sr,
-		      unsigned int iftype_mr, unsigned int major_mr,
-		      unsigned int subtype_mr, unsigned int minor_mr)
-{
-	wl->min_sr_fw_ver[FW_VER_CHIP] = chip;
-	wl->min_sr_fw_ver[FW_VER_IF_TYPE] = iftype_sr;
-	wl->min_sr_fw_ver[FW_VER_MAJOR] = major_sr;
-	wl->min_sr_fw_ver[FW_VER_SUBTYPE] = subtype_sr;
-	wl->min_sr_fw_ver[FW_VER_MINOR] = minor_sr;
-
-	wl->min_mr_fw_ver[FW_VER_CHIP] = chip;
-	wl->min_mr_fw_ver[FW_VER_IF_TYPE] = iftype_mr;
-	wl->min_mr_fw_ver[FW_VER_MAJOR] = major_mr;
-	wl->min_mr_fw_ver[FW_VER_SUBTYPE] = subtype_mr;
-	wl->min_mr_fw_ver[FW_VER_MINOR] = minor_mr;
-}
 
 /* Firmware image load chunk size */
 #define CHUNK_SIZE	16384

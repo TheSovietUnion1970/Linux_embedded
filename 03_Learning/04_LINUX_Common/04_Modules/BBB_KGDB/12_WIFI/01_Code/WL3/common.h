@@ -434,6 +434,120 @@ struct Wifi_data {
 
     /* Temporary use */
     struct wl1271 *wl;
+
+
+
+	/* ===== */
+	bool initialized;
+	struct ieee80211_hw *hw;
+	bool mac80211_registered;
+
+	struct platform_device *pdev;
+
+	struct wl1271_if_operations *if_ops;
+
+	int irq;
+	int wakeirq;
+
+	int irq_flags;
+
+	enum wlcore_state state;
+	enum wl12xx_fw_type fw_type;
+	bool plt;
+
+	u8 *fw;
+	size_t fw_len;
+	void *nvs;
+	size_t nvs_len;
+
+
+	/* address read from the fuse ROM */
+	u32 fuse_oui_addr;
+	u32 fuse_nic_addr;
+
+	/* we have up to 2 MAC addresses */
+	struct mac_address addresses[WLCORE_NUM_MAC_ADDRESSES];
+	int channel;
+
+	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
+	unsigned long roc_map[BITS_TO_LONGS(WL12XX_MAX_ROLES)];
+
+	struct list_head wlvif_list;
+
+	u8 sta_count;
+
+	struct wl1271_acx_mem_map *target_mem_map;
+
+	unsigned long queue_stop_reasons[
+				NUM_TX_QUEUES * WLCORE_NUM_MAC_ADDRESSES];
+
+	/* The mbox event mask */
+	u32 event_mask;
+
+	struct delayed_work scan_complete_work;
+
+	struct ieee80211_vif *roc_vif;
+	//struct delayed_work roc_complete_work;
+
+	struct wl12xx_vif *sched_vif;
+
+	/* Current chipset configuration */
+	struct wlcore_conf conf;
+
+	bool enable_11a;
+
+	/* bands supported by this instance of wl12xx */
+	struct ieee80211_supported_band bands[WLCORE_NUM_BANDS];
+
+	bool irq_wake_enabled;
+
+	/* Quirks of specific hardware revisions */
+	unsigned int quirks;
+
+	/* last wlvif we transmitted from */
+	struct wl12xx_vif *last_wlvif;
+
+	/* work to fire when Tx is stuck */
+	struct delayed_work tx_watchdog_work;
+
+	struct wlcore_ops *ops;
+
+	const char *sr_fw_name;
+
+	/* per-chip-family private structure */
+	void *priv;
+
+	/* HW HT (11n) capabilities */
+	struct ieee80211_sta_ht_cap ht_cap[WLCORE_NUM_BANDS];
+
+	/* RX Data filter rule state - enabled/disabled */
+	unsigned long rx_filter_enabled[BITS_TO_LONGS(WL1271_MAX_RX_FILTERS)];
+
+	/* size of the private static data */
+	size_t static_data_priv_len;
+
+	/* mutex for protecting the tx_flush function */
+	struct mutex flush_mutex;
+
+	/* sleep auth value currently configured to FW */
+	int sleep_auth;
+
+	/* the number of allocated MAC addresses in this chip */
+	int num_mac_addr;
+
+	/* minimum FW version required for the driver to work in single-role */
+	unsigned int min_sr_fw_ver[NUM_FW_VER];
+
+	/* minimum FW version required for the driver to work in multi-role */
+	unsigned int min_mr_fw_ver[NUM_FW_VER];
+
+	struct completion nvs_loading_complete;
+
+	/* interface combinations supported by the hw */
+	const struct ieee80211_iface_combination *iface_combinations;
+	u8 n_iface_combinations;
+
+	void *last_valid_wlvif;
 };
 extern struct Wifi_data wifi_data;
 
@@ -515,7 +629,7 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
 // wlcore_set_assoc:
     // wl1271_cmd_build_ps_poll(wl, wlvif, wlvif->aid):
     //-> PS-poll frame by CLI in pow-save mode -> AP: 'I'm awake'
-        // ieee80211_pspoll_get(wl->hw, vif) -> standard PS-Poll frame
+        // ieee80211_pspoll_get(wifi_data.hw, vif) -> standard PS-Poll frame
 
         // ret = wl1271_cmd_template_set(wlvif->role_id,
         // 			      CMD_TEMPL_PS_POLL, skb->data,
@@ -594,7 +708,7 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
 // wlcore_scan:
     // delayed work: scan_complete_work
     
-    // wl->ops->scan_start(wl, wlvif, req) = wl18xx_scan_send
+    // wifi_data.ops->scan_start(wl, wlvif, req) = wl18xx_scan_send
         // -> cpy cmd_channels->active|passive|dtfs -> cmd
         // -> wl12xx_cmd_build_probe_req - 2 + 5 GHz
         // <- CMD_SCAN
@@ -634,7 +748,7 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
     // wl1271_flush_deferred_work -> flush RX + TX status to stack
     // wl12xx_tx_reset + wl1271_power_off
 
-// wl->recovery_work = wl1271_recovery_work
+// wifi_data.recovery_work = wl1271_recovery_work
     // disable_irq_nosync + ieee80211_stop_queues
     // __wl1271_op_remove_interface
     // wlcore_op_stop_locked = wlcore_op_stop
@@ -647,13 +761,13 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
     // wl12xx_set_power_on
     // wl1271_sdio_set_block_size
     // wl1271_setup
-        // alloc(wl->fw_status);
-        // alloc(wl->raw_fw_status);
-        // alloc(wl->tx_res_if);
+        // alloc(wifi_data.fw_status);
+        // alloc(wifi_data.raw_fw_status);
+        // alloc(wifi_data.tx_res_if);
     // wl12xx_fetch_firmware:
-        // wl->fw_type
-        // wl->fw_len 
-        // wl->fw 
+        // wifi_data.fw_type
+        // wifi_data.fw_len 
+        // wifi_data.fw 
 
 // wl18xx_set_clk:
     // configures the internal clock/PLL system of the wl18xx WiFi chip.
@@ -777,13 +891,13 @@ struct ieee80211_vif *VV_wlvif_to_vif(int idx)
 
 
 // wl18xx_lnk_high_prio:
-    // wl->fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
+    // wifi_data.fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
     // if (suspend_bitmap = hlid = bit 1) -> choose wl18xx_lnk_low_prio 
     // else thold = tx_fast_link_prio_threshold or tx_slow_link_prio_threshold
     // CHECK lnk->allocated_pkts (usually 0) < thold
 
 // wl18xx_lnk_low_prio:
-    // wl->fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
+    // wifi_data.fw_status->priv is read from wl18xx_convert_fw_status (Interrupt)
     // if (suspend_bitmap = hlid = bit 1) -> thold = tx_suspend_threshold 
     // else thold = tx_fast_stop_threshold or tx_slow_stop_threshold
     // CHECK lnk->allocated_pkts (usually 0) < thold

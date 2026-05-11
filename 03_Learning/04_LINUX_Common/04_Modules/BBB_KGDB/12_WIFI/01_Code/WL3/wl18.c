@@ -163,7 +163,7 @@ int VV_acx_set_peer_cap(struct wl1271 *wl,
 	acx->ht_capabilites = cpu_to_le32(ht_capabilites);
 	acx->supported_rates = cpu_to_le32(rate_set);
 
-	ret = VV_cmd_configure(wl, ACX_PEER_CAP, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_PEER_CAP, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx ht capabilities setting failed: %d", ret);
 		goto out;
@@ -174,8 +174,7 @@ out:
 	return ret;
 }
 
-int VV_handle_static_data(struct wl1271 *wl,
-				     struct wl1271_static_data *static_data)
+int VV_handle_static_data(struct wl1271_static_data *static_data)
 {
 	struct VV_static_data_priv *static_data_priv =
 		(struct VV_static_data_priv *) static_data->priv;

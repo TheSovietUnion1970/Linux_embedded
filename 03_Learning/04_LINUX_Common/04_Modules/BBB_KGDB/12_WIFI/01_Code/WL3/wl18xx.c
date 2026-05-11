@@ -876,7 +876,7 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 
 	/* Disable interrupts */
 	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, WL1271_ACX_INTR_ALL);
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -915,7 +915,7 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		goto out;
 
 	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &tmp);
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wl->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
+	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -958,11 +958,11 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	ret = irq_get_trigger_type(wl->irq);
+	ret = irq_get_trigger_type(wifi_data.irq);
 	if ((ret == IRQ_TYPE_LEVEL_LOW) || (ret == IRQ_TYPE_EDGE_FALLING)) {
 		wl1271_info("using inverted interrupt logic: %d", ret);
 		// ret = VV_set_partition_18(wl,
-		// 			   &wl->ptable[PART_TOP_PRCM_ELP_SOC]);
+		// 			   &wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 		ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 		if (ret < 0)
 			goto out;
@@ -985,7 +985,7 @@ out:
 
 static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 {
-	struct wl18xx_priv *priv = wl->priv;
+	struct wl18xx_priv *priv = wifi_data.priv;
 	struct wl18xx_mac_and_phy_params *params;
 	int ret;
 
@@ -1017,7 +1017,7 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 	intr_mask = WL18XX_INTR_MASK;
 
 	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, event_mask);
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1025,7 +1025,7 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 
 	// ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK,
 	// 		       WL1271_ACX_INTR_ALL & ~intr_mask);
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wl->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
+	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
 
@@ -1058,7 +1058,7 @@ static int wl18xx_boot(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	wl->event_mask = BSS_LOSS_EVENT_ID |
+	wifi_data.event_mask = BSS_LOSS_EVENT_ID |
 		SCAN_COMPLETE_EVENT_ID |
 		RADAR_DETECTED_EVENT_ID |
 		RSSI_SNR_TRIGGER_0_EVENT_ID |
@@ -1077,9 +1077,9 @@ static int wl18xx_boot(struct wl1271 *wl)
 		FW_LOGGER_INDICATION |
 		RX_BA_WIN_SIZE_CHANGE_EVENT_ID;
 
-	//wl->ap_event_mask = MAX_TX_FAILURE_EVENT_ID;
+	//wifi_data.ap_event_mask = MAX_TX_FAILURE_EVENT_ID;
 
-	ret = wlcore_boot_run_firmware(wl);
+	ret = wlcore_boot_run_firmware();
 	if (ret < 0)
 		goto out;
 
@@ -1092,7 +1092,7 @@ out:
 static int wl18xx_trigger_cmd(struct wl1271 *wl, int cmd_box_addr,
 			       void *buf, size_t len)
 {
-	struct wl18xx_priv *priv = wl->priv;
+	struct wl18xx_priv *priv = wifi_data.priv;
 
 	memcpy(priv->cmd_buf, buf, len);
 	memset(priv->cmd_buf + len, 0, WL18XX_CMD_MAX_SIZE - len);
@@ -1124,7 +1124,7 @@ static int VV_acx_host_if_cfg_bitmap(struct wl1271 *wl, u32 host_cfg_bitmap,
 	bitmap_conf->extra_mem_blocks = cpu_to_le32(extra_mem_blks);
 	bitmap_conf->length_field_size = cpu_to_le32(len_field_size);
 
-	ret = VV_cmd_configure(wl, ACX_HOST_IF_CFG_BITMAP,
+	ret = VV_cmd_configure(ACX_HOST_IF_CFG_BITMAP,
 				   bitmap_conf, sizeof(*bitmap_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 bitmap config opt failed: %d", ret);
@@ -1145,13 +1145,13 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 			      HOST_IF_CFG_ADD_RX_ALIGNMENT;
 
 	/* Enable Tx SDIO padding */
-	if (wl->quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN) {
+	if (wifi_data.quirks & WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN) {
 		host_cfg_bitmap |= HOST_IF_CFG_TX_PAD_TO_SDIO_BLK;
 		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
 	}
 
 	/* Enable Rx SDIO padding */
-	if (wl->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN) {
+	if (wifi_data.quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN) {
 		host_cfg_bitmap |= HOST_IF_CFG_RX_PAD_TO_SDIO_BLK;
 		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
 	}
@@ -1171,7 +1171,7 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 static int wl18xx_hw_init(struct wl1271 *wl)
 {
 	int ret;
-	struct wl18xx_priv *priv = wl->priv;
+	struct wl18xx_priv *priv = wifi_data.priv;
 
 	/* (re)init private structures. Relevant on recovery as well. */
 	priv->extra_spare_key_count = 0;
@@ -1198,7 +1198,7 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 
 static bool wl18xx_is_mimo_supported(struct wl1271 *wl)
 {
-	struct wl18xx_priv *priv = wl->priv;
+	struct wl18xx_priv *priv = wifi_data.priv;
 
 	/* only support MIMO with multiple antennas, and when SISO
 	 * is not forced through config
@@ -1258,16 +1258,16 @@ out_release:
 
 static int wl18xx_conf_init(struct wl1271 *wl, struct device *dev)
 {
-	struct platform_device *pdev = wl->pdev;
+	struct platform_device *pdev = wifi_data.pdev;
 	struct wlcore_platdev_data *pdata = dev_get_platdata(&pdev->dev);
-	struct wl18xx_priv *priv = wl->priv;
+	struct wl18xx_priv *priv = wifi_data.priv;
 
-	if (wl18xx_load_conf_file(dev, &wl->conf, &priv->conf,
+	if (wl18xx_load_conf_file(dev, &wifi_data.conf, &priv->conf,
 				  pdata->family->cfg_name) < 0) {
 		wl1271_warning("falling back to default config");
 
 		/* apply driver default configuration */
-		memcpy(&wl->conf, &wl18xx_conf, sizeof(wl->conf));
+		memcpy(&wifi_data.conf, &wl18xx_conf, sizeof(wifi_data.conf));
 		/* apply default private configuration */
 		memcpy(&priv->conf, &wl18xx_default_priv_conf,
 		       sizeof(priv->conf));
@@ -1400,38 +1400,45 @@ wl18xx_iface_combinations[] = {
 	}
 };
 
+static inline void
+wlcore_set_ht_cap(struct wl1271 *wl, enum nl80211_band band,
+		  struct ieee80211_sta_ht_cap *ht_cap)
+{
+	memcpy(&wifi_data.ht_cap[band], ht_cap, sizeof(*ht_cap));
+}
+
 static int wl18xx_setup(struct wl1271 *wl)
 {
-	struct wl18xx_priv *priv = wl->priv;
+	struct wl18xx_priv *priv = wifi_data.priv;
 	int ret;
 
 	BUILD_BUG_ON(WL18XX_MAX_LINKS > WLCORE_MAX_LINKS);
 	BUILD_BUG_ON(WL18XX_MAX_AP_STATIONS > WL18XX_MAX_LINKS);
 	BUILD_BUG_ON(WL18XX_CONF_SG_PARAMS_MAX > WLCORE_CONF_SG_PARAMS_MAX);
 
-	wl->rtable = wl18xx_rtable;
+	wifi_data.rtable = wl18xx_rtable;
 
 	//WL18XX_NUM_TX_DESCRIPTORS = WL18XX_NUM_TX_DESCRIPTORS;
-	//wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
-	//wl->num_links = WL18XX_MAX_LINKS;
-	//wl->max_ap_stations = WL18XX_MAX_AP_STATIONS;
-	wl->iface_combinations = wl18xx_iface_combinations;
-	wl->n_iface_combinations = ARRAY_SIZE(wl18xx_iface_combinations);
-	wl->num_mac_addr = WL18XX_NUM_MAC_ADDRESSES;
-	//wl->band_rate_to_idx = wl18xx_band_rate_to_idx;
-	//wl->hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
-	//wl->hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
-	// wl->fw_status_len = sizeof(struct wl18xx_fw_status);
-	//wl->fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
-	//wl->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
-	wl->static_data_priv_len = sizeof(struct wl18xx_static_data_priv);
+	//wifi_data.num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
+	//wifi_data.num_links = WL18XX_MAX_LINKS;
+	//wifi_data.max_ap_stations = WL18XX_MAX_AP_STATIONS;
+	wifi_data.iface_combinations = wl18xx_iface_combinations;
+	wifi_data.n_iface_combinations = ARRAY_SIZE(wl18xx_iface_combinations);
+	wifi_data.num_mac_addr = WL18XX_NUM_MAC_ADDRESSES;
+	//wifi_data.band_rate_to_idx = wl18xx_band_rate_to_idx;
+	//wifi_data.hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
+	//wifi_data.hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
+	// wifi_data.fw_status_len = sizeof(struct wl18xx_fw_status);
+	//wifi_data.fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
+	//wifi_data.stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
+	wifi_data.static_data_priv_len = sizeof(struct wl18xx_static_data_priv);
 
 	wifi_data.band_rate_to_idx = wl18xx_band_rate_to_idx;
 
 	// if (num_rx_desc_param != -1)
-	// 	wl->num_rx_desc = num_rx_desc_param;
+	// 	wifi_data.num_rx_desc = num_rx_desc_param;
 
-	ret = wl18xx_conf_init(wl, wl->dev);
+	ret = wl18xx_conf_init(wl, wifi_data.dev);
 	if (ret < 0)
 		return ret;
 
@@ -1527,7 +1534,7 @@ static int wl18xx_setup(struct wl1271 *wl)
 	// }
 
 	/* Enable 11a Band only if we have 5G antennas */
-	wl->enable_11a = (priv->conf.phy.number_of_assembled_ant5 != 0);
+	wifi_data.enable_11a = (priv->conf.phy.number_of_assembled_ant5 != 0);
 
 	return 0;
 }
@@ -1550,18 +1557,18 @@ static int wl18xx_probe(struct platform_device *pdev)
 	}
 
 	wl = hw->priv;
-	wl->ops = &wl18xx_ops;
+	wifi_data.ops = &wl18xx_ops;
 	wifi_data.ptable = wl18xx_ptable;
 
 	ret = wlcore_probe(wl, pdev);
-	printk("[MERGE] - wl->dev: 0x%x, parent = 0x%x\n", wl->dev, wl->dev->parent);
+	printk("[MERGE] - wifi_data.dev: 0x%x, parent = 0x%x\n", wifi_data.dev, wifi_data.dev->parent);
 	if (ret)
 		goto out_free;
 
-	wifi_data.cmd_box_addr = devm_kzalloc(wl->dev, 4, GFP_KERNEL);
-	wifi_data.mbox_ptr[0] = (u32*)devm_kzalloc(wl->dev, 4, GFP_KERNEL);
-	wifi_data.mbox_ptr[1] = (u32*)devm_kzalloc(wl->dev, 4, GFP_KERNEL);
-	wifi_data.mbox = devm_kzalloc(wl->dev, sizeof(struct wl18xx_event_mailbox), GFP_KERNEL | GFP_DMA);
+	wifi_data.cmd_box_addr = devm_kzalloc(wifi_data.dev, 4, GFP_KERNEL);
+	wifi_data.mbox_ptr[0] = (u32*)devm_kzalloc(wifi_data.dev, 4, GFP_KERNEL);
+	wifi_data.mbox_ptr[1] = (u32*)devm_kzalloc(wifi_data.dev, 4, GFP_KERNEL);
+	wifi_data.mbox = devm_kzalloc(wifi_data.dev, sizeof(struct wl18xx_event_mailbox), GFP_KERNEL | GFP_DMA);
 
 	return ret;
 

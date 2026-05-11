@@ -46,8 +46,8 @@ static inline void wl1271_power_off(struct wl1271 *wl)
 	if (!test_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags))
 		return;
 
-	if (wl->if_ops->power)
-		ret = wl->if_ops->power(wl->dev, false);
+	if (wifi_data.if_ops->power)
+		ret = wifi_data.if_ops->power(wifi_data.dev, false);
 	if (!ret)
 		clear_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
 }
@@ -56,8 +56,8 @@ static inline int wl1271_power_on(struct wl1271 *wl)
 {
 	int ret = 0;
 
-	if (wl->if_ops->power)
-		ret = wl->if_ops->power(wl->dev, true);
+	if (wifi_data.if_ops->power)
+		ret = wifi_data.if_ops->power(wifi_data.dev, true);
 	if (ret == 0)
 		set_bit(WL1271_FLAG_GPIO_POWER, &wifi_data.flags);
 

@@ -36,13 +36,13 @@ void wl1271_scan_complete_work(struct work_struct *work)
 
 	mutex_lock(&wifi_data.mutex);
 
-	if (unlikely(wifi_data.wl->state != WLCORE_STATE_ON))
+	if (unlikely(wifi_data.state != WLCORE_STATE_ON))
 		goto out;
 
 	if (wifi_data.scan_state == WL1271_SCAN_STATE_IDLE)
 		goto out;
 
-	//wlvif = wifi_data.wl->scan_wlvif;
+	//wlvif = wifi_data.scan_wlvif;
 
 
 	/*
@@ -52,13 +52,13 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	wl12xx_rearm_tx_watchdog_locked();
 
 	wifi_data.scan_state = WL1271_SCAN_STATE_IDLE;
-	//memset(wifi_data.wl->scan.scanned_ch, 0, sizeof(wifi_data.wl->scan.scanned_ch));
-	//wifi_data.wl->scan.req = NULL;
-	//wifi_data.wl->scan_wlvif = NULL;
+	//memset(wifi_data.scan.scanned_ch, 0, sizeof(wifi_data.scan.scanned_ch));
+	//wifi_data.scan.req = NULL;
+	//wifi_data.scan_wlvif = NULL;
 
-	ret = pm_runtime_get_sync(wifi_data.wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wifi_data.wl->dev);
+		pm_runtime_put_noidle(wifi_data.dev);
 		goto out;
 	}
 
@@ -67,16 +67,16 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	// 	wl1271_cmd_build_ap_probe_req(VV_vif_ptr[0]->probereq);
 	// }
 
-	// if (wifi_data.wl->scan.failed) {
+	// if (wifi_data.scan.failed) {
 	if (VV_scan_failed) {
 		wl1271_info("Scan completed due to error.");
-		wl12xx_queue_recovery_work(wifi_data.wl);
+		printk("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
 	}
 
 	wlcore_cmd_regdomain_config_locked();
 
-	pm_runtime_mark_last_busy(wifi_data.wl->dev);
-	pm_runtime_put_autosuspend(wifi_data.wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.dev);
+	pm_runtime_put_autosuspend(wifi_data.dev);
 
 	ieee80211_scan_completed(VV_work.hw, &info);
 
@@ -104,7 +104,7 @@ wlcore_scan_get_channels(struct wl1271 *wl,
 
 	// /* configure dwell times according to scan type */
 	// if (scan_type == SCAN_TYPE_SEARCH) {
-	// 	struct conf_scan_settings *c = &wl->conf.scan;
+	// 	struct conf_scan_settings *c = &wifi_data.conf.scan;
 	// 	bool active_vif_exists = !!wlcore_count_started_vifs(wl);
 
 	// 	min_dwell_time_active = active_vif_exists ?
@@ -116,7 +116,7 @@ wlcore_scan_get_channels(struct wl1271 *wl,
 	// 	dwell_time_passive = c->dwell_time_passive;
 	// 	dwell_time_dfs = c->dwell_time_dfs;
 	// } else {
-	// 	struct conf_sched_scan_settings *c = &wl->conf.sched_scan;
+	// 	struct conf_sched_scan_settings *c = &wifi_data.conf.sched_scan;
 	// 	u32 delta_per_probe;
 
 	// 	if (band == NL80211_BAND_5GHZ)
@@ -241,18 +241,18 @@ int wlcore_scan(struct wl1271 *wl, struct ieee80211_vif *vif,
 	wifi_data.scan_state = WL1271_SCAN_STATE_2GHZ_ACTIVE;
 
 	// if (ssid_len && ssid) {
-	// 	wl->scan.ssid_len = ssid_len;
-	// 	memcpy(wl->scan.ssid, ssid, ssid_len);
+	// 	wifi_data.scan.ssid_len = ssid_len;
+	// 	memcpy(wifi_data.scan.ssid, ssid, ssid_len);
 	// } else {
-	// 	wl->scan.ssid_len = 0;
+	// 	wifi_data.scan.ssid_len = 0;
 	// }
 
-	//wl->scan_wlvif = wlvif;
-	//wl->scan.req = req;
-	//memset(wl->scan.scanned_ch, 0, sizeof(wl->scan.scanned_ch));
+	//wifi_data.scan_wlvif = wlvif;
+	//wifi_data.scan.req = req;
+	//memset(wifi_data.scan.scanned_ch, 0, sizeof(wifi_data.scan.scanned_ch));
 
 	/* we assume failure so that timeout scenarios are handled correctly */
-	//wl->scan.failed = true;
+	//wifi_data.scan.failed = true;
 
 	VV_scan_failed = true;
 	ieee80211_queue_delayed_work(VV_work.hw, &VV_work.scan_complete_work,
@@ -374,6 +374,6 @@ void wlcore_scan_sched_scan_results(struct wl1271 *wl)
 {
 	wl1271_debug(DEBUG_SCAN, "got periodic scan results");
 
-	ieee80211_sched_scan_results(wl->hw);
+	ieee80211_sched_scan_results(wifi_data.hw);
 }
 EXPORT_SYMBOL_GPL(wlcore_scan_sched_scan_results);

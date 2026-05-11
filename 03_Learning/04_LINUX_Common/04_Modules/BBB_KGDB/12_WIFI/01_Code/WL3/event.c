@@ -96,10 +96,10 @@ void wlcore_event_sched_scan_completed(struct wl1271 *wl,
 	wl1271_debug(DEBUG_EVENT, "PERIODIC_SCAN_COMPLETE_EVENT (status 0x%0x)",
 		     status);
 
-	printk("[EVENT] - wl->sched_vif: 0x%x\n", wl->sched_vif);
-	if (wl->sched_vif) {
-		ieee80211_sched_scan_stopped(wl->hw);
-		wl->sched_vif = NULL;
+	printk("[EVENT] - wifi_data.sched_vif: 0x%x\n", wifi_data.sched_vif);
+	if (wifi_data.sched_vif) {
+		ieee80211_sched_scan_stopped(wifi_data.hw);
+		wifi_data.sched_vif = NULL;
 	}
 }
 EXPORT_SYMBOL_GPL(wlcore_event_sched_scan_completed);
@@ -160,7 +160,7 @@ EXPORT_SYMBOL_GPL(wlcore_event_channel_switch);
 
 void wlcore_event_dummy_packet(struct wl1271 *wl)
 {
-	if (wl->plt) {
+	if (wifi_data.plt) {
 		wl1271_info("Got DUMMY_PACKET event in PLT mode.  FW bug, ignoring.");
 		return;
 	}
@@ -172,7 +172,7 @@ EXPORT_SYMBOL_GPL(wlcore_event_dummy_packet);
 
 static void wlcore_disconnect_sta(struct wl1271 *wl, unsigned long sta_bitmap)
 {
-	u32 num_packets = wl->conf.tx.max_tx_retries;
+	u32 num_packets = wifi_data.conf.tx.max_tx_retries;
 	struct wl12xx_vif *wlvif;
 	struct ieee80211_vif *vif;
 	struct ieee80211_sta *sta;
@@ -221,9 +221,9 @@ EXPORT_SYMBOL_GPL(wlcore_event_inactive_sta);
 void wlcore_event_roc_complete(struct wl1271 *wl)
 {
 	wl1271_debug(DEBUG_EVENT, "REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID");
-	printk("wl->roc_vif = 0x%x\n", wl->roc_vif);
-	if (wl->roc_vif)
-		ieee80211_ready_on_channel(wl->hw);
+	printk("wifi_data.roc_vif = 0x%x\n", wifi_data.roc_vif);
+	if (wifi_data.roc_vif)
+		ieee80211_ready_on_channel(wifi_data.hw);
 }
 EXPORT_SYMBOL_GPL(wlcore_event_roc_complete);
 
@@ -235,8 +235,8 @@ void wlcore_event_beacon_loss(struct wl1271 *wl, unsigned long roles_bitmap)
 	 */
 	struct wl12xx_vif *wlvif;
 	struct ieee80211_vif *vif;
-	int delay = wl->conf.conn.synch_fail_thold *
-				wl->conf.conn.bss_lose_timeout;
+	int delay = wifi_data.conf.conn.synch_fail_thold *
+				wifi_data.conf.conn.bss_lose_timeout;
 
 	wl1271_info("Beacon loss detected. roles:0x%lx", roles_bitmap);
 
@@ -258,7 +258,7 @@ void wlcore_event_beacon_loss(struct wl1271 *wl, unsigned long roles_bitmap)
 		 * We don't want to delay the connection loss
 		 * indication any more.
 		 */
-		// ieee80211_queue_delayed_work(wl->hw,
+		// ieee80211_queue_delayed_work(wifi_data.hw,
 		// 			     &wlvif->connection_loss_work,
 		// 			     msecs_to_jiffies(delay));
 
@@ -267,12 +267,12 @@ void wlcore_event_beacon_loss(struct wl1271 *wl, unsigned long roles_bitmap)
 }
 EXPORT_SYMBOL_GPL(wlcore_event_beacon_loss);
 
-int wl1271_event_unmask(struct wl1271 *wl)
+int wl1271_event_unmask(void)
 {
 	int ret;
 
-	wl1271_debug(DEBUG_EVENT, "unmasking event_mask 0x%x", wl->event_mask);
-	ret = wl1271_acx_event_mbox_mask(wl, ~(wl->event_mask));
+	wl1271_debug(DEBUG_EVENT, "unmasking event_mask 0x%x", wifi_data.event_mask);
+	ret = wl1271_acx_event_mbox_mask(~(wifi_data.event_mask));
 	if (ret < 0)
 		return ret;
 
@@ -299,7 +299,7 @@ enum wlcore_vendor_attributes {
 
 static void VV_scan_completed(void)
 {
-	//wl->scan.failed = false;
+	//wifi_data.scan.failed = false;
 	printk("VV_scan_completed\n");
 	VV_scan_failed = false;
 	cancel_delayed_work(&VV_work.scan_complete_work);
@@ -321,8 +321,8 @@ static int VV_process_mailbox_events(void)
 		wl1271_debug(DEBUG_EVENT, "scan results: %d",
 			     mbox->number_of_scan_results);
 
-		// if (wl->scan_wlvif)
-		// 	VV_scan_completed(wl, wl->scan_wlvif);
+		// if (wifi_data.scan_wlvif)
+		// 	VV_scan_completed(wl, wifi_data.scan_wlvif);
 		if (VV_vif_ptr[0])
 			VV_scan_completed();
 	}
@@ -357,7 +357,7 @@ int wl1271_event_handle(u8 mbox_num)
 		return ret;
 
 	/* process the descriptor */
-	//ret = wl->ops->process_mailbox_events(wl);
+	//ret = wifi_data.ops->process_mailbox_events(wl);
 	ret = VV_process_mailbox_events();
 	if (ret < 0)
 		return ret;
@@ -366,7 +366,7 @@ int wl1271_event_handle(u8 mbox_num)
 	 * TODO: we just need this because one bit is in a different
 	 * place.  Is there any better way?
 	 */
-	//ret = wl->ops->ack_event(wl);
+	//ret = wifi_data.ops->ack_event(wl);
 	ret = VV_ack_event();
 
 	return ret;

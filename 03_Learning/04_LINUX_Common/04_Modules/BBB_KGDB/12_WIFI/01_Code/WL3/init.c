@@ -40,9 +40,9 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 	if (ret < 0)
 		return ret;
 
-	if (wl->quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL) {
+	if (wifi_data.quirks & WLCORE_QUIRK_DUAL_PROBE_TMPL) {
 		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
-					    //   wl->sched_scan_templ_id_2_4,
+					    //   wifi_data.sched_scan_templ_id_2_4,
 						  CMD_TEMPL_PROBE_REQ_2_4_PERIODIC,
 					      NULL,
 					      WL1271_CMD_TEMPL_MAX_SIZE,
@@ -51,7 +51,7 @@ int wl1271_init_templates_config(struct wl1271 *wl)
 			return ret;
 
 		ret = wl1271_cmd_template_set(WL12XX_INVALID_ROLE_ID,
-					      // wl->sched_scan_templ_id_5,
+					      // wifi_data.sched_scan_templ_id_5,
 						  CMD_TEMPL_PROBE_REQ_5_PERIODIC,
 					      NULL,
 					      WL1271_CMD_TEMPL_MAX_SIZE,
@@ -239,7 +239,7 @@ static int wl12xx_init_rx_config(struct wl1271 *wl)
 {
 	int ret;
 
-	ret = wl1271_acx_rx_msdu_life_time(wl);
+	ret = wl1271_acx_rx_msdu_life_time();
 	if (ret < 0)
 		return ret;
 
@@ -251,15 +251,15 @@ static int wl12xx_init_phy_vif_config(struct wl1271 *wl,
 {
 	int ret;
 
-	ret = wl1271_acx_slot(wl, wlvif, DEFAULT_SLOT_TIME);
+	ret = wl1271_acx_slot(wlvif, DEFAULT_SLOT_TIME);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_service_period_timeout(wl, wlvif);
+	ret = wl1271_acx_service_period_timeout(wlvif);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_rts_threshold(wl, wlvif, wl->hw->wiphy->rts_threshold);
+	ret = wl1271_acx_rts_threshold(wlvif, wifi_data.hw->wiphy->rts_threshold);
 	if (ret < 0)
 		return ret;
 
@@ -271,12 +271,12 @@ static int wl1271_init_sta_beacon_filter(struct wl1271 *wl,
 {
 	int ret;
 
-	ret = wl1271_acx_beacon_filter_table(wl, wlvif);
+	ret = wl1271_acx_beacon_filter_table(wlvif);
 	if (ret < 0)
 		return ret;
 
 	/* disable beacon filtering until we get the first beacon */
-	ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
+	ret = wl1271_acx_beacon_filter_opt(wlvif, false);
 	if (ret < 0)
 		return ret;
 
@@ -287,11 +287,11 @@ int wl1271_init_pta(struct wl1271 *wl)
 {
 	int ret;
 
-	ret = wl12xx_acx_sg_cfg(wl);
+	ret = wl12xx_acx_sg_cfg();
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_sg_enable(wl, true); // wl->sg_enabled = true
+	ret = wl1271_acx_sg_enable(true); // wifi_data.sg_enabled = true
 	if (ret < 0)
 		return ret;
 
@@ -302,7 +302,7 @@ int wl1271_init_energy_detection(struct wl1271 *wl)
 {
 	int ret;
 
-	ret = wl1271_acx_cca_threshold(wl);
+	ret = wl1271_acx_cca_threshold();
 	if (ret < 0)
 		return ret;
 
@@ -314,7 +314,7 @@ static int wl1271_init_beacon_broadcast(struct wl1271 *wl,
 {
 	int ret;
 
-	ret = wl1271_acx_bcn_dtim_options(wl, wlvif);
+	ret = wl1271_acx_bcn_dtim_options(wlvif);
 	if (ret < 0)
 		return ret;
 
@@ -325,7 +325,7 @@ static int wl12xx_init_fwlog(struct wl1271 *wl)
 {
 	int ret;
 
-	if (wl->quirks & WLCORE_QUIRK_FWLOG_NOT_IMPLEMENTED)
+	if (wifi_data.quirks & WLCORE_QUIRK_FWLOG_NOT_IMPLEMENTED)
 		return 0;
 
 	ret = wl12xx_cmd_config_fwlog(wl);
@@ -340,17 +340,17 @@ int wl1271_sta_hw_init(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	int ret;
 
-	/* PS config */
-	ret = wl12xx_acx_config_ps(wl, wlvif);
-	if (ret < 0)
-		return ret;
+	// /* PS config */
+	// ret = wl12xx_acx_config_ps(wl, wlvif);
+	// if (ret < 0)
+	// 	return ret;
 
 	/* FM WLAN coexistence */
-	ret = wl1271_acx_fm_coex(wl);
+	ret = wl1271_acx_fm_coex();
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_sta_rate_policies(wl, wlvif);
+	ret = wl1271_acx_sta_rate_policies(wlvif);
 	if (ret < 0)
 		return ret;
 
@@ -364,7 +364,7 @@ static int wl1271_sta_hw_init_post_mem(struct wl1271 *wl,
 	int ret;
 
 	/* disable the keep-alive feature */
-	ret = wl1271_acx_keep_alive_mode(wl, wlvif, false);
+	ret = wl1271_acx_keep_alive_mode(wlvif, false);
 	if (ret < 0)
 		return ret;
 
@@ -392,7 +392,7 @@ int wl1271_ap_init_templates(struct wl1271 *wl, struct ieee80211_vif *vif)
 	 * when operating as AP we want to receive external beacons for
 	 * configuring ERP protection.
 	 */
-	ret = wl1271_acx_beacon_filter_opt(wl, wlvif, false);
+	ret = wl1271_acx_beacon_filter_opt(wlvif, false);
 	if (ret < 0)
 		return ret;
 
@@ -409,7 +409,7 @@ static int wl1271_set_ba_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	/* Reset the BA RX indicators */
 	wlvif->ba_allowed = true;
-	//wl->ba_rx_session_count = 0;
+	//wifi_data.ba_rx_session_count = 0;
 
 	/* BA is supported in STA/AP modes */
 	if (wlvif->bss_type != BSS_TYPE_AP_BSS &&
@@ -421,7 +421,7 @@ static int wl1271_set_ba_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	wlvif->ba_support = true;
 
 	/* 802.11n initiator BA session setting */
-	return wl12xx_acx_set_ba_initiator_policy(wl, wlvif);
+	return wl12xx_acx_set_ba_initiator_policy(wlvif);
 }
 
 /* vif-specifc initialization */
@@ -429,12 +429,12 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 {
 	int ret;
 
-	ret = wl1271_acx_group_address_tbl(wl, wlvif, true, NULL, 0);
+	ret = wl1271_acx_group_address_tbl(wlvif, true, NULL, 0);
 	if (ret < 0)
 		return ret;
 
 	/* Initialize connection monitoring thresholds */
-	ret = wl1271_acx_conn_monit_params(wl, wlvif, false);
+	ret = wl1271_acx_conn_monit_params(wlvif, false);
 	if (ret < 0)
 		return ret;
 
@@ -449,7 +449,7 @@ static int wl12xx_init_sta_role(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		return ret;
 
 	/* Configure rssi/snr averaging weights */
-	ret = wl1271_acx_rssi_snr_avg_weights(wl, wlvif);
+	ret = wl1271_acx_rssi_snr_avg_weights(wlvif);
 	if (ret < 0)
 		return ret;
 
@@ -466,13 +466,13 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	int ret, i;
 
 	/* consider all existing roles before configuring psm. */
-	u8 sta_auth = wl->conf.conn.sta_sleep_auth;
+	u8 sta_auth = wifi_data.conf.conn.sta_sleep_auth;
 	/* Configure for power according to debugfs */
 	if (sta_auth != WL1271_PSM_ILLEGAL)
-		ret = wl1271_acx_sleep_auth(wl, sta_auth);
+		ret = wl1271_acx_sleep_auth(sta_auth);
 	/* Configure for ELP power saving */
 	else
-		ret = wl1271_acx_sleep_auth(wl, WL1271_PSM_ELP);
+		ret = wl1271_acx_sleep_auth(WL1271_PSM_ELP);
 
 	if (ret < 0)
 		return ret;
@@ -489,17 +489,17 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	wl12xx_init_phy_vif_config(wl, wlvif);
 
 	/* Default TID/AC configuration */
-	BUG_ON(wl->conf.tx.tid_conf_count != wl->conf.tx.ac_conf_count);
-	for (i = 0; i < wl->conf.tx.tid_conf_count; i++) {
-		conf_ac = &wl->conf.tx.ac_conf[i];
-		ret = wl1271_acx_ac_cfg(wl, wlvif, conf_ac->ac,
+	BUG_ON(wifi_data.conf.tx.tid_conf_count != wifi_data.conf.tx.ac_conf_count);
+	for (i = 0; i < wifi_data.conf.tx.tid_conf_count; i++) {
+		conf_ac = &wifi_data.conf.tx.ac_conf[i];
+		ret = wl1271_acx_ac_cfg(wlvif, conf_ac->ac,
 					conf_ac->cw_min, conf_ac->cw_max,
 					conf_ac->aifsn, conf_ac->tx_op_limit);
 		if (ret < 0)
 			return ret;
 
-		conf_tid = &wl->conf.tx.tid_conf[i];
-		ret = wl1271_acx_tid_cfg(wl, wlvif,
+		conf_tid = &wifi_data.conf.tx.tid_conf[i];
+		ret = wl1271_acx_tid_cfg(wlvif,
 					 conf_tid->queue_id,
 					 conf_tid->channel_type,
 					 conf_tid->tsid,
@@ -512,7 +512,7 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	}
 
 	/* Configure HW encryption */
-	ret = wl1271_acx_feature_cfg(wl, wlvif);
+	ret = wl1271_acx_feature_cfg(wlvif);
 	if (ret < 0)
 		return ret;
 
@@ -542,7 +542,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 	int ret;
 
 	/* Chip-specific hw init */
-	ret = wl->ops->hw_init(wl);
+	ret = wifi_data.ops->hw_init(wl);
 	if (ret < 0)
 		return ret;
 
@@ -551,7 +551,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 	if (ret < 0)
 		return ret;
 
-	ret = wl12xx_acx_mem_cfg(wl);
+	ret = wl12xx_acx_mem_cfg();
 	if (ret < 0)
 		return ret;
 
@@ -570,7 +570,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		return ret;
 
 	/* Default memory configuration */
-	ret = wl1271_acx_init_mem_config(wl);
+	ret = wl1271_acx_init_mem_config();
 	if (ret < 0)
 		return ret;
 
@@ -579,17 +579,17 @@ int wl1271_hw_init(struct wl1271 *wl)
 	if (ret < 0)
 		goto out_free_memmap;
 
-	ret = wl1271_acx_dco_itrim_params(wl);
+	ret = wl1271_acx_dco_itrim_params();
 	if (ret < 0)
 		goto out_free_memmap;
 
 	/* Configure TX patch complete interrupt behavior */
-	ret = wl1271_acx_tx_config_options(wl);
+	ret = wl1271_acx_tx_config_options();
 	if (ret < 0)
 		goto out_free_memmap;
 
 	/* RX complete interrupt pacing */
-	ret = wl1271_acx_init_rx_interrupt(wl);
+	ret = wl1271_acx_init_rx_interrupt();
 	if (ret < 0)
 		goto out_free_memmap;
 
@@ -599,7 +599,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		goto out_free_memmap;
 
 	/* Default fragmentation threshold */
-	ret = wl1271_acx_frag_threshold(wl, wl->hw->wiphy->frag_threshold);
+	ret = wl1271_acx_frag_threshold(wifi_data.hw->wiphy->frag_threshold);
 	if (ret < 0)
 		goto out_free_memmap;
 
@@ -609,24 +609,24 @@ int wl1271_hw_init(struct wl1271 *wl)
 		goto out_free_memmap;
 
 	/* configure PM */
-	ret = wl1271_acx_pm_config(wl);
+	ret = wl1271_acx_pm_config();
 	if (ret < 0)
 		goto out_free_memmap;
 
-	ret = wl12xx_acx_set_rate_mgmt_params(wl);
+	ret = wl12xx_acx_set_rate_mgmt_params();
 	if (ret < 0)
 		goto out_free_memmap;
 
 	/* configure hangover */
-	ret = wl12xx_acx_config_hangover(wl);
+	ret = wl12xx_acx_config_hangover();
 	if (ret < 0)
 		goto out_free_memmap;
 
 	return 0;
 
  out_free_memmap:
-	kfree(wl->target_mem_map);
-	wl->target_mem_map = NULL;
+	kfree(wifi_data.target_mem_map);
+	wifi_data.target_mem_map = NULL;
 
 	return ret;
 }

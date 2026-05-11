@@ -50,22 +50,22 @@ wlcore_vendor_cmd_smart_config_start(struct wiphy *wiphy,
 
 	mutex_lock(&wifi_data.mutex);
 
-	if (unlikely(wl->state != WLCORE_STATE_ON)) {
+	if (unlikely(wifi_data.state != WLCORE_STATE_ON)) {
 		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = pm_runtime_get_sync(wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
+		pm_runtime_put_noidle(wifi_data.dev);
 		goto out;
 	}
 
 	ret = VV_cmd_smart_config_start(wl,
 			nla_get_u32(tb[WLCORE_VENDOR_ATTR_GROUP_ID]));
 
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.dev);
+	pm_runtime_put_autosuspend(wifi_data.dev);
 out:
 	mutex_unlock(&wifi_data.mutex);
 
@@ -85,21 +85,21 @@ wlcore_vendor_cmd_smart_config_stop(struct wiphy *wiphy,
 
 	mutex_lock(&wifi_data.mutex);
 
-	if (unlikely(wl->state != WLCORE_STATE_ON)) {
+	if (unlikely(wifi_data.state != WLCORE_STATE_ON)) {
 		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = pm_runtime_get_sync(wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
+		pm_runtime_put_noidle(wifi_data.dev);
 		goto out;
 	}
 
 	ret = VV_cmd_smart_config_stop(wl);
 
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.dev);
+	pm_runtime_put_autosuspend(wifi_data.dev);
 out:
 	mutex_unlock(&wifi_data.mutex);
 
@@ -132,14 +132,14 @@ wlcore_vendor_cmd_smart_config_set_group_key(struct wiphy *wiphy,
 
 	mutex_lock(&wifi_data.mutex);
 
-	if (unlikely(wl->state != WLCORE_STATE_ON)) {
+	if (unlikely(wifi_data.state != WLCORE_STATE_ON)) {
 		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = pm_runtime_get_sync(wl->dev);
+	ret = pm_runtime_get_sync(wifi_data.dev);
 	if (ret < 0) {
-		pm_runtime_put_noidle(wl->dev);
+		pm_runtime_put_noidle(wifi_data.dev);
 		goto out;
 	}
 
@@ -148,8 +148,8 @@ wlcore_vendor_cmd_smart_config_set_group_key(struct wiphy *wiphy,
 			nla_len(tb[WLCORE_VENDOR_ATTR_GROUP_KEY]),
 			nla_data(tb[WLCORE_VENDOR_ATTR_GROUP_KEY]));
 
-	pm_runtime_mark_last_busy(wl->dev);
-	pm_runtime_put_autosuspend(wl->dev);
+	pm_runtime_mark_last_busy(wifi_data.dev);
+	pm_runtime_put_autosuspend(wifi_data.dev);
 out:
 	mutex_unlock(&wifi_data.mutex);
 

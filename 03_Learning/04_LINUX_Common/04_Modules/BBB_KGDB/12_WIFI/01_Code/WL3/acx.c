@@ -21,7 +21,7 @@
 
 #include "common.h"
 
-int wl1271_acx_wake_up_conditions(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_wake_up_conditions(struct wl12xx_vif *wlvif,
 				  u8 wake_up_event, u8 listen_interval)
 {
 	struct acx_wake_up_condition *wake_up;
@@ -40,7 +40,7 @@ int wl1271_acx_wake_up_conditions(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	wake_up->wake_up_event = wake_up_event;
 	wake_up->listen_interval = listen_interval;
 
-	ret = VV_cmd_configure(wl, ACX_WAKE_UP_CONDITIONS,
+	ret = VV_cmd_configure(ACX_WAKE_UP_CONDITIONS,
 				   wake_up, sizeof(*wake_up));
 	if (ret < 0) {
 		wl1271_warning("could not set wake up conditions: %d", ret);
@@ -52,7 +52,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_sleep_auth(struct wl1271 *wl, u8 sleep_auth)
+int wl1271_acx_sleep_auth(u8 sleep_auth)
 {
 	struct acx_sleep_auth *auth;
 	int ret;
@@ -67,21 +67,21 @@ int wl1271_acx_sleep_auth(struct wl1271 *wl, u8 sleep_auth)
 
 	auth->sleep_auth = sleep_auth;
 
-	ret = VV_cmd_configure(wl, ACX_SLEEP_AUTH, auth, sizeof(*auth));
+	ret = VV_cmd_configure(ACX_SLEEP_AUTH, auth, sizeof(*auth));
 	if (ret < 0) {
 		wl1271_error("could not configure sleep_auth to %d: %d",
 			     sleep_auth, ret);
 		goto out;
 	}
 
-	wl->sleep_auth = sleep_auth;
+	wifi_data.sleep_auth = sleep_auth;
 out:
 	kfree(auth);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(wl1271_acx_sleep_auth);
 
-int wl1271_acx_tx_power(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_tx_power(struct wl12xx_vif *wlvif,
 			int power)
 {
 	struct acx_current_tx_power *acx;
@@ -101,7 +101,7 @@ int wl1271_acx_tx_power(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->role_id = wlvif->role_id;
 	acx->current_tx_power = power * 10;
 
-	ret = VV_cmd_configure(wl, DOT11_CUR_TX_PWR, acx, sizeof(*acx));
+	ret = VV_cmd_configure(DOT11_CUR_TX_PWR, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("configure of tx power failed: %d", ret);
 		goto out;
@@ -112,7 +112,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_feature_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl1271_acx_feature_cfg(struct wl12xx_vif *wlvif)
 {
 	struct acx_feature_config *feature;
 	int ret;
@@ -130,7 +130,7 @@ int wl1271_acx_feature_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	feature->data_flow_options = 0;
 	feature->options = 0;
 
-	ret = VV_cmd_configure(wl, ACX_FEATURE_CFG,
+	ret = VV_cmd_configure(ACX_FEATURE_CFG,
 				   feature, sizeof(*feature));
 	if (ret < 0) {
 		wl1271_error("Couldn't set HW encryption");
@@ -142,14 +142,14 @@ out:
 	return ret;
 }
 
-int wl1271_acx_mem_map(struct wl1271 *wl, struct acx_header *mem_map,
+int wl1271_acx_mem_map(struct acx_header *mem_map,
 		       size_t len)
 {
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx mem map");
 
-	ret = wl1271_cmd_interrogate(wl, ACX_MEM_MAP, mem_map,
+	ret = wl1271_cmd_interrogate(ACX_MEM_MAP, mem_map,
 				     sizeof(struct acx_header), len);
 	if (ret < 0)
 		return ret;
@@ -157,7 +157,7 @@ int wl1271_acx_mem_map(struct wl1271 *wl, struct acx_header *mem_map,
 	return 0;
 }
 
-int wl1271_acx_rx_msdu_life_time(struct wl1271 *wl)
+int wl1271_acx_rx_msdu_life_time(void)
 {
 	struct acx_rx_msdu_lifetime *acx;
 	int ret;
@@ -170,8 +170,8 @@ int wl1271_acx_rx_msdu_life_time(struct wl1271 *wl)
 		goto out;
 	}
 
-	acx->lifetime = cpu_to_le32(wl->conf.rx.rx_msdu_life_time);
-	ret = VV_cmd_configure(wl, DOT11_RX_MSDU_LIFE_TIME,
+	acx->lifetime = cpu_to_le32(wifi_data.conf.rx.rx_msdu_life_time);
+	ret = VV_cmd_configure(DOT11_RX_MSDU_LIFE_TIME,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set rx msdu life time: %d", ret);
@@ -183,7 +183,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_slot(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_slot(struct wl12xx_vif *wlvif,
 		    enum acx_slot_type slot_time)
 {
 	struct acx_slot *slot;
@@ -201,7 +201,7 @@ int wl1271_acx_slot(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	slot->wone_index = STATION_WONE_INDEX;
 	slot->slot_time = slot_time;
 
-	ret = VV_cmd_configure(wl, ACX_SLOT, slot, sizeof(*slot));
+	ret = VV_cmd_configure(ACX_SLOT, slot, sizeof(*slot));
 	if (ret < 0) {
 		wl1271_warning("failed to set slot time: %d", ret);
 		goto out;
@@ -212,7 +212,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_group_address_tbl(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_group_address_tbl(struct wl12xx_vif *wlvif,
 				 bool enable, void *mc_list, u32 mc_list_len)
 {
 	struct acx_dot11_grp_addr_tbl *acx;
@@ -232,7 +232,7 @@ int wl1271_acx_group_address_tbl(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->num_groups = mc_list_len;
 	memcpy(acx->mac_table, mc_list, mc_list_len * ETH_ALEN);
 
-	ret = VV_cmd_configure(wl, DOT11_GROUP_ADDRESS_TBL,
+	ret = VV_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set group addr table: %d", ret);
@@ -244,7 +244,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_service_period_timeout(struct wl1271 *wl,
+int wl1271_acx_service_period_timeout(
 				      struct wl12xx_vif *wlvif)
 {
 	struct acx_rx_timeout *rx_timeout;
@@ -259,10 +259,10 @@ int wl1271_acx_service_period_timeout(struct wl1271 *wl,
 	wl1271_debug(DEBUG_ACX, "acx service period timeout");
 
 	rx_timeout->role_id = wlvif->role_id;
-	rx_timeout->ps_poll_timeout = cpu_to_le16(wl->conf.rx.ps_poll_timeout);
-	rx_timeout->upsd_timeout = cpu_to_le16(wl->conf.rx.upsd_timeout);
+	rx_timeout->ps_poll_timeout = cpu_to_le16(wifi_data.conf.rx.ps_poll_timeout);
+	rx_timeout->upsd_timeout = cpu_to_le16(wifi_data.conf.rx.upsd_timeout);
 
-	ret = VV_cmd_configure(wl, ACX_SERVICE_PERIOD_TIMEOUT,
+	ret = VV_cmd_configure(ACX_SERVICE_PERIOD_TIMEOUT,
 				   rx_timeout, sizeof(*rx_timeout));
 	if (ret < 0) {
 		wl1271_warning("failed to set service period timeout: %d",
@@ -275,7 +275,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rts_threshold(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_rts_threshold(struct wl12xx_vif *wlvif,
 			     u32 rts_threshold)
 {
 	struct acx_rts_threshold *rts;
@@ -286,7 +286,7 @@ int wl1271_acx_rts_threshold(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 * default value.
 	 */
 	if (rts_threshold > IEEE80211_MAX_RTS_THRESHOLD)
-		rts_threshold = wl->conf.rx.rts_threshold;
+		rts_threshold = wifi_data.conf.rx.rts_threshold;
 
 	wl1271_debug(DEBUG_ACX, "acx rts threshold: %d", rts_threshold);
 
@@ -299,7 +299,7 @@ int wl1271_acx_rts_threshold(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	rts->role_id = wlvif->role_id;
 	rts->threshold = cpu_to_le16((u16)rts_threshold);
 
-	ret = VV_cmd_configure(wl, DOT11_RTS_THRESHOLD, rts, sizeof(*rts));
+	ret = VV_cmd_configure(DOT11_RTS_THRESHOLD, rts, sizeof(*rts));
 	if (ret < 0) {
 		wl1271_warning("failed to set rts threshold: %d", ret);
 		goto out;
@@ -310,10 +310,10 @@ out:
 	return ret;
 }
 
-int wl1271_acx_dco_itrim_params(struct wl1271 *wl)
+int wl1271_acx_dco_itrim_params(void)
 {
 	struct acx_dco_itrim_params *dco;
-	struct conf_itrim_settings *c = &wl->conf.itrim;
+	struct conf_itrim_settings *c = &wifi_data.conf.itrim;
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx dco itrim parameters");
@@ -327,7 +327,7 @@ int wl1271_acx_dco_itrim_params(struct wl1271 *wl)
 	dco->enable = c->enable;
 	dco->timeout = cpu_to_le32(c->timeout);
 
-	ret = VV_cmd_configure(wl, ACX_SET_DCO_ITRIM_PARAMS,
+	ret = VV_cmd_configure(ACX_SET_DCO_ITRIM_PARAMS,
 				   dco, sizeof(*dco));
 	if (ret < 0) {
 		wl1271_warning("failed to set dco itrim parameters: %d", ret);
@@ -339,7 +339,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_beacon_filter_opt(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_beacon_filter_opt(struct wl12xx_vif *wlvif,
 				 bool enable_filter)
 {
 	struct acx_beacon_filter_option *beacon_filter = NULL;
@@ -349,7 +349,7 @@ int wl1271_acx_beacon_filter_opt(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		     enable_filter);
 
 	if (enable_filter &&
-	    wl->conf.conn.bcn_filt_mode == CONF_BCN_FILT_MODE_DISABLED)
+	    wifi_data.conf.conn.bcn_filt_mode == CONF_BCN_FILT_MODE_DISABLED)
 		goto out;
 
 	beacon_filter = kzalloc(sizeof(*beacon_filter), GFP_KERNEL);
@@ -367,7 +367,7 @@ int wl1271_acx_beacon_filter_opt(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 */
 	beacon_filter->max_num_beacons = 0;
 
-	ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_OPT,
+	ret = VV_cmd_configure(ACX_BEACON_FILTER_OPT,
 				   beacon_filter, sizeof(*beacon_filter));
 	if (ret < 0) {
 		wl1271_warning("failed to set beacon filter opt: %d", ret);
@@ -379,7 +379,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_beacon_filter_table(struct wl1271 *wl,
+int wl1271_acx_beacon_filter_table(
 				   struct wl12xx_vif *wlvif)
 {
 	struct acx_beacon_filter_ie_table *ie_table;
@@ -398,8 +398,8 @@ int wl1271_acx_beacon_filter_table(struct wl1271 *wl,
 	/* configure default beacon pass-through rules */
 	ie_table->role_id = wlvif->role_id;
 	ie_table->num_ie = 0;
-	for (i = 0; i < wl->conf.conn.bcn_filt_ie_count; i++) {
-		struct conf_bcn_filt_rule *r = &(wl->conf.conn.bcn_filt_ie[i]);
+	for (i = 0; i < wifi_data.conf.conn.bcn_filt_ie_count; i++) {
+		struct conf_bcn_filt_rule *r = &(wifi_data.conf.conn.bcn_filt_ie[i]);
 		ie_table->table[idx++] = r->ie;
 		ie_table->table[idx++] = r->rule;
 
@@ -423,7 +423,7 @@ int wl1271_acx_beacon_filter_table(struct wl1271 *wl,
 		ie_table->num_ie++;
 	}
 
-	ret = VV_cmd_configure(wl, ACX_BEACON_FILTER_TABLE,
+	ret = VV_cmd_configure(ACX_BEACON_FILTER_TABLE,
 				   ie_table, sizeof(*ie_table));
 	if (ret < 0) {
 		wl1271_warning("failed to set beacon filter table: %d", ret);
@@ -437,7 +437,7 @@ out:
 
 #define ACX_CONN_MONIT_DISABLE_VALUE  0xffffffff
 
-int wl1271_acx_conn_monit_params(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_conn_monit_params(struct wl12xx_vif *wlvif,
 				 bool enable)
 {
 	struct acx_conn_monit_params *acx;
@@ -455,15 +455,15 @@ int wl1271_acx_conn_monit_params(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 	if (enable) {
-		threshold = wl->conf.conn.synch_fail_thold;
-		timeout = wl->conf.conn.bss_lose_timeout;
+		threshold = wifi_data.conf.conn.synch_fail_thold;
+		timeout = wifi_data.conf.conn.bss_lose_timeout;
 	}
 
 	acx->role_id = wlvif->role_id;
 	acx->synch_fail_thold = cpu_to_le32(threshold);
 	acx->bss_lose_timeout = cpu_to_le32(timeout);
 
-	ret = VV_cmd_configure(wl, ACX_CONN_MONIT_PARAMS,
+	ret = VV_cmd_configure(ACX_CONN_MONIT_PARAMS,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set connection monitor "
@@ -477,7 +477,7 @@ out:
 }
 
 
-int wl1271_acx_sg_enable(struct wl1271 *wl, bool enable)
+int wl1271_acx_sg_enable(bool enable)
 {
 	struct acx_bt_wlan_coex *pta;
 	int ret;
@@ -491,11 +491,11 @@ int wl1271_acx_sg_enable(struct wl1271 *wl, bool enable)
 	}
 
 	if (enable)
-		pta->enable = wl->conf.sg.state;
+		pta->enable = wifi_data.conf.sg.state;
 	else
 		pta->enable = CONF_SG_DISABLE;
 
-	ret = VV_cmd_configure(wl, ACX_SG_ENABLE, pta, sizeof(*pta));
+	ret = VV_cmd_configure(ACX_SG_ENABLE, pta, sizeof(*pta));
 	if (ret < 0) {
 		wl1271_warning("failed to set softgemini enable: %d", ret);
 		goto out;
@@ -506,10 +506,10 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_sg_cfg(struct wl1271 *wl)
+int wl12xx_acx_sg_cfg(void)
 {
 	struct acx_bt_wlan_coex_param *param;
-	struct conf_sg_settings *c = &wl->conf.sg;
+	struct conf_sg_settings *c = &wifi_data.conf.sg;
 	int i, ret;
 
 	wl1271_debug(DEBUG_ACX, "acx sg cfg");
@@ -525,7 +525,7 @@ int wl12xx_acx_sg_cfg(struct wl1271 *wl)
 		param->params[i] = cpu_to_le32(c->params[i]);
 	param->param_idx = WLCORE_CONF_SG_PARAMS_ALL;
 
-	ret = VV_cmd_configure(wl, ACX_SG_CFG, param, sizeof(*param));
+	ret = VV_cmd_configure(ACX_SG_CFG, param, sizeof(*param));
 	if (ret < 0) {
 		wl1271_warning("failed to set sg config: %d", ret);
 		goto out;
@@ -536,7 +536,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_cca_threshold(struct wl1271 *wl)
+int wl1271_acx_cca_threshold(void)
 {
 	struct acx_energy_detection *detection;
 	int ret;
@@ -549,10 +549,10 @@ int wl1271_acx_cca_threshold(struct wl1271 *wl)
 		goto out;
 	}
 
-	detection->rx_cca_threshold = cpu_to_le16(wl->conf.rx.rx_cca_threshold);
-	detection->tx_energy_detection = wl->conf.tx.tx_energy_detection;
+	detection->rx_cca_threshold = cpu_to_le16(wifi_data.conf.rx.rx_cca_threshold);
+	detection->tx_energy_detection = wifi_data.conf.tx.tx_energy_detection;
 
-	ret = VV_cmd_configure(wl, ACX_CCA_THRESHOLD,
+	ret = VV_cmd_configure(ACX_CCA_THRESHOLD,
 				   detection, sizeof(*detection));
 	if (ret < 0)
 		wl1271_warning("failed to set cca threshold: %d", ret);
@@ -562,7 +562,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_bcn_dtim_options(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl1271_acx_bcn_dtim_options(struct wl12xx_vif *wlvif)
 {
 	struct acx_beacon_broadcast *bb;
 	int ret;
@@ -576,12 +576,12 @@ int wl1271_acx_bcn_dtim_options(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	}
 
 	bb->role_id = wlvif->role_id;
-	bb->beacon_rx_timeout = cpu_to_le16(wl->conf.conn.beacon_rx_timeout);
-	bb->broadcast_timeout = cpu_to_le16(wl->conf.conn.broadcast_timeout);
-	bb->rx_broadcast_in_ps = wl->conf.conn.rx_broadcast_in_ps;
-	bb->ps_poll_threshold = wl->conf.conn.ps_poll_threshold;
+	bb->beacon_rx_timeout = cpu_to_le16(wifi_data.conf.conn.beacon_rx_timeout);
+	bb->broadcast_timeout = cpu_to_le16(wifi_data.conf.conn.broadcast_timeout);
+	bb->rx_broadcast_in_ps = wifi_data.conf.conn.rx_broadcast_in_ps;
+	bb->ps_poll_threshold = wifi_data.conf.conn.ps_poll_threshold;
 
-	ret = VV_cmd_configure(wl, ACX_BCN_DTIM_OPTIONS, bb, sizeof(*bb));
+	ret = VV_cmd_configure(ACX_BCN_DTIM_OPTIONS, bb, sizeof(*bb));
 	if (ret < 0) {
 		wl1271_warning("failed to set rx config: %d", ret);
 		goto out;
@@ -592,7 +592,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_aid(struct wl1271 *wl, struct wl12xx_vif *wlvif, u16 aid)
+int wl1271_acx_aid(struct wl12xx_vif *wlvif, u16 aid)
 {
 	struct acx_aid *acx_aid;
 	int ret;
@@ -608,7 +608,7 @@ int wl1271_acx_aid(struct wl1271 *wl, struct wl12xx_vif *wlvif, u16 aid)
 	acx_aid->role_id = wlvif->role_id;
 	acx_aid->aid = cpu_to_le16(aid);
 
-	ret = VV_cmd_configure(wl, ACX_AID, acx_aid, sizeof(*acx_aid));
+	ret = VV_cmd_configure(ACX_AID, acx_aid, sizeof(*acx_aid));
 	if (ret < 0) {
 		wl1271_warning("failed to set aid: %d", ret);
 		goto out;
@@ -619,7 +619,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_event_mbox_mask(struct wl1271 *wl, u32 event_mask)
+int wl1271_acx_event_mbox_mask(u32 event_mask)
 {
 	struct acx_event_mask *mask;
 	int ret;
@@ -636,7 +636,7 @@ int wl1271_acx_event_mbox_mask(struct wl1271 *wl, u32 event_mask)
 	mask->high_event_mask = cpu_to_le32(0xffffffff);
 	mask->event_mask = cpu_to_le32(event_mask);
 
-	ret = VV_cmd_configure(wl, ACX_EVENT_MBOX_MASK,
+	ret = VV_cmd_configure(ACX_EVENT_MBOX_MASK,
 				   mask, sizeof(*mask));
 	if (ret < 0) {
 		wl1271_warning("failed to set acx_event_mbox_mask: %d", ret);
@@ -648,7 +648,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_set_preamble(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_set_preamble(struct wl12xx_vif *wlvif,
 			    enum acx_preamble_type preamble)
 {
 	struct acx_preamble *acx;
@@ -665,7 +665,7 @@ int wl1271_acx_set_preamble(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->role_id = wlvif->role_id;
 	acx->preamble = preamble;
 
-	ret = VV_cmd_configure(wl, ACX_PREAMBLE_TYPE, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_PREAMBLE_TYPE, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of preamble failed: %d", ret);
 		goto out;
@@ -676,7 +676,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_cts_protect(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_cts_protect(struct wl12xx_vif *wlvif,
 			   enum acx_ctsprotect_type ctsprotect)
 {
 	struct acx_ctsprotect *acx;
@@ -693,7 +693,7 @@ int wl1271_acx_cts_protect(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->role_id = wlvif->role_id;
 	acx->ctsprotect = ctsprotect;
 
-	ret = VV_cmd_configure(wl, ACX_CTS_PROTECTION, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_CTS_PROTECTION, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of ctsprotect failed: %d", ret);
 		goto out;
@@ -704,10 +704,10 @@ out:
 	return ret;
 }
 
-int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl1271_acx_sta_rate_policies(struct wl12xx_vif *wlvif)
 {
 	struct acx_rate_policy *acx;
-	struct conf_tx_rate_class *c = &wl->conf.tx.sta_rc_conf;
+	struct conf_tx_rate_class *c = &wifi_data.conf.tx.sta_rc_conf;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_ACX, "acx rate policies");
@@ -730,7 +730,7 @@ int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;
 
-	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of rate policies failed: %d", ret);
 		goto out;
@@ -741,15 +741,13 @@ int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx->rate_policy_idx = cpu_to_le32(STA_AP_RATE_IDX);
 
 	/* the AP policy is HW specific */
-	// acx->rate_policy.enabled_rates =
-	// 	cpu_to_le32(wlcore_hw_sta_get_ap_rate_mask(wl, wlvif));
 	acx->rate_policy.enabled_rates = wlvif->rate_set;
 		
 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;
 
-	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of rate policies failed: %d", ret);
 		goto out;
@@ -768,7 +766,7 @@ int wl1271_acx_sta_rate_policies(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;
 
-	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of rate policies failed: %d", ret);
 		goto out;
@@ -779,40 +777,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_ap_rate_policy(struct wl1271 *wl, struct conf_tx_rate_class *c,
-		      u8 idx)
-{
-	struct acx_rate_policy *acx;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_ACX, "acx ap rate policy %d rates 0x%x",
-		     idx, c->enabled_rates);
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	acx->rate_policy.enabled_rates = cpu_to_le32(c->enabled_rates);
-	acx->rate_policy.short_retry_limit = c->short_retry_limit;
-	acx->rate_policy.long_retry_limit = c->long_retry_limit;
-	acx->rate_policy.aflags = c->aflags;
-
-	acx->rate_policy_idx = cpu_to_le32(idx);
-
-	ret = VV_cmd_configure(wl, ACX_RATE_POLICY, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("Setting of ap rate policy failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
-	return ret;
-}
-
-int wl1271_acx_ac_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_ac_cfg(struct wl12xx_vif *wlvif,
 		      u8 ac, u8 cw_min, u16 cw_max, u8 aifsn, u16 txop)
 {
 	struct acx_ac_cfg *acx;
@@ -835,7 +800,7 @@ int wl1271_acx_ac_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->aifsn = aifsn;
 	acx->tx_op_limit = cpu_to_le16(txop);
 
-	ret = VV_cmd_configure(wl, ACX_AC_CFG, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_AC_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx ac cfg failed: %d", ret);
 		goto out;
@@ -846,7 +811,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_tid_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_tid_cfg(struct wl12xx_vif *wlvif,
 		       u8 queue_id, u8 channel_type,
 		       u8 tsid, u8 ps_scheme, u8 ack_policy,
 		       u32 apsd_conf0, u32 apsd_conf1)
@@ -872,7 +837,7 @@ int wl1271_acx_tid_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->apsd_conf[0] = cpu_to_le32(apsd_conf0);
 	acx->apsd_conf[1] = cpu_to_le32(apsd_conf1);
 
-	ret = VV_cmd_configure(wl, ACX_TID_CFG, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_TID_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of tid config failed: %d", ret);
 		goto out;
@@ -883,7 +848,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_frag_threshold(struct wl1271 *wl, u32 frag_threshold)
+int wl1271_acx_frag_threshold(u32 frag_threshold)
 {
 	struct acx_frag_threshold *acx;
 	int ret = 0;
@@ -893,7 +858,7 @@ int wl1271_acx_frag_threshold(struct wl1271 *wl, u32 frag_threshold)
 	 * default value.
 	 */
 	if (frag_threshold > IEEE80211_MAX_FRAG_THRESHOLD)
-		frag_threshold = wl->conf.tx.frag_threshold;
+		frag_threshold = wifi_data.conf.tx.frag_threshold;
 
 	wl1271_debug(DEBUG_ACX, "acx frag threshold: %d", frag_threshold);
 
@@ -905,7 +870,7 @@ int wl1271_acx_frag_threshold(struct wl1271 *wl, u32 frag_threshold)
 	}
 
 	acx->frag_threshold = cpu_to_le16((u16)frag_threshold);
-	ret = VV_cmd_configure(wl, ACX_FRAG_CFG, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_FRAG_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of frag threshold failed: %d", ret);
 		goto out;
@@ -916,7 +881,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_tx_config_options(struct wl1271 *wl)
+int wl1271_acx_tx_config_options(void)
 {
 	struct acx_tx_config_options *acx;
 	int ret = 0;
@@ -930,9 +895,9 @@ int wl1271_acx_tx_config_options(struct wl1271 *wl)
 		goto out;
 	}
 
-	acx->tx_compl_timeout = cpu_to_le16(wl->conf.tx.tx_compl_timeout);
-	acx->tx_compl_threshold = cpu_to_le16(wl->conf.tx.tx_compl_threshold);
-	ret = VV_cmd_configure(wl, ACX_TX_CONFIG_OPT, acx, sizeof(*acx));
+	acx->tx_compl_timeout = cpu_to_le16(wifi_data.conf.tx.tx_compl_timeout);
+	acx->tx_compl_threshold = cpu_to_le16(wifi_data.conf.tx.tx_compl_threshold);
+	ret = VV_cmd_configure(ACX_TX_CONFIG_OPT, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of tx options failed: %d", ret);
 		goto out;
@@ -944,7 +909,7 @@ out:
 }
 
 #define WL18XX_NUM_TX_DESCRIPTORS 32
-int wl12xx_acx_mem_cfg(struct wl1271 *wl)
+int wl12xx_acx_mem_cfg(void)
 {
 	struct wl12xx_acx_config_memory *mem_conf;
 	struct conf_memory_settings *mem;
@@ -958,7 +923,7 @@ int wl12xx_acx_mem_cfg(struct wl1271 *wl)
 		goto out;
 	}
 
-	mem = &wl->conf.mem;
+	mem = &wifi_data.conf.mem;
 
 	/* memory config */
 	mem_conf->num_stations = mem->num_stations;
@@ -970,9 +935,9 @@ int wl12xx_acx_mem_cfg(struct wl1271 *wl)
 	mem_conf->tx_free_req = mem->min_req_tx_blocks;
 	mem_conf->rx_free_req = mem->min_req_rx_blocks;
 	mem_conf->tx_min = mem->tx_min;
-	mem_conf->fwlog_blocks = wl->conf.fwlog.mem_blocks;
+	mem_conf->fwlog_blocks = wifi_data.conf.fwlog.mem_blocks;
 
-	ret = VV_cmd_configure(wl, ACX_MEM_CFG, mem_conf,
+	ret = VV_cmd_configure(ACX_MEM_CFG, mem_conf,
 				   sizeof(*mem_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 mem config failed: %d", ret);
@@ -985,30 +950,30 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl12xx_acx_mem_cfg);
 
-int wl1271_acx_init_mem_config(struct wl1271 *wl)
+int wl1271_acx_init_mem_config(void)
 {
 	int ret;
 
-	wl->target_mem_map = kzalloc(sizeof(struct wl1271_acx_mem_map),
+	wifi_data.target_mem_map = kzalloc(sizeof(struct wl1271_acx_mem_map),
 				     GFP_KERNEL);
-	if (!wl->target_mem_map) {
+	if (!wifi_data.target_mem_map) {
 		wl1271_error("couldn't allocate target memory map");
 		return -ENOMEM;
 	}
 
 	/* we now ask for the firmware built memory map */
-	ret = wl1271_acx_mem_map(wl, (void *)wl->target_mem_map,
+	ret = wl1271_acx_mem_map((void *)wifi_data.target_mem_map,
 				 sizeof(struct wl1271_acx_mem_map));
 	if (ret < 0) {
 		wl1271_error("couldn't retrieve firmware memory map");
-		kfree(wl->target_mem_map);
-		wl->target_mem_map = NULL;
+		kfree(wifi_data.target_mem_map);
+		wifi_data.target_mem_map = NULL;
 		return ret;
 	}
 
 	/* initialize TX block book keeping */
 	VV_tx_blocks_available =
-		le32_to_cpu(wl->target_mem_map->num_tx_mem_blocks);
+		le32_to_cpu(wifi_data.target_mem_map->num_tx_mem_blocks);
 	// wl1271_debug(DEBUG_TX, "available tx blocks: %d",
 	// 	     VV_tx_blocks_available);
 	printk("[INIT] available tx blocks: %d", VV_tx_blocks_available);
@@ -1017,7 +982,7 @@ int wl1271_acx_init_mem_config(struct wl1271 *wl)
 }
 EXPORT_SYMBOL_GPL(wl1271_acx_init_mem_config);
 
-int wl1271_acx_init_rx_interrupt(struct wl1271 *wl)
+int wl1271_acx_init_rx_interrupt(void)
 {
 	struct wl1271_acx_rx_config_opt *rx_conf;
 	int ret;
@@ -1030,12 +995,12 @@ int wl1271_acx_init_rx_interrupt(struct wl1271 *wl)
 		goto out;
 	}
 
-	rx_conf->threshold = cpu_to_le16(wl->conf.rx.irq_pkt_threshold);
-	rx_conf->timeout = cpu_to_le16(wl->conf.rx.irq_timeout);
-	rx_conf->mblk_threshold = cpu_to_le16(wl->conf.rx.irq_blk_threshold);
-	rx_conf->queue_type = wl->conf.rx.queue_type;
+	rx_conf->threshold = cpu_to_le16(wifi_data.conf.rx.irq_pkt_threshold);
+	rx_conf->timeout = cpu_to_le16(wifi_data.conf.rx.irq_timeout);
+	rx_conf->mblk_threshold = cpu_to_le16(wifi_data.conf.rx.irq_blk_threshold);
+	rx_conf->queue_type = wifi_data.conf.rx.queue_type;
 
-	ret = VV_cmd_configure(wl, ACX_RX_CONFIG_OPT, rx_conf,
+	ret = VV_cmd_configure(ACX_RX_CONFIG_OPT, rx_conf,
 				   sizeof(*rx_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 rx config opt failed: %d", ret);
@@ -1047,7 +1012,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_bet_enable(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_bet_enable(struct wl12xx_vif *wlvif,
 			  bool enable)
 {
 	struct wl1271_acx_bet_enable *acx = NULL;
@@ -1055,7 +1020,7 @@ int wl1271_acx_bet_enable(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	wl1271_debug(DEBUG_ACX, "acx bet enable");
 
-	if (enable && wl->conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
+	if (enable && wifi_data.conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
 		goto out;
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
@@ -1066,9 +1031,9 @@ int wl1271_acx_bet_enable(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	acx->role_id = wlvif->role_id;
 	acx->enable = enable ? CONF_BET_MODE_ENABLE : CONF_BET_MODE_DISABLE;
-	acx->max_consecutive = wl->conf.conn.bet_max_consecutive;
+	acx->max_consecutive = wifi_data.conf.conn.bet_max_consecutive;
 
-	ret = VV_cmd_configure(wl, ACX_BET_ENABLE, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_BET_ENABLE, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx bet enable failed: %d", ret);
 		goto out;
@@ -1079,7 +1044,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_arp_ip_filter(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_arp_ip_filter(struct wl12xx_vif *wlvif,
 			     u8 enable, __be32 address)
 {
 	struct wl1271_acx_arp_filter *acx;
@@ -1100,7 +1065,7 @@ int wl1271_acx_arp_ip_filter(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (enable)
 		memcpy(acx->address, &address, ACX_IPV4_ADDR_SIZE);
 
-	ret = VV_cmd_configure(wl, ACX_ARP_IP_FILTER,
+	ret = VV_cmd_configure(ACX_ARP_IP_FILTER,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set arp ip filter: %d", ret);
@@ -1112,10 +1077,10 @@ out:
 	return ret;
 }
 
-int wl1271_acx_pm_config(struct wl1271 *wl)
+int wl1271_acx_pm_config(void)
 {
 	struct wl1271_acx_pm_config *acx = NULL;
-	struct  conf_pm_config_settings *c = &wl->conf.pm_config;
+	struct  conf_pm_config_settings *c = &wifi_data.conf.pm_config;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_ACX, "acx pm config");
@@ -1129,7 +1094,7 @@ int wl1271_acx_pm_config(struct wl1271 *wl)
 	acx->host_clk_settling_time = cpu_to_le32(c->host_clk_settling_time);
 	acx->host_fast_wakeup_support = c->host_fast_wakeup_support;
 
-	ret = VV_cmd_configure(wl, ACX_PM_CONFIG, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_PM_CONFIG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx pm config failed: %d", ret);
 		goto out;
@@ -1141,7 +1106,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl1271_acx_pm_config);
 
-int wl1271_acx_keep_alive_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_keep_alive_mode(struct wl12xx_vif *wlvif,
 			       bool enable)
 {
 	struct wl1271_acx_keep_alive_mode *acx = NULL;
@@ -1158,7 +1123,7 @@ int wl1271_acx_keep_alive_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->role_id = wlvif->role_id;
 	acx->enabled = enable;
 
-	ret = VV_cmd_configure(wl, ACX_KEEP_ALIVE_MODE, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_KEEP_ALIVE_MODE, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx keep alive mode failed: %d", ret);
 		goto out;
@@ -1169,7 +1134,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_keep_alive_config(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_keep_alive_config(struct wl12xx_vif *wlvif,
 				 u8 index, u8 tpl_valid)
 {
 	struct wl1271_acx_keep_alive_config *acx = NULL;
@@ -1184,12 +1149,12 @@ int wl1271_acx_keep_alive_config(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 
 	acx->role_id = wlvif->role_id;
-	acx->period = cpu_to_le32(wl->conf.conn.keep_alive_interval);
+	acx->period = cpu_to_le32(wifi_data.conf.conn.keep_alive_interval);
 	acx->index = index;
 	acx->tpl_validation = tpl_valid;
 	acx->trigger = ACX_KEEP_ALIVE_NO_TX;
 
-	ret = VV_cmd_configure(wl, ACX_SET_KEEP_ALIVE_CONFIG,
+	ret = VV_cmd_configure(ACX_SET_KEEP_ALIVE_CONFIG,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx keep alive config failed: %d", ret);
@@ -1201,7 +1166,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rssi_snr_trigger(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_rssi_snr_trigger(struct wl12xx_vif *wlvif,
 				bool enable, s16 thold, u8 hyst)
 {
 	struct wl1271_acx_rssi_snr_trigger *acx = NULL;
@@ -1218,7 +1183,7 @@ int wl1271_acx_rssi_snr_trigger(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	wlvif->last_rssi_event = -1;
 
 	acx->role_id = wlvif->role_id;
-	acx->pacing = cpu_to_le16(wl->conf.roam_trigger.trigger_pacing);
+	acx->pacing = cpu_to_le16(wifi_data.conf.roam_trigger.trigger_pacing);
 	acx->metric = WL1271_ACX_TRIG_METRIC_RSSI_BEACON;
 	acx->type = WL1271_ACX_TRIG_TYPE_EDGE;
 	if (enable)
@@ -1231,7 +1196,7 @@ int wl1271_acx_rssi_snr_trigger(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	acx->threshold = cpu_to_le16(thold);
 	acx->hysteresis = hyst;
 
-	ret = VV_cmd_configure(wl, ACX_RSSI_SNR_TRIGGER, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_RSSI_SNR_TRIGGER, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx rssi snr trigger setting failed: %d", ret);
 		goto out;
@@ -1242,11 +1207,11 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rssi_snr_avg_weights(struct wl1271 *wl,
+int wl1271_acx_rssi_snr_avg_weights(
 				    struct wl12xx_vif *wlvif)
 {
 	struct wl1271_acx_rssi_snr_avg_weights *acx = NULL;
-	struct conf_roam_trigger_settings *c = &wl->conf.roam_trigger;
+	struct conf_roam_trigger_settings *c = &wifi_data.conf.roam_trigger;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_ACX, "acx rssi snr avg weights");
@@ -1263,7 +1228,7 @@ int wl1271_acx_rssi_snr_avg_weights(struct wl1271 *wl,
 	acx->snr_beacon = c->avg_weight_snr_beacon;
 	acx->snr_data = c->avg_weight_snr_data;
 
-	ret = VV_cmd_configure(wl, ACX_RSSI_SNR_WEIGHTS, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_RSSI_SNR_WEIGHTS, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx rssi snr trigger weights failed: %d", ret);
 		goto out;
@@ -1274,56 +1239,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_set_ht_capabilities(struct wl1271 *wl,
-				    struct ieee80211_sta_ht_cap *ht_cap,
-				    bool allow_ht_operation, u8 hlid)
-{
-	struct wl1271_acx_ht_capabilities *acx;
-	int ret = 0;
-	u32 ht_capabilites = 0;
-
-	wl1271_debug(DEBUG_ACX, "acx ht capabilities setting "
-		     "sta supp: %d sta cap: %d", ht_cap->ht_supported,
-		     ht_cap->cap);
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	if (allow_ht_operation && ht_cap->ht_supported) {
-		/* no need to translate capabilities - use the spec values */
-		ht_capabilites = ht_cap->cap;
-
-		/*
-		 * this bit is not employed by the spec but only by FW to
-		 * indicate peer HT support
-		 */
-		ht_capabilites |= WL12XX_HT_CAP_HT_OPERATION;
-
-		/* get data from A-MPDU parameters field */
-		acx->ampdu_max_length = ht_cap->ampdu_factor;
-		acx->ampdu_min_spacing = ht_cap->ampdu_density;
-	}
-
-	acx->hlid = hlid;
-	acx->ht_capabilites = cpu_to_le32(ht_capabilites);
-
-	ret = VV_cmd_configure(wl, ACX_PEER_HT_CAP, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("acx ht capabilities setting failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
-	return ret;
-}
-EXPORT_SYMBOL_GPL(wl1271_acx_set_ht_capabilities);
-
-
-int wl1271_acx_set_ht_information(struct wl1271 *wl,
+int wl1271_acx_set_ht_information(
 				   struct wl12xx_vif *wlvif,
 				   u16 ht_operation_mode)
 {
@@ -1347,7 +1263,7 @@ int wl1271_acx_set_ht_information(struct wl1271 *wl,
 	acx->ht_tx_burst_limit = 0;
 	acx->dual_cts_protection = 0;
 
-	ret = VV_cmd_configure(wl, ACX_HT_BSS_OPERATION, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_HT_BSS_OPERATION, acx, sizeof(*acx));
 
 	if (ret < 0) {
 		wl1271_warning("acx ht information setting failed: %d", ret);
@@ -1360,7 +1276,7 @@ out:
 }
 
 /* Configure BA session initiator/receiver parameters setting in the FW. */
-int wl12xx_acx_set_ba_initiator_policy(struct wl1271 *wl,
+int wl12xx_acx_set_ba_initiator_policy(
 				       struct wl12xx_vif *wlvif)
 {
 	struct wl1271_acx_ba_initiator_policy *acx;
@@ -1376,11 +1292,11 @@ int wl12xx_acx_set_ba_initiator_policy(struct wl1271 *wl,
 
 	/* set for the current role */
 	acx->role_id = wlvif->role_id;
-	acx->tid_bitmap = wl->conf.ht.tx_ba_tid_bitmap;
-	acx->win_size = wl->conf.ht.tx_ba_win_size;
-	acx->inactivity_timeout = wl->conf.ht.inactivity_timeout;
+	acx->tid_bitmap = wifi_data.conf.ht.tx_ba_tid_bitmap;
+	acx->win_size = wifi_data.conf.ht.tx_ba_win_size;
+	acx->inactivity_timeout = wifi_data.conf.ht.inactivity_timeout;
 
-	ret = VV_cmd_configure(wl,
+	ret = VV_cmd_configure(
 				   ACX_BA_SESSION_INIT_POLICY,
 				   acx,
 				   sizeof(*acx));
@@ -1394,36 +1310,7 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_tsf_info(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			u64 *mactime)
-{
-	struct wl12xx_acx_fw_tsf_information *tsf_info;
-	int ret;
-
-	tsf_info = kzalloc(sizeof(*tsf_info), GFP_KERNEL);
-	if (!tsf_info) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	tsf_info->role_id = wlvif->role_id;
-
-	ret = wl1271_cmd_interrogate(wl, ACX_TSF_INFO, tsf_info,
-				sizeof(struct acx_header), sizeof(*tsf_info));
-	if (ret < 0) {
-		wl1271_warning("acx tsf info interrogate failed");
-		goto out;
-	}
-
-	*mactime = le32_to_cpu(tsf_info->current_tsf_low) |
-		((u64) le32_to_cpu(tsf_info->current_tsf_high) << 32);
-
-out:
-	kfree(tsf_info);
-	return ret;
-}
-
-int wl1271_acx_ps_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_acx_ps_rx_streaming(struct wl12xx_vif *wlvif,
 			       bool enable)
 {
 	struct wl1271_acx_ps_rx_streaming *rx_streaming;
@@ -1438,7 +1325,7 @@ int wl1271_acx_ps_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		goto out;
 	}
 
-	conf_queues = wl->conf.rx_streaming.queues;
+	conf_queues = wifi_data.conf.rx_streaming.queues;
 	if (enable)
 		enable_queues = conf_queues;
 	else
@@ -1456,10 +1343,10 @@ int wl1271_acx_ps_rx_streaming(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		rx_streaming->role_id = wlvif->role_id;
 		rx_streaming->tid = i;
 		rx_streaming->enable = enable_queues & BIT(i);
-		rx_streaming->period = wl->conf.rx_streaming.interval;
-		rx_streaming->timeout = wl->conf.rx_streaming.interval;
+		rx_streaming->period = wifi_data.conf.rx_streaming.interval;
+		rx_streaming->timeout = wifi_data.conf.rx_streaming.interval;
 
-		ret = VV_cmd_configure(wl, ACX_PS_RX_STREAMING,
+		ret = VV_cmd_configure(ACX_PS_RX_STREAMING,
 					   rx_streaming,
 					   sizeof(*rx_streaming));
 		if (ret < 0) {
@@ -1472,89 +1359,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_ap_max_tx_retry(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	struct wl1271_acx_ap_max_tx_retry *acx = NULL;
-	int ret;
-
-	wl1271_debug(DEBUG_ACX, "acx ap max tx retry");
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx)
-		return -ENOMEM;
-
-	acx->role_id = wlvif->role_id;
-	acx->max_tx_retry = cpu_to_le16(wl->conf.tx.max_tx_retries);
-
-	ret = VV_cmd_configure(wl, ACX_MAX_TX_FAILURE, acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("acx ap max tx retry failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
-	return ret;
-}
-
-int wl12xx_acx_config_ps(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	struct wl1271_acx_config_ps *config_ps;
-	int ret;
-
-	wl1271_debug(DEBUG_ACX, "acx config ps");
-
-	config_ps = kzalloc(sizeof(*config_ps), GFP_KERNEL);
-	if (!config_ps) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	config_ps->exit_retries = wl->conf.conn.psm_exit_retries;
-	config_ps->enter_retries = wl->conf.conn.psm_entry_retries;
-	config_ps->null_data_rate = cpu_to_le32(wlvif->basic_rate);
-
-	ret = VV_cmd_configure(wl, ACX_CONFIG_PS, config_ps,
-				   sizeof(*config_ps));
-
-	if (ret < 0) {
-		wl1271_warning("acx config ps failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(config_ps);
-	return ret;
-}
-
-int wl1271_acx_set_inconnection_sta(struct wl1271 *wl,
-				    struct wl12xx_vif *wlvif, u8 *addr)
-{
-	struct wl1271_acx_inconnection_sta *acx = NULL;
-	int ret;
-
-	wl1271_debug(DEBUG_ACX, "acx set inconnaction sta %pM", addr);
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx)
-		return -ENOMEM;
-
-	memcpy(acx->addr, addr, ETH_ALEN);
-	acx->role_id = wlvif->role_id;
-
-	ret = VV_cmd_configure(wl, ACX_UPDATE_INCONNECTION_STA_LIST,
-				   acx, sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("acx set inconnaction sta failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
-	return ret;
-}
-
-int wl1271_acx_fm_coex(struct wl1271 *wl)
+int wl1271_acx_fm_coex(void)
 {
 	struct wl1271_acx_fm_coex *acx;
 	int ret;
@@ -1567,23 +1372,23 @@ int wl1271_acx_fm_coex(struct wl1271 *wl)
 		goto out;
 	}
 
-	acx->enable = wl->conf.fm_coex.enable;
-	acx->swallow_period = wl->conf.fm_coex.swallow_period;
-	acx->n_divider_fref_set_1 = wl->conf.fm_coex.n_divider_fref_set_1;
-	acx->n_divider_fref_set_2 = wl->conf.fm_coex.n_divider_fref_set_2;
+	acx->enable = wifi_data.conf.fm_coex.enable;
+	acx->swallow_period = wifi_data.conf.fm_coex.swallow_period;
+	acx->n_divider_fref_set_1 = wifi_data.conf.fm_coex.n_divider_fref_set_1;
+	acx->n_divider_fref_set_2 = wifi_data.conf.fm_coex.n_divider_fref_set_2;
 	acx->m_divider_fref_set_1 =
-		cpu_to_le16(wl->conf.fm_coex.m_divider_fref_set_1);
+		cpu_to_le16(wifi_data.conf.fm_coex.m_divider_fref_set_1);
 	acx->m_divider_fref_set_2 =
-		cpu_to_le16(wl->conf.fm_coex.m_divider_fref_set_2);
+		cpu_to_le16(wifi_data.conf.fm_coex.m_divider_fref_set_2);
 	acx->coex_pll_stabilization_time =
-		cpu_to_le32(wl->conf.fm_coex.coex_pll_stabilization_time);
+		cpu_to_le32(wifi_data.conf.fm_coex.coex_pll_stabilization_time);
 	acx->ldo_stabilization_time =
-		cpu_to_le16(wl->conf.fm_coex.ldo_stabilization_time);
+		cpu_to_le16(wifi_data.conf.fm_coex.ldo_stabilization_time);
 	acx->fm_disturbed_band_margin =
-		wl->conf.fm_coex.fm_disturbed_band_margin;
-	acx->swallow_clk_diff = wl->conf.fm_coex.swallow_clk_diff;
+		wifi_data.conf.fm_coex.fm_disturbed_band_margin;
+	acx->swallow_clk_diff = wifi_data.conf.fm_coex.swallow_clk_diff;
 
-	ret = VV_cmd_configure(wl, ACX_FM_COEX_CFG, acx, sizeof(*acx));
+	ret = VV_cmd_configure(ACX_FM_COEX_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx fm coex setting failed: %d", ret);
 		goto out;
@@ -1594,10 +1399,10 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_set_rate_mgmt_params(struct wl1271 *wl)
+int wl12xx_acx_set_rate_mgmt_params(void)
 {
 	struct wl12xx_acx_set_rate_mgmt_params *acx = NULL;
-	struct conf_rate_policy_settings *conf = &wl->conf.rate;
+	struct conf_rate_policy_settings *conf = &wifi_data.conf.rate;
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx set rate mgmt params");
@@ -1624,7 +1429,7 @@ int wl12xx_acx_set_rate_mgmt_params(struct wl1271 *wl)
 	memcpy(acx->rate_retry_policy, conf->rate_retry_policy,
 	       sizeof(acx->rate_retry_policy));
 
-	ret = VV_cmd_configure(wl, ACX_SET_RATE_MGMT_PARAMS,
+	ret = VV_cmd_configure(ACX_SET_RATE_MGMT_PARAMS,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx set rate mgmt params failed: %d", ret);
@@ -1636,10 +1441,10 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_config_hangover(struct wl1271 *wl)
+int wl12xx_acx_config_hangover(void)
 {
 	struct wl12xx_acx_config_hangover *acx;
-	struct conf_hangover_settings *conf = &wl->conf.hangover;
+	struct conf_hangover_settings *conf = &wifi_data.conf.hangover;
 	int ret;
 
 	wl1271_debug(DEBUG_ACX, "acx config hangover");
@@ -1662,7 +1467,7 @@ int wl12xx_acx_config_hangover(struct wl1271 *wl)
 	acx->increase_time = conf->increase_time;
 	acx->window_size = conf->window_size;
 
-	ret = VV_cmd_configure(wl, ACX_CONFIG_HANGOVER, acx,
+	ret = VV_cmd_configure(ACX_CONFIG_HANGOVER, acx,
 				   sizeof(*acx));
 
 	if (ret < 0) {
@@ -1676,113 +1481,3 @@ out:
 
 }
 
-int wlcore_acx_average_rssi(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			    s8 *avg_rssi)
-{
-	struct acx_roaming_stats *acx;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_ACX, "acx roaming statistics");
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx) {
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	acx->role_id = wlvif->role_id;
-	ret = wl1271_cmd_interrogate(wl, ACX_ROAMING_STATISTICS_TBL,
-				     acx, sizeof(*acx), sizeof(*acx));
-	if (ret	< 0) {
-		wl1271_warning("acx roaming statistics failed: %d", ret);
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	*avg_rssi = acx->rssi_beacon;
-out:
-	kfree(acx);
-	return ret;
-}
-
-#ifdef CONFIG_PM
-/* Set the global behaviour of RX filters - On/Off + default action */
-int wl1271_acx_default_rx_filter_enable(struct wl1271 *wl, bool enable,
-					enum rx_filter_action action)
-{
-	struct acx_default_rx_filter *acx;
-	int ret;
-
-	wl1271_debug(DEBUG_ACX, "acx default rx filter en: %d act: %d",
-		     enable, action);
-
-	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
-	if (!acx)
-		return -ENOMEM;
-
-	acx->enable = enable;
-	acx->default_action = action;
-
-	ret = VV_cmd_configure(wl, ACX_ENABLE_RX_DATA_FILTER, acx,
-				   sizeof(*acx));
-	if (ret < 0) {
-		wl1271_warning("acx default rx filter enable failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
-	return ret;
-}
-
-/* Configure or disable a specific RX filter pattern */
-int wl1271_acx_set_rx_filter(struct wl1271 *wl, u8 index, bool enable,
-			     struct wl12xx_rx_filter *filter)
-{
-	struct acx_rx_filter_cfg *acx;
-	int fields_size = 0;
-	int acx_size;
-	int ret;
-
-	WARN_ON(enable && !filter);
-	WARN_ON(index >= WL1271_MAX_RX_FILTERS);
-
-	wl1271_debug(DEBUG_ACX,
-		     "acx set rx filter idx: %d enable: %d filter: %p",
-		     index, enable, filter);
-
-	if (enable) {
-		fields_size = wl1271_rx_filter_get_fields_size(filter);
-
-		wl1271_debug(DEBUG_ACX, "act: %d num_fields: %d field_size: %d",
-		      filter->action, filter->num_fields, fields_size);
-	}
-
-	acx_size = ALIGN(sizeof(*acx) + fields_size, 4);
-	acx = kzalloc(acx_size, GFP_KERNEL);
-
-	if (!acx)
-		return -ENOMEM;
-
-	acx->enable = enable;
-	acx->index = index;
-
-	if (enable) {
-		acx->num_fields = filter->num_fields;
-		acx->action = filter->action;
-		wl1271_rx_filter_flatten_fields(filter, acx->fields);
-	}
-
-	wl1271_dump(DEBUG_ACX, "RX_FILTER: ", acx, acx_size);
-
-	ret = VV_cmd_configure(wl, ACX_SET_RX_DATA_FILTER, acx, acx_size);
-	if (ret < 0) {
-		wl1271_warning("setting rx filter failed: %d", ret);
-		goto out;
-	}
-
-out:
-	kfree(acx);
-	return ret;
-}
-#endif /* CONFIG_PM */

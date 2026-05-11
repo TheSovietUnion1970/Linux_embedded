@@ -102,7 +102,6 @@ int VV_acx_set_peer_cap(struct wl1271 *wl,
 struct VV_static_data_priv {
 	char phy_version[WL18XX_PHY_VERSION_MAX_LEN];
 };
-int VV_handle_static_data(struct wl1271 *wl,
-				     struct wl1271_static_data *static_data);
+int VV_handle_static_data(struct wl1271_static_data *static_data);
 
 #endif

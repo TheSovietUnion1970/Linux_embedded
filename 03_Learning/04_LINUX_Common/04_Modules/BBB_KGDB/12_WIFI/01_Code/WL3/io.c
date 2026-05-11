@@ -20,31 +20,31 @@
 
 void wlcore_disable_interrupts(struct wl1271 *wl)
 {
-	disable_irq(wl->irq);
+	disable_irq(wifi_data.irq);
 }
 EXPORT_SYMBOL_GPL(wlcore_disable_interrupts);
 
 void wlcore_disable_interrupts_nosync(struct wl1271 *wl)
 {
-	disable_irq_nosync(wl->irq);
+	disable_irq_nosync(wifi_data.irq);
 }
 EXPORT_SYMBOL_GPL(wlcore_disable_interrupts_nosync);
 
 void wlcore_enable_interrupts(struct wl1271 *wl)
 {
-	enable_irq(wl->irq);
+	enable_irq(wifi_data.irq);
 }
 EXPORT_SYMBOL_GPL(wlcore_enable_interrupts);
 
 void wlcore_synchronize_interrupts(struct wl1271 *wl)
 {
-	synchronize_irq(wl->irq);
+	synchronize_irq(wifi_data.irq);
 }
 EXPORT_SYMBOL_GPL(wlcore_synchronize_interrupts);
 
 int wlcore_translate_addr(int addr)
 {
-	// struct wlcore_partition_set *part = &wl->curr_part;
+	// struct wlcore_partition_set *part = &wifi_data.curr_part;
 	struct VV_partition_set *part = &wifi_data.curr_part;
 
 	/*
@@ -116,7 +116,7 @@ EXPORT_SYMBOL_GPL(wlcore_translate_addr);
 int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)
 {
 	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.dev->parent);
 
 	sdio_claim_host(func);
 
@@ -137,7 +137,7 @@ int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)
 int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed)
 {
 	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.dev->parent);
 
 	sdio_claim_host(func);
 
@@ -158,7 +158,7 @@ int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed)
 int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed)
 {
 	int ret = 0;
-	struct sdio_func *func = dev_to_sdio_func(wifi_data.wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.dev->parent);
 
 	sdio_claim_host(func);
 
@@ -181,7 +181,7 @@ int VV_set_partition_core(struct VV_partition_set *p)
 	int ret;
 
 	/* copy partition info */
-	//memcpy(&wl->curr_part, p, sizeof(*p));
+	//memcpy(&wifi_data.curr_part, p, sizeof(*p));
 	memcpy(&wifi_data.curr_part, p, sizeof(*p));
 
 	ret = VV_sdio_raw_write(HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
@@ -222,7 +222,7 @@ out:
 
 void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz)
 {
-	struct sdio_func *func = dev_to_sdio_func(wl->dev->parent);
+	struct sdio_func *func = dev_to_sdio_func(wifi_data.dev->parent);
 
 	sdio_claim_host(func);
 	sdio_set_block_size(func, blksz);
