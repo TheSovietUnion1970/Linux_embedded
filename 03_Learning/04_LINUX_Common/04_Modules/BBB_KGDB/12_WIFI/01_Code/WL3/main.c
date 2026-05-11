@@ -1346,7 +1346,7 @@ static void wlcore_op_stop(struct ieee80211_hw *hw)
 	mutex_unlock(&wifi_data.mutex);
 }
 
-static u8 wl12xx_get_role_type(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static u8 wl12xx_get_role_type(struct wl12xx_vif *wlvif)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 
@@ -1374,7 +1374,7 @@ static u8 wl12xx_get_role_type(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	return WL12XX_INVALID_ROLE_TYPE;
 }
 
-static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
+static int wl12xx_init_vif_data(struct ieee80211_vif *vif)
 {
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 
@@ -1524,8 +1524,7 @@ static bool wl12xx_dev_role_started(struct wl12xx_vif *wlvif)
 // 	__set_bit(vif->hw_queue[0] / NUM_TX_QUEUES, iter_data->hw_queue_map);
 // }
 
-static int wlcore_allocate_hw_queue_base(struct wl1271 *wl,
-					 struct wl12xx_vif *wlvif)
+static int wlcore_allocate_hw_queue_base(struct wl12xx_vif *wlvif)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 	//struct wlcore_hw_queue_iter_data iter_data = {};
@@ -1576,7 +1575,7 @@ static int wlcore_allocate_hw_queue_base(struct wl1271 *wl,
 static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	int ret = 0;
 	u8 role_type;
@@ -1611,18 +1610,18 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	}
 
 	printk("[ADD IF] - wl1271_op_add_interface, vif = 0x%x, drv = 0x%x\n", vif, vif->drv_priv);
-	ret = wl12xx_init_vif_data(wl, vif);
+	ret = wl12xx_init_vif_data(vif);
 	if (ret < 0)
 		goto out;
 
-	wlvif->wl = wl;
-	role_type = wl12xx_get_role_type(wl, wlvif);
+	//wlvif->wl = wl;
+	role_type = wl12xx_get_role_type(wlvif);
 	if (role_type == WL12XX_INVALID_ROLE_TYPE) {
 		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = wlcore_allocate_hw_queue_base(wl, wlvif);
+	ret = wlcore_allocate_hw_queue_base(wlvif);
 	if (ret < 0)
 		goto out;
 
@@ -1662,7 +1661,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		if (ret < 0)
 			goto out;
 		//printk("IF - wlvif->role_id = %d\n", wlvif->role_id);
-		ret = wl1271_init_vif_specific(wl, vif);
+		ret = wl1271_init_vif_specific(vif);
 		if (ret < 0)
 			goto out;
 
@@ -1673,7 +1672,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 			goto out;
 		//printk("ELSE - wlvif->dev_role_id = %d\n", wlvif->dev_role_id);
 		/* needed mainly for configuring rate policies */
-		ret = wl1271_sta_hw_init(wl, wlvif);
+		ret = wl1271_sta_hw_init(wlvif);
 		if (ret < 0)
 			goto out;
 	}
