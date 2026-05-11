@@ -1664,7 +1664,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	// no need fw change as we use single role
 
 	if (!(vif->type == NL80211_IFTYPE_P2P_DEVICE)) {
-		ret = wl12xx_cmd_role_enable(wl, vif->addr,
+		ret = wl12xx_cmd_role_enable(vif->addr,
 					     role_type, &wlvif->role_id);
 		if (ret < 0)
 			goto out;
@@ -1674,7 +1674,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 			goto out;
 
 	} else {
-		ret = wl12xx_cmd_role_enable(wl, vif->addr, WL1271_ROLE_DEVICE,
+		ret = wl12xx_cmd_role_enable(vif->addr, WL1271_ROLE_DEVICE,
 					     &wlvif->dev_role_id);
 		if (ret < 0)
 			goto out;
@@ -1768,20 +1768,14 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 			goto deinit;
 		}
 
-		if (wlvif->bss_type == BSS_TYPE_STA_BSS ||
-		    wlvif->bss_type == BSS_TYPE_IBSS) {
-			if (wl12xx_dev_role_started(wlvif)) // wlvif->dev_hlid != WL12XX_INVALID_LINK_ID
-				wl12xx_stop_dev(wl, wlvif);
-		}
-
 		if (!wlcore_is_p2p_mgmt(wlvif)) {
-			ret = wl12xx_cmd_role_disable(wl, &wlvif->role_id);
+			ret = wl12xx_cmd_role_disable(&wlvif->role_id);
 			if (ret < 0) {
 				pm_runtime_put_noidle(wifi_data.dev);
 				goto deinit;
 			}
 		} else {
-			ret = wl12xx_cmd_role_disable(wl, &wlvif->dev_role_id);
+			ret = wl12xx_cmd_role_disable(&wlvif->dev_role_id);
 			if (ret < 0) {
 				pm_runtime_put_noidle(wifi_data.dev);
 				goto deinit;
@@ -1873,7 +1867,7 @@ out:
 	mutex_unlock(&wifi_data.mutex);
 }
 
-static int wlcore_join(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static int wlcore_join(struct wl12xx_vif *wlvif)
 {
 	int ret;
 
@@ -1892,12 +1886,12 @@ static int wlcore_join(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	/* clear encryption type */
 	wlvif->encryption_type = KEY_NONE;
 
-	ret = wl12xx_cmd_role_start_sta(wl, wlvif);
+	ret = wl12xx_cmd_role_start_sta(wlvif);
 
 	return ret;
 }
 
-static int wlcore_set_ssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static int wlcore_set_ssid(struct wl12xx_vif *wlvif)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 	struct sk_buff *skb;
@@ -2011,7 +2005,7 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	if (sta_rate_set) {
 		wlvif->rate_set =
-			wl1271_tx_enabled_rates_get(wl,
+			wl1271_tx_enabled_rates_get(
 						    sta_rate_set,
 						    wlvif->band);
 		ret = wl1271_acx_sta_rate_policies(wlvif);
@@ -2173,7 +2167,7 @@ out:
 	kfree(fp);
 }
 
-static int wl1271_record_ap_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+static int wl1271_record_ap_key(struct wl12xx_vif *wlvif,
 				u8 id, u8 key_type, u8 key_size,
 				const u8 *key, u8 hlid, u32 tx_seq_32,
 				u16 tx_seq_16, bool is_pairwise)
@@ -2220,7 +2214,7 @@ static int wl1271_record_ap_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	return 0;
 }
 
-static int wl1271_set_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+static int wl1271_set_key(struct wl12xx_vif *wlvif,
 		       u16 action, u8 id, u8 key_type,
 		       u8 key_size, const u8 *key, u32 tx_seq_32,
 		       u16 tx_seq_16, struct ieee80211_sta *sta,
@@ -2248,12 +2242,12 @@ static int wl1271_set_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			if (action != KEY_ADD_OR_REPLACE)
 				return 0;
 
-			ret = wl1271_record_ap_key(wl, wlvif, id,
+			ret = wl1271_record_ap_key(wlvif, id,
 					     key_type, key_size,
 					     key, hlid, tx_seq_32,
 					     tx_seq_16, is_pairwise);
 		} else {
-			ret = wl1271_cmd_set_ap_key(wl, wlvif, action,
+			ret = wl1271_cmd_set_ap_key(wlvif, action,
 					     id, key_type, key_size,
 					     key, hlid, tx_seq_32,
 					     tx_seq_16, is_pairwise);
@@ -2286,7 +2280,7 @@ static int wl1271_set_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		    wlvif->sta.hlid == WL12XX_INVALID_LINK_ID)
 			return 0;
 
-		ret = wl1271_cmd_set_sta_key(wl, wlvif, action,
+		ret = wl1271_cmd_set_sta_key(wlvif, action,
 					     id, key_type, key_size,
 					     key, addr, tx_seq_32,
 					     tx_seq_16);
@@ -2305,19 +2299,6 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 {
 	struct wl1271 *wl = hw->priv;
 	int ret;
-	// bool might_change_spare =
-	// 	key_conf->cipher == WL1271_CIPHER_SUITE_GEM ||
-	// 	key_conf->cipher == WLAN_CIPHER_SUITE_TKIP;
-
-	// if (might_change_spare) {
-	// 	printk("might_change_spare\n");
-	// 	/*
-	// 	 * stop the queues and flush to ensure the next packets are
-	// 	 * in sync with FW spare block accounting
-	// 	 */
-	// 	wlcore_stop_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
-	// 	wl1271_tx_flush(wl);
-	// }
 
 	mutex_lock(&wifi_data.mutex);
 
@@ -2332,22 +2313,18 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		goto out_wake_queues;
 	}
 
-	//ret = wlcore_hw_set_key(wl, cmd, vif, sta, key_conf);
-	ret = wlcore_set_key(wl, cmd, vif, sta, key_conf);
+	ret = wlcore_set_key(cmd, vif, sta, key_conf);
 
 	pm_runtime_mark_last_busy(wifi_data.dev);
 	pm_runtime_put_autosuspend(wifi_data.dev);
 
 out_wake_queues:
-	// if (might_change_spare)
-	// 	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_SPARE_BLK);
-
 	mutex_unlock(&wifi_data.mutex);
 
 	return ret;
 }
 
-int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
+int wlcore_set_key(enum set_key_cmd cmd,
 		   struct ieee80211_vif *vif,
 		   struct ieee80211_sta *sta,
 		   struct ieee80211_key_conf *key_conf)
@@ -2368,15 +2345,6 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		     key_conf->keylen, key_conf->flags);
 	wl1271_dump(DEBUG_CRYPT, "KEY: ", key_conf->key, key_conf->keylen);
 
-	// if (wlvif->bss_type == BSS_TYPE_AP_BSS)
-	// 	if (sta) {
-	// 		struct wl1271_station *wl_sta = (void *)sta->drv_priv;
-	// 		hlid = wl_sta->hlid;
-	// 	} else {
-	// 		hlid = wlvif->ap.bcast_hlid;
-	// 	}
-	// else
-	// 	hlid = wlvif->sta.hlid;
 	hlid = wlvif->sta.hlid;
 
 	if (hlid != WL12XX_INVALID_LINK_ID) {
@@ -2385,32 +2353,6 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		tx_seq_16 = WL1271_TX_SECURITY_LO16(tx_seq);
 	}
 
-	//printk("wlvif->sta.hlid = %d\n", wlvif->sta.hlid);
-
-	// printk("key_conf->cipher = %d\n", key_conf->cipher);
-	// switch (key_conf->cipher) {
-	// case WLAN_CIPHER_SUITE_WEP40:
-	// case WLAN_CIPHER_SUITE_WEP104:
-	// 	key_type = KEY_WEP;
-
-	// 	key_conf->hw_key_idx = key_conf->keyidx;
-	// 	break;
-	// case WLAN_CIPHER_SUITE_TKIP:
-	// 	key_type = KEY_TKIP;
-	// 	key_conf->hw_key_idx = key_conf->keyidx;
-	// 	break;
-	// case WLAN_CIPHER_SUITE_CCMP:
-	// 	key_type = KEY_AES;
-	// 	key_conf->flags |= IEEE80211_KEY_FLAG_PUT_IV_SPACE;
-	// 	break;
-	// case WL1271_CIPHER_SUITE_GEM:
-	// 	key_type = KEY_GEM;
-	// 	break;
-	// default:
-	// 	wl1271_error("Unknown key algo 0x%x", key_conf->cipher);
-
-	// 	return -EOPNOTSUPP;
-	// }
 	key_type = KEY_AES;
 	key_conf->flags |= IEEE80211_KEY_FLAG_PUT_IV_SPACE;
 
@@ -2418,7 +2360,7 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 
 	switch (cmd) {
 	case SET_KEY:
-		ret = wl1271_set_key(wl, wlvif, KEY_ADD_OR_REPLACE,
+		ret = wl1271_set_key(wlvif, KEY_ADD_OR_REPLACE,
 				 key_conf->keyidx, key_type,
 				 key_conf->keylen, key_conf->key,
 				 tx_seq_32, tx_seq_16, sta, is_pairwise);
@@ -2435,7 +2377,7 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		    (sta || key_type == KEY_WEP) &&
 		    wlvif->encryption_type != key_type) {
 			wlvif->encryption_type = key_type;
-			ret = wl1271_cmd_build_arp_rsp(wl, wlvif);
+			ret = wl1271_cmd_build_arp_rsp(wlvif);
 			if (ret < 0) {
 				wl1271_warning("build arp rsp failed: %d", ret);
 				return ret;
@@ -2444,7 +2386,7 @@ int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
 		break;
 
 	case DISABLE_KEY:
-		ret = wl1271_set_key(wl, wlvif, KEY_REMOVE,
+		ret = wl1271_set_key(wlvif, KEY_REMOVE,
 				     key_conf->keyidx, key_type,
 				     key_conf->keylen, key_conf->key,
 				     0, 0, sta, is_pairwise);
@@ -2589,7 +2531,7 @@ out:
 	return ret;
 }
 
-static int wlcore_set_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+static int wlcore_set_bssid(struct wl12xx_vif *wlvif,
 			    struct ieee80211_bss_conf *bss_conf,
 			    u32 sta_rate_set)
 {
@@ -2606,7 +2548,7 @@ static int wlcore_set_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 
 	if (sta_rate_set)
 		wlvif->rate_set =
-			wl1271_tx_enabled_rates_get(wl,
+			wl1271_tx_enabled_rates_get(
 						sta_rate_set,
 						wlvif->band);
 	// raw:      sta_rate_set    -> 0xFF0FFF
@@ -2617,16 +2559,16 @@ static int wlcore_set_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	if (ret < 0)
 		return ret;
 
-	ret = wl12xx_cmd_build_null_data(wl, wlvif);
+	ret = wl12xx_cmd_build_null_data(wlvif);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_build_qos_null_data(wl, wl12xx_wlvif_to_vif(wlvif));
+	ret = wl1271_build_qos_null_data(wl12xx_wlvif_to_vif(wlvif));
 	if (ret < 0)
 		return ret;
 
 	// get wlvif->ssid_len and ssid string
-	wlcore_set_ssid(wl, wlvif); 
+	wlcore_set_ssid(wlvif); 
 
 	set_bit(WLVIF_FLAG_IN_USE, &wlvif->flags);
 
@@ -2716,7 +2658,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 
 	if (changed & BSS_CHANGED_BSSID) {
 		if (!is_zero_ether_addr(bss_conf->bssid)) {
-			ret = wlcore_set_bssid(wl, wlvif, bss_conf,
+			ret = wlcore_set_bssid(wlvif, bss_conf,
 					       sta_rate_set); // sta_rate_set is get from the step above
 			if (ret < 0)
 				goto out;
@@ -2744,7 +2686,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 		goto out;
 
 	if (do_join) {
-		ret = wlcore_join(wl, wlvif);
+		ret = wlcore_join(wlvif);
 		if (ret < 0) {
 			wl1271_warning("cmd join failed %d", ret);
 			goto out;
@@ -2813,7 +2755,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 			 * isn't being set (when sending), so we have to
 			 * reconfigure the template upon every ip change.
 			 */
-			ret = wl1271_cmd_build_arp_rsp(wl, wlvif);
+			ret = wl1271_cmd_build_arp_rsp(wlvif);
 			if (ret < 0) {
 				wl1271_warning("build arp rsp failed: %d", ret);
 				goto out;
@@ -2952,7 +2894,7 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	rcu_read_unlock();
 
 
-	wl12xx_free_link(wl, wlvif, &hlid);
+	wl12xx_free_link(wlvif, &hlid);
 	//wifi_data.active_sta_count--;
 
 	// /*
@@ -2973,7 +2915,7 @@ static void wlcore_roc_if_possible(struct wl1271 *wl,
 	if (WARN_ON(wlvif->role_id == WL12XX_INVALID_ROLE_ID))
 		return;
 
-	wl12xx_roc(wl, wlvif, wlvif->role_id, wlvif->band, wlvif->channel);
+	wl12xx_roc(wlvif, wlvif->role_id, wlvif->band, wlvif->channel);
 }
 
 /*
@@ -4115,22 +4057,14 @@ err_hw_alloc:
 }
 EXPORT_SYMBOL_GPL(wlcore_alloc_hw);
 
-int wlcore_free_hw(struct wl1271 *wl)
+int wlcore_free_hw(void)
 {
 	/* Unblock any fwlog readers */
 	mutex_lock(&wifi_data.mutex);
-	//wifi_data.fwlog_size = -1;
 	mutex_unlock(&wifi_data.mutex);
 
-	//wlcore_sysfs_free(wl);
-
-	//kfree(wifi_data.buffer_32);
-	// kfree(wifi_data.mbox);
-	//free_page((unsigned long)wifi_data.fwlog);
 	dev_kfree_skb(VV_dummy_packet);
 	free_pages((unsigned long)VV_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));
-
-	//wl1271_debugfs_exit(wl);
 
 	vfree(wifi_data.fw);
 	wifi_data.fw = NULL;
@@ -4359,7 +4293,7 @@ int wlcore_remove(struct platform_device *pdev)
 	pm_runtime_disable(wifi_data.dev);
 
 	free_irq(wifi_data.irq, wl);
-	wlcore_free_hw(wl);
+	wlcore_free_hw();
 
 	return 0;
 }

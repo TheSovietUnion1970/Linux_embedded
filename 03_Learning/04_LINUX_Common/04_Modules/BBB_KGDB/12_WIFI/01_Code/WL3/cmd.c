@@ -56,7 +56,6 @@ int VV_cmd_send(u16 id, void *buf, size_t len, size_t res_len)
 
 
 	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
-	//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
 	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 	if (ret < 0)
 		return ret;
@@ -66,7 +65,6 @@ int VV_cmd_send(u16 id, void *buf, size_t len, size_t res_len)
 			wl1271_error("command complete timeout");
 			return -ETIMEDOUT;
 		}
-		//ret = wlcore_read_reg(wl, REG_INTERRUPT_NO_CLEAR, &intr);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 		if (ret < 0)
 			return ret;
@@ -80,8 +78,7 @@ int VV_cmd_send(u16 id, void *buf, size_t len, size_t res_len)
 	if (ret < 0)
 		return ret;
 	status = le16_to_cpu(cmd->status);
-	// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
-	// 		       WL1271_ACX_INTR_CMD_COMPLETE);
+
 	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_ACK]), 
 				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
 	if (ret < 0){
@@ -158,16 +155,11 @@ int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout)
 			usleep_range(1000, 5000);
 
 		/* read from both event fields */
-		// ret = wlcore_read(wl, *wifi_data.mbox_ptr[0], events_vector,
-		// 		  sizeof(*events_vector), false);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[0]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 
 		event = *events_vector & mask;
-
-		// ret = wlcore_read(wl, *wifi_data.mbox_ptr[1], events_vector,
-		// 		  sizeof(*events_vector), false);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data.mbox_ptr[1]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
@@ -184,7 +176,7 @@ free_vector:
 }
 EXPORT_SYMBOL_GPL(wlcore_cmd_wait_for_event_or_timeout);
 
-int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
+int wl12xx_cmd_role_enable(u8 *addr, u8 role_type,
 			   u8 *role_id)
 {
 	struct wl12xx_cmd_role_enable *cmd;
@@ -236,7 +228,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id)
+int wl12xx_cmd_role_disable(u8 *role_id)
 {
 	struct wl12xx_cmd_role_disable *cmd;
 	int ret;
@@ -269,7 +261,7 @@ out:
 	return ret;
 }
 
-static int wlcore_get_new_session_id(struct wl1271 *wl, u8 hlid)
+static int wlcore_get_new_session_id(u8 hlid)
 {
 	if (VV_session_ids[hlid] >= SESSION_COUNTER_MAX)
 		VV_session_ids[hlid] = 0;
@@ -280,7 +272,7 @@ static int wlcore_get_new_session_id(struct wl1271 *wl, u8 hlid)
 }
 
 #define WL18XX_MAX_LINKS 16
-int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
+int wl12xx_allocate_link(struct wl12xx_vif *wlvif, u8 *hlid)
 {
 	unsigned long flags;
 
@@ -288,7 +280,7 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	if (link >= WL18XX_MAX_LINKS)
 		return -EBUSY;
 
-	VV_session_ids[link] = wlcore_get_new_session_id(wl, link);
+	VV_session_ids[link] = wlcore_get_new_session_id(link);
 
 	/* these bits are used by op_tx */
 	spin_lock_irqsave(&wifi_data.lock, flags);
@@ -321,7 +313,7 @@ int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	return 0;
 }
 
-void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
+void wl12xx_free_link(struct wl12xx_vif *wlvif, u8 *hlid)
 {
 	unsigned long flags;
 
@@ -344,7 +336,7 @@ void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid)
 	 * At this point op_tx() will not add more packets to the queues. We
 	 * can purge them.
 	 */
-	wl1271_tx_reset_link_queues(wl, *hlid);
+	wl1271_tx_reset_link_queues(*hlid);
 	VV_links[*hlid].wlvif = NULL;
 
 	if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
@@ -392,7 +384,7 @@ u8 wlcore_get_native_channel_type(u8 nl_channel_type)
 }
 EXPORT_SYMBOL_GPL(wlcore_get_native_channel_type);
 
-static int wl12xx_cmd_role_start_dev(struct wl1271 *wl,
+static int wl12xx_cmd_role_start_dev(
 				     struct wl12xx_vif *wlvif,
 				     enum nl80211_band band,
 				     int channel)
@@ -414,7 +406,7 @@ static int wl12xx_cmd_role_start_dev(struct wl1271 *wl,
 	cmd->channel = channel;
 
 	if (wlvif->dev_hlid == WL12XX_INVALID_LINK_ID) {
-		ret = wl12xx_allocate_link(wl, wlvif, &wlvif->dev_hlid);
+		ret = wl12xx_allocate_link(wlvif, &wlvif->dev_hlid);
 		if (ret)
 			goto out_free;
 	}
@@ -434,7 +426,7 @@ static int wl12xx_cmd_role_start_dev(struct wl1271 *wl,
 
 err_hlid:
 	/* clear links on error */
-	wl12xx_free_link(wl, wlvif, &wlvif->dev_hlid);
+	wl12xx_free_link(wlvif, &wlvif->dev_hlid);
 
 out_free:
 	kfree(cmd);
@@ -443,7 +435,7 @@ out:
 	return ret;
 }
 
-static int wl12xx_cmd_role_stop_dev(struct wl1271 *wl,
+static int wl12xx_cmd_role_stop_dev(
 				    struct wl12xx_vif *wlvif)
 {
 	struct wl12xx_cmd_role_stop *cmd;
@@ -470,7 +462,7 @@ static int wl12xx_cmd_role_stop_dev(struct wl1271 *wl,
 		goto out_free;
 	}
 
-	wl12xx_free_link(wl, wlvif, &wlvif->dev_hlid);
+	wl12xx_free_link(wlvif, &wlvif->dev_hlid);
 
 out_free:
 	kfree(cmd);
@@ -479,7 +471,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl12xx_cmd_role_start_sta(struct wl12xx_vif *wlvif)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 	struct wl12xx_cmd_role_start *cmd;
@@ -516,7 +508,7 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	cmd->channel_type = wlcore_get_native_channel_type(wlvif->channel_type);
 
 	if (wlvif->sta.hlid == WL12XX_INVALID_LINK_ID) {
-		ret = wl12xx_allocate_link(wl, wlvif, &wlvif->sta.hlid);
+		ret = wl12xx_allocate_link(wlvif, &wlvif->sta.hlid);
 		if (ret)
 			goto out_free;
 	}
@@ -531,11 +523,6 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	 */
 	cmd->sta.remote_rates = cpu_to_le32(supported_rates);
 
-	// wl1271_info("[START_STA] - role start: roleid=%d, hlid=%d, session=%d "
-	// 	     "basic_rate_set: 0x%x, remote_rates: 0x%x",
-	// 	     wlvif->role_id, cmd->sta.hlid, cmd->sta.session,
-	// 	     wlvif->basic_rate_set, wlvif->rate_set);
-
 	ret = VV_cmd_send(CMD_ROLE_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		wl1271_error("failed to initiate cmd role start sta");
@@ -544,12 +531,11 @@ int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	wlvif->sta.role_chan_type = wlvif->channel_type;
 
-	//printk("[basic_rate_set] - wlvif->basic_rate_set = %d\n", wlvif->basic_rate_set);
 	goto out_free;
 
 err_hlid:
 	/* clear links on error. */
-	wl12xx_free_link(wl, wlvif, &wlvif->sta.hlid);
+	wl12xx_free_link(wlvif, &wlvif->sta.hlid);
 
 out_free:
 	kfree(cmd);
@@ -585,7 +571,7 @@ int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		goto out_free;
 	}
 
-	wl12xx_free_link(wl, wlvif, &wlvif->sta.hlid);
+	wl12xx_free_link(wlvif, &wlvif->sta.hlid);
 
 out_free:
 	kfree(cmd);
@@ -615,8 +601,8 @@ int wl12xx_cmd_role_stop_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		goto out_free;
 	}
 
-	wl12xx_free_link(wl, wlvif, &wlvif->ap.bcast_hlid);
-	wl12xx_free_link(wl, wlvif, &wlvif->ap.global_hlid);
+	wl12xx_free_link(wlvif, &wlvif->ap.bcast_hlid);
+	wl12xx_free_link(wlvif, &wlvif->ap.global_hlid);
 
 out_free:
 	kfree(cmd);
@@ -654,7 +640,7 @@ int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	cmd->sta.local_rates = cpu_to_le32(wlvif->rate_set);
 
 	if (wlvif->sta.hlid == WL12XX_INVALID_LINK_ID) {
-		ret = wl12xx_allocate_link(wl, wlvif, &wlvif->sta.hlid);
+		ret = wl12xx_allocate_link(wlvif, &wlvif->sta.hlid);
 		if (ret)
 			goto out_free;
 	}
@@ -679,7 +665,7 @@ int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 err_hlid:
 	/* clear links on error. */
-	wl12xx_free_link(wl, wlvif, &wlvif->sta.hlid);
+	wl12xx_free_link(wlvif, &wlvif->sta.hlid);
 
 out_free:
 	kfree(cmd);
@@ -845,7 +831,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_build_null_data(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl12xx_cmd_build_null_data(struct wl12xx_vif *wlvif)
 {
 	struct sk_buff *skb = NULL;
 	int size;
@@ -975,7 +961,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl12xx_cmd_build_probe_req);
 
-int wl1271_cmd_build_arp_rsp(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl1271_cmd_build_arp_rsp(struct wl12xx_vif *wlvif)
 {
 	int ret, extra = 0;
 	u16 fc;
@@ -1066,7 +1052,7 @@ out:
 	return ret;
 }
 
-int wl1271_build_qos_null_data(struct wl1271 *wl, struct ieee80211_vif *vif)
+int wl1271_build_qos_null_data(struct ieee80211_vif *vif)
 {
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	struct ieee80211_qos_hdr template;
@@ -1121,7 +1107,7 @@ out:
 	return ret;
 }
 
-int wl1271_cmd_set_sta_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_cmd_set_sta_key(struct wl12xx_vif *wlvif,
 		       u16 action, u8 id, u8 key_type,
 		       u8 key_size, const u8 *key, const u8 *addr,
 		       u32 tx_seq_32, u16 tx_seq_16)
@@ -1190,7 +1176,7 @@ out:
  * TODO: merge with sta/ibss into 1 set_key function.
  * note there are slight diffs
  */
-int wl1271_cmd_set_ap_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_cmd_set_ap_key(struct wl12xx_vif *wlvif,
 			  u16 action, u8 id, u8 key_type,
 			  u8 key_size, const u8 *key, u8 hlid, u32 tx_seq_32,
 			  u16 tx_seq_16, bool is_pairwise)
@@ -1328,7 +1314,7 @@ int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			(sta->ht_cap.mcs.rx_mask[1] << HW_MIMO_RATES_OFFSET);
 
 	cmd->supported_rates =
-		cpu_to_le32(wl1271_tx_enabled_rates_get(wl, sta_rates,
+		cpu_to_le32(wl1271_tx_enabled_rates_get(sta_rates,
 							wlvif->band));
 
 	if (!cmd->supported_rates) {
@@ -1625,7 +1611,7 @@ out:
 	return ret;
 }
 
-static int wl12xx_cmd_roc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+static int wl12xx_cmd_roc(struct wl12xx_vif *wlvif,
 			  u8 role_id, enum nl80211_band band, u8 channel)
 {
 	struct wl12xx_cmd_roc *cmd;
@@ -1699,7 +1685,7 @@ out:
 	return ret;
 }
 
-int wl12xx_roc(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
+int wl12xx_roc(struct wl12xx_vif *wlvif, u8 role_id,
 	       enum nl80211_band band, u8 channel)
 {
 	int ret = 0;
@@ -1711,7 +1697,7 @@ int wl12xx_roc(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
 
 	//printk("sz = %d\n", sizeof(wifi_data.roc_map));
 
-	ret = wl12xx_cmd_roc(wl, wlvif, role_id, band, channel);
+	ret = wl12xx_cmd_roc(wlvif, role_id, band, channel);
 	if (ret < 0)
 		goto out;
 
@@ -1772,111 +1758,6 @@ out:
 	return ret;
 }
 
-/* start dev role and roc on its channel */
-int wl12xx_start_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-		     enum nl80211_band band, int channel)
-{
-	int ret;
-
-	if (WARN_ON(!(wlvif->bss_type == BSS_TYPE_STA_BSS ||
-		      wlvif->bss_type == BSS_TYPE_IBSS)))
-		return -EINVAL;
-
-	/* the dev role is already started for p2p mgmt interfaces */
-	if (!wlcore_is_p2p_mgmt(wlvif)) {
-		ret = wl12xx_cmd_role_enable(wl,
-					     wl12xx_wlvif_to_vif(wlvif)->addr,
-					     WL1271_ROLE_DEVICE,
-					     &wlvif->dev_role_id);
-		if (ret < 0)
-			goto out;
-	}
-
-	ret = wl12xx_cmd_role_start_dev(wl, wlvif, band, channel);
-	if (ret < 0)
-		goto out_disable;
-
-	ret = wl12xx_roc(wl, wlvif, wlvif->dev_role_id, band, channel);
-	if (ret < 0)
-		goto out_stop;
-
-	return 0;
-
-out_stop:
-	wl12xx_cmd_role_stop_dev(wl, wlvif);
-out_disable:
-	if (!wlcore_is_p2p_mgmt(wlvif))
-		wl12xx_cmd_role_disable(wl, &wlvif->dev_role_id);
-out:
-	return ret;
-}
-
-/* croc dev hlid, and stop the role */
-int wl12xx_stop_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif)
-{
-	int ret;
-
-	if (WARN_ON(!(wlvif->bss_type == BSS_TYPE_STA_BSS ||
-		      wlvif->bss_type == BSS_TYPE_IBSS)))
-		return -EINVAL;
-
-	/* flush all pending packets */
-	ret = wlcore_tx_work_locked();
-	if (ret < 0)
-		goto out;
-
-	if (test_bit(wlvif->dev_role_id, wifi_data.roc_map)) {
-		ret = wl12xx_croc(wl, wlvif->dev_role_id);
-		if (ret < 0)
-			goto out;
-	}
-
-	ret = wl12xx_cmd_role_stop_dev(wl, wlvif);
-	if (ret < 0)
-		goto out;
-
-	if (!wlcore_is_p2p_mgmt(wlvif)) {
-		//printk("wl12xx_cmd_role_disable called\n");
-		ret = wl12xx_cmd_role_disable(wl, &wlvif->dev_role_id);
-		if (ret < 0)
-			goto out;
-	}
-
-out:
-	return ret;
-}
-
-int wlcore_cmd_generic_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			   u8 feature, u8 enable, u8 value)
-{
-	struct wlcore_cmd_generic_cfg *cmd;
-	int ret;
-
-	wl1271_debug(DEBUG_CMD,
-		     "cmd generic cfg (role %d feature %d enable %d value %d)",
-		     wlvif->role_id, feature, enable, value);
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd)
-		return -ENOMEM;
-
-	cmd->role_id = wlvif->role_id;
-	cmd->feature = feature;
-	cmd->enable = enable;
-	cmd->value = value;
-
-	ret = VV_cmd_send(CMD_GENERIC_CFG, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send generic cfg command");
-		goto out_free;
-	}
-out_free:
-	kfree(cmd);
-	return ret;
-}
-EXPORT_SYMBOL_GPL(wlcore_cmd_generic_cfg);
-
-
 /* Vinh custom */
 int wl12xx_rocV(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
 	       enum nl80211_band band, u8 channel)
@@ -1888,7 +1769,6 @@ int wl12xx_rocV(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
 		return 0;
 	}
 
-	//ret = wl12xx_cmd_roc(wl, wlvif, role_id, band, channel);
     struct wl12xx_cmd_roc cmd;
 	cmd.role_id = role_id;
 	cmd.channel = channel;

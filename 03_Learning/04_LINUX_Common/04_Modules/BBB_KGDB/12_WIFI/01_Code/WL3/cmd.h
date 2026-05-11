@@ -19,25 +19,18 @@ int VV_cmd_send(u16 id, void *buf, size_t len, size_t res_len);
 int VV_cmd_configure(u16 id, void *buf,
 				  size_t len);;
 
-// int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
-// 		    size_t res_len);
-int wl12xx_cmd_role_enable(struct wl1271 *wl, u8 *addr, u8 role_type,
+int wl12xx_cmd_role_enable(u8 *addr, u8 role_type,
 			   u8 *role_id);
-int wl12xx_cmd_role_disable(struct wl1271 *wl, u8 *role_id);
-int wl12xx_cmd_role_start_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif);
+int wl12xx_cmd_role_disable(u8 *role_id);
+int wl12xx_cmd_role_start_sta(struct wl12xx_vif *wlvif);
 int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-//int wl12xx_cmd_role_start_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif);
+
 int wl12xx_cmd_role_stop_ap(struct wl1271 *wl, struct wl12xx_vif *wlvif);
 int wl12xx_cmd_role_start_ibss(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl12xx_start_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-		     enum nl80211_band band, int channel);
-int wl12xx_stop_dev(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-// int wl1271_cmd_test(struct wl1271 *wl, void *buf, size_t buf_len, u8 answer);
+
 int wl1271_cmd_interrogate(u16 id, void *buf,
 			   size_t cmd_len, size_t res_len);
-// int wl1271_cmd_configure(struct wl1271 *wl, u16 id, void *buf, size_t len);
-// int wlcore_cmd_configure_failsafe(struct wl1271 *wl, u16 id, void *buf,
-// 				  size_t len, unsigned long valid_rets);
+
 int wl1271_cmd_data_path(bool enable);
 int wl1271_cmd_ps_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		       u8 ps_mode, u16 auto_ps_timeout);
@@ -46,7 +39,7 @@ int wl1271_cmd_read_memory(struct wl1271 *wl, u32 addr, void *answer,
 int wl1271_cmd_template_set(u8 role_id,
 			    u16 template_id, void *buf, size_t buf_len,
 			    int index, u32 rates);
-int wl12xx_cmd_build_null_data(struct wl1271 *wl, struct wl12xx_vif *wlvif);
+int wl12xx_cmd_build_null_data(struct wl12xx_vif *wlvif);
 int wl1271_cmd_build_ps_poll(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			     u16 aid);
 int wl12xx_cmd_build_probe_req(struct wl12xx_vif *wlvif,
@@ -54,22 +47,22 @@ int wl12xx_cmd_build_probe_req(struct wl12xx_vif *wlvif,
 			       const u8 *ssid, size_t ssid_len,
 			       const u8 *ie, size_t ie_len, const u8 *common_ie,
 			       size_t common_ie_len, bool sched_scan);
-int wl1271_cmd_build_arp_rsp(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-int wl1271_build_qos_null_data(struct wl1271 *wl, struct ieee80211_vif *vif);
+int wl1271_cmd_build_arp_rsp(struct wl12xx_vif *wlvif);
+int wl1271_build_qos_null_data(struct ieee80211_vif *vif);
 int wl12xx_cmd_build_klv_null_data(struct wl1271 *wl,
 				   struct wl12xx_vif *wlvif);
 int wl12xx_cmd_set_default_wep_key(struct wl1271 *wl, u8 id, u8 hlid);
-int wl1271_cmd_set_sta_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_cmd_set_sta_key(struct wl12xx_vif *wlvif,
 			   u16 action, u8 id, u8 key_type,
 			   u8 key_size, const u8 *key, const u8 *addr,
 			   u32 tx_seq_32, u16 tx_seq_16);
-int wl1271_cmd_set_ap_key(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_cmd_set_ap_key(struct wl12xx_vif *wlvif,
 			  u16 action, u8 id, u8 key_type,
 			  u8 key_size, const u8 *key, u8 hlid, u32 tx_seq_32,
 			  u16 tx_seq_16, bool is_pairwise);
 int wl12xx_cmd_set_peer_state(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			      u8 hlid);
-int wl12xx_roc(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
+int wl12xx_roc(struct wl12xx_vif *wlvif, u8 role_id,
 	       enum nl80211_band band, u8 channel);
 int wl12xx_croc(struct wl1271 *wl, u8 role_id);
 int wl12xx_cmd_add_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
@@ -79,8 +72,6 @@ int wl12xx_cmd_remove_peer(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 void wlcore_set_pending_regdomain_ch(u16 channel,
 				     enum nl80211_band band);
 int wlcore_cmd_regdomain_config_locked(void);
-int wlcore_cmd_generic_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			   u8 feature, u8 enable, u8 value);
 int wl12xx_cmd_config_fwlog(void);
 int wl12xx_cmd_start_fwlog(struct wl1271 *wl);
 int wl12xx_cmd_stop_fwlog(struct wl1271 *wl);
@@ -89,9 +80,9 @@ int wl12xx_cmd_channel_switch(struct wl1271 *wl,
 			      struct ieee80211_channel_switch *ch_switch);
 int wl12xx_cmd_stop_channel_switch(struct wl1271 *wl,
 				   struct wl12xx_vif *wlvif);
-int wl12xx_allocate_link(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl12xx_allocate_link(struct wl12xx_vif *wlvif,
 			 u8 *hlid);
-void wl12xx_free_link(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 *hlid);
+void wl12xx_free_link(struct wl12xx_vif *wlvif, u8 *hlid);
 int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout);
 u8 wlcore_get_native_channel_type(u8 nl_channel_type);
 
@@ -648,15 +639,6 @@ struct wl12xx_cmd_regdomain_dfs_config {
 enum wlcore_generic_cfg_feature {
 	WLCORE_CFG_FEATURE_RADAR_DEBUG = 2,
 };
-
-struct wlcore_cmd_generic_cfg {
-	struct wl1271_cmd_header header;
-
-	u8 role_id;
-	u8 feature;
-	u8 enable;
-	u8 value;
-} __packed;
 
 struct wl12xx_cmd_config_fwlog {
 	struct wl1271_cmd_header header;

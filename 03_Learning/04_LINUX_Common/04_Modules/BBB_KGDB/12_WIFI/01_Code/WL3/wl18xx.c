@@ -872,7 +872,6 @@ static int wl18xx_pre_boot(void)
 	if (ret < 0)
 		goto out;
 
-	//ret = wl18xx_boot_soft_reset(wl);
 	/* disable Rx/Tx */
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
@@ -1117,9 +1116,6 @@ static int wl18xx_set_host_cfg_bitmap(u32 extra_mem_blk)
 		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
 	}
 
-	// ret = wl18xx_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
-	// 				    sdio_align_size, extra_mem_blk,
-	// 				    WL18XX_HOST_IF_LEN_SIZE_FIELD);
 	ret = VV_acx_host_if_cfg_bitmap(host_cfg_bitmap,
 					    sdio_align_size, extra_mem_blk,
 					    WL18XX_HOST_IF_LEN_SIZE_FIELD);
@@ -1141,18 +1137,6 @@ static int wl18xx_hw_init(void)
 	ret = wl18xx_set_host_cfg_bitmap(WL18XX_TX_HW_BLOCK_SPARE);
 	if (ret < 0)
 		return ret;
-
-	/* set the dynamic fw traces bitmap */
-	// ret = wl18xx_acx_dynamic_fw_traces(wl);
-	// ret = VV_acx_dynamic_fw_traces(wl);
-	// if (ret < 0)
-	// 	return ret;
-
-	// if (checksum_param) {
-	// 	ret = wl18xx_acx_set_checksum_state(wl);
-	// 	if (ret != 0)
-	// 		return ret;
-	// }
 
 	return ret;
 }
@@ -1533,7 +1517,7 @@ static int wl18xx_probe(struct platform_device *pdev)
 	return ret;
 
 out_free:
-	wlcore_free_hw(wl);
+	wlcore_free_hw();
 out:
 	return ret;
 }

@@ -62,9 +62,6 @@ static int wlcore_boot_parse_fw_ver(
 		goto out;
 	}
 
-	// ret = wlcore_identify_fw(wl);
-	// if (ret < 0)
-	// 	goto out;
 out:
 	return ret;
 }
@@ -220,7 +217,6 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 		memcpy(chunk, p, CHUNK_SIZE);
 		wl1271_debug(DEBUG_BOOT, "uploading fw chunk 0x%p to 0x%x",
 			     p, addr);
-		// ret = wlcore_write(wl, addr, chunk, CHUNK_SIZE, false);
 		ret = VV_sdio_raw_write1(wlcore_translate_addr(addr), chunk, CHUNK_SIZE, false);
 		if (ret < 0)
 			goto out;
@@ -316,8 +312,6 @@ int wlcore_boot_run_firmware(void)
 		}
 		/* check that ACX_INTR_INIT_COMPLETE is enabled */
 		else if (intr & WL1271_ACX_INTR_INIT_COMPLETE) {
-			// ret = wlcore_write_reg(wl, REG_INTERRUPT_ACK,
-			// 		       WL1271_ACX_INTR_INIT_COMPLETE);
 			ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
 			if (ret < 0)
 				return ret;

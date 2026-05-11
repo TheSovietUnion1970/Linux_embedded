@@ -405,8 +405,8 @@ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev);
 int wlcore_remove(struct platform_device *pdev);
 struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 				     u32 mbox_size);
-int wlcore_free_hw(struct wl1271 *wl);
-int wlcore_set_key(struct wl1271 *wl, enum set_key_cmd cmd,
+int wlcore_free_hw(void);
+int wlcore_set_key(enum set_key_cmd cmd,
 		   struct ieee80211_vif *vif,
 		   struct ieee80211_sta *sta,
 		   struct ieee80211_key_conf *key_conf);

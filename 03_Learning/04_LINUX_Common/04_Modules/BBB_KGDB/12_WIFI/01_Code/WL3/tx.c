@@ -324,7 +324,7 @@ static int wl1271_prepare_tx_frame(struct sk_buff *skb, u32 buf_offset, u8 hlid)
 	return total_len;
 }
 
-u32 wl1271_tx_enabled_rates_get(struct wl1271 *wl, u32 rate_set,
+u32 wl1271_tx_enabled_rates_get(u32 rate_set,
 				enum nl80211_band rate_band)
 {
 	struct ieee80211_supported_band *band;
@@ -616,7 +616,7 @@ out:
 	mutex_unlock(&wifi_data.mutex);
 }
 
-void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
+void wl1271_tx_reset_link_queues(u8 hlid)
 {
 	struct sk_buff *skb;
 	int i;
@@ -642,12 +642,10 @@ void wl1271_tx_reset_link_queues(struct wl1271 *wl, u8 hlid)
 
 	spin_lock_irqsave(&wifi_data.lock, flags);
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		//wifi_data.tx_queue_count[i] -= total[i];
 		VV_tx_queue_count[i] -= total[i];
 	}
 	spin_unlock_irqrestore(&wifi_data.lock, flags);
 
-	//wl1271_handle_tx_low_watermark(wl);
 }
 
 /* caller must hold wifi_data.mutex and TX must be stopped */
@@ -663,7 +661,7 @@ void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 			wl1271_free_sta(wl, wlvif, i);
 		} else {
 			u8 hlid = i;
-			wl12xx_free_link(wl, wlvif, &hlid);
+			wl12xx_free_link(wlvif, &hlid);
 		}
 	}
 
@@ -682,7 +680,7 @@ void wl12xx_tx_reset(struct wl1271 *wl)
 	/* only reset the queues if something bad happened */
 	if (wl1271_tx_total_queue_count() != 0) {
 		for (i = 0; i < WL18XX_MAX_LINKS; i++)
-			wl1271_tx_reset_link_queues(wl, i);
+			wl1271_tx_reset_link_queues(i);
 
 		for (i = 0; i < NUM_TX_QUEUES; i++)
 			//wifi_data.tx_queue_count[i] = 0;
@@ -776,7 +774,7 @@ void wl1271_tx_flush(struct wl1271 *wl)
 
 	/* forcibly flush all Tx buffers on our queues */
 	for (i = 0; i < WL18XX_MAX_LINKS; i++)
-		wl1271_tx_reset_link_queues(wl, i);
+		wl1271_tx_reset_link_queues(i);
 
 out_wake:
 	wlcore_wake_queues(wl, WLCORE_QUEUE_STOP_REASON_FLUSH);
