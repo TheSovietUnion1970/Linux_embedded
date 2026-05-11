@@ -372,7 +372,7 @@ static int wlcore_fw_status(void)
 	return 0;
 }
 
-static void wl1271_flush_deferred_work(struct wl1271 *wl)
+static void wl1271_flush_deferred_work(void)
 {
 	struct sk_buff *skb;
 
@@ -392,7 +392,6 @@ static void wl1271_netstack_work(struct work_struct *work)
 	// 	container_of(work, struct wl1271, netstack_work);
 
 	do {
-		//wl1271_flush_deferred_work(wl);
 		struct sk_buff *skb;
 
 		/* Pass all received frames to the network stack */
@@ -650,7 +649,6 @@ static int VV_irq_locked(void)
 			defer_count = skb_queue_len(&VV_deferred_tx_queue) +
 				      skb_queue_len(&VV_deferred_rx_queue);
 			if (defer_count > WL1271_DEFERRED_QUEUE_LIMIT){
-				// wl1271_flush_deferred_work(wl);
 				struct sk_buff *skb;
 
 				/* Pass all received frames to the network stack */
@@ -754,7 +752,7 @@ static void wl12xx_vif_count_iter(void *data, u8 *mac,
 	printk("ACTIVE - vif = 0x%x\n", vif);
 }
 
-static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
+static int wl12xx_fetch_firmware(bool plt)
 {
 	const struct firmware *fw;
 	const char *fw_name;
@@ -839,7 +837,7 @@ static void wlcore_save_freed_pkts(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		wl_sta->total_freed_pkts += sqn_recovery_padding;
 }
 
-static int wl1271_setup(struct wl1271 *wl)
+static int wl1271_setup(void)
 {
 	/* Vinh custom */
 	VV_status_reg = kzalloc(sizeof(struct VV_wl18xx_fw_status), GFP_KERNEL);
@@ -938,7 +936,7 @@ fail:
 	return ret;
 }
 
-static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
+static int wl12xx_chip_wakeup(bool plt)
 {
 	int ret = 0;
 
@@ -960,14 +958,14 @@ static int wl12xx_chip_wakeup(struct wl1271 *wl, bool plt)
 	// if (!wl1271_set_block_size(wl))
 	// 	wifi_data.quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
 
-	VV_sdio_set_block_size(wl, WL12XX_BUS_BLOCK_SIZE);
+	VV_sdio_set_block_size(WL12XX_BUS_BLOCK_SIZE);
 
 	/* TODO: make sure the lower driver has set things up correctly */
-	ret = wl1271_setup(wl);
+	ret = wl1271_setup();
 	if (ret < 0)
 		goto out;
 
-	ret = wl12xx_fetch_firmware(wl, plt); // VV_
+	ret = wl12xx_fetch_firmware(plt); // VV_
 	if (ret < 0) {
 		kfree(VV_status_reg);
 	}
@@ -1007,7 +1005,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 
 	mutex_unlock(&wifi_data.mutex);
 
-	wl1271_flush_deferred_work(wl);
+	wl1271_flush_deferred_work();
 	//cancel_work_sync(&wifi_data.netstack_work);
 	cancel_work_sync(&VV_work.netstack_work);
 
@@ -1015,7 +1013,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	cancel_delayed_work_sync(&VV_work.tx_watchdog_work);
 
 	mutex_lock(&wifi_data.mutex);
-	wl1271_power_off(wl);
+	wl1271_power_off();
 	wifi_data.flags = 0;
 	wifi_data.sleep_auth = WL1271_PSM_ILLEGAL;
 	wifi_data.state = WLCORE_STATE_OFF;
@@ -1263,7 +1261,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	wlcore_synchronize_interrupts(wl); // synchronize_irq(wifi_data.irq);
 	// if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
 	// 	cancel_work_sync(&wifi_data.recovery_work);
-	wl1271_flush_deferred_work(wl);
+	wl1271_flush_deferred_work();
 	cancel_delayed_work_sync(&VV_work.scan_complete_work);
 	//cancel_work_sync(&wifi_data.netstack_work);
 	cancel_work_sync(&VV_work.netstack_work);
@@ -1274,7 +1272,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	mutex_lock(&wifi_data.mutex);
 	wl12xx_tx_reset(wl);
 
-	wl1271_power_off(wl);
+	wl1271_power_off();
 	/*
 	 * In case a recovery was scheduled, interrupts were disabled to avoid
 	 * an interrupt storm. Now that the power is down, it is safe to
@@ -1433,7 +1431,7 @@ static int wl12xx_init_vif_data(struct wl1271 *wl, struct ieee80211_vif *vif)
 	return 0;
 }
 
-static int wl12xx_init_fw(struct wl1271 *wl)
+static int wl12xx_init_fw(void)
 {
 	int retries = WL1271_BOOT_RETRIES;
 	bool booted = false;
@@ -1442,7 +1440,7 @@ static int wl12xx_init_fw(struct wl1271 *wl)
 
 	while (retries) {
 		retries--;
-		ret = wl12xx_chip_wakeup(wl, false); // VV_
+		ret = wl12xx_chip_wakeup(false); // VV_
 		if (ret < 0)
 			goto power_off;
 
@@ -1467,12 +1465,12 @@ irq_disable:
 		   possible concurrent operations will fail due to the
 		   current state, hence the wl1271 struct should be safe. */
 		wlcore_disable_interrupts();
-		wl1271_flush_deferred_work(wl);
+		wl1271_flush_deferred_work();
 		//cancel_work_sync(&wifi_data.netstack_work);
 		cancel_work_sync(&VV_work.netstack_work);
 		mutex_lock(&wifi_data.mutex);
 power_off:
-		wl1271_power_off(wl);
+		wl1271_power_off();
 	}
 
 	if (!booted) {
@@ -1647,7 +1645,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		memcpy(wifi_data.addresses[0].addr, vif->addr, ETH_ALEN);
 
 		printk("PROGRESS - wl12xx_init_fw\n");
-		ret = wl12xx_init_fw(wl);
+		ret = wl12xx_init_fw();
 		if (ret < 0)
 			goto out;
 	}
@@ -4228,7 +4226,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	ret = wl12xx_get_hw_info(wl);
 	if (ret < 0) {
 		wl1271_error("couldn't get hw info");
-		wl1271_power_off(wl);
+		wl1271_power_off();
 		goto out_free_nvs;
 	}
 
@@ -4236,7 +4234,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 				   wifi_data.irq_flags, pdev->name, wl);
 	if (ret < 0) {
 		wl1271_error("interrupt configuration failed");
-		wl1271_power_off(wl);
+		wl1271_power_off();
 		goto out_free_nvs;
 	}
 
@@ -4262,7 +4260,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	}
 #endif
 	disable_irq(wifi_data.irq);
-	wl1271_power_off(wl);
+	wl1271_power_off();
 
 	//ret = wifi_data.ops->identify_chip(wl);
 	ret = VV_identify_chip(wl);

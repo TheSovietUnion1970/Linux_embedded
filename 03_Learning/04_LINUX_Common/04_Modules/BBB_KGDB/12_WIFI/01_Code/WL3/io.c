@@ -220,7 +220,7 @@ out:
 	return ret;
 }
 
-void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz)
+void VV_sdio_set_block_size(unsigned int blksz)
 {
 	struct sdio_func *func = dev_to_sdio_func(wifi_data.dev->parent);
 

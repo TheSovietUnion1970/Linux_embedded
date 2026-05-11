@@ -39,7 +39,7 @@ void wlcore_synchronize_interrupts(struct wl1271 *wl);
 
 int wlcore_translate_addr(int addr);
 
-static inline void wl1271_power_off(struct wl1271 *wl)
+static inline void wl1271_power_off(void)
 {
 	int ret = 0;
 
@@ -80,6 +80,6 @@ int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed);
 int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed);
 int wlcore_translate_addr(int addr);
 int VV_set_partition_core(struct VV_partition_set *p);
-void VV_sdio_set_block_size(struct wl1271 *wl, unsigned int blksz);
+void VV_sdio_set_block_size(unsigned int blksz);
 
 #endif
