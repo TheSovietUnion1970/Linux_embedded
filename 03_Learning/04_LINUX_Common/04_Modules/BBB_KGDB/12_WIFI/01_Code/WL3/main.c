@@ -101,9 +101,6 @@ static int wl12xx_set_authorized(struct wl12xx_vif *wlvif)
 static void wl1271_reg_notify(struct wiphy *wiphy,
 			      struct regulatory_request *request)
 {
-	//struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
-	//struct wl1271 *wl = hw->priv;
-
 	/* copy the current dfs region */
 	if (request)
 		wifi_data.dfs_region = request->dfs_region;
@@ -130,10 +127,8 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 {
 	printk("[WORK] - wl12xx_tx_watchdog_work\n");
 	struct delayed_work *dwork;
-	//struct wl1271 *wl;
 
 	dwork = to_delayed_work(work);
-	//wl = container_of(dwork, struct wl1271, tx_watchdog_work);
 
 	mutex_lock(&wifi_data.mutex);
 
@@ -333,10 +328,6 @@ static void wl1271_flush_deferred_work(void)
 
 static void wl1271_netstack_work(struct work_struct *work)
 {
-	//printk("[WORK] - wl1271_netstack_work\n");
-	// struct wl1271 *wl =
-	// 	container_of(work, struct wl1271, netstack_work);
-
 	do {
 		struct sk_buff *skb;
 
@@ -586,11 +577,6 @@ static int VV_irq_locked(void)
 					goto err_ret;
 			}
 
-			/* check for tx results */
-			// ret = wlcore_hw_tx_delayed_compl(wl); // null
-			// if (ret < 0)
-			// 	goto err_ret;
-
 			/* Make sure the deferred queues don't get too long */
 			defer_count = skb_queue_len(&VV_deferred_tx_queue) +
 				      skb_queue_len(&VV_deferred_rx_queue);
@@ -834,15 +820,12 @@ static int wl12xx_set_power_on(void)
 	if (ret < 0)
 		goto out;
 	msleep(WL1271_POWER_ON_SLEEP);
-	// wl1271_io_reset(wl);
-	// wl1271_io_init(wl);
 
 	ret = VV_set_partition_core(&wifi_data.ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
 	/* ELP module wake up = Enhanced Low Power */
-	// ret = wlcore_fw_wakeup(wl);
 	VV_sdio_raw_write(HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
 	if (ret < 0)
 		goto fail;
@@ -874,8 +857,6 @@ static int wl12xx_chip_wakeup(bool plt)
 	 * Check if the bus supports blocksize alignment and, if it
 	 * doesn't, make sure we don't have the quirk.
 	 */
-	// if (!wl1271_set_block_size(wl))
-	// 	wifi_data.quirks &= ~WLCORE_QUIRK_TX_BLOCKSIZE_ALIGN;
 
 	VV_sdio_set_block_size(WL12XX_BUS_BLOCK_SIZE);
 
@@ -897,7 +878,6 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 			 struct ieee80211_tx_control *control,
 			 struct sk_buff *skb)
 {
-	struct wl1271 *wl = hw->priv;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_vif *vif = info->control.vif;
 	struct wl12xx_vif *wlvif = NULL;
@@ -1090,8 +1070,6 @@ static void wlcore_op_stop_locked(void)
 		VV_tx_allocated_pkts[i] = 0;
 	}
 
-	//wl1271_debugfs_reset(wl);
-
 	kfree(wifi_data.target_mem_map);
 	wifi_data.target_mem_map = NULL;
 
@@ -1109,8 +1087,6 @@ static void wlcore_op_stop_locked(void)
 
 static void wlcore_op_stop(struct ieee80211_hw *hw)
 {
-	struct wl1271 *wl = hw->priv;
-
 	wl1271_debug(DEBUG_MAC80211, "mac80211 stop");
 
 	mutex_lock(&wifi_data.mutex);
@@ -1163,20 +1139,11 @@ static int wl12xx_init_vif_data(struct ieee80211_vif *vif)
 
 	/* init sta/ibss data */
 	wlvif->sta.hlid = WL12XX_INVALID_LINK_ID;
-	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.basic_rate_idx);
-	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.ap_rate_idx);
-	// wl12xx_allocate_rate_policy(wl, &wlvif->sta.p2p_rate_idx);
-	// wlcore_allocate_klv_template(wl, &wlvif->sta.klv_template_id);
+
 	wlvif->basic_rate_set = CONF_TX_RATE_MASK_BASIC;
-	//printk("[init basic_rate_set] = %d\n", wlvif->basic_rate_set);
+
 	wlvif->basic_rate = CONF_TX_RATE_MASK_BASIC;
 	wlvif->rate_set = CONF_TX_RATE_MASK_BASIC;
-
-	// printk("[sta]%d %d %d %d\n", wlvif->sta.basic_rate_idx,
-	// 	wlvif->sta.ap_rate_idx,
-	// 	wlvif->sta.p2p_rate_idx,
-	// 	wlvif->sta.klv_template_id
-	// );
 	
 
 	wlvif->bitrate_masks[NL80211_BAND_2GHZ] = wifi_data.conf.tx.basic_rate;
@@ -1573,7 +1540,7 @@ unlock:
 static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	//struct wl12xx_vif *iter;
 
@@ -2025,7 +1992,7 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 			     struct ieee80211_sta *sta,
 			     struct ieee80211_key_conf *key_conf)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	int ret;
 
 	mutex_lock(&wifi_data.mutex);
@@ -2152,10 +2119,6 @@ void wlcore_regdomain_config(void)
 	}
 
 	ret = wlcore_cmd_regdomain_config_locked();
-	// if (ret < 0) {
-	// 	wl12xx_queue_recovery_work(wl);
-	// 	goto out;
-	// }
 
 	pm_runtime_mark_last_busy(wifi_data.dev);
 	pm_runtime_put_autosuspend(wifi_data.dev);
@@ -2504,7 +2467,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 				       struct ieee80211_bss_conf *bss_conf,
 				       u32 changed)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	int ret;
 
@@ -2541,7 +2504,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 					struct ieee80211_vif *vif,
 					struct ieee80211_chanctx_conf *ctx)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	int channel = ieee80211_frequency_to_channel(
 		ctx->def.chan->center_freq);
@@ -2615,19 +2578,6 @@ void wl1271_free_sta(struct wl12xx_vif *wlvif, u8 hlid)
 
 
 	wl12xx_free_link(wlvif, &hlid);
-}
-
-static void wlcore_roc_if_possible(struct wl1271 *wl,
-				   struct wl12xx_vif *wlvif)
-{
-	if (find_first_bit(wifi_data.roc_map,
-			   WL12XX_MAX_ROLES) < WL12XX_MAX_ROLES)
-		return;
-
-	if (WARN_ON(wlvif->role_id == WL12XX_INVALID_ROLE_ID))
-		return;
-
-	wl12xx_roc(wlvif, wlvif->role_id, wlvif->band, wlvif->channel);
 }
 
 static int wl12xx_update_sta_state(
@@ -2714,7 +2664,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 			       enum ieee80211_sta_state old_state,
 			       enum ieee80211_sta_state new_state)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	int ret;
 
@@ -2888,7 +2838,7 @@ static void wlcore_op_unassign_vif_chanctx(struct ieee80211_hw *hw,
 					   struct ieee80211_vif *vif,
 					   struct ieee80211_chanctx_conf *ctx)
 {
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif = wl12xx_vif_to_data(vif);
 	int ret;
 
@@ -3695,7 +3645,6 @@ err_wq:
 	destroy_workqueue(VV_work.freezable_wq);
 
 err_hw:
-	//wl1271_debugfs_exit(wl);
 	kfree(wifi_data.priv);
 
 err_priv_alloc:
