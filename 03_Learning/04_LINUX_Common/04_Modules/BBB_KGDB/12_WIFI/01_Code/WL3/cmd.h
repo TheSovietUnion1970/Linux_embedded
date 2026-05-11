@@ -38,7 +38,7 @@ int wl1271_cmd_interrogate(u16 id, void *buf,
 // int wl1271_cmd_configure(struct wl1271 *wl, u16 id, void *buf, size_t len);
 // int wlcore_cmd_configure_failsafe(struct wl1271 *wl, u16 id, void *buf,
 // 				  size_t len, unsigned long valid_rets);
-int wl1271_cmd_data_path(struct wl1271 *wl, bool enable);
+int wl1271_cmd_data_path(bool enable);
 int wl1271_cmd_ps_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		       u8 ps_mode, u16 auto_ps_timeout);
 int wl1271_cmd_read_memory(struct wl1271 *wl, u32 addr, void *answer,
@@ -81,7 +81,7 @@ void wlcore_set_pending_regdomain_ch(u16 channel,
 int wlcore_cmd_regdomain_config_locked(void);
 int wlcore_cmd_generic_cfg(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			   u8 feature, u8 enable, u8 value);
-int wl12xx_cmd_config_fwlog(struct wl1271 *wl);
+int wl12xx_cmd_config_fwlog(void);
 int wl12xx_cmd_start_fwlog(struct wl1271 *wl);
 int wl12xx_cmd_stop_fwlog(struct wl1271 *wl);
 int wl12xx_cmd_channel_switch(struct wl1271 *wl,

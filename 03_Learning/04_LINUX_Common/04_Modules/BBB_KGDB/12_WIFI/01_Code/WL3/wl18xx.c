@@ -1063,20 +1063,7 @@ out:
 	return ret;
 }
 
-static int wl18xx_trigger_cmd(struct wl1271 *wl, int cmd_box_addr,
-			       void *buf, size_t len)
-{
-	struct wl18xx_priv *priv = wifi_data.priv;
-
-	memcpy(priv->cmd_buf, buf, len);
-	memset(priv->cmd_buf + len, 0, WL18XX_CMD_MAX_SIZE - len);
-
-	// return wlcore_write(wl, cmd_box_addr, priv->cmd_buf,
-	// 		    WL18XX_CMD_MAX_SIZE, false);
-	return VV_sdio_raw_write1(wlcore_translate_addr(cmd_box_addr), priv->cmd_buf, WL18XX_CMD_MAX_SIZE, false);
-}
-
-static int VV_acx_host_if_cfg_bitmap(struct wl1271 *wl, u32 host_cfg_bitmap,
+static int VV_acx_host_if_cfg_bitmap(u32 host_cfg_bitmap,
 				  u32 sdio_blk_size, u32 extra_mem_blks,
 				  u32 len_field_size)
 {
@@ -1111,7 +1098,7 @@ out:
 	return ret;
 }
 
-static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
+static int wl18xx_set_host_cfg_bitmap(u32 extra_mem_blk)
 {
 	int ret;
 	u32 sdio_align_size = 0;
@@ -1133,7 +1120,7 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 	// ret = wl18xx_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
 	// 				    sdio_align_size, extra_mem_blk,
 	// 				    WL18XX_HOST_IF_LEN_SIZE_FIELD);
-	ret = VV_acx_host_if_cfg_bitmap(wl, host_cfg_bitmap,
+	ret = VV_acx_host_if_cfg_bitmap(host_cfg_bitmap,
 					    sdio_align_size, extra_mem_blk,
 					    WL18XX_HOST_IF_LEN_SIZE_FIELD);
 	if (ret < 0)
@@ -1142,7 +1129,7 @@ static int wl18xx_set_host_cfg_bitmap(struct wl1271 *wl, u32 extra_mem_blk)
 	return 0;
 }
 
-static int wl18xx_hw_init(struct wl1271 *wl)
+static int wl18xx_hw_init(void)
 {
 	int ret;
 	struct wl18xx_priv *priv = wifi_data.priv;
@@ -1151,7 +1138,7 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	priv->extra_spare_key_count = 0;
 
 	/* set the default amount of spare blocks in the bitmap */
-	ret = wl18xx_set_host_cfg_bitmap(wl, WL18XX_TX_HW_BLOCK_SPARE);
+	ret = wl18xx_set_host_cfg_bitmap(WL18XX_TX_HW_BLOCK_SPARE);
 	if (ret < 0)
 		return ret;
 
@@ -1170,7 +1157,7 @@ static int wl18xx_hw_init(struct wl1271 *wl)
 	return ret;
 }
 
-static bool wl18xx_is_mimo_supported(struct wl1271 *wl)
+static bool wl18xx_is_mimo_supported(void)
 {
 	struct wl18xx_priv *priv = wifi_data.priv;
 
@@ -1230,7 +1217,7 @@ out_release:
 	return ret;
 }
 
-static int wl18xx_conf_init(struct wl1271 *wl, struct device *dev)
+static int wl18xx_conf_init(struct device *dev)
 {
 	struct platform_device *pdev = wifi_data.pdev;
 	struct wlcore_platdev_data *pdata = dev_get_platdata(&pdev->dev);
@@ -1250,12 +1237,11 @@ static int wl18xx_conf_init(struct wl1271 *wl, struct device *dev)
 	return 0;
 }
 
-static int wl18xx_setup(struct wl1271 *wl);
+static int wl18xx_setup(void);
 
 static struct wlcore_ops wl18xx_ops = {
 	.setup		= wl18xx_setup,
 	.boot		= wl18xx_boot,
-	.trigger_cmd	= wl18xx_trigger_cmd,
 	.hw_init	= wl18xx_hw_init,
 };
 
@@ -1375,13 +1361,13 @@ wl18xx_iface_combinations[] = {
 };
 
 static inline void
-wlcore_set_ht_cap(struct wl1271 *wl, enum nl80211_band band,
+wlcore_set_ht_cap(enum nl80211_band band,
 		  struct ieee80211_sta_ht_cap *ht_cap)
 {
 	memcpy(&wifi_data.ht_cap[band], ht_cap, sizeof(*ht_cap));
 }
 
-static int wl18xx_setup(struct wl1271 *wl)
+static int wl18xx_setup(void)
 {
 	struct wl18xx_priv *priv = wifi_data.priv;
 	int ret;
@@ -1412,7 +1398,7 @@ static int wl18xx_setup(struct wl1271 *wl)
 	// if (num_rx_desc_param != -1)
 	// 	wifi_data.num_rx_desc = num_rx_desc_param;
 
-	ret = wl18xx_conf_init(wl, wifi_data.dev);
+	ret = wl18xx_conf_init(wifi_data.dev);
 	if (ret < 0)
 		return ret;
 
@@ -1479,25 +1465,25 @@ static int wl18xx_setup(struct wl1271 *wl)
 		 * Only support mimo with multiple antennas. Fall back to
 		 * siso40.
 		 */
-		if (wl18xx_is_mimo_supported(wl))
-			wlcore_set_ht_cap(wl, NL80211_BAND_2GHZ,
+		if (wl18xx_is_mimo_supported())
+			wlcore_set_ht_cap(NL80211_BAND_2GHZ,
 					  &wl18xx_mimo_ht_cap_2ghz);
 		else
-			wlcore_set_ht_cap(wl, NL80211_BAND_2GHZ,
+			wlcore_set_ht_cap(NL80211_BAND_2GHZ,
 					  &wl18xx_siso40_ht_cap_2ghz);
 
 		/* 5Ghz is always wide */
-		wlcore_set_ht_cap(wl, NL80211_BAND_5GHZ,
+		wlcore_set_ht_cap(NL80211_BAND_5GHZ,
 				  &wl18xx_siso40_ht_cap_5ghz);
 	} else if (priv->conf.ht.mode == HT_MODE_WIDE) {
-		wlcore_set_ht_cap(wl, NL80211_BAND_2GHZ,
+		wlcore_set_ht_cap(NL80211_BAND_2GHZ,
 				  &wl18xx_siso40_ht_cap_2ghz);
-		wlcore_set_ht_cap(wl, NL80211_BAND_5GHZ,
+		wlcore_set_ht_cap(NL80211_BAND_5GHZ,
 				  &wl18xx_siso40_ht_cap_5ghz);
 	} else if (priv->conf.ht.mode == HT_MODE_SISO20) {
-		wlcore_set_ht_cap(wl, NL80211_BAND_2GHZ,
+		wlcore_set_ht_cap(NL80211_BAND_2GHZ,
 				  &wl18xx_siso20_ht_cap);
-		wlcore_set_ht_cap(wl, NL80211_BAND_5GHZ,
+		wlcore_set_ht_cap(NL80211_BAND_5GHZ,
 				  &wl18xx_siso20_ht_cap);
 	}
 

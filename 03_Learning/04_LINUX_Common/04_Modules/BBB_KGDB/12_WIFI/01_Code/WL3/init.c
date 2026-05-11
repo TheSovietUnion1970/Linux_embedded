@@ -20,7 +20,7 @@
 #include "io.h"
 //#include "hw_ops.h"
 
-int wl1271_init_templates_config(struct wl1271 *wl)
+static int wl1271_init_templates_config(void)
 {
 	int ret, i;
 	size_t max_size;
@@ -235,7 +235,7 @@ out:
 	return ret;
 }
 
-static int wl12xx_init_rx_config(struct wl1271 *wl)
+static int wl12xx_init_rx_config(void)
 {
 	int ret;
 
@@ -283,7 +283,7 @@ static int wl1271_init_sta_beacon_filter(struct wl1271 *wl,
 	return 0;
 }
 
-int wl1271_init_pta(struct wl1271 *wl)
+static int wl1271_init_pta(void)
 {
 	int ret;
 
@@ -298,7 +298,7 @@ int wl1271_init_pta(struct wl1271 *wl)
 	return 0;
 }
 
-int wl1271_init_energy_detection(struct wl1271 *wl)
+static int wl1271_init_energy_detection(void)
 {
 	int ret;
 
@@ -321,14 +321,14 @@ static int wl1271_init_beacon_broadcast(struct wl1271 *wl,
 	return 0;
 }
 
-static int wl12xx_init_fwlog(struct wl1271 *wl)
+static int wl12xx_init_fwlog(void)
 {
 	int ret;
 
 	if (wifi_data.quirks & WLCORE_QUIRK_FWLOG_NOT_IMPLEMENTED)
 		return 0;
 
-	ret = wl12xx_cmd_config_fwlog(wl);
+	ret = wl12xx_cmd_config_fwlog();
 	if (ret < 0)
 		return ret;
 
@@ -537,17 +537,17 @@ int wl1271_init_vif_specific(struct wl1271 *wl, struct ieee80211_vif *vif)
 	return 0;
 }
 
-int wl1271_hw_init(struct wl1271 *wl)
+int wl1271_hw_init(void)
 {
 	int ret;
 
 	/* Chip-specific hw init */
-	ret = wifi_data.ops->hw_init(wl);
+	ret = wifi_data.ops->hw_init();
 	if (ret < 0)
 		return ret;
 
 	/* Init templates */
-	ret = wl1271_init_templates_config(wl);
+	ret = wl1271_init_templates_config();
 	if (ret < 0)
 		return ret;
 
@@ -556,7 +556,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		return ret;
 
 	/* Configure the FW logger */
-	ret = wl12xx_init_fwlog(wl);
+	ret = wl12xx_init_fwlog();
 	if (ret < 0)
 		return ret;
 
@@ -565,7 +565,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		return ret;
 
 	/* Bluetooth WLAN coexistence */
-	ret = wl1271_init_pta(wl);
+	ret = wl1271_init_pta();
 	if (ret < 0)
 		return ret;
 
@@ -575,7 +575,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		return ret;
 
 	/* RX config */
-	ret = wl12xx_init_rx_config(wl);
+	ret = wl12xx_init_rx_config();
 	if (ret < 0)
 		goto out_free_memmap;
 
@@ -594,7 +594,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		goto out_free_memmap;
 
 	/* Energy detection */
-	ret = wl1271_init_energy_detection(wl);
+	ret = wl1271_init_energy_detection();
 	if (ret < 0)
 		goto out_free_memmap;
 
@@ -604,7 +604,7 @@ int wl1271_hw_init(struct wl1271 *wl)
 		goto out_free_memmap;
 
 	/* Enable data path */
-	ret = wl1271_cmd_data_path(wl, 1);
+	ret = wl1271_cmd_data_path(1);
 	if (ret < 0)
 		goto out_free_memmap;
 

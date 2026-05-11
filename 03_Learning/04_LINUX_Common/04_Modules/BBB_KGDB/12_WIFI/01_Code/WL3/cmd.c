@@ -718,7 +718,7 @@ int wl1271_cmd_interrogate(u16 id, void *buf,
 	return ret;
 }
 
-int wl1271_cmd_data_path(struct wl1271 *wl, bool enable)
+int wl1271_cmd_data_path(bool enable)
 {
 	struct cmd_enabledisable_path *cmd;
 	int ret;
@@ -1541,7 +1541,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_config_fwlog(struct wl1271 *wl)
+int wl12xx_cmd_config_fwlog(void)
 {
 	struct wl12xx_cmd_config_fwlog *cmd;
 	int ret = 0;

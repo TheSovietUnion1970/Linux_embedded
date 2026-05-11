@@ -1450,7 +1450,7 @@ static int wl12xx_init_fw(struct wl1271 *wl)
 		if (ret < 0)
 			goto power_off;
 
-		ret = wl1271_hw_init(wl);
+		ret = wl1271_hw_init();
 		if (ret < 0)
 			goto irq_disable;
 
@@ -4191,7 +4191,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 		wifi_data.nvs_len = 0;
 	}
 
-	ret = wifi_data.ops->setup(wl);
+	ret = wifi_data.ops->setup();
 	if (ret < 0)
 		goto out_free_nvs;
 

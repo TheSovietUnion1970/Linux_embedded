@@ -36,80 +36,9 @@ enum wl_rx_buf_align;
 struct wl1271_rx_descriptor;
 
 struct wlcore_ops {
-	int (*setup)(struct wl1271 *wl);
-	int (*identify_chip)(struct wl1271 *wl);
-	int (*identify_fw)(struct wl1271 *wl);
+	int (*setup)(void);
 	int (*boot)(void);
-	int (*plt_init)(struct wl1271 *wl);
-	int (*trigger_cmd)(struct wl1271 *wl, int cmd_box_addr,
-			   void *buf, size_t len);
-	int (*ack_event)(struct wl1271 *wl);
-	int (*wait_for_event)(struct wl1271 *wl, enum wlcore_wait_event event,
-			      bool *timeout);
-	int (*process_mailbox_events)(struct wl1271 *wl);
-	u32 (*calc_tx_blocks)(struct wl1271 *wl, u32 len, u32 spare_blks);
-	void (*set_tx_desc_blocks)(struct wl1271 *wl,
-				   struct wl1271_tx_hw_descr *desc,
-				   u32 blks, u32 spare_blks);
-	void (*set_tx_desc_data_len)(struct wl1271 *wl,
-				     struct wl1271_tx_hw_descr *desc,
-				     struct sk_buff *skb);
-	enum wl_rx_buf_align (*get_rx_buf_align)(struct wl1271 *wl,
-						 u32 rx_desc);
-	int (*prepare_read)(struct wl1271 *wl, u32 rx_desc, u32 len);
-	u32 (*get_rx_packet_len)(struct wl1271 *wl, void *rx_data,
-				 u32 data_len);
-	int (*tx_delayed_compl)(struct wl1271 *wl);
-	void (*tx_immediate_compl)(struct wl1271 *wl);
-	int (*hw_init)(struct wl1271 *wl);
-	int (*init_vif)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-	u32 (*sta_get_ap_rate_mask)(struct wl1271 *wl,
-				    struct wl12xx_vif *wlvif);
-	int (*get_pg_ver)(struct wl1271 *wl, s8 *ver);
-	int (*get_mac)(struct wl1271 *wl);
-	void (*set_tx_desc_csum)(struct wl1271 *wl,
-				 struct wl1271_tx_hw_descr *desc,
-				 struct sk_buff *skb);
-	void (*set_rx_csum)(struct wl1271 *wl,
-			    struct wl1271_rx_descriptor *desc,
-			    struct sk_buff *skb);
-	u32 (*ap_get_mimo_wide_rate_mask)(struct wl1271 *wl,
-					  struct wl12xx_vif *wlvif);
-	int (*debugfs_init)(struct wl1271 *wl, struct dentry *rootdir);
-	int (*handle_static_data)(struct wl1271 *wl,
-				  struct wl1271_static_data *static_data);
-	int (*scan_start)(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-			  struct cfg80211_scan_request *req);
-	int (*scan_stop)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-	int (*sched_scan_start)(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-				struct cfg80211_sched_scan_request *req,
-				struct ieee80211_scan_ies *ies);
-	void (*sched_scan_stop)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-	int (*get_spare_blocks)(struct wl1271 *wl, bool is_gem);
-	int (*set_key)(struct wl1271 *wl, enum set_key_cmd cmd,
-		       struct ieee80211_vif *vif,
-		       struct ieee80211_sta *sta,
-		       struct ieee80211_key_conf *key_conf);
-	int (*channel_switch)(struct wl1271 *wl,
-			      struct wl12xx_vif *wlvif,
-			      struct ieee80211_channel_switch *ch_switch);
-	u32 (*pre_pkt_send)(struct wl1271 *wl, u32 buf_offset, u32 last_len);
-	void (*sta_rc_update)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
-	int (*set_peer_cap)(struct wl1271 *wl,
-			    struct ieee80211_sta_ht_cap *ht_cap,
-			    bool allow_ht_operation,
-			    u32 rate_set, u8 hlid);
-	u32 (*convert_hwaddr)(struct wl1271 *wl, u32 hwaddr);
-	int (*interrupt_notify)(struct wl1271 *wl, bool action);
-	int (*rx_ba_filter)(struct wl1271 *wl, bool action);
-	int (*ap_sleep)(struct wl1271 *wl);
-	int (*smart_config_start)(struct wl1271 *wl, u32 group_bitmap);
-	int (*smart_config_stop)(struct wl1271 *wl);
-	int (*smart_config_set_group_key)(struct wl1271 *wl, u16 group_id,
-					  u8 key_len, u8 *key);
-	int (*set_cac)(struct wl1271 *wl, struct wl12xx_vif *wlvif,
-		       bool start);
-	int (*dfs_master_restart)(struct wl1271 *wl, struct wl12xx_vif *wlvif);
+	int (*hw_init)(void);
 };
 
 enum wlcore_partitions {
