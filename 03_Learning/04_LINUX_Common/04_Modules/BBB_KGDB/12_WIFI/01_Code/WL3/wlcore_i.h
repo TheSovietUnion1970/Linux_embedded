@@ -475,21 +475,8 @@ static inline bool wlcore_is_p2p_mgmt(struct wl12xx_vif *wlvif)
 	return wl12xx_wlvif_to_vif(wlvif)->type == NL80211_IFTYPE_P2P_DEVICE;
 }
 
-#define wl12xx_for_each_wlvif(wl, wlvif) \
+#define wl12xx_for_each_wlvif(wlvif) \
 		list_for_each_entry(wlvif, &wifi_data.wlvif_list, list)
-
-#define wl12xx_for_each_wlvif_continue(wl, wlvif) \
-		list_for_each_entry_continue(wlvif, &wifi_data.wlvif_list, list)
-
-#define wl12xx_for_each_wlvif_bss_type(wl, wlvif, _bss_type)	\
-		wl12xx_for_each_wlvif(wl, wlvif)		\
-			if (wlvif->bss_type == _bss_type)
-
-#define wl12xx_for_each_wlvif_sta(wl, wlvif)	\
-		wl12xx_for_each_wlvif_bss_type(wl, wlvif, BSS_TYPE_STA_BSS)
-
-#define wl12xx_for_each_wlvif_ap(wl, wlvif)	\
-		wl12xx_for_each_wlvif_bss_type(wl, wlvif, BSS_TYPE_AP_BSS)
 
 void wl12xx_queue_recovery_work(void);
 

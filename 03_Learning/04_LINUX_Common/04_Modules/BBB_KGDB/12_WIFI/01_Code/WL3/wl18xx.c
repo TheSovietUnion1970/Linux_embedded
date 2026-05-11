@@ -1485,7 +1485,7 @@ static int wl18xx_setup(void)
 
 static int wl18xx_probe(struct platform_device *pdev)
 {
-	struct wl1271 *wl;
+	//struct wl1271 *wl;
 	struct ieee80211_hw *hw;
 	int ret;
 
@@ -1500,11 +1500,11 @@ static int wl18xx_probe(struct platform_device *pdev)
 		goto out;
 	}
 
-	wl = hw->priv;
+	//wl = hw->priv;
 	wifi_data.ops = &wl18xx_ops;
 	wifi_data.ptable = wl18xx_ptable;
 
-	ret = wlcore_probe(wl, pdev);
+	ret = wlcore_probe(pdev);
 	printk("[MERGE] - wifi_data.dev: 0x%x, parent = 0x%x\n", wifi_data.dev, wifi_data.dev->parent);
 	if (ret)
 		goto out_free;

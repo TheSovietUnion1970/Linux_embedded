@@ -1791,8 +1791,9 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 				       unsigned int *total, u64 multicast)
 {
 	struct wl1271_filter_params *fp = (void *)(unsigned long)multicast;
-	struct wl1271 *wl = hw->priv;
+	//struct wl1271 *wl = hw->priv;
 	struct wl12xx_vif *wlvif;
+	int i = 0;
 
 	int ret;
 
@@ -1813,7 +1814,7 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	wl12xx_for_each_wlvif(wl, wlvif) {
+	wl12xx_for_each_wlvif(wlvif) {
 		if (wlcore_is_p2p_mgmt(wlvif))
 			continue;
 
@@ -3509,9 +3510,9 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	}
 
 	wl = hw->priv;
-	//wifi_data.wl = wl;
-	wifi_data.dev = wifi_data.dev;
 	memset(wl, 0, sizeof(*wl));
+
+
 
 	wifi_data.priv = kzalloc(priv_size, GFP_KERNEL);
 	if (!wifi_data.priv) {
@@ -3695,9 +3696,8 @@ static irqreturn_t wlcore_hardirq(int irq, void *cookie)
 	return IRQ_WAKE_THREAD;
 }
 #include "tables.h"
-static void wlcore_nvs_cb(const struct firmware *fw, void *context)
+static void wlcore_nvs_cb(const struct firmware *fw)
 {
-	struct wl1271 *wl = context;
 	struct platform_device *pdev = wifi_data.pdev;
 	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
 	struct resource *res;
@@ -3764,7 +3764,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	}
 
 	ret = request_threaded_irq(wifi_data.irq, hardirq_fn, wlcore_irq,
-				   wifi_data.irq_flags, pdev->name, wl);
+				   wifi_data.irq_flags, pdev->name, NULL);
 	if (ret < 0) {
 		wl1271_error("interrupt configuration failed");
 		wl1271_power_off();
@@ -3815,7 +3815,7 @@ out_irq:
 	if (wifi_data.wakeirq >= 0)
 		dev_pm_clear_wake_irq(wifi_data.dev);
 	device_init_wakeup(wifi_data.dev, false);
-	free_irq(wifi_data.irq, wl);
+	free_irq(wifi_data.irq, NULL);
 
 out_free_nvs:
 	kfree(wifi_data.nvs);
@@ -3825,7 +3825,7 @@ out:
 	complete_all(&wifi_data.nvs_loading_complete);
 }
 
-int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
+int wlcore_probe(struct platform_device *pdev)
 {
 	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
 	//const char *nvs_name;
@@ -3836,11 +3836,10 @@ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev)
 
 	wifi_data.dev = &pdev->dev;
 	wifi_data.pdev = pdev;
-	platform_set_drvdata(pdev, wl);
 
 	VV_chip = (struct VV_chip*)devm_kzalloc(wifi_data.dev, sizeof(struct VV_chip), GFP_KERNEL);
 
-	wlcore_nvs_cb(NULL, wl);
+	wlcore_nvs_cb(NULL);
 
 	//wifi_data.dev->driver->pm = &wlcore_pm_ops;
 	pm_runtime_set_autosuspend_delay(wifi_data.dev, 50);
@@ -3854,7 +3853,6 @@ EXPORT_SYMBOL_GPL(wlcore_probe);
 int wlcore_remove(struct platform_device *pdev)
 {
 	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
-	struct wl1271 *wl = platform_get_drvdata(pdev);
 	int error;
 
 	error = pm_runtime_get_sync(wifi_data.dev);
@@ -3884,7 +3882,7 @@ int wlcore_remove(struct platform_device *pdev)
 	pm_runtime_dont_use_autosuspend(wifi_data.dev);
 	pm_runtime_disable(wifi_data.dev);
 
-	free_irq(wifi_data.irq, wl);
+	free_irq(wifi_data.irq, NULL);
 	wlcore_free_hw();
 
 	return 0;

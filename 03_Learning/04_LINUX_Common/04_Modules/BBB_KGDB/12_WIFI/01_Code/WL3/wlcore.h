@@ -401,7 +401,7 @@ struct wl1271 {
 
 };
 
-int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev);
+int wlcore_probe(struct platform_device *pdev);
 int wlcore_remove(struct platform_device *pdev);
 struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 				     u32 mbox_size);
