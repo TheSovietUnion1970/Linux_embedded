@@ -78,7 +78,7 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 					 bool reset_tx_queues);
 static void wlcore_op_stop_locked(struct wl1271 *wl);
 
-static int wl12xx_set_authorized(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static int wl12xx_set_authorized(struct wl12xx_vif *wlvif)
 {
 	int ret;
 
@@ -91,14 +91,7 @@ static int wl12xx_set_authorized(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	if (test_and_set_bit(WLVIF_FLAG_STA_STATE_SENT, &wlvif->flags))
 		return 0;
 
-	ret = wl12xx_cmd_set_peer_state(wl, wlvif, wlvif->sta.hlid);
-	// struct wl12xx_cmd_set_peer_state cmd;
-	// cmd.hlid = wlvif->sta.hlid;
-	// cmd.state = WL1271_CMD_STA_STATE_CONNECTED;
-	// /* wmm param is valid only for station role */
-	// if (wlvif->bss_type == BSS_TYPE_STA_BSS)
-	// 	cmd.wmm = wlvif->wmm_enabled;
-	// ret = VV_cmd_configure(CMD_SET_PEER_STATE, &cmd, sizeof(cmd));
+	ret = wl12xx_cmd_set_peer_state(wlvif, wlvif->sta.hlid);
 	if (ret < 0)
 		return ret;
 
@@ -1924,7 +1917,7 @@ static int wlcore_set_ssid(struct wl12xx_vif *wlvif)
 	return 0;
 }
 
-static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+static int wlcore_set_assoc(struct wl12xx_vif *wlvif,
 			    struct ieee80211_bss_conf *bss_conf,
 			    u32 sta_rate_set)
 {
@@ -1944,7 +1937,7 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 * updates it by itself when the first beacon is
 	 * received after a join.
 	 */
-	ret = wl1271_cmd_build_ps_poll(wl, wlvif, wlvif->aid);
+	ret = wl1271_cmd_build_ps_poll(wlvif, wlvif->aid);
 	if (ret < 0)
 		return ret;
 
@@ -1955,8 +1948,6 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	// The firmware uses this template when it needs to send a Probe Request (for scanning, roaming, reconnecting, etc.).
 	// The template is stored in firmware memory instead of from CPU building
 	dev_kfree_skb(wlvif->probereq);
-	//wlvif->probereq = wl1271_cmd_build_ap_probe_req(NULL);
-
 
 	// synch_fail_thold + bss_lose_timeout
 	// = How many consecutive beacons the firmware can miss before it considers the link "broken".
@@ -1983,7 +1974,7 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 		return ret;
 
 	// Building a special Null Data template dedicated to Keep-Alive.
-	ret = wl12xx_cmd_build_klv_null_data(wl, wlvif);
+	ret = wl12xx_cmd_build_klv_null_data(wlvif);
 	if (ret < 0)
 		return ret;
 
@@ -1999,7 +1990,7 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	 * The default fw psm configuration is AUTO, while mac80211 default
 	 * setting is off (ACTIVE), so sync the fw with the correct value.
 	 */
-	ret = wl1271_ps_set_mode(wl, wlvif, STATION_ACTIVE_MODE);
+	ret = wl1271_ps_set_mode(wlvif, STATION_ACTIVE_MODE);
 	if (ret < 0)
 		return ret;
 
@@ -2016,7 +2007,7 @@ static int wlcore_set_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	return ret;
 }
 
-static int wlcore_unset_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static int wlcore_unset_assoc(struct wl12xx_vif *wlvif)
 {
 	int ret;
 	bool sta = wlvif->bss_type == BSS_TYPE_STA_BSS;
@@ -2058,7 +2049,7 @@ static int wlcore_unset_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	if (test_and_clear_bit(WLVIF_FLAG_CS_PROGRESS, &wlvif->flags)) {
 		struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 
-		wl12xx_cmd_stop_channel_switch(wl, wlvif);
+		wl12xx_cmd_stop_channel_switch(wlvif);
 		ieee80211_chswitch_done(vif, false);
 		// cancel_delayed_work(&wlvif->channel_switch_work);
 	}
@@ -2072,7 +2063,7 @@ static int wlcore_unset_assoc(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	return 0;
 }
 
-static void wl1271_set_band_rate(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static void wl1271_set_band_rate(struct wl12xx_vif *wlvif)
 {
 	wlvif->basic_rate_set = wlvif->bitrate_masks[wlvif->band];
 	//printk("[basic_rate_set] = %d\n", wlvif->basic_rate_set);
@@ -2488,7 +2479,7 @@ out:
 	return ret;
 }
 
-static int wl1271_bss_erp_info_changed(struct wl1271 *wl,
+static int wl1271_bss_erp_info_changed(
 				       struct ieee80211_vif *vif,
 				       struct ieee80211_bss_conf *bss_conf,
 				       u32 changed)
@@ -2575,14 +2566,13 @@ static int wlcore_set_bssid(struct wl12xx_vif *wlvif,
 	return 0;
 }
 
-static int wlcore_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+static int wlcore_clear_bssid(struct wl12xx_vif *wlvif)
 {
 	int ret;
 
 	/* revert back to minimum rates for the current band */
-	wl1271_set_band_rate(wl, wlvif);
+	wl1271_set_band_rate(wlvif);
 	wlvif->basic_rate = wl1271_tx_min_rate_get(wlvif->basic_rate_set);
-	//printk("wlvif->basic_rate = %d\n", wlvif->basic_rate);
 
 	ret = wl1271_acx_sta_rate_policies(wlvif);
 	if (ret < 0)
@@ -2590,7 +2580,7 @@ static int wlcore_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 
 	if (wlvif->bss_type == BSS_TYPE_STA_BSS &&
 	    test_bit(WLVIF_FLAG_IN_USE, &wlvif->flags)) {
-		ret = wl12xx_cmd_role_stop_sta(wl, wlvif);
+		ret = wl12xx_cmd_role_stop_sta(wlvif);
 		if (ret < 0)
 			return ret;
 	}
@@ -2599,7 +2589,7 @@ static int wlcore_clear_bssid(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	return 0;
 }
 /* STA/IBSS mode changes */
-static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
+static void wl1271_bss_info_changed_sta(
 					struct ieee80211_vif *vif,
 					struct ieee80211_bss_conf *bss_conf,
 					u32 changed)
@@ -2666,7 +2656,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 			/* Need to update the BSSID (for filtering etc) */
 			do_join = true;
 		} else {
-			ret = wlcore_clear_bssid(wl, wlvif);
+			ret = wlcore_clear_bssid(wlvif);
 			if (ret < 0)
 				goto out;
 		}
@@ -2681,7 +2671,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 	}
 
 	// Extended Rate PHY
-	ret = wl1271_bss_erp_info_changed(wl, vif, bss_conf, changed);
+	ret = wl1271_bss_erp_info_changed(vif, bss_conf, changed);
 	if (ret < 0)
 		goto out;
 
@@ -2695,15 +2685,15 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 
 	if (changed & BSS_CHANGED_ASSOC) {
 		if (bss_conf->assoc) {
-			ret = wlcore_set_assoc(wl, wlvif, bss_conf,
+			ret = wlcore_set_assoc(wlvif, bss_conf,
 					       sta_rate_set);
 			if (ret < 0)
 				goto out;
 
 			if (test_bit(WLVIF_FLAG_STA_AUTHORIZED, &wlvif->flags))
-				wl12xx_set_authorized(wl, wlvif);
+				wl12xx_set_authorized(wlvif);
 		} else {
-			wlcore_unset_assoc(wl, wlvif);
+			wlcore_unset_assoc(wlvif);
 		}
 	}
 
@@ -2712,12 +2702,7 @@ static void wl1271_bss_info_changed_sta(struct wl1271 *wl,
 		bool enabled =
 			bss_conf->chandef.width != NL80211_CHAN_WIDTH_20_NOHT;
 
-		// ret = wlcore_hw_set_peer_cap(wl,
-		// 			     &sta_ht_cap,
-		// 			     enabled,
-		// 			     wlvif->rate_set,
-		// 			     wlvif->sta.hlid);
-		ret = VV_acx_set_peer_cap(wl,
+		ret = VV_acx_set_peer_cap(
 					     &sta_ht_cap,
 					     enabled,
 					     wlvif->rate_set,
@@ -2807,7 +2792,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 		wlvif->power_level = bss_conf->txpower;
 	}
 
-	wl1271_bss_info_changed_sta(wl, vif, bss_conf, changed);
+	wl1271_bss_info_changed_sta(vif, bss_conf, changed);
 
 	pm_runtime_mark_last_busy(wifi_data.dev);
 	pm_runtime_put_autosuspend(wifi_data.dev);
@@ -2851,7 +2836,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 	wlvif->channel_type = cfg80211_get_chandef_type(&ctx->def);
 
 	/* update default rates according to the band */
-	wl1271_set_band_rate(wl, wlvif);
+	wl1271_set_band_rate(wlvif);
 
 	if (ctx->radar_enabled &&
 	    ctx->def.chan->dfs_state == NL80211_DFS_USABLE) {

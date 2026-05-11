@@ -12,7 +12,7 @@
 #include "tx.h"
 #include "debug.h"
 
-int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
 		       enum wl1271_cmd_ps_mode mode)
 {
 	int ret;
@@ -32,7 +32,7 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 			return ret;
 		}
 
-		ret = wl1271_cmd_ps_mode(wl, wlvif, mode, timeout);
+		ret = wl1271_cmd_ps_mode(wlvif, mode, timeout);
 		if (ret < 0)
 			return ret;
 
@@ -60,7 +60,7 @@ int wl1271_ps_set_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 				return ret;
 		}
 
-		ret = wl1271_cmd_ps_mode(wl, wlvif, mode, 0);
+		ret = wl1271_cmd_ps_mode(wlvif, mode, 0);
 		if (ret < 0)
 			return ret;
 

@@ -125,7 +125,7 @@ out:
  * with the addition of supported rates. they should be unified in
  * the next fw api change
  */
-int VV_acx_set_peer_cap(struct wl1271 *wl,
+int VV_acx_set_peer_cap(
 			    struct ieee80211_sta_ht_cap *ht_cap,
 			    bool allow_ht_operation,
 			    u32 rate_set, u8 hlid)

@@ -545,7 +545,7 @@ out:
 }
 
 /* use this function to stop ibss as well */
-int wl12xx_cmd_role_stop_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl12xx_cmd_role_stop_sta(struct wl12xx_vif *wlvif)
 {
 	struct wl12xx_cmd_role_stop *cmd;
 	int ret;
@@ -755,7 +755,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl1271_cmd_data_path);
 
-int wl1271_cmd_ps_mode(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_cmd_ps_mode(struct wl12xx_vif *wlvif,
 		       u8 ps_mode, u16 auto_ps_timeout)
 {
 	struct wl1271_cmd_ps_params *ps_params = NULL;
@@ -865,7 +865,7 @@ out:
 
 }
 
-int wl12xx_cmd_build_klv_null_data(struct wl1271 *wl,
+int wl12xx_cmd_build_klv_null_data(
 				   struct wl12xx_vif *wlvif)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
@@ -891,7 +891,7 @@ out:
 
 }
 
-int wl1271_cmd_build_ps_poll(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl1271_cmd_build_ps_poll(struct wl12xx_vif *wlvif,
 			     u16 aid)
 {
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
@@ -1240,7 +1240,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_set_peer_state(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+int wl12xx_cmd_set_peer_state(struct wl12xx_vif *wlvif,
 			      u8 hlid)
 {
 	struct wl12xx_cmd_set_peer_state *cmd;
@@ -1730,7 +1730,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_stop_channel_switch(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl12xx_cmd_stop_channel_switch(struct wl12xx_vif *wlvif)
 {
 	struct wl12xx_cmd_stop_channel_switch *cmd;
 	int ret;
@@ -1833,14 +1833,7 @@ int wl12xx_set_authorizedV(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	if (test_and_set_bit(WLVIF_FLAG_STA_STATE_SENT, &wlvif->flags))
 		return 0;
 
-	//ret = wl12xx_cmd_set_peer_state(wl, wlvif, wlvif->sta.hlid);
-	struct wl12xx_cmd_set_peer_state cmd;
-	cmd.hlid = wlvif->sta.hlid;
-	cmd.state = WL1271_CMD_STA_STATE_CONNECTED;
-	/* wmm param is valid only for station role */
-	if (wlvif->bss_type == BSS_TYPE_STA_BSS)
-		cmd.wmm = wlvif->wmm_enabled;
-	ret = VV_cmd_configure(CMD_SET_PEER_STATE, &cmd, sizeof(cmd));
+	ret = wl12xx_cmd_set_peer_state(wlvif, wlvif->sta.hlid);
 	if (ret < 0)
 		return ret;
 
