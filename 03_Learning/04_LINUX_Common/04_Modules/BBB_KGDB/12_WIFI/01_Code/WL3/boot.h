@@ -12,7 +12,7 @@
 
 #include "wlcore.h"
 
-int wlcore_boot_upload_firmware(struct wl1271 *wl);
+int wlcore_boot_upload_firmware(void);
 int wlcore_boot_run_firmware(void);
 
 #define WL1271_NO_SUBBANDS 8

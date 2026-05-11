@@ -40,7 +40,7 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
-int wl18xx_top_reg_write(struct wl1271 *wl, int addr, u16 val)
+int wl18xx_top_reg_write(int addr, u16 val)
 {
 	u32 tmp;
 	int ret;
@@ -49,22 +49,18 @@ int wl18xx_top_reg_write(struct wl1271 *wl, int addr, u16 val)
 		return -EINVAL;
 
 	if ((addr % 4) == 0) {
-		//ret = wlcore_read32(wl, addr, &tmp);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(addr), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff0000) | val;
-		//ret = wlcore_write32(wl, addr, tmp);
 		ret = VV_sdio_raw_write(wlcore_translate_addr(addr), tmp, 4, false);
 	} else {
-		//ret = wlcore_read32(wl, addr - 2, &tmp);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(addr - 2), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff) | (val << 16);
-		//ret = wlcore_write32(wl, addr - 2, tmp);
 		ret = VV_sdio_raw_write(wlcore_translate_addr(addr - 2), tmp, 4, false);
 	}
 
@@ -72,7 +68,7 @@ out:
 	return ret;
 }
 
-int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
+int wl18xx_top_reg_read(int addr, u16 *out)
 {
 	u32 val = 0;
 	int ret;
@@ -82,12 +78,10 @@ int wl18xx_top_reg_read(struct wl1271 *wl, int addr, u16 *out)
 
 	if ((addr % 4) == 0) {
 		/* address is 4-bytes aligned */
-		//ret = wlcore_read32(wl, addr, &val);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(addr), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = val & 0xffff;
 	} else {
-		//ret = wlcore_read32(wl, addr - 2, &val);
 		ret = VV_sdio_raw_read(wlcore_translate_addr(addr - 2), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = (val & 0xffff0000) >> 16;
@@ -746,7 +740,7 @@ static const struct wl18xx_clk_cfg wl18xx_clk_table[NUM_CLOCK_CONFIGS] = {
 	[CLOCK_CONFIG_52_M]	= { 13, 120,    0, 0, false },
 };
 
-static int wl18xx_set_clk(struct wl1271 *wl)
+static int wl18xx_set_clk(void)
 {
 	u16 clk_freq;
 	int ret;
@@ -757,7 +751,7 @@ static int wl18xx_set_clk(struct wl1271 *wl)
 
 	/* TODO: PG2: apparently we need to read the clk type */
 
-	ret = wl18xx_top_reg_read(wl, PRIMARY_CLK_DETECT, &clk_freq);
+	ret = wl18xx_top_reg_read(PRIMARY_CLK_DETECT, &clk_freq);
 	if (ret < 0)
 		goto out;
 
@@ -767,103 +761,102 @@ static int wl18xx_set_clk(struct wl1271 *wl)
 		     wl18xx_clk_table[clk_freq].swallow ? "swallow" : "spit");
 
 	/* coex PLL configuration */
-	ret = wl18xx_top_reg_write(wl, PLLSH_COEX_PLL_N,
+	ret = wl18xx_top_reg_write(PLLSH_COEX_PLL_N,
 				   wl18xx_clk_table_coex[clk_freq].n);
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_top_reg_write(wl, PLLSH_COEX_PLL_M,
+	ret = wl18xx_top_reg_write(PLLSH_COEX_PLL_M,
 				   wl18xx_clk_table_coex[clk_freq].m);
 	if (ret < 0)
 		goto out;
 
 	/* bypass the swallowing logic */
-	ret = wl18xx_top_reg_write(wl, PLLSH_COEX_PLL_SWALLOW_EN,
+	ret = wl18xx_top_reg_write(PLLSH_COEX_PLL_SWALLOW_EN,
 				   PLLSH_COEX_PLL_SWALLOW_EN_VAL1);
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_N,
+	ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_N,
 				   wl18xx_clk_table[clk_freq].n);
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_M,
+	ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_M,
 				   wl18xx_clk_table[clk_freq].m);
 	if (ret < 0)
 		goto out;
 
 	if (wl18xx_clk_table[clk_freq].swallow) {
 		/* first the 16 lower bits */
-		ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_Q_FACTOR_CFG_1,
+		ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_Q_FACTOR_CFG_1,
 					   wl18xx_clk_table[clk_freq].q &
 					   PLLSH_WCS_PLL_Q_FACTOR_CFG_1_MASK);
 		if (ret < 0)
 			goto out;
 
 		/* then the 16 higher bits, masked out */
-		ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_Q_FACTOR_CFG_2,
+		ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_Q_FACTOR_CFG_2,
 					(wl18xx_clk_table[clk_freq].q >> 16) &
 					PLLSH_WCS_PLL_Q_FACTOR_CFG_2_MASK);
 		if (ret < 0)
 			goto out;
 
 		/* first the 16 lower bits */
-		ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_P_FACTOR_CFG_1,
+		ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_P_FACTOR_CFG_1,
 					   wl18xx_clk_table[clk_freq].p &
 					   PLLSH_WCS_PLL_P_FACTOR_CFG_1_MASK);
 		if (ret < 0)
 			goto out;
 
 		/* then the 16 higher bits, masked out */
-		ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_P_FACTOR_CFG_2,
+		ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_P_FACTOR_CFG_2,
 					(wl18xx_clk_table[clk_freq].p >> 16) &
 					PLLSH_WCS_PLL_P_FACTOR_CFG_2_MASK);
 		if (ret < 0)
 			goto out;
 	} else {
-		ret = wl18xx_top_reg_write(wl, PLLSH_WCS_PLL_SWALLOW_EN,
+		ret = wl18xx_top_reg_write(PLLSH_WCS_PLL_SWALLOW_EN,
 					   PLLSH_WCS_PLL_SWALLOW_EN_VAL2);
 		if (ret < 0)
 			goto out;
 	}
 
 	/* choose WCS PLL */
-	ret = wl18xx_top_reg_write(wl, PLLSH_WL_PLL_SEL,
+	ret = wl18xx_top_reg_write(PLLSH_WL_PLL_SEL,
 				   PLLSH_WL_PLL_SEL_WCS_PLL);
 	if (ret < 0)
 		goto out;
 
 	/* enable both PLLs */
-	ret = wl18xx_top_reg_write(wl, PLLSH_WL_PLL_EN, PLLSH_WL_PLL_EN_VAL1);
+	ret = wl18xx_top_reg_write(PLLSH_WL_PLL_EN, PLLSH_WL_PLL_EN_VAL1);
 	if (ret < 0)
 		goto out;
 
 	udelay(1000);
 
 	/* disable coex PLL */
-	ret = wl18xx_top_reg_write(wl, PLLSH_WL_PLL_EN, PLLSH_WL_PLL_EN_VAL2);
+	ret = wl18xx_top_reg_write(PLLSH_WL_PLL_EN, PLLSH_WL_PLL_EN_VAL2);
 	if (ret < 0)
 		goto out;
 
 	/* reset the swallowing logic */
-	ret = wl18xx_top_reg_write(wl, PLLSH_COEX_PLL_SWALLOW_EN,
+	ret = wl18xx_top_reg_write(PLLSH_COEX_PLL_SWALLOW_EN,
 				   PLLSH_COEX_PLL_SWALLOW_EN_VAL2);
 
 out:
 	return ret;
 }
 
-static int wl18xx_pre_boot(struct wl1271 *wl)
+static int wl18xx_pre_boot(void)
 {
 	int ret;
 
-	ret = wl18xx_set_clk(wl);
+	ret = wl18xx_set_clk();
 	if (ret < 0)
 		goto out;
 
 	/* Continue the ELP wake up sequence */
-	//ret = wlcore_write32(wl, WL18XX_WELP_ARM_COMMAND, WELP_ARM_COMMAND_VAL);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
 	if (ret < 0)
 		goto out;
@@ -875,27 +868,24 @@ static int wl18xx_pre_boot(struct wl1271 *wl)
 		goto out;
 
 	/* Disable interrupts */
-	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, WL1271_ACX_INTR_ALL);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	//ret = wl18xx_boot_soft_reset(wl);
 	/* disable Rx/Tx */
-	//ret = wlcore_write32(wl, WL18XX_ENABLE, 0x0);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
-	//ret = wlcore_write32(wl, WL18XX_SPARE_A2, 0xffff);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
 }
 
-static int wl18xx_pre_upload(struct wl1271 *wl)
+static int wl18xx_pre_upload(void)
 {
 	u32 tmp;
 	int ret;
@@ -909,19 +899,16 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		goto out;
 
 	/* TODO: check if this is all needed */
-	//ret = wlcore_write32(wl, WL18XX_EEPROMLESS_IND, WL18XX_EEPROMLESS_IND);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
 	if (ret < 0)
 		goto out;
 
-	//ret = wlcore_read_reg(wl, REG_CHIP_ID_B, &tmp);
 	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data.rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wl1271_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
 
-	//ret = wlcore_read32(wl, WL18XX_SCR_PAD2, &tmp);
 	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
@@ -938,22 +925,16 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 		goto out;
 
 	/* disable FDSP clock */
-	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
-	// 		     MEM_FDSP_CLK_120_DISABLE);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* set ATPG clock toward FDSP Code RAM rather than its own clock */
-	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
-	// 		     MEM_FDSP_CODERAM_FUNC_CLK_SEL);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* re-enable FDSP clock */
-	// ret = wlcore_write32(wl, WL18XX_PHY_FPGA_SPARE_1,
-	// 		     MEM_FDSP_CLK_120_ENABLE);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
 	if (ret < 0)
 		goto out;
@@ -961,18 +942,16 @@ static int wl18xx_pre_upload(struct wl1271 *wl)
 	ret = irq_get_trigger_type(wifi_data.irq);
 	if ((ret == IRQ_TYPE_LEVEL_LOW) || (ret == IRQ_TYPE_EDGE_FALLING)) {
 		wl1271_info("using inverted interrupt logic: %d", ret);
-		// ret = VV_set_partition_18(wl,
-		// 			   &wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 		ret = VV_set_partition_core(&wifi_data.ptable[PART_TOP_PRCM_ELP_SOC]);
 		if (ret < 0)
 			goto out;
 
-		ret = wl18xx_top_reg_read(wl, TOP_FN0_CCCR_REG_32, &irq_invert);
+		ret = wl18xx_top_reg_read(TOP_FN0_CCCR_REG_32, &irq_invert);
 		if (ret < 0)
 			goto out;
 
 		irq_invert |= BIT(1);
-		ret = wl18xx_top_reg_write(wl, TOP_FN0_CCCR_REG_32, irq_invert);
+		ret = wl18xx_top_reg_write(TOP_FN0_CCCR_REG_32, irq_invert);
 		if (ret < 0)
 			goto out;
 
@@ -983,7 +962,7 @@ out:
 	return ret;
 }
 
-static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
+static int wl18xx_set_mac_and_phy(void)
 {
 	struct wl18xx_priv *priv = wifi_data.priv;
 	struct wl18xx_mac_and_phy_params *params;
@@ -999,8 +978,6 @@ static int wl18xx_set_mac_and_phy(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	// ret = wlcore_write(wl, WL18XX_PHY_INIT_MEM_ADDR, params,
-	// 		   sizeof(*params), false);
 	ret = VV_sdio_raw_write1(wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
 
 out:
@@ -1008,7 +985,7 @@ out:
 	return ret;
 }
 
-static int wl18xx_enable_interrupts(struct wl1271 *wl)
+static int wl18xx_enable_interrupts(void)
 {
 	u32 event_mask, intr_mask;
 	int ret;
@@ -1016,15 +993,12 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 	event_mask = WL18XX_ACX_EVENTS_VECTOR;
 	intr_mask = WL18XX_INTR_MASK;
 
-	//ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK, event_mask);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
-	wlcore_enable_interrupts(wl);
+	wlcore_enable_interrupts();
 
-	// ret = wlcore_write_reg(wl, REG_INTERRUPT_MASK,
-	// 		       WL1271_ACX_INTR_ALL & ~intr_mask);
 	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data.rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
@@ -1032,29 +1006,29 @@ static int wl18xx_enable_interrupts(struct wl1271 *wl)
 	return ret;
 
 disable_interrupts:
-	wlcore_disable_interrupts(wl);
+	wlcore_disable_interrupts();
 
 out:
 	return ret;
 }
 
-static int wl18xx_boot(struct wl1271 *wl)
+static int wl18xx_boot(void)
 {
 	int ret;
 
-	ret = wl18xx_pre_boot(wl);
+	ret = wl18xx_pre_boot();
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_pre_upload(wl);
+	ret = wl18xx_pre_upload();
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_boot_upload_firmware(wl);
+	ret = wlcore_boot_upload_firmware();
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_set_mac_and_phy(wl);
+	ret = wl18xx_set_mac_and_phy();
 	if (ret < 0)
 		goto out;
 
@@ -1083,7 +1057,7 @@ static int wl18xx_boot(struct wl1271 *wl)
 	if (ret < 0)
 		goto out;
 
-	ret = wl18xx_enable_interrupts(wl);
+	ret = wl18xx_enable_interrupts();
 
 out:
 	return ret;

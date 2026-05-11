@@ -32,9 +32,9 @@
 
 struct wl1271;
 
-void wlcore_disable_interrupts(struct wl1271 *wl);
+void wlcore_disable_interrupts(void);
 void wlcore_disable_interrupts_nosync(struct wl1271 *wl);
-void wlcore_enable_interrupts(struct wl1271 *wl);
+void wlcore_enable_interrupts(void);
 void wlcore_synchronize_interrupts(struct wl1271 *wl);
 
 int wlcore_translate_addr(int addr);

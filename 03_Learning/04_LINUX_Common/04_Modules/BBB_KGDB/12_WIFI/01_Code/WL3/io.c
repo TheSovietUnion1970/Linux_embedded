@@ -18,7 +18,7 @@
 #include "io.h"
 #include "tx.h"
 
-void wlcore_disable_interrupts(struct wl1271 *wl)
+void wlcore_disable_interrupts(void)
 {
 	disable_irq(wifi_data.irq);
 }
@@ -30,7 +30,7 @@ void wlcore_disable_interrupts_nosync(struct wl1271 *wl)
 }
 EXPORT_SYMBOL_GPL(wlcore_disable_interrupts_nosync);
 
-void wlcore_enable_interrupts(struct wl1271 *wl)
+void wlcore_enable_interrupts(void)
 {
 	enable_irq(wifi_data.irq);
 }

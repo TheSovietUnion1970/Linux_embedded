@@ -987,7 +987,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 	 * Otherwise, the interrupt handler might be called and exit without
 	 * reading the interrupt status.
 	 */
-	wlcore_disable_interrupts(wl);
+	wlcore_disable_interrupts();
 	mutex_lock(&wifi_data.mutex);
 	if (!wifi_data.plt) {
 		mutex_unlock(&wifi_data.mutex);
@@ -997,7 +997,7 @@ int wl1271_plt_stop(struct wl1271 *wl)
 		 * may have been disabled when op_stop was called. It will,
 		 * however, balance the above call to disable_interrupts().
 		 */
-		wlcore_enable_interrupts(wl);
+		wlcore_enable_interrupts();
 
 		wl1271_error("cannot power down because not in PLT "
 			     "state: %d", wifi_data.state);
@@ -1241,7 +1241,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	if (wifi_data.state == WLCORE_STATE_OFF) {
 		if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS,
 					&wifi_data.flags))
-			wlcore_enable_interrupts(wl);
+			wlcore_enable_interrupts();
 
 		return;
 	}
@@ -1281,7 +1281,7 @@ static void wlcore_op_stop_locked(struct wl1271 *wl)
 	 * re-enable interrupts to balance the disable depth
 	 */
 	if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data.flags))
-		wlcore_enable_interrupts(wl);
+		wlcore_enable_interrupts();
 
 	//wifi_data.band = NL80211_BAND_2GHZ;
 
@@ -1446,7 +1446,7 @@ static int wl12xx_init_fw(struct wl1271 *wl)
 		if (ret < 0)
 			goto power_off;
 
-		ret = wifi_data.ops->boot(wl);
+		ret = wifi_data.ops->boot();
 		if (ret < 0)
 			goto power_off;
 
@@ -1466,7 +1466,7 @@ irq_disable:
 		   work function will not do anything.) Also, any other
 		   possible concurrent operations will fail due to the
 		   current state, hence the wl1271 struct should be safe. */
-		wlcore_disable_interrupts(wl);
+		wlcore_disable_interrupts();
 		wl1271_flush_deferred_work(wl);
 		//cancel_work_sync(&wifi_data.netstack_work);
 		cancel_work_sync(&VV_work.netstack_work);

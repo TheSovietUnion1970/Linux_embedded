@@ -163,7 +163,7 @@ out:
 	return ret;
 }
 
-static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
+static int wl1271_boot_upload_firmware_chunk(void *buf,
 					     size_t fw_data_len, u32 dest)
 {
 	// struct wlcore_partition_set partition;
@@ -234,7 +234,6 @@ static int wl1271_boot_upload_firmware_chunk(struct wl1271 *wl, void *buf,
 	memcpy(chunk, p, fw_data_len % CHUNK_SIZE);
 	wl1271_debug(DEBUG_BOOT, "uploading fw last chunk (%zd B) 0x%p to 0x%x",
 		     fw_data_len % CHUNK_SIZE, p, addr);
-	// ret = wlcore_write(wl, addr, chunk, fw_data_len % CHUNK_SIZE, false);
 	ret = VV_sdio_raw_write1(wlcore_translate_addr(addr), chunk, fw_data_len % CHUNK_SIZE, false);
 
 out:
@@ -242,7 +241,7 @@ out:
 	return ret;
 }
 
-int wlcore_boot_upload_firmware(struct wl1271 *wl)
+int wlcore_boot_upload_firmware(void)
 {
 	u32 chunks, addr, len;
 	int ret = 0;
@@ -266,7 +265,7 @@ int wlcore_boot_upload_firmware(struct wl1271 *wl)
 		}
 		wl1271_debug(DEBUG_BOOT, "chunk %d addr 0x%x len %u",
 			     chunks, addr, len);
-		ret = wl1271_boot_upload_firmware_chunk(wl, fw, len, addr);
+		ret = wl1271_boot_upload_firmware_chunk(fw, len, addr);
 		if (ret != 0)
 			break;
 		fw += len;
