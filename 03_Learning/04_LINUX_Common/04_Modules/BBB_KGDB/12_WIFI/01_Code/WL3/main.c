@@ -73,7 +73,7 @@ static int fwlog_mem_blocks = -1;
 static int bug_on_recovery = -1;
 static int no_recovery     = -1;
 
-static void __wl1271_op_remove_interface(struct wl1271 *wl,
+static void __wl1271_op_remove_interface(
 					 struct ieee80211_vif *vif,
 					 bool reset_tx_queues);
 static void wlcore_op_stop_locked(struct wl1271 *wl);
@@ -810,7 +810,7 @@ void wl12xx_queue_recovery_work(struct wl1271 *wl)
 	// }
 }
 
-static void wlcore_save_freed_pkts(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+static void wlcore_save_freed_pkts(struct wl12xx_vif *wlvif,
 				   u8 hlid, struct ieee80211_sta *sta)
 {
 	struct wl1271_station *wl_sta;
@@ -1043,7 +1043,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	q = wl1271_tx_get_queue(mapping);
 	printk("q = %d, mapping = %d\n", q, mapping);
 
-	hlid = wl12xx_tx_get_hlid(wl, wlvif, skb, control->sta); // sta.hlid
+	hlid = wl12xx_tx_get_hlid(wlvif, skb, control->sta); // sta.hlid
 
 	spin_lock_irqsave(&wifi_data.lock, flags);
 
@@ -1704,7 +1704,7 @@ out_unlock:
 	return ret;
 }
 
-static void __wl1271_op_remove_interface(struct wl1271 *wl,
+static void __wl1271_op_remove_interface(
 					 struct ieee80211_vif *vif,
 					 bool reset_tx_queues)
 {
@@ -1737,10 +1737,6 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 		wl12xx_rearm_tx_watchdog_locked();
 
 		wifi_data.scan_state = WL1271_SCAN_STATE_IDLE;
-		//memset(wifi_data.scan.scanned_ch, 0, sizeof(wifi_data.scan.scanned_ch));
-		// wifi_data.scan_wlvif = NULL;
-		//wifi_data.VV_scan_vif = NULL;
-		//wifi_data.scan.req = NULL;
 		ieee80211_scan_completed(wifi_data.hw, &info);
 	}
 
@@ -1779,24 +1775,16 @@ static void __wl1271_op_remove_interface(struct wl1271 *wl,
 		pm_runtime_put_autosuspend(wifi_data.dev);
 	}
 deinit:
-	wl12xx_tx_reset_wlvif(wl, wlvif);
+	wl12xx_tx_reset_wlvif(wlvif);
 
 	/* clear all hlids (except system_hlid) */
 	wlvif->dev_hlid = WL12XX_INVALID_LINK_ID;
 
 	wlvif->sta.hlid = WL12XX_INVALID_LINK_ID;
-	// wl12xx_free_rate_policy(wl, &wlvif->sta.basic_rate_idx);
-	// wl12xx_free_rate_policy(wl, &wlvif->sta.ap_rate_idx);
-	// wl12xx_free_rate_policy(wl, &wlvif->sta.p2p_rate_idx);
-	// wlcore_free_klv_template(wl, &wlvif->sta.klv_template_id);
-
 
 	dev_kfree_skb(wlvif->probereq);
 	wlvif->probereq = NULL;
-	// if (wifi_data.last_wlvif == wlvif)
-	// 	wifi_data.last_wlvif = NULL;
 	list_del(&wlvif->list);
-	//list_del(&VV_vif.list_id);
 	memset(wlvif->ap.sta_hlid_map, 0, sizeof(wlvif->ap.sta_hlid_map));
 	wlvif->role_id = WL12XX_INVALID_ROLE_ID;
 	wlvif->dev_role_id = WL12XX_INVALID_ROLE_ID;
@@ -1813,15 +1801,6 @@ deinit:
 
 unlock:
 	mutex_unlock(&wifi_data.mutex);
-
-	// del_timer_sync(&wlvif->rx_streaming_timer);
-	// cancel_work_sync(&wlvif->rx_streaming_enable_work);
-	// cancel_work_sync(&wlvif->rx_streaming_disable_work);
-	// cancel_work_sync(&wlvif->rc_update_work);
-	// cancel_delayed_work_sync(&wlvif->connection_loss_work);
-	// cancel_delayed_work_sync(&wlvif->channel_switch_work);
-	// cancel_delayed_work_sync(&wlvif->pending_auth_complete_work);
-
 	mutex_lock(&wifi_data.mutex);
 }
 
@@ -1846,15 +1825,7 @@ static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 	 * wifi_data.vif can be null here if someone shuts down the interface
 	 * just when hardware recovery has been started.
 	 */
-	// wl12xx_for_each_wlvif(wl, iter) {
-	// 	if (iter != wlvif)
-	// 		continue;
-	// 	printk("__wl1271_op_remove_interface, vif = 0x%x\n", vif);
-	// 	__wl1271_op_remove_interface(wl, vif, true);
-	// 	break;
-	// }
-	// WARN_ON(iter != wlvif);
-	__wl1271_op_remove_interface(wl, vif, true);
+	__wl1271_op_remove_interface(vif, true);
 	// no need fw change as we use single role
 out:
 	mutex_unlock(&wifi_data.mutex);
@@ -2841,7 +2812,7 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 	if (ctx->radar_enabled &&
 	    ctx->def.chan->dfs_state == NL80211_DFS_USABLE) {
 		wl1271_info("Start radar detection");
-		VV_cmd_set_cac(wl, wlvif, true);
+		VV_cmd_set_cac(wlvif, true);
 		wlvif->radar_enabled = true;
 	}
 
@@ -2853,7 +2824,7 @@ out:
 	return 0;
 }
 
-void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
+void wl1271_free_sta(struct wl12xx_vif *wlvif, u8 hlid)
 {
 	if (!test_bit(hlid, wlvif->ap.sta_hlid_map))
 		return;
@@ -2864,7 +2835,6 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	 * save the last used PN in the private part of iee80211_sta,
 	 * in case of recovery/suspend
 	 */
-	//wlcore_save_freed_pkts_addr(wl, wlvif, hlid, VV_links[hlid].addr);
 	struct ieee80211_sta *sta;
 	struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
 
@@ -2875,19 +2845,11 @@ void wl1271_free_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 hlid)
 	rcu_read_lock();
 	sta = ieee80211_find_sta(vif, VV_links[hlid].addr);
 	if (sta)
-		wlcore_save_freed_pkts(wl, wlvif, hlid, sta);
+		wlcore_save_freed_pkts(wlvif, hlid, sta);
 	rcu_read_unlock();
 
 
 	wl12xx_free_link(wlvif, &hlid);
-	//wifi_data.active_sta_count--;
-
-	// /*
-	//  * rearm the tx watchdog when the last STA is freed - give the FW a
-	//  * chance to return STA-buffered packets before complaining.
-	//  */
-	// if (wifi_data.active_sta_count == 0)
-	// 	wl12xx_rearm_tx_watchdog_locked();
 }
 
 static void wlcore_roc_if_possible(struct wl1271 *wl,
@@ -2949,7 +2911,7 @@ void wlcore_update_inconn_sta(struct wl1271 *wl, struct wl12xx_vif *wlvif,
 	}
 }
 
-static int wl12xx_update_sta_state(struct wl1271 *wl,
+static int wl12xx_update_sta_state(
 				   struct wl12xx_vif *wlvif,
 				   struct ieee80211_sta *sta,
 				   enum ieee80211_sta_state old_state,
@@ -2970,7 +2932,7 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 	    new_state == IEEE80211_STA_AUTHORIZED) {
 		printk("STATE - 1\n");
 		set_bit(WLVIF_FLAG_STA_AUTHORIZED, &wlvif->flags);
-		ret = wl12xx_set_authorizedV(wl, wlvif); // VV_ -> Association completed.
+		ret = wl12xx_set_authorizedV(wlvif); // VV_ -> Association completed.
 		if (ret)
 			return ret;
 	}
@@ -2990,7 +2952,7 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 	    old_state == IEEE80211_STA_ASSOC &&
 	    new_state == IEEE80211_STA_AUTH) {
 		printk("STATE - 3\n");
-		wlcore_save_freed_pkts(wl, wlvif, wlvif->sta.hlid, sta);
+		wlcore_save_freed_pkts(wlvif, wlvif->sta.hlid, sta);
 		wlvif->total_freed_pkts = 0;
 	}
 
@@ -3009,7 +2971,7 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 	     new_state == IEEE80211_STA_NOTEXIST)) {
 		printk("STATE - 5\n");
 		if (test_bit(wlvif->role_id, wifi_data.roc_map))
-			wl12xx_crocV(wl, wlvif->role_id); // VV_
+			wl12xx_crocV(wlvif->role_id); // VV_
 	}
 
 	// WHEN not fully connected -> REMAIN on CHANNEL
@@ -3020,7 +2982,7 @@ static int wl12xx_update_sta_state(struct wl1271 *wl,
 		if (find_first_bit(wifi_data.roc_map,
 				   WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES) {
 			WARN_ON(wlvif->role_id == WL12XX_INVALID_ROLE_ID);
-			wl12xx_rocV(wl, wlvif, wlvif->role_id,
+			wl12xx_rocV(wlvif, wlvif->role_id,
 				   wlvif->band, wlvif->channel); // VV_
 		}
 	}
@@ -3053,7 +3015,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	ret = wl12xx_update_sta_state(wl, wlvif, sta, old_state, new_state); // VV_
+	ret = wl12xx_update_sta_state(wlvif, sta, old_state, new_state); // VV_
 
 	pm_runtime_mark_last_busy(wifi_data.dev);
 	pm_runtime_put_autosuspend(wifi_data.dev);
@@ -3235,7 +3197,7 @@ static void wlcore_op_unassign_vif_chanctx(struct ieee80211_hw *hw,
 
 	if (wlvif->radar_enabled) {
 		wl1271_debug(DEBUG_MAC80211, "Stop radar detection");
-		VV_cmd_set_cac(wl, wlvif, false);
+		VV_cmd_set_cac(wlvif, false);
 		wlvif->radar_enabled = false;
 	}
 

@@ -63,13 +63,10 @@ bool wl12xx_is_dummy_packet(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(wl12xx_is_dummy_packet);
 
-u8 wl12xx_tx_get_hlid(struct wl1271 *wl, struct wl12xx_vif *wlvif,
+u8 wl12xx_tx_get_hlid(struct wl12xx_vif *wlvif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta)
 {
 	struct ieee80211_tx_info *control;
-
-	// if (wlvif->bss_type == BSS_TYPE_AP_BSS)
-	// 	return wl12xx_tx_get_hlid_ap(wl, wlvif, skb, sta);
 
 	control = IEEE80211_SKB_CB(skb);
 	if (control->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
@@ -649,7 +646,7 @@ void wl1271_tx_reset_link_queues(u8 hlid)
 }
 
 /* caller must hold wifi_data.mutex and TX must be stopped */
-void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif)
 {
 	int i;
 
@@ -658,7 +655,7 @@ void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 		if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
 		    i != wlvif->ap.bcast_hlid && i != wlvif->ap.global_hlid) {
 			/* this calls wl12xx_free_link */
-			wl1271_free_sta(wl, wlvif, i);
+			wl1271_free_sta(wlvif, i);
 		} else {
 			u8 hlid = i;
 			wl12xx_free_link(wlvif, &hlid);
@@ -666,9 +663,6 @@ void wl12xx_tx_reset_wlvif(struct wl1271 *wl, struct wl12xx_vif *wlvif)
 	}
 
 	wlvif->last_tx_hlid = 0;
-
-	// for (i = 0; i < NUM_TX_QUEUES; i++)
-	// 	wlvif->tx_queue_count[i] = 0;
 }
 /* caller must hold wifi_data.mutex and TX must be stopped */
 void wl12xx_tx_reset(struct wl1271 *wl)

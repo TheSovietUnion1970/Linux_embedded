@@ -31,7 +31,7 @@ struct VV_cmd_cac_start {
 	u8 band;
 	u8 bandwidth;
 } __packed;
-int VV_cmd_set_cac(struct wl1271 *wl, struct wl12xx_vif *wlvif, bool start);
+int VV_cmd_set_cac(struct wl12xx_vif *wlvif, bool start);
 
 
 struct wl18xx_cmd_smart_config_set_group_key {

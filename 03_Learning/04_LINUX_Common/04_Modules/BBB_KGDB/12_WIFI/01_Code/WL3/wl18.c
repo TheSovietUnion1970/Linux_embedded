@@ -1,6 +1,6 @@
 #include "wl18.h"
 
-int VV_cmd_set_cac(struct wl1271 *wl, struct wl12xx_vif *wlvif, bool start)
+int VV_cmd_set_cac(struct wl12xx_vif *wlvif, bool start)
 {
 	struct VV_cmd_cac_start *cmd;
 	int ret = 0;

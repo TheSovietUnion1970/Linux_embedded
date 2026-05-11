@@ -1759,7 +1759,7 @@ out:
 }
 
 /* Vinh custom */
-int wl12xx_rocV(struct wl1271 *wl, struct wl12xx_vif *wlvif, u8 role_id,
+int wl12xx_rocV(struct wl12xx_vif *wlvif, u8 role_id,
 	       enum nl80211_band band, u8 channel)
 {
 	int ret = 0;
@@ -1789,16 +1789,15 @@ out:
 	return ret;
 }
 
-int wl12xx_crocV(struct wl1271 *wl, u8 role_id)
+int wl12xx_crocV(u8 role_id)
 {
 	int ret = 0;
 
 	if ((!test_bit(role_id, wifi_data.roc_map))){
-        //printk("ALREADY - wl12xx_crocV\n");
+        printk("ALREADY - wl12xx_crocV\n");
         return 0;
     }
 
-	//ret = wl12xx_cmd_croc(wl, role_id);
     struct wl12xx_cmd_croc cmd;
     cmd.role_id = role_id;
 	ret = VV_cmd_send(CMD_CANCEL_REMAIN_ON_CHANNEL, &cmd, sizeof(cmd), 0);
@@ -1818,7 +1817,7 @@ out:
 	return ret;
 }
 
-int wl12xx_set_authorizedV(struct wl1271 *wl, struct wl12xx_vif *wlvif)
+int wl12xx_set_authorizedV(struct wl12xx_vif *wlvif)
 {
 	int ret;
 
