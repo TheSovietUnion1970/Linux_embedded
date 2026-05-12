@@ -22,4 +22,4 @@ clean:
 
 # sudo cp *.c *.h Makefile /home/vinh/D/LINUX/Linux_embedded/03_Learning/04_LINUX_Common/04_Modules/BBB_KGDB/12_WIFI/01_Code/WL3
 
-# sudo cp -r wl18xx wlcore /home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl3
+# sudo cp *.c *.h /home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl3

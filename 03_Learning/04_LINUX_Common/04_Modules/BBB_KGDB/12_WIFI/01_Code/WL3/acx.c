@@ -723,7 +723,6 @@ int wl1271_acx_sta_rate_policies(struct wl12xx_vif *wlvif)
 		wlvif->basic_rate, wlvif->rate_set);
 
 	/* configure one basic rate class */
-	// acx->rate_policy_idx = cpu_to_le32(wlvif->sta.basic_rate_idx);
 	acx->rate_policy_idx = cpu_to_le32(STA_BASIC_RATE_IDX);
 	acx->rate_policy.enabled_rates = cpu_to_le32(wlvif->basic_rate);
 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
@@ -737,7 +736,6 @@ int wl1271_acx_sta_rate_policies(struct wl12xx_vif *wlvif)
 	}
 
 	/* configure one AP supported rate class */
-	// acx->rate_policy_idx = cpu_to_le32(wlvif->sta.ap_rate_idx);
 	acx->rate_policy_idx = cpu_to_le32(STA_AP_RATE_IDX);
 
 	/* the AP policy is HW specific */
@@ -758,7 +756,6 @@ int wl1271_acx_sta_rate_policies(struct wl12xx_vif *wlvif)
 	 * (p2p packets should always go out with OFDM rates, even
 	 * if we are currently connected to 11b AP)
 	 */
-	// acx->rate_policy_idx = cpu_to_le32(wlvif->sta.p2p_rate_idx);
 	acx->rate_policy_idx = cpu_to_le32(STA_P2P_RATE_IDX);
 	acx->rate_policy.enabled_rates =
 				cpu_to_le32(CONF_TX_RATE_MASK_BASIC_P2P);
@@ -1180,7 +1177,7 @@ int wl1271_acx_rssi_snr_trigger(struct wl12xx_vif *wlvif,
 		goto out;
 	}
 
-	wlvif->last_rssi_event = -1;
+	//wlvif->last_rssi_event = -1;
 
 	acx->role_id = wlvif->role_id;
 	acx->pacing = cpu_to_le16(wifi_data->conf.roam_trigger.trigger_pacing);

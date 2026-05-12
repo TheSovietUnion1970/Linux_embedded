@@ -277,17 +277,17 @@ static int wl1271_sta_hw_init_post_mem(
 static int wl1271_set_ba_policies(struct wl12xx_vif *wlvif)
 {
 	/* Reset the BA RX indicators */
-	wlvif->ba_allowed = true;
+	//wlvif->ba_allowed = true;
 	//wifi_data->ba_rx_session_count = 0;
 
 	/* BA is supported in STA/AP modes */
 	if (wlvif->bss_type != BSS_TYPE_AP_BSS &&
 	    wlvif->bss_type != BSS_TYPE_STA_BSS) {
-		wlvif->ba_support = false;
+		//wlvif->ba_support = false;
 		return 0;
 	}
 
-	wlvif->ba_support = true;
+	//wlvif->ba_support = true;
 
 	/* 802.11n initiator BA session setting */
 	return wl12xx_acx_set_ba_initiator_policy(wlvif);

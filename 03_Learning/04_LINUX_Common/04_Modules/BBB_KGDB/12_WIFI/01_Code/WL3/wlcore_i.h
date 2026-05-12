@@ -318,39 +318,9 @@ struct wl12xx_vif {
 	union {
 		struct {
 			u8 hlid;
-
-			u8 basic_rate_idx;
-			u8 ap_rate_idx;
-			u8 p2p_rate_idx;
-
-			u8 klv_template_id;
-
 			bool qos;
-			/* channel type we started the STA role with */
-			enum nl80211_channel_type role_chan_type;
 		} sta;
-		struct {
-			u8 global_hlid;
-			u8 bcast_hlid;
-
-			/* HLIDs bitmap of associated stations */
-			unsigned long sta_hlid_map[BITS_TO_LONGS(
-							WLCORE_MAX_LINKS)];
-
-			/* recoreded keys - set here before AP startup */
-			struct wl1271_ap_key *recorded_keys[MAX_NUM_KEYS];
-
-			u8 mgmt_rate_idx;
-			u8 bcast_rate_idx;
-			u8 ucast_rate_idx[CONF_TX_MAX_AC_COUNT];
-		} ap;
 	};
-
-	/* the hlid of the last transmitted skb */
-	int last_tx_hlid;
-
-	/* counters of packets per AC, across all links in the vif */
-	//int tx_queue_count[NUM_TX_QUEUES];
 
 	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
 
@@ -381,42 +351,42 @@ struct wl12xx_vif {
 	u32 beacon_int;
 
 	/* Default key (for WEP) */
-	u32 default_key;
+	//u32 default_key;
 
 	/* Our association ID */
 	u16 aid;
 
 	/* retry counter for PSM entries */
-	u8 psm_entry_retry;
+	//u8 psm_entry_retry;
 
 	/* in dBm */
 	int power_level;
 
-	int rssi_thold;
-	int last_rssi_event;
+	//int rssi_thold;
+	//int last_rssi_event;
 
 	/* save the current encryption type for auto-arp config */
 	u8 encryption_type;
 	__be32 ip_addr;
 
 	/* RX BA constraint value */
-	bool ba_support;
-	bool ba_allowed;
+	//bool ba_support;
+	//bool ba_allowed;
 
 	bool wmm_enabled;
 
 	bool radar_enabled;
 
 	/* Rx Streaming */
-	struct work_struct rx_streaming_enable_work;
-	struct work_struct rx_streaming_disable_work;
-	struct timer_list rx_streaming_timer;
+	// struct work_struct rx_streaming_enable_work;
+	// struct work_struct rx_streaming_disable_work;
+	// struct timer_list rx_streaming_timer;
 
-	struct delayed_work channel_switch_work;
-	struct delayed_work connection_loss_work;
+	//struct delayed_work channel_switch_work;
+	//struct delayed_work connection_loss_work;
 
 	/* number of in connection stations */
-	int inconn_count;
+	//int inconn_count;
 
 	/*
 	 * This vif's queues are mapped to mac80211 HW queues as:
@@ -428,18 +398,18 @@ struct wl12xx_vif {
 	//int hw_queue_base;
 
 	/* do we have a pending auth reply? (and ROC) */
-	bool ap_pending_auth_reply;
+	//bool ap_pending_auth_reply;
 
 	/* time when we sent the pending auth reply */
-	unsigned long pending_auth_reply_time;
+	//unsigned long pending_auth_reply_time;
 
 	/* work for canceling ROC after pending auth reply */
-	struct delayed_work pending_auth_complete_work;
+	//struct delayed_work pending_auth_complete_work;
 
 	/* update rate conrol */
-	enum ieee80211_sta_rx_bandwidth rc_update_bw;
-	struct ieee80211_sta_ht_cap rc_ht_cap;
-	struct work_struct rc_update_work;
+	//enum ieee80211_sta_rx_bandwidth rc_update_bw;
+	//struct ieee80211_sta_ht_cap rc_ht_cap;
+	//struct work_struct rc_update_work;
 
 	/*
 	 * total freed FW packets on the link.

@@ -339,26 +339,6 @@ void wl12xx_free_link(struct wl12xx_vif *wlvif, u8 *hlid)
 	wl1271_tx_reset_link_queues(*hlid);
 	VV_links[*hlid].wlvif = NULL;
 
-	if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
-	    *hlid == wlvif->ap.bcast_hlid) {
-		u32 sqn_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING;
-		/*
-		 * save the total freed packets in the wlvif, in case this is
-		 * recovery or suspend
-		 */
-		wlvif->total_freed_pkts = VV_links[*hlid].total_freed_pkts;
-
-		/*
-		 * increment the initial seq number on recovery to account for
-		 * transmitted packets that we haven't yet got in the FW status
-		 */
-		if (wlvif->encryption_type == KEY_GEM)
-			sqn_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING_GEM;
-
-		if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data->flags))
-			wlvif->total_freed_pkts += sqn_padding;
-	}
-
 	VV_links[*hlid].total_freed_pkts = 0;
 
 	*hlid = WL12XX_INVALID_LINK_ID;
@@ -526,8 +506,6 @@ int wl12xx_cmd_role_start_sta(struct wl12xx_vif *wlvif)
 		wl1271_error("failed to initiate cmd role start sta");
 		goto err_hlid;
 	}
-
-	wlvif->sta.role_chan_type = wlvif->channel_type;
 
 	goto out_free;
 
@@ -781,7 +759,6 @@ int wl12xx_cmd_build_klv_null_data(
 
 	ret = wl1271_cmd_template_set(wlvif->role_id, CMD_TEMPL_KLV,
 				      skb->data, skb->len,
-				    //   wlvif->sta.klv_template_id,
 					  STA_KLV_TEMPLATE_IDX,
 				      wlvif->basic_rate);
 
@@ -1041,74 +1018,6 @@ int wl1271_cmd_set_sta_key(struct wl12xx_vif *wlvif,
 out:
 	kfree(cmd);
 
-	return ret;
-}
-
-/*
- * TODO: merge with sta/ibss into 1 set_key function.
- * note there are slight diffs
- */
-int wl1271_cmd_set_ap_key(struct wl12xx_vif *wlvif,
-			  u16 action, u8 id, u8 key_type,
-			  u8 key_size, const u8 *key, u8 hlid, u32 tx_seq_32,
-			  u16 tx_seq_16, bool is_pairwise)
-{
-	struct wl1271_cmd_set_keys *cmd;
-	int ret = 0;
-	u8 lid_type;
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd)
-		return -ENOMEM;
-
-	if (hlid == wlvif->ap.bcast_hlid) {
-		if (key_type == KEY_WEP)
-			lid_type = WEP_DEFAULT_LID_TYPE;
-		else
-			lid_type = BROADCAST_LID_TYPE;
-	} else if (is_pairwise) {
-		lid_type = UNICAST_LID_TYPE;
-	} else {
-		lid_type = BROADCAST_LID_TYPE;
-	}
-
-	wl1271_debug(DEBUG_CRYPT, "ap key action: %d id: %d lid: %d type: %d"
-		     " hlid: %d", (int)action, (int)id, (int)lid_type,
-		     (int)key_type, (int)hlid);
-
-	cmd->lid_key_type = lid_type;
-	cmd->hlid = hlid;
-	cmd->key_action = cpu_to_le16(action);
-	cmd->key_size = key_size;
-	cmd->key_type = key_type;
-	cmd->key_id = id;
-	cmd->ac_seq_num16[0] = cpu_to_le16(tx_seq_16);
-	cmd->ac_seq_num32[0] = cpu_to_le32(tx_seq_32);
-
-	if (key_type == KEY_TKIP) {
-		/*
-		 * We get the key in the following form:
-		 * TKIP (16 bytes) - TX MIC (8 bytes) - RX MIC (8 bytes)
-		 * but the target is expecting:
-		 * TKIP - RX MIC - TX MIC
-		 */
-		memcpy(cmd->key, key, 16);
-		memcpy(cmd->key + 16, key + 24, 8);
-		memcpy(cmd->key + 24, key + 16, 8);
-	} else {
-		memcpy(cmd->key, key, key_size);
-	}
-
-	wl1271_dump(DEBUG_CRYPT, "TARGET AP KEY: ", cmd, sizeof(*cmd));
-
-	ret = VV_cmd_send(CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_warning("could not set ap keys");
-		goto out;
-	}
-
-out:
-	kfree(cmd);
 	return ret;
 }
 

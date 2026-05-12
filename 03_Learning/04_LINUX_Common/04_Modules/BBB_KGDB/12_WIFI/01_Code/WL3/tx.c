@@ -206,16 +206,12 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 		* otherwise use default basic rates
 		*/
 	if (skb->protocol == cpu_to_be16(ETH_P_PAE))
-		// rate_idx = wlvif->sta.basic_rate_idx;
 		rate_idx = STA_BASIC_RATE_IDX;
 	else if (control->flags & IEEE80211_TX_CTL_NO_CCK_RATE)
-		// rate_idx = wlvif->sta.p2p_rate_idx;
 		rate_idx = STA_P2P_RATE_IDX;
 	else if (ieee80211_is_data(frame_control))
-		// rate_idx = wlvif->sta.ap_rate_idx;
 		rate_idx = STA_AP_RATE_IDX;
 	else
-		// rate_idx = wlvif->sta.basic_rate_idx;
 		rate_idx = STA_BASIC_RATE_IDX;
 
 	tx_attr |= rate_idx << TX_HW_ATTR_OFST_RATE_POLICY;
@@ -408,39 +404,52 @@ static struct sk_buff *VV_skb_dequeue1(void)
 	ac = wlcore_select_ac();
 	if (ac < 0){
 		//printk("FAILED - ac\n");
-		return skb;
+		return NULL;
 	}
 
-	/* Do a new pass over the wlvif list. But no need to continue
-	 * after last_wlvif. The previous pass should have found it. */
-	if (!skb) {
-		//printk("[0] - wlvif = 0x%x\n", wlvif);
-		//wl12xx_for_each_wlvif(wl, wlvif) {
-		for (i = 0; i < VV_vif_ptr_id; i++){
-			//printk("[1] - START LOOP\n");
-			if (!VV_lnk_high_prio(HW_LINK_ID)) {
-				if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
-					!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
-					VV_lnk_low_prio(HW_LINK_ID)) // wl18xx_lnk_low_prio
-					/* we found the first non-empty low priority queue */
-					low_prio_hlid = HW_LINK_ID;
+	// /* Do a new pass over the wlvif list. But no need to continue
+	//  * after last_wlvif. The previous pass should have found it. */
+	// if (!skb) {
+	// 	//printk("[0] - wlvif = 0x%x\n", wlvif);
+	// 	//wl12xx_for_each_wlvif(wl, wlvif) {
+	// 	for (i = 0; i < VV_vif_ptr_id; i++){
+	// 		//printk("[1] - START LOOP\n");
+	// 		if (!VV_lnk_high_prio(HW_LINK_ID)) {
+	// 			if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
+	// 				!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
+	// 				VV_lnk_low_prio(HW_LINK_ID)) // wl18xx_lnk_low_prio
+	// 				/* we found the first non-empty low priority queue */
+	// 				low_prio_hlid = HW_LINK_ID;
 
-				skb = NULL;
-			}
-			// this case for high priority
-			else skb = wlcore_lnk_dequeue(HW_LINK_ID, ac);
+	// 			skb = NULL;
+	// 		}
+	// 		// this case for high priority
+	// 		else skb = wlcore_lnk_dequeue(HW_LINK_ID, ac);
 
-			VV_vif_ptr[i]->last_tx_hlid = HW_LINK_ID;
+	// 		//VV_vif_ptr[i]->last_tx_hlid = HW_LINK_ID;
 
-	// // test
-	// if (!test) skb = NULL;
-	// test = 1;
+	// // // test
+	// // if (!test) skb = NULL;
+	// // test = 1;
 
-			if (skb) {
-				break;
-			}
-		}
+	// 		if (skb) {
+	// 			break;
+	// 		}
+	// 	}
+	// }
+
+
+	if (!VV_lnk_high_prio(HW_LINK_ID)) {
+		if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
+			!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
+			VV_lnk_low_prio(HW_LINK_ID)) // wl18xx_lnk_low_prio
+			/* we found the first non-empty low priority queue */
+			low_prio_hlid = HW_LINK_ID;
+
+		skb = NULL;
 	}
+	// this case for high priority
+	else skb = wlcore_lnk_dequeue(HW_LINK_ID, ac);
 
 	printk("[2] - skb = 0x%x, VV_vif_ptr[%d] = 0x%x, low_prio_hlid = %x\n", skb, i, VV_vif_ptr[i], low_prio_hlid);
 	return skb;
@@ -587,17 +596,11 @@ void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif)
 
 	/* TX failure */
 	for_each_set_bit(i, wlvif->links_map, WL18XX_MAX_LINKS) {
-		if (wlvif->bss_type == BSS_TYPE_AP_BSS &&
-		    i != wlvif->ap.bcast_hlid && i != wlvif->ap.global_hlid) {
-			/* this calls wl12xx_free_link */
-			wl1271_free_sta(wlvif, i);
-		} else {
-			u8 hlid = i;
-			wl12xx_free_link(wlvif, &hlid);
-		}
+		u8 hlid = i;
+		wl12xx_free_link(wlvif, &hlid);
 	}
 
-	wlvif->last_tx_hlid = 0;
+	//wlvif->last_tx_hlid = 0;
 }
 /* caller must hold wifi_data->mutex and TX must be stopped */
 void wl12xx_tx_reset(void)

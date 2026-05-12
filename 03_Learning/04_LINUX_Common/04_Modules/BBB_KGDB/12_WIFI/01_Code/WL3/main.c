@@ -1518,7 +1518,7 @@ deinit:
 	dev_kfree_skb(wlvif->probereq);
 	wlvif->probereq = NULL;
 	list_del(&wlvif->list);
-	memset(wlvif->ap.sta_hlid_map, 0, sizeof(wlvif->ap.sta_hlid_map));
+	//memset(wlvif->ap.sta_hlid_map, 0, sizeof(wlvif->ap.sta_hlid_map));
 	wlvif->role_id = WL12XX_INVALID_ROLE_ID;
 	wlvif->dev_role_id = WL12XX_INVALID_ROLE_ID;
 
@@ -1684,7 +1684,6 @@ static int wlcore_set_assoc(struct wl12xx_vif *wlvif,
 
 	// main configuration command that tells the firmware how to use Keep-Alive.
 	ret = wl1271_acx_keep_alive_config(wlvif,
-					//    wlvif->sta.klv_template_id,
 					   STA_KLV_TEMPLATE_IDX,
 					   ACX_KEEP_ALIVE_TPL_VALID);
 	if (ret < 0)
@@ -1755,12 +1754,10 @@ static int wlcore_unset_assoc(struct wl12xx_vif *wlvif)
 
 		wl12xx_cmd_stop_channel_switch(wlvif);
 		ieee80211_chswitch_done(vif, false);
-		// cancel_delayed_work(&wlvif->channel_switch_work);
 	}
 
 	/* invalidate keep-alive template */
 	wl1271_acx_keep_alive_config(wlvif,
-				    //  wlvif->sta.klv_template_id,
 					 STA_KLV_TEMPLATE_IDX,
 				     ACX_KEEP_ALIVE_TPL_INVALID);
 
@@ -1785,6 +1782,39 @@ struct wl1271_filter_params {
 				  FIF_BCN_PRBRESP_PROMISC | \
 				  FIF_CONTROL | \
 				  FIF_OTHER_BSS)
+
+int VV_acx_group_address_tbl(struct VV_vif *VV_vif,
+				 bool enable, void *mc_list, u32 mc_list_len)
+{
+	struct acx_dot11_grp_addr_tbl *acx;
+	int ret;
+
+	wl1271_debug(DEBUG_ACX, "acx group address tbl");
+
+	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
+	if (!acx) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	/* MAC filtering */
+	acx->role_id = VV_vif->role_id;
+	acx->enabled = enable;
+	acx->num_groups = mc_list_len;
+	memcpy(acx->mac_table, mc_list, mc_list_len * ETH_ALEN);
+
+	ret = VV_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
+				   acx, sizeof(*acx));
+	if (ret < 0) {
+		wl1271_warning("failed to set group addr table: %d", ret);
+		goto out;
+	}
+
+out:
+	kfree(acx);
+	return ret;
+}
+
 
 static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 				       unsigned int changed,
@@ -1814,39 +1844,37 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	wl12xx_for_each_wlvif(wlvif) {
-		if (wlcore_is_p2p_mgmt(wlvif))
-			continue;
+	// wl12xx_for_each_wlvif(wlvif) {
+	// 	if (wlcore_is_p2p_mgmt(wlvif))
+	// 		continue;
 
-		if (wlvif->bss_type != BSS_TYPE_AP_BSS) {
-			if (*total & FIF_ALLMULTI)
-				ret = wl1271_acx_group_address_tbl(wlvif,
-								   false,
-								   NULL, 0);
-			else if (fp)
-				ret = wl1271_acx_group_address_tbl(wlvif,
-							fp->enabled,
-							fp->mc_list,
-							fp->mc_list_length);
-			if (ret < 0)
-				goto out_sleep;
-		}
+	// 	if (wlvif->bss_type != BSS_TYPE_AP_BSS) {
+	// 		if (*total & FIF_ALLMULTI)
+	// 			ret = wl1271_acx_group_address_tbl(wlvif,
+	// 							   false,
+	// 							   NULL, 0);
+	// 		else if (fp)
+	// 			ret = wl1271_acx_group_address_tbl(wlvif,
+	// 						fp->enabled,
+	// 						fp->mc_list,
+	// 						fp->mc_list_length);
+	// 		if (ret < 0)
+	// 			goto out_sleep;
+	// 	}
+	// }
 
-		/*
-		 * If interface in AP mode and created with allmulticast then disable
-		 * the firmware filters so that all multicast packets are passed
-		 * This is mandatory for MDNS based discovery protocols 
-		 */
-		if (wlvif->bss_type == BSS_TYPE_AP_BSS) {
-			if (*total & FIF_ALLMULTI) {
-				ret = wl1271_acx_group_address_tbl(wlvif,
+	// as VV_vif_ptr[0]->bss_type = BSS_TYPE_STA_BSS
+	if (*total & FIF_ALLMULTI)
+		ret = VV_acx_group_address_tbl(VV_vif_ptr[0],
 							false,
 							NULL, 0);
-				if (ret < 0)
-					goto out_sleep;
-			}
-		}
-	}
+	else if (fp)
+		ret = VV_acx_group_address_tbl(VV_vif_ptr[0],
+					fp->enabled,
+					fp->mc_list,
+					fp->mc_list_length);
+	if (ret < 0)
+		goto out_sleep;
 
 	/*
 	 * the fw doesn't provide an api to configure the filters. instead,
@@ -1863,53 +1891,6 @@ out:
 	kfree(fp);
 }
 
-static int wl1271_record_ap_key(struct wl12xx_vif *wlvif,
-				u8 id, u8 key_type, u8 key_size,
-				const u8 *key, u8 hlid, u32 tx_seq_32,
-				u16 tx_seq_16, bool is_pairwise)
-{
-	struct wl1271_ap_key *ap_key;
-	int i;
-
-	wl1271_debug(DEBUG_CRYPT, "record ap key id %d", (int)id);
-
-	if (key_size > MAX_KEY_SIZE)
-		return -EINVAL;
-
-	/*
-	 * Find next free entry in ap_keys. Also check we are not replacing
-	 * an existing key.
-	 */
-	for (i = 0; i < MAX_NUM_KEYS; i++) {
-		if (wlvif->ap.recorded_keys[i] == NULL)
-			break;
-
-		if (wlvif->ap.recorded_keys[i]->id == id) {
-			wl1271_warning("trying to record key replacement");
-			return -EINVAL;
-		}
-	}
-
-	if (i == MAX_NUM_KEYS)
-		return -EBUSY;
-
-	ap_key = kzalloc(sizeof(*ap_key), GFP_KERNEL);
-	if (!ap_key)
-		return -ENOMEM;
-
-	ap_key->id = id;
-	ap_key->key_type = key_type;
-	ap_key->key_size = key_size;
-	memcpy(ap_key->key, key, key_size);
-	ap_key->hlid = hlid;
-	ap_key->tx_seq_32 = tx_seq_32;
-	ap_key->tx_seq_16 = tx_seq_16;
-	ap_key->is_pairwise = is_pairwise;
-
-	wlvif->ap.recorded_keys[i] = ap_key;
-	return 0;
-}
-
 static int wl1271_set_key(struct wl12xx_vif *wlvif,
 		       u16 action, u8 id, u8 key_type,
 		       u8 key_size, const u8 *key, u32 tx_seq_32,
@@ -1918,72 +1899,38 @@ static int wl1271_set_key(struct wl12xx_vif *wlvif,
 {
 	int ret;
 	bool is_ap = (wlvif->bss_type == BSS_TYPE_AP_BSS);
+	const u8 *addr;
+	static const u8 bcast_addr[ETH_ALEN] = {
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+	};
 
-	if (is_ap) {
-		struct wl1271_station *wl_sta;
-		u8 hlid;
+	addr = sta ? sta->addr : bcast_addr;
 
-		if (sta) {
-			wl_sta = (struct wl1271_station *)sta->drv_priv;
-			hlid = wl_sta->hlid;
-		} else {
-			hlid = wlvif->ap.bcast_hlid;
-		}
-
-		if (!test_bit(WLVIF_FLAG_AP_STARTED, &wlvif->flags)) {
-			/*
-			 * We do not support removing keys after AP shutdown.
-			 * Pretend we do to make mac80211 happy.
-			 */
-			if (action != KEY_ADD_OR_REPLACE)
-				return 0;
-
-			ret = wl1271_record_ap_key(wlvif, id,
-					     key_type, key_size,
-					     key, hlid, tx_seq_32,
-					     tx_seq_16, is_pairwise);
-		} else {
-			ret = wl1271_cmd_set_ap_key(wlvif, action,
-					     id, key_type, key_size,
-					     key, hlid, tx_seq_32,
-					     tx_seq_16, is_pairwise);
-		}
-
-		if (ret < 0)
-			return ret;
-	} else {
-		const u8 *addr;
-		static const u8 bcast_addr[ETH_ALEN] = {
-			0xff, 0xff, 0xff, 0xff, 0xff, 0xff
-		};
-
-		addr = sta ? sta->addr : bcast_addr;
-
-		if (is_zero_ether_addr(addr)) {
-			/* We dont support TX only encryption */
-			return -EOPNOTSUPP;
-		}
-
-		/* The wl1271 does not allow to remove unicast keys - they
-		   will be cleared automatically on next CMD_JOIN. Ignore the
-		   request silently, as we dont want the mac80211 to emit
-		   an error message. */
-		if (action == KEY_REMOVE && !is_broadcast_ether_addr(addr))
-			return 0;
-
-		/* don't remove key if hlid was already deleted */
-		if (action == KEY_REMOVE &&
-		    wlvif->sta.hlid == WL12XX_INVALID_LINK_ID)
-			return 0;
-
-		ret = wl1271_cmd_set_sta_key(wlvif, action,
-					     id, key_type, key_size,
-					     key, addr, tx_seq_32,
-					     tx_seq_16);
-		if (ret < 0)
-			return ret;
-
+	if (is_zero_ether_addr(addr)) {
+		/* We dont support TX only encryption */
+		return -EOPNOTSUPP;
 	}
+
+	/* The wl1271 does not allow to remove unicast keys - they
+		will be cleared automatically on next CMD_JOIN. Ignore the
+		request silently, as we dont want the mac80211 to emit
+		an error message. */
+	if (action == KEY_REMOVE && !is_broadcast_ether_addr(addr))
+		return 0;
+
+	/* don't remove key if hlid was already deleted */
+	if (action == KEY_REMOVE &&
+		wlvif->sta.hlid == WL12XX_INVALID_LINK_ID)
+		return 0;
+
+	ret = wl1271_cmd_set_sta_key(wlvif, action,
+						id, key_type, key_size,
+						key, addr, tx_seq_32,
+						tx_seq_16);
+	if (ret < 0)
+		return ret;
+
+	
 
 	return 0;
 }
@@ -2317,7 +2264,7 @@ static void wl1271_bss_info_changed_sta(
 						  bss_conf->cqm_rssi_hyst); // Hysteresis (how much the signal must improve before notifying again)
 		if (ret < 0)
 			goto out;
-		wlvif->rssi_thold = bss_conf->cqm_rssi_thold;
+		//wlvif->rssi_thold = bss_conf->cqm_rssi_thold;
 	}
 
 	// Info of AP  - sta rate cap
@@ -2555,11 +2502,6 @@ out:
 
 void wl1271_free_sta(struct wl12xx_vif *wlvif, u8 hlid)
 {
-	if (!test_bit(hlid, wlvif->ap.sta_hlid_map))
-		return;
-
-	clear_bit(hlid, wlvif->ap.sta_hlid_map);
-
 	/*
 	 * save the last used PN in the private part of iee80211_sta,
 	 * in case of recovery/suspend
@@ -3681,7 +3623,6 @@ static void wlcore_nvs_cb(const struct firmware *fw)
 
 	/* VInh custom */
 	wifi_data->rtable = VV_rtable;
-	wifi_data->ptable = VV_ptable;
 
 
 	BUG_ON(WL18XX_NUM_TX_DESCRIPTORS > WLCORE_MAX_TX_DESCRIPTORS);
