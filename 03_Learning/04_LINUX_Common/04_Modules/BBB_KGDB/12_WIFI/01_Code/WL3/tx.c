@@ -63,7 +63,7 @@ bool wl12xx_is_dummy_packet(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(wl12xx_is_dummy_packet);
 
-u8 wl12xx_tx_get_hlid(struct wl12xx_vif *wlvif,
+u8 wl12xx_tx_get_hlid(struct VV_vif *VV_vif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta)
 {
 	struct ieee80211_tx_info *control;
@@ -71,10 +71,10 @@ u8 wl12xx_tx_get_hlid(struct wl12xx_vif *wlvif,
 	control = IEEE80211_SKB_CB(skb);
 	if (control->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
 		wl1271_debug(DEBUG_TX, "tx offchannel");
-		return wlvif->dev_hlid;
+		return VV_vif->dev_hlid;
 	}
 
-	return wlvif->sta.hlid;
+	return VV_vif->sta.hlid;
 }
 
 #define WL18XX_TX_HW_BLOCK_SPARE        1
@@ -181,9 +181,9 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 	
 	is_dummy = wl12xx_is_dummy_packet(skb);
 	//is_dummy = (wifi_data->VV_dummy_packet == skb);
-	// if (is_dummy || !wlvif || wlvif->bss_type != BSS_TYPE_AP_BSS)
+	// if (is_dummy || !VV_vif || VV_vif->bss_type != BSS_TYPE_AP_BSS)
 	// 	desc->life_time = cpu_to_le16(TX_HW_MGMT_PKT_LIFETIME_TU);
-	// [TODO-wlvif]
+	// [TODO-VV_vif]
 	desc->life_time = cpu_to_le16(TX_HW_MGMT_PKT_LIFETIME_TU);
 
 	/* queue */
@@ -193,7 +193,7 @@ static void wl1271_tx_fill_hdr(struct sk_buff *skb,
 	u8 session_id = VV_session_ids[hlid];
 
 	// if ((wifi_data->quirks & WLCORE_QUIRK_AP_ZERO_SESSION_ID) &&
-	// 	(wlvif->bss_type == BSS_TYPE_AP_BSS))
+	// 	(VV_vif->bss_type == BSS_TYPE_AP_BSS))
 	// 	session_id = 0;
 
 	/* configure the tx attributes */
@@ -407,38 +407,6 @@ static struct sk_buff *VV_skb_dequeue1(void)
 		return NULL;
 	}
 
-	// /* Do a new pass over the wlvif list. But no need to continue
-	//  * after last_wlvif. The previous pass should have found it. */
-	// if (!skb) {
-	// 	//printk("[0] - wlvif = 0x%x\n", wlvif);
-	// 	//wl12xx_for_each_wlvif(wl, wlvif) {
-	// 	for (i = 0; i < VV_vif_ptr_id; i++){
-	// 		//printk("[1] - START LOOP\n");
-	// 		if (!VV_lnk_high_prio(HW_LINK_ID)) {
-	// 			if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
-	// 				!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
-	// 				VV_lnk_low_prio(HW_LINK_ID)) // wl18xx_lnk_low_prio
-	// 				/* we found the first non-empty low priority queue */
-	// 				low_prio_hlid = HW_LINK_ID;
-
-	// 			skb = NULL;
-	// 		}
-	// 		// this case for high priority
-	// 		else skb = wlcore_lnk_dequeue(HW_LINK_ID, ac);
-
-	// 		//VV_vif_ptr[i]->last_tx_hlid = HW_LINK_ID;
-
-	// // // test
-	// // if (!test) skb = NULL;
-	// // test = 1;
-
-	// 		if (skb) {
-	// 			break;
-	// 		}
-	// 	}
-	// }
-
-
 	if (!VV_lnk_high_prio(HW_LINK_ID)) {
 		if (low_prio_hlid == WL12XX_INVALID_LINK_ID &&
 			!skb_queue_empty(&VV_tx_queue[HW_LINK_ID][ac]) &&
@@ -476,7 +444,7 @@ static bool wl1271_tx_is_data_present(struct sk_buff *skb)
 #define WL18XX_TX_CTRL_NOT_PADDED	BIT(7)
 int wlcore_tx_work_locked(void)
 {
-	struct wl12xx_vif *wlvif;
+	struct VV_vif *VV_vif;
 	struct sk_buff *skb;
 	struct wl1271_tx_hw_descr *desc;
 	u32 buf_offset = 0, last_len = 0;
@@ -490,17 +458,13 @@ int wlcore_tx_work_locked(void)
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 		bool has_data = false;
 
-		wlvif = wl12xx_vif_to_data(info->control.vif);
-		// [TOTO-wlvif]
-		if (wlvif != VV_vif_ptr[0]){
-			printk("WARNING DIFF in wlvif\n");
-		}
+		VV_vif = VV_vif_to_data(info->control.vif);
 
 		has_data = wl1271_tx_is_data_present(skb);
 		last_len = wl1271_prepare_tx_frame(skb, buf_offset,
 					      hlid);
 
-		printk("wl1271_prepare_tx_frame->wlvif = 0x%x\n", wlvif);
+		printk("wl1271_prepare_tx_frame->VV_vif = 0x%x\n", VV_vif);
 
 		buf_offset += last_len;
 		VV_tx_packets_count++;
@@ -590,17 +554,17 @@ void wl1271_tx_reset_link_queues(u8 hlid)
 }
 
 /* caller must hold wifi_data->mutex and TX must be stopped */
-void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif)
+void wl12xx_tx_reset_VV_vif(struct VV_vif *VV_vif)
 {
 	int i;
 
 	/* TX failure */
-	for_each_set_bit(i, wlvif->links_map, WL18XX_MAX_LINKS) {
+	for_each_set_bit(i, VV_vif->links_map, WL18XX_MAX_LINKS) {
 		u8 hlid = i;
-		wl12xx_free_link(wlvif, &hlid);
+		wl12xx_free_link(VV_vif, &hlid);
 	}
 
-	//wlvif->last_tx_hlid = 0;
+	//VV_vif->last_tx_hlid = 0;
 }
 /* caller must hold wifi_data->mutex and TX must be stopped */
 void wl12xx_tx_reset(void)
@@ -767,10 +731,10 @@ void wlcore_wake_queues(
 }
 
 bool wlcore_is_queue_stopped_by_reason_locked(
-				       struct wl12xx_vif *wlvif, u8 queue,
+				       struct VV_vif *VV_vif, u8 queue,
 				       enum wlcore_queue_stop_reason reason)
 {
-	int hwq = wlcore_tx_get_mac80211_queue(wlvif, queue);
+	int hwq = wlcore_tx_get_mac80211_queue(VV_vif, queue);
 
 	assert_spin_locked(&wifi_data->lock);
 	return test_bit(reason, &wifi_data->queue_stop_reasons[hwq]);

@@ -201,7 +201,7 @@ static void VV_adjust_channels(struct VV_cmd_scan_params *cmd,
 	/* channels_4 are not supported, so no need to copy them */
 }
 
-int VV_scan_send(struct wl12xx_vif *wlvif,
+int VV_scan_send(struct VV_vif *VV_vif,
 			    struct cfg80211_scan_request *req)
 {
 	struct VV_cmd_scan_params *cmd;
@@ -215,10 +215,10 @@ int VV_scan_send(struct wl12xx_vif *wlvif,
 	}
 
 	/* scan on the dev role if the regular one is not started */
-	if (wlcore_is_p2p_mgmt(wlvif))
-		cmd->role_id = wlvif->dev_role_id;
+	if (wlcore_is_p2p_mgmt(VV_vif))
+		cmd->role_id = VV_vif->dev_role_id;
 	else
-		cmd->role_id = wlvif->role_id;
+		cmd->role_id = VV_vif->role_id;
 
 	if (cmd->role_id == WL12XX_INVALID_ROLE_ID) {
 		printk("INVALID - role_id\n");
@@ -279,7 +279,7 @@ int VV_scan_send(struct wl12xx_vif *wlvif,
 	/* TODO: per-band ies? */
 	if (cmd->active[0]) {
 		u8 band = NL80211_BAND_2GHZ;
-		ret = wl12xx_cmd_build_probe_req(wlvif,
+		ret = wl12xx_cmd_build_probe_req(VV_vif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -296,7 +296,7 @@ int VV_scan_send(struct wl12xx_vif *wlvif,
 
 	if (cmd->active[1] || cmd->dfs) {
 		u8 band = NL80211_BAND_5GHZ;
-		ret = wl12xx_cmd_build_probe_req(wlvif,
+		ret = wl12xx_cmd_build_probe_req(VV_vif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,

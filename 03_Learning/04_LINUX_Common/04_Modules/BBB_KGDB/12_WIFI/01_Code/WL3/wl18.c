@@ -1,22 +1,22 @@
 #include "wl18.h"
 
-int VV_cmd_set_cac(struct wl12xx_vif *wlvif, bool start)
+int VV_cmd_set_cac(struct VV_vif *VV_vif, bool start)
 {
 	struct VV_cmd_cac_start *cmd;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_CMD, "cmd cac (channel %d) %s",
-		     wlvif->channel, start ? "start" : "stop");
+		     VV_vif->channel, start ? "start" : "stop");
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
 
-	cmd->role_id = wlvif->role_id;
-	cmd->channel = wlvif->channel;
-	if (wlvif->band == NL80211_BAND_5GHZ)
+	cmd->role_id = VV_vif->role_id;
+	cmd->channel = VV_vif->channel;
+	if (VV_vif->band == NL80211_BAND_5GHZ)
 		cmd->band = WLCORE_BAND_5GHZ;
-	cmd->bandwidth = wlcore_get_native_channel_type(wlvif->channel_type);
+	cmd->bandwidth = wlcore_get_native_channel_type(VV_vif->channel_type);
 
 	ret = VV_cmd_send(
 			      start ? CMD_CAC_START : CMD_CAC_STOP,

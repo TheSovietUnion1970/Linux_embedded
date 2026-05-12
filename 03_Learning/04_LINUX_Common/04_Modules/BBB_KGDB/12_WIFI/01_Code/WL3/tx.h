@@ -200,9 +200,9 @@ static inline int wl1271_tx_get_queue(int queue)
 }
 
 static inline
-int wlcore_tx_get_mac80211_queue(struct wl12xx_vif *wlvif, int queue)
+int wlcore_tx_get_mac80211_queue(struct VV_vif *VV_vif, int queue)
 {
-	//int mac_queue = wlvif->hw_queue_base;
+	//int mac_queue = VV_vif->hw_queue_base;
 	int mac_queue = HW_QUEUE_BASE;
 
 	switch (queue) {
@@ -232,14 +232,14 @@ static inline int wl1271_tx_total_queue_count(void)
 
 void wl1271_tx_work(struct work_struct *work);
 int wlcore_tx_work_locked(void);
-void wl12xx_tx_reset_wlvif(struct wl12xx_vif *wlvif);
+void wl12xx_tx_reset_VV_vif(struct VV_vif *VV_vif);
 void wl12xx_tx_reset(void);
 void wl1271_tx_flush(void);
 u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band);
 u32 wl1271_tx_enabled_rates_get(u32 rate_set,
 				enum nl80211_band rate_band);
 u32 wl1271_tx_min_rate_get(u32 rate_set);
-u8 wl12xx_tx_get_hlid(struct wl12xx_vif *wlvif,
+u8 wl12xx_tx_get_hlid(struct VV_vif *VV_vif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta);
 void wl1271_tx_reset_link_queues(u8 hlid);
 bool wl12xx_is_dummy_packet(struct sk_buff *skb);
@@ -250,12 +250,12 @@ void wlcore_wake_queues(
 			enum wlcore_queue_stop_reason reason);
 bool
 wlcore_is_queue_stopped_by_reason_locked(
-					 struct wl12xx_vif *wlvif,
+					 struct VV_vif *VV_vif,
 					 u8 queue,
 					 enum wlcore_queue_stop_reason reason);
 
 /* from main.c */
-void wl1271_free_sta(struct wl12xx_vif *wlvif, u8 hlid);
+void wl1271_free_sta(struct VV_vif *VV_vif, u8 hlid);
 void wl12xx_rearm_tx_watchdog_locked(void);
 
 #endif

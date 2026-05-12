@@ -12,7 +12,7 @@
 #include "tx.h"
 #include "debug.h"
 
-int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
+int wl1271_ps_set_mode(struct VV_vif *VV_vif,
 		       enum wl1271_cmd_ps_mode mode)
 {
 	int ret;
@@ -24,7 +24,7 @@ int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
 		wl1271_debug(DEBUG_PSM, "entering psm (mode=%d,timeout=%u)",
 			     mode, timeout);
 
-		ret = wl1271_acx_wake_up_conditions(wlvif,
+		ret = wl1271_acx_wake_up_conditions(VV_vif,
 					    wifi_data->conf.conn.wake_up_event,
 					    wifi_data->conf.conn.listen_interval);
 		if (ret < 0) {
@@ -32,19 +32,19 @@ int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
 			return ret;
 		}
 
-		ret = wl1271_cmd_ps_mode(wlvif, mode, timeout);
+		ret = wl1271_cmd_ps_mode(VV_vif, mode, timeout);
 		if (ret < 0)
 			return ret;
 
-		set_bit(WLVIF_FLAG_IN_PS, &wlvif->flags);
+		set_bit(VV_vif_FLAG_IN_PS, &VV_vif->flags);
 
 		/*
 		 * enable beacon early termination.
 		 * Not relevant for 5GHz and for high rates.
 		 */
-		if ((wlvif->band == NL80211_BAND_2GHZ) &&
-		    (wlvif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
-			ret = wl1271_acx_bet_enable(wlvif, true);
+		if ((VV_vif->band == NL80211_BAND_2GHZ) &&
+		    (VV_vif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
+			ret = wl1271_acx_bet_enable(VV_vif, true);
 			if (ret < 0)
 				return ret;
 		}
@@ -53,18 +53,18 @@ int wl1271_ps_set_mode(struct wl12xx_vif *wlvif,
 		wl1271_debug(DEBUG_PSM, "leaving psm");
 
 		/* disable beacon early termination */
-		if ((wlvif->band == NL80211_BAND_2GHZ) &&
-		    (wlvif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
-			ret = wl1271_acx_bet_enable(wlvif, false);
+		if ((VV_vif->band == NL80211_BAND_2GHZ) &&
+		    (VV_vif->basic_rate < CONF_HW_BIT_RATE_9MBPS)) {
+			ret = wl1271_acx_bet_enable(VV_vif, false);
 			if (ret < 0)
 				return ret;
 		}
 
-		ret = wl1271_cmd_ps_mode(wlvif, mode, 0);
+		ret = wl1271_cmd_ps_mode(VV_vif, mode, 0);
 		if (ret < 0)
 			return ret;
 
-		clear_bit(WLVIF_FLAG_IN_PS, &wlvif->flags);
+		clear_bit(VV_vif_FLAG_IN_PS, &VV_vif->flags);
 		break;
 	default:
 		wl1271_warning("trying to set ps to unsupported mode %d", mode);

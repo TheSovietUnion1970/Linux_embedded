@@ -21,6 +21,7 @@
 #include "conf.h"
 #include "ini.h"
 
+
 struct wilink_family_data {
 	const char *name;
 	const char *nvs_name;	/* wl12xx nvs file */
@@ -233,21 +234,21 @@ enum wl12xx_flags {
 	WL1271_FLAG_REINIT_TX_WDOG,
 };
 
-enum wl12xx_vif_flags {
-	WLVIF_FLAG_INITIALIZED,
-	WLVIF_FLAG_STA_ASSOCIATED,
-	WLVIF_FLAG_STA_AUTHORIZED,
-	WLVIF_FLAG_IBSS_JOINED,
-	WLVIF_FLAG_AP_STARTED,
-	WLVIF_FLAG_IN_PS,
-	WLVIF_FLAG_STA_STATE_SENT,
-	WLVIF_FLAG_RX_STREAMING_STARTED,
-	WLVIF_FLAG_PSPOLL_FAILURE,
-	WLVIF_FLAG_CS_PROGRESS,
-	WLVIF_FLAG_AP_PROBE_RESP_SET,
-	WLVIF_FLAG_IN_USE,
-	WLVIF_FLAG_ACTIVE,
-	WLVIF_FLAG_BEACON_DISABLED,
+enum VV_vif_flags {
+	VV_vif_FLAG_INITIALIZED,
+	VV_vif_FLAG_STA_ASSOCIATED,
+	VV_vif_FLAG_STA_AUTHORIZED,
+	VV_vif_FLAG_IBSS_JOINED,
+	VV_vif_FLAG_AP_STARTED,
+	VV_vif_FLAG_IN_PS,
+	VV_vif_FLAG_STA_STATE_SENT,
+	VV_vif_FLAG_RX_STREAMING_STARTED,
+	VV_vif_FLAG_PSPOLL_FAILURE,
+	VV_vif_FLAG_CS_PROGRESS,
+	VV_vif_FLAG_AP_PROBE_RESP_SET,
+	VV_vif_FLAG_IN_USE,
+	VV_vif_FLAG_ACTIVE,
+	VV_vif_FLAG_BEACON_DISABLED,
 };
 
 #define WL1271_MAX_RX_FILTERS 5
@@ -303,150 +304,26 @@ struct wl1271_station {
 	u64 total_freed_pkts;
 };
 
-struct wl12xx_vif {
-	struct wl1271 *wl;
-	struct list_head list;
-	unsigned long flags;
-	u8 bss_type;
-	u8 p2p; /* we are using p2p role */
-	u8 role_id;
 
-	/* sta/ibss specific */
-	u8 dev_role_id;
-	u8 dev_hlid;
-
-	union {
-		struct {
-			u8 hlid;
-			bool qos;
-		} sta;
-	};
-
-	unsigned long links_map[BITS_TO_LONGS(WLCORE_MAX_LINKS)];
-
-	u8 ssid[IEEE80211_MAX_SSID_LEN + 1];
-	u8 ssid_len;
-
-	/* The current band */
-	enum nl80211_band band;
-	int channel;
-	enum nl80211_channel_type channel_type;
-
-	u32 bitrate_masks[WLCORE_NUM_BANDS];
-	u32 basic_rate_set;
-
-	/*
-	 * currently configured rate set:
-	 *	bits  0-15 - 802.11abg rates
-	 *	bits 16-23 - 802.11n   MCS index mask
-	 * support only 1 stream, thus only 8 bits for the MCS rates (0-7).
-	 */
-	u32 basic_rate;
-	u32 rate_set;
-
-	/* probe-req template for the current AP */
-	struct sk_buff *probereq;
-
-	/* Beaconing interval (needed for ad-hoc) */
-	u32 beacon_int;
-
-	/* Default key (for WEP) */
-	//u32 default_key;
-
-	/* Our association ID */
-	u16 aid;
-
-	/* retry counter for PSM entries */
-	//u8 psm_entry_retry;
-
-	/* in dBm */
-	int power_level;
-
-	//int rssi_thold;
-	//int last_rssi_event;
-
-	/* save the current encryption type for auto-arp config */
-	u8 encryption_type;
-	__be32 ip_addr;
-
-	/* RX BA constraint value */
-	//bool ba_support;
-	//bool ba_allowed;
-
-	bool wmm_enabled;
-
-	bool radar_enabled;
-
-	/* Rx Streaming */
-	// struct work_struct rx_streaming_enable_work;
-	// struct work_struct rx_streaming_disable_work;
-	// struct timer_list rx_streaming_timer;
-
-	//struct delayed_work channel_switch_work;
-	//struct delayed_work connection_loss_work;
-
-	/* number of in connection stations */
-	//int inconn_count;
-
-	/*
-	 * This vif's queues are mapped to mac80211 HW queues as:
-	 * VO - hw_queue_base
-	 * VI - hw_queue_base + 1
-	 * BE - hw_queue_base + 2
-	 * BK - hw_queue_base + 3
-	 */
-	//int hw_queue_base;
-
-	/* do we have a pending auth reply? (and ROC) */
-	//bool ap_pending_auth_reply;
-
-	/* time when we sent the pending auth reply */
-	//unsigned long pending_auth_reply_time;
-
-	/* work for canceling ROC after pending auth reply */
-	//struct delayed_work pending_auth_complete_work;
-
-	/* update rate conrol */
-	//enum ieee80211_sta_rx_bandwidth rc_update_bw;
-	//struct ieee80211_sta_ht_cap rc_ht_cap;
-	//struct work_struct rc_update_work;
-
-	/*
-	 * total freed FW packets on the link.
-	 * For STA this holds the PN of the link to the AP.
-	 * For AP this holds the PN of the broadcast link.
-	 */
-	u64 total_freed_pkts;
-
-	/*
-	 * This struct must be last!
-	 * data that has to be saved acrossed reconfigs (e.g. recovery)
-	 * should be declared in this struct.
-	 */
-	struct {
-		u8 persistent[0];
-	};
-};
-
-static inline struct wl12xx_vif *wl12xx_vif_to_data(struct ieee80211_vif *vif)
+static inline struct VV_vif *VV_vif_to_data(struct ieee80211_vif *vif)
 {
 	WARN_ON(!vif);
-	return (struct wl12xx_vif *)vif->drv_priv;
+	return (struct VV_vif *)vif->drv_priv;
 }
 
 static inline
-struct ieee80211_vif *wl12xx_wlvif_to_vif(struct wl12xx_vif *wlvif)
+struct ieee80211_vif *wl12xx_VV_vif_to_vif(struct VV_vif *VV_vif)
 {
-	return container_of((void *)wlvif, struct ieee80211_vif, drv_priv);
+	return container_of((void *)VV_vif, struct ieee80211_vif, drv_priv);
 }
 
-static inline bool wlcore_is_p2p_mgmt(struct wl12xx_vif *wlvif)
+static inline bool wlcore_is_p2p_mgmt(struct VV_vif *VV_vif)
 {
-	return wl12xx_wlvif_to_vif(wlvif)->type == NL80211_IFTYPE_P2P_DEVICE;
+	return wl12xx_VV_vif_to_vif(VV_vif)->type == NL80211_IFTYPE_P2P_DEVICE;
 }
 
-#define wl12xx_for_each_wlvif(wlvif) \
-		list_for_each_entry(wlvif, &wifi_data->wlvif_list, list)
+#define wl12xx_for_each_VV_vif(VV_vif) \
+		list_for_each_entry(VV_vif, &wifi_data->VV_vif_list, list)
 
 void wl12xx_queue_recovery_work(void);
 

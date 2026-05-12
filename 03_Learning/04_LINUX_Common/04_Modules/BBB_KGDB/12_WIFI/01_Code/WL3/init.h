@@ -14,6 +14,6 @@
 
 int wl1271_hw_init(void);
 int wl1271_init_vif_specific(struct ieee80211_vif *vif);
-int wl1271_sta_hw_init(struct wl12xx_vif *wlvif);
+int wl1271_sta_hw_init(struct VV_vif *VV_vif);
 
 #endif

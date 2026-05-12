@@ -71,6 +71,7 @@ static int VV_process_mailbox_events(void)
 {
 	struct wl18xx_event_mailbox *mbox = wifi_data->mbox;
 	u32 vector;
+	int i = 0;
 
 	vector = le32_to_cpu(mbox->events_vector);
 	printk("[EVENTS] - MBOX vector: 0x%x, bit: %d", vector, fls(vector) - 1);
@@ -80,13 +81,20 @@ static int VV_process_mailbox_events(void)
 		wl1271_debug(DEBUG_EVENT, "scan results: %d",
 			     mbox->number_of_scan_results);
 
-		if (VV_vif_ptr[0])
-			VV_scan_completed();
+		for (i = 0; i < VV_vif_ptr_id; i++){
+			if (!wlcore_is_p2p_mgmt(VV_vif_ptr[i])){
+				printk("[EVENTS] [%d] - bss = %d", i, VV_vif_ptr[i]->bss_type);
+				if (VV_vif_ptr[i]->bss_type == BSS_TYPE_STA_BSS)
+					VV_scan_completed();
+			}
+		}
 	}
 
 	// 0x40000
-	if (vector & REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID)
+	else if (vector & REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID)
 		printk("REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID\n");
+
+	else printk("OTHER EVENTS, vector = 0x%x\n", vector);
 	return 0;
 }
 

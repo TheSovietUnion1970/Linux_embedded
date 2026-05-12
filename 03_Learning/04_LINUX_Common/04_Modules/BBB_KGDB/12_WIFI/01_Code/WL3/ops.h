@@ -126,7 +126,7 @@ struct VV_cmd_scan_params {
 	u8 padding1[3];
 } __packed;
 
-int VV_scan_send(struct wl12xx_vif *wlvif,
+int VV_scan_send(struct VV_vif *VV_vif,
 			    struct cfg80211_scan_request *req);
 
 int VV_get_mac(void);
