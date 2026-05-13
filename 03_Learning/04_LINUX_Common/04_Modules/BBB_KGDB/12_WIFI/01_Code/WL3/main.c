@@ -676,8 +676,10 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 static void wifi_vif_count_iter(void *data, u8 *mac,
 				  struct ieee80211_vif *vif)
 {
-#if (PRINT_DEBUG)
-	printk("ACTIVE - vif = 0x%x\n", vif);
+#if (PRINT_DEBUG_INIT)
+	struct wifi_vif *wifi_vif;
+	wifi_vif = wifi_vif_to_data(vif);
+	printk("[0] - ACTIVE - wifi_vif = 0x%x\n", wifi_vif);
 #endif
 }
 
@@ -1175,7 +1177,6 @@ static int wl12xx_init_vif_data(struct ieee80211_vif *vif)
 	wifi_vif->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	wifi_vif->channel_type = NL80211_CHAN_NO_HT;
 
-	INIT_LIST_HEAD(&wifi_vif->list);
 	return 0;
 }
 
@@ -1188,10 +1189,15 @@ static int wl12xx_init_fw(void)
 
 	while (retries) {
 		retries--;
+		// wl12xx_fetch_firmware
 		ret = wl12xx_chip_wakeup(false); // wifi_
 		if (ret < 0)
 			goto power_off;
 
+		// load fw (binary code) to Wifi chip
+		// ret = request_firmware(&fw, fw_name, wifi_data->dev);
+		// from /lib/firmware/ti-connectivity/wl18xx-fw-4.bin
+		// addr = fw, data = fw->data, len = fw->len
 		ret = wifi_data->ops->boot();
 		if (ret < 0)
 			goto power_off;
@@ -1287,7 +1293,11 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	wl1271_debug(DEBUG_MAC80211, "mac80211 add interface type %d mac %pM",
 		     ieee80211_vif_type_p2p(vif), vif->addr);
 
-	// Call this to know this if is active or not
+#if (PRINT_DEBUG_INIT)
+	printk("[0] - wl1271_op_add_interface - vif->drv_priv = 0x%x\n", vif->drv_priv);
+#endif
+
+	// Call this to know this wifi_vif is active or not
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
 					    wifi_vif_count_iter, NULL);
 
@@ -1303,9 +1313,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		ret = -EBUSY;
 		goto out;
 	}
-#if (PRINT_DEBUG)
-	printk("[ADD IF] - wl1271_op_add_interface, vif = 0x%x, drv = 0x%x\n", vif, vif->drv_priv);
-#endif
+
 	ret = wl12xx_init_vif_data(vif);
 	if (ret < 0)
 		goto out;
@@ -1330,16 +1338,17 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		 * while uploading the nvs
 		 */
 		memcpy(wifi_data->addresses[0].addr, vif->addr, ETH_ALEN);
-#if (PRINT_DEBUG)
-		printk("PROGRESS - wl12xx_init_fw\n");
+#if (PRINT_DEBUG_INIT)
+		printk("[1] - PROGRESS - wl12xx_init_fw\n");
 #endif
 		ret = wl12xx_init_fw();
 		if (ret < 0)
 			goto out;
-	}
-#if (PRINT_DEBUG)
-	printk("DONE - wl12xx_init_fw\n");
+
+#if (PRINT_DEBUG_INIT)
+	printk("[1] - DONE - wl12xx_init_fw\n");
 #endif
+	}
 	/*
 	 * Call runtime PM only after possible wl12xx_init_fw() above
 	 * is done. Otherwise we do not have interrupts enabled.
@@ -1354,7 +1363,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 
 	if (!(vif->type == NL80211_IFTYPE_P2P_DEVICE)) {
 		ret = wl12xx_cmd_role_enable(vif->addr,
-					     role_type, &wifi_vif->role_id);
+					     role_type, &wifi_vif->role_id); // WL1271_ROLE_STA
 		if (ret < 0)
 			goto out;
 		//printk("IF - wifi_vif->role_id = %d\n", wifi_vif->role_id);
@@ -1373,8 +1382,6 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		if (ret < 0)
 			goto out;
 	}
-
-	list_add(&wifi_vif->list, &wifi_data->wifi_vif_list);
 
 	/* wifi_vif_ptr is set global to use for scanning, configure_filter */
 	for (i = 0; i < wifi_vif_ptr_id; i++){
@@ -1479,8 +1486,6 @@ deinit:
 
 	dev_kfree_skb(wifi_vif->probereq);
 	wifi_vif->probereq = NULL;
-	list_del(&wifi_vif->list);
-	//memset(wifi_vif->ap.sta_hlid_map, 0, sizeof(wifi_vif->ap.sta_hlid_map));
 	wifi_vif->role_id = WL12XX_INVALID_ROLE_ID;
 	wifi_vif->dev_role_id = WL12XX_INVALID_ROLE_ID;
 

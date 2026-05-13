@@ -1,0 +1,2 @@
+Remain On Chip -> Remain on one channel 
+-> usually ROC in association by staying in one channel for connection and association

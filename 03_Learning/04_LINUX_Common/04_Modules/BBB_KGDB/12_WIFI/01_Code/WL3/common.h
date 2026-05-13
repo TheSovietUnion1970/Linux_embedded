@@ -219,7 +219,6 @@ extern struct wifi_Work wifi_work;
 
 struct wifi_vif {
 	struct wl1271 *wl;
-	struct list_head list;
 	unsigned long flags;
 	u8 bss_type;
 	u8 p2p; /* we are using p2p role */

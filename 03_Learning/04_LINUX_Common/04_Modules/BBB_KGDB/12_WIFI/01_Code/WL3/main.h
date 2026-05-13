@@ -3,6 +3,9 @@
 
 #define PRINT_DEBUG 0
 
+/* Debug init */
+#define PRINT_DEBUG_INIT 1
+
 /* Debug for tx, rx rate */
 #define PRINT_DEBUG_RATE 0
 
