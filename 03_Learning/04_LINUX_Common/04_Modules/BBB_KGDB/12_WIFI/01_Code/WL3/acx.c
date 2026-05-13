@@ -17,11 +17,11 @@
 #include "wlcore.h"
 #include "debug.h"
 #include "wl12xx_80211.h"
-//#include "hw_ops.h"
 
 #include "common.h"
+#include "main.h"
 
-int wl1271_acx_wake_up_conditions(struct VV_vif *VV_vif,
+int wl1271_acx_wake_up_conditions(struct wifi_vif *wifi_vif,
 				  u8 wake_up_event, u8 listen_interval)
 {
 	struct acx_wake_up_condition *wake_up;
@@ -36,11 +36,11 @@ int wl1271_acx_wake_up_conditions(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	wake_up->role_id = VV_vif->role_id;
+	wake_up->role_id = wifi_vif->role_id;
 	wake_up->wake_up_event = wake_up_event;
 	wake_up->listen_interval = listen_interval;
 
-	ret = VV_cmd_configure(ACX_WAKE_UP_CONDITIONS,
+	ret = wifi_cmd_configure(ACX_WAKE_UP_CONDITIONS,
 				   wake_up, sizeof(*wake_up));
 	if (ret < 0) {
 		wl1271_warning("could not set wake up conditions: %d", ret);
@@ -67,7 +67,7 @@ int wl1271_acx_sleep_auth(u8 sleep_auth)
 
 	auth->sleep_auth = sleep_auth;
 
-	ret = VV_cmd_configure(ACX_SLEEP_AUTH, auth, sizeof(*auth));
+	ret = wifi_cmd_configure(ACX_SLEEP_AUTH, auth, sizeof(*auth));
 	if (ret < 0) {
 		wl1271_error("could not configure sleep_auth to %d: %d",
 			     sleep_auth, ret);
@@ -81,7 +81,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl1271_acx_sleep_auth);
 
-int wl1271_acx_tx_power(struct VV_vif *VV_vif,
+int wl1271_acx_tx_power(struct wifi_vif *wifi_vif,
 			int power)
 {
 	struct acx_current_tx_power *acx;
@@ -98,10 +98,10 @@ int wl1271_acx_tx_power(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->current_tx_power = power * 10;
 
-	ret = VV_cmd_configure(DOT11_CUR_TX_PWR, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(DOT11_CUR_TX_PWR, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("configure of tx power failed: %d", ret);
 		goto out;
@@ -112,7 +112,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_feature_cfg(struct VV_vif *VV_vif)
+int wl1271_acx_feature_cfg(struct wifi_vif *wifi_vif)
 {
 	struct acx_feature_config *feature;
 	int ret;
@@ -126,11 +126,11 @@ int wl1271_acx_feature_cfg(struct VV_vif *VV_vif)
 	}
 
 	/* DF_ENCRYPTION_DISABLE and DF_SNIFF_MODE_ENABLE are disabled */
-	feature->role_id = VV_vif->role_id;
+	feature->role_id = wifi_vif->role_id;
 	feature->data_flow_options = 0;
 	feature->options = 0;
 
-	ret = VV_cmd_configure(ACX_FEATURE_CFG,
+	ret = wifi_cmd_configure(ACX_FEATURE_CFG,
 				   feature, sizeof(*feature));
 	if (ret < 0) {
 		wl1271_error("Couldn't set HW encryption");
@@ -171,7 +171,7 @@ int wl1271_acx_rx_msdu_life_time(void)
 	}
 
 	acx->lifetime = cpu_to_le32(wifi_data->conf.rx.rx_msdu_life_time);
-	ret = VV_cmd_configure(DOT11_RX_MSDU_LIFE_TIME,
+	ret = wifi_cmd_configure(DOT11_RX_MSDU_LIFE_TIME,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set rx msdu life time: %d", ret);
@@ -183,7 +183,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_slot(struct VV_vif *VV_vif,
+int wl1271_acx_slot(struct wifi_vif *wifi_vif,
 		    enum acx_slot_type slot_time)
 {
 	struct acx_slot *slot;
@@ -197,11 +197,11 @@ int wl1271_acx_slot(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	slot->role_id = VV_vif->role_id;
+	slot->role_id = wifi_vif->role_id;
 	slot->wone_index = STATION_WONE_INDEX;
 	slot->slot_time = slot_time;
 
-	ret = VV_cmd_configure(ACX_SLOT, slot, sizeof(*slot));
+	ret = wifi_cmd_configure(ACX_SLOT, slot, sizeof(*slot));
 	if (ret < 0) {
 		wl1271_warning("failed to set slot time: %d", ret);
 		goto out;
@@ -212,7 +212,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_group_address_tbl(struct VV_vif *VV_vif,
+int wl1271_acx_group_address_tbl(struct wifi_vif *wifi_vif,
 				 bool enable, void *mc_list, u32 mc_list_len)
 {
 	struct acx_dot11_grp_addr_tbl *acx;
@@ -227,12 +227,12 @@ int wl1271_acx_group_address_tbl(struct VV_vif *VV_vif,
 	}
 
 	/* MAC filtering */
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->enabled = enable;
 	acx->num_groups = mc_list_len;
 	memcpy(acx->mac_table, mc_list, mc_list_len * ETH_ALEN);
 
-	ret = VV_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
+	ret = wifi_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set group addr table: %d", ret);
@@ -245,7 +245,7 @@ out:
 }
 
 int wl1271_acx_service_period_timeout(
-				      struct VV_vif *VV_vif)
+				      struct wifi_vif *wifi_vif)
 {
 	struct acx_rx_timeout *rx_timeout;
 	int ret;
@@ -258,11 +258,11 @@ int wl1271_acx_service_period_timeout(
 
 	wl1271_debug(DEBUG_ACX, "acx service period timeout");
 
-	rx_timeout->role_id = VV_vif->role_id;
+	rx_timeout->role_id = wifi_vif->role_id;
 	rx_timeout->ps_poll_timeout = cpu_to_le16(wifi_data->conf.rx.ps_poll_timeout);
 	rx_timeout->upsd_timeout = cpu_to_le16(wifi_data->conf.rx.upsd_timeout);
 
-	ret = VV_cmd_configure(ACX_SERVICE_PERIOD_TIMEOUT,
+	ret = wifi_cmd_configure(ACX_SERVICE_PERIOD_TIMEOUT,
 				   rx_timeout, sizeof(*rx_timeout));
 	if (ret < 0) {
 		wl1271_warning("failed to set service period timeout: %d",
@@ -275,7 +275,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rts_threshold(struct VV_vif *VV_vif,
+int wl1271_acx_rts_threshold(struct wifi_vif *wifi_vif,
 			     u32 rts_threshold)
 {
 	struct acx_rts_threshold *rts;
@@ -296,10 +296,10 @@ int wl1271_acx_rts_threshold(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	rts->role_id = VV_vif->role_id;
+	rts->role_id = wifi_vif->role_id;
 	rts->threshold = cpu_to_le16((u16)rts_threshold);
 
-	ret = VV_cmd_configure(DOT11_RTS_THRESHOLD, rts, sizeof(*rts));
+	ret = wifi_cmd_configure(DOT11_RTS_THRESHOLD, rts, sizeof(*rts));
 	if (ret < 0) {
 		wl1271_warning("failed to set rts threshold: %d", ret);
 		goto out;
@@ -327,7 +327,7 @@ int wl1271_acx_dco_itrim_params(void)
 	dco->enable = c->enable;
 	dco->timeout = cpu_to_le32(c->timeout);
 
-	ret = VV_cmd_configure(ACX_SET_DCO_ITRIM_PARAMS,
+	ret = wifi_cmd_configure(ACX_SET_DCO_ITRIM_PARAMS,
 				   dco, sizeof(*dco));
 	if (ret < 0) {
 		wl1271_warning("failed to set dco itrim parameters: %d", ret);
@@ -339,7 +339,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_beacon_filter_opt(struct VV_vif *VV_vif,
+int wl1271_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
 				 bool enable_filter)
 {
 	struct acx_beacon_filter_option *beacon_filter = NULL;
@@ -358,7 +358,7 @@ int wl1271_acx_beacon_filter_opt(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	beacon_filter->role_id = VV_vif->role_id;
+	beacon_filter->role_id = wifi_vif->role_id;
 	beacon_filter->enable = enable_filter;
 
 	/*
@@ -367,7 +367,7 @@ int wl1271_acx_beacon_filter_opt(struct VV_vif *VV_vif,
 	 */
 	beacon_filter->max_num_beacons = 0;
 
-	ret = VV_cmd_configure(ACX_BEACON_FILTER_OPT,
+	ret = wifi_cmd_configure(ACX_BEACON_FILTER_OPT,
 				   beacon_filter, sizeof(*beacon_filter));
 	if (ret < 0) {
 		wl1271_warning("failed to set beacon filter opt: %d", ret);
@@ -380,7 +380,7 @@ out:
 }
 
 int wl1271_acx_beacon_filter_table(
-				   struct VV_vif *VV_vif)
+				   struct wifi_vif *wifi_vif)
 {
 	struct acx_beacon_filter_ie_table *ie_table;
 	int i, idx = 0;
@@ -396,7 +396,7 @@ int wl1271_acx_beacon_filter_table(
 	}
 
 	/* configure default beacon pass-through rules */
-	ie_table->role_id = VV_vif->role_id;
+	ie_table->role_id = wifi_vif->role_id;
 	ie_table->num_ie = 0;
 	for (i = 0; i < wifi_data->conf.conn.bcn_filt_ie_count; i++) {
 		struct conf_bcn_filt_rule *r = &(wifi_data->conf.conn.bcn_filt_ie[i]);
@@ -423,7 +423,7 @@ int wl1271_acx_beacon_filter_table(
 		ie_table->num_ie++;
 	}
 
-	ret = VV_cmd_configure(ACX_BEACON_FILTER_TABLE,
+	ret = wifi_cmd_configure(ACX_BEACON_FILTER_TABLE,
 				   ie_table, sizeof(*ie_table));
 	if (ret < 0) {
 		wl1271_warning("failed to set beacon filter table: %d", ret);
@@ -437,7 +437,7 @@ out:
 
 #define ACX_CONN_MONIT_DISABLE_VALUE  0xffffffff
 
-int wl1271_acx_conn_monit_params(struct VV_vif *VV_vif,
+int wl1271_acx_conn_monit_params(struct wifi_vif *wifi_vif,
 				 bool enable)
 {
 	struct acx_conn_monit_params *acx;
@@ -459,11 +459,11 @@ int wl1271_acx_conn_monit_params(struct VV_vif *VV_vif,
 		timeout = wifi_data->conf.conn.bss_lose_timeout;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->synch_fail_thold = cpu_to_le32(threshold);
 	acx->bss_lose_timeout = cpu_to_le32(timeout);
 
-	ret = VV_cmd_configure(ACX_CONN_MONIT_PARAMS,
+	ret = wifi_cmd_configure(ACX_CONN_MONIT_PARAMS,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set connection monitor "
@@ -495,7 +495,7 @@ int wl1271_acx_sg_enable(bool enable)
 	else
 		pta->enable = CONF_SG_DISABLE;
 
-	ret = VV_cmd_configure(ACX_SG_ENABLE, pta, sizeof(*pta));
+	ret = wifi_cmd_configure(ACX_SG_ENABLE, pta, sizeof(*pta));
 	if (ret < 0) {
 		wl1271_warning("failed to set softgemini enable: %d", ret);
 		goto out;
@@ -525,7 +525,7 @@ int wl12xx_acx_sg_cfg(void)
 		param->params[i] = cpu_to_le32(c->params[i]);
 	param->param_idx = WLCORE_CONF_SG_PARAMS_ALL;
 
-	ret = VV_cmd_configure(ACX_SG_CFG, param, sizeof(*param));
+	ret = wifi_cmd_configure(ACX_SG_CFG, param, sizeof(*param));
 	if (ret < 0) {
 		wl1271_warning("failed to set sg config: %d", ret);
 		goto out;
@@ -552,7 +552,7 @@ int wl1271_acx_cca_threshold(void)
 	detection->rx_cca_threshold = cpu_to_le16(wifi_data->conf.rx.rx_cca_threshold);
 	detection->tx_energy_detection = wifi_data->conf.tx.tx_energy_detection;
 
-	ret = VV_cmd_configure(ACX_CCA_THRESHOLD,
+	ret = wifi_cmd_configure(ACX_CCA_THRESHOLD,
 				   detection, sizeof(*detection));
 	if (ret < 0)
 		wl1271_warning("failed to set cca threshold: %d", ret);
@@ -562,7 +562,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_bcn_dtim_options(struct VV_vif *VV_vif)
+int wl1271_acx_bcn_dtim_options(struct wifi_vif *wifi_vif)
 {
 	struct acx_beacon_broadcast *bb;
 	int ret;
@@ -575,13 +575,13 @@ int wl1271_acx_bcn_dtim_options(struct VV_vif *VV_vif)
 		goto out;
 	}
 
-	bb->role_id = VV_vif->role_id;
+	bb->role_id = wifi_vif->role_id;
 	bb->beacon_rx_timeout = cpu_to_le16(wifi_data->conf.conn.beacon_rx_timeout);
 	bb->broadcast_timeout = cpu_to_le16(wifi_data->conf.conn.broadcast_timeout);
 	bb->rx_broadcast_in_ps = wifi_data->conf.conn.rx_broadcast_in_ps;
 	bb->ps_poll_threshold = wifi_data->conf.conn.ps_poll_threshold;
 
-	ret = VV_cmd_configure(ACX_BCN_DTIM_OPTIONS, bb, sizeof(*bb));
+	ret = wifi_cmd_configure(ACX_BCN_DTIM_OPTIONS, bb, sizeof(*bb));
 	if (ret < 0) {
 		wl1271_warning("failed to set rx config: %d", ret);
 		goto out;
@@ -592,7 +592,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_aid(struct VV_vif *VV_vif, u16 aid)
+int wl1271_acx_aid(struct wifi_vif *wifi_vif, u16 aid)
 {
 	struct acx_aid *acx_aid;
 	int ret;
@@ -605,10 +605,10 @@ int wl1271_acx_aid(struct VV_vif *VV_vif, u16 aid)
 		goto out;
 	}
 
-	acx_aid->role_id = VV_vif->role_id;
+	acx_aid->role_id = wifi_vif->role_id;
 	acx_aid->aid = cpu_to_le16(aid);
 
-	ret = VV_cmd_configure(ACX_AID, acx_aid, sizeof(*acx_aid));
+	ret = wifi_cmd_configure(ACX_AID, acx_aid, sizeof(*acx_aid));
 	if (ret < 0) {
 		wl1271_warning("failed to set aid: %d", ret);
 		goto out;
@@ -636,7 +636,7 @@ int wl1271_acx_event_mbox_mask(u32 event_mask)
 	mask->high_event_mask = cpu_to_le32(0xffffffff);
 	mask->event_mask = cpu_to_le32(event_mask);
 
-	ret = VV_cmd_configure(ACX_EVENT_MBOX_MASK,
+	ret = wifi_cmd_configure(ACX_EVENT_MBOX_MASK,
 				   mask, sizeof(*mask));
 	if (ret < 0) {
 		wl1271_warning("failed to set acx_event_mbox_mask: %d", ret);
@@ -648,7 +648,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_set_preamble(struct VV_vif *VV_vif,
+int wl1271_acx_set_preamble(struct wifi_vif *wifi_vif,
 			    enum acx_preamble_type preamble)
 {
 	struct acx_preamble *acx;
@@ -662,10 +662,10 @@ int wl1271_acx_set_preamble(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->preamble = preamble;
 
-	ret = VV_cmd_configure(ACX_PREAMBLE_TYPE, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_PREAMBLE_TYPE, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of preamble failed: %d", ret);
 		goto out;
@@ -676,7 +676,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_cts_protect(struct VV_vif *VV_vif,
+int wl1271_acx_cts_protect(struct wifi_vif *wifi_vif,
 			   enum acx_ctsprotect_type ctsprotect)
 {
 	struct acx_ctsprotect *acx;
@@ -690,10 +690,10 @@ int wl1271_acx_cts_protect(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->ctsprotect = ctsprotect;
 
-	ret = VV_cmd_configure(ACX_CTS_PROTECTION, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_CTS_PROTECTION, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of ctsprotect failed: %d", ret);
 		goto out;
@@ -704,7 +704,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_sta_rate_policies(struct VV_vif *VV_vif)
+int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
 {
 	struct acx_rate_policy *acx;
 	struct conf_tx_rate_class *c = &wifi_data->conf.tx.sta_rc_conf;
@@ -720,16 +720,16 @@ int wl1271_acx_sta_rate_policies(struct VV_vif *VV_vif)
 	}
 
 	wl1271_debug(DEBUG_ACX, "basic_rate: 0x%x, full_rate: 0x%x",
-		VV_vif->basic_rate, VV_vif->rate_set);
+		wifi_vif->basic_rate, wifi_vif->rate_set);
 
 	/* configure one basic rate class */
 	acx->rate_policy_idx = cpu_to_le32(STA_BASIC_RATE_IDX);
-	acx->rate_policy.enabled_rates = cpu_to_le32(VV_vif->basic_rate);
+	acx->rate_policy.enabled_rates = cpu_to_le32(wifi_vif->basic_rate);
 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;
 
-	ret = VV_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of rate policies failed: %d", ret);
 		goto out;
@@ -739,13 +739,13 @@ int wl1271_acx_sta_rate_policies(struct VV_vif *VV_vif)
 	acx->rate_policy_idx = cpu_to_le32(STA_AP_RATE_IDX);
 
 	/* the AP policy is HW specific */
-	acx->rate_policy.enabled_rates = VV_vif->rate_set;
+	acx->rate_policy.enabled_rates = wifi_vif->rate_set;
 		
 	acx->rate_policy.short_retry_limit = c->short_retry_limit;
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;
 
-	ret = VV_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of rate policies failed: %d", ret);
 		goto out;
@@ -763,7 +763,7 @@ int wl1271_acx_sta_rate_policies(struct VV_vif *VV_vif)
 	acx->rate_policy.long_retry_limit = c->long_retry_limit;
 	acx->rate_policy.aflags = c->aflags;
 
-	ret = VV_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of rate policies failed: %d", ret);
 		goto out;
@@ -774,7 +774,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_ac_cfg(struct VV_vif *VV_vif,
+int wl1271_acx_ac_cfg(struct wifi_vif *wifi_vif,
 		      u8 ac, u8 cw_min, u16 cw_max, u8 aifsn, u16 txop)
 {
 	struct acx_ac_cfg *acx;
@@ -790,14 +790,14 @@ int wl1271_acx_ac_cfg(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->ac = ac;
 	acx->cw_min = cw_min;
 	acx->cw_max = cpu_to_le16(cw_max);
 	acx->aifsn = aifsn;
 	acx->tx_op_limit = cpu_to_le16(txop);
 
-	ret = VV_cmd_configure(ACX_AC_CFG, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_AC_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx ac cfg failed: %d", ret);
 		goto out;
@@ -808,7 +808,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_tid_cfg(struct VV_vif *VV_vif,
+int wl1271_acx_tid_cfg(struct wifi_vif *wifi_vif,
 		       u8 queue_id, u8 channel_type,
 		       u8 tsid, u8 ps_scheme, u8 ack_policy,
 		       u32 apsd_conf0, u32 apsd_conf1)
@@ -825,7 +825,7 @@ int wl1271_acx_tid_cfg(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->queue_id = queue_id;
 	acx->channel_type = channel_type;
 	acx->tsid = tsid;
@@ -834,7 +834,7 @@ int wl1271_acx_tid_cfg(struct VV_vif *VV_vif,
 	acx->apsd_conf[0] = cpu_to_le32(apsd_conf0);
 	acx->apsd_conf[1] = cpu_to_le32(apsd_conf1);
 
-	ret = VV_cmd_configure(ACX_TID_CFG, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_TID_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of tid config failed: %d", ret);
 		goto out;
@@ -867,7 +867,7 @@ int wl1271_acx_frag_threshold(u32 frag_threshold)
 	}
 
 	acx->frag_threshold = cpu_to_le16((u16)frag_threshold);
-	ret = VV_cmd_configure(ACX_FRAG_CFG, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_FRAG_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of frag threshold failed: %d", ret);
 		goto out;
@@ -894,7 +894,7 @@ int wl1271_acx_tx_config_options(void)
 
 	acx->tx_compl_timeout = cpu_to_le16(wifi_data->conf.tx.tx_compl_timeout);
 	acx->tx_compl_threshold = cpu_to_le16(wifi_data->conf.tx.tx_compl_threshold);
-	ret = VV_cmd_configure(ACX_TX_CONFIG_OPT, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_TX_CONFIG_OPT, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("Setting of tx options failed: %d", ret);
 		goto out;
@@ -934,7 +934,7 @@ int wl12xx_acx_mem_cfg(void)
 	mem_conf->tx_min = mem->tx_min;
 	mem_conf->fwlog_blocks = wifi_data->conf.fwlog.mem_blocks;
 
-	ret = VV_cmd_configure(ACX_MEM_CFG, mem_conf,
+	ret = wifi_cmd_configure(ACX_MEM_CFG, mem_conf,
 				   sizeof(*mem_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 mem config failed: %d", ret);
@@ -969,11 +969,11 @@ int wl1271_acx_init_mem_config(void)
 	}
 
 	/* initialize TX block book keeping */
-	VV_tx_blocks_available =
+	wifi_tx_blocks_available =
 		le32_to_cpu(wifi_data->target_mem_map->num_tx_mem_blocks);
-	// wl1271_debug(DEBUG_TX, "available tx blocks: %d",
-	// 	     VV_tx_blocks_available);
-	printk("[INIT] available tx blocks: %d", VV_tx_blocks_available);
+#if (PRINT_DEBUG)
+	printk("[INIT] available tx blocks: %d", wifi_tx_blocks_available);
+#endif
 
 	return 0;
 }
@@ -997,7 +997,7 @@ int wl1271_acx_init_rx_interrupt(void)
 	rx_conf->mblk_threshold = cpu_to_le16(wifi_data->conf.rx.irq_blk_threshold);
 	rx_conf->queue_type = wifi_data->conf.rx.queue_type;
 
-	ret = VV_cmd_configure(ACX_RX_CONFIG_OPT, rx_conf,
+	ret = wifi_cmd_configure(ACX_RX_CONFIG_OPT, rx_conf,
 				   sizeof(*rx_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 rx config opt failed: %d", ret);
@@ -1009,7 +1009,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_bet_enable(struct VV_vif *VV_vif,
+int wl1271_acx_bet_enable(struct wifi_vif *wifi_vif,
 			  bool enable)
 {
 	struct wl1271_acx_bet_enable *acx = NULL;
@@ -1026,11 +1026,11 @@ int wl1271_acx_bet_enable(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->enable = enable ? CONF_BET_MODE_ENABLE : CONF_BET_MODE_DISABLE;
 	acx->max_consecutive = wifi_data->conf.conn.bet_max_consecutive;
 
-	ret = VV_cmd_configure(ACX_BET_ENABLE, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_BET_ENABLE, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx bet enable failed: %d", ret);
 		goto out;
@@ -1041,7 +1041,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_arp_ip_filter(struct VV_vif *VV_vif,
+int wl1271_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
 			     u8 enable, __be32 address)
 {
 	struct wl1271_acx_arp_filter *acx;
@@ -1055,14 +1055,14 @@ int wl1271_acx_arp_ip_filter(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->version = ACX_IPV4_VERSION;
 	acx->enable = enable;
 
 	if (enable)
 		memcpy(acx->address, &address, ACX_IPV4_ADDR_SIZE);
 
-	ret = VV_cmd_configure(ACX_ARP_IP_FILTER,
+	ret = wifi_cmd_configure(ACX_ARP_IP_FILTER,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set arp ip filter: %d", ret);
@@ -1091,7 +1091,7 @@ int wl1271_acx_pm_config(void)
 	acx->host_clk_settling_time = cpu_to_le32(c->host_clk_settling_time);
 	acx->host_fast_wakeup_support = c->host_fast_wakeup_support;
 
-	ret = VV_cmd_configure(ACX_PM_CONFIG, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_PM_CONFIG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx pm config failed: %d", ret);
 		goto out;
@@ -1103,7 +1103,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(wl1271_acx_pm_config);
 
-int wl1271_acx_keep_alive_mode(struct VV_vif *VV_vif,
+int wl1271_acx_keep_alive_mode(struct wifi_vif *wifi_vif,
 			       bool enable)
 {
 	struct wl1271_acx_keep_alive_mode *acx = NULL;
@@ -1117,10 +1117,10 @@ int wl1271_acx_keep_alive_mode(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->enabled = enable;
 
-	ret = VV_cmd_configure(ACX_KEEP_ALIVE_MODE, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_KEEP_ALIVE_MODE, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx keep alive mode failed: %d", ret);
 		goto out;
@@ -1131,7 +1131,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_keep_alive_config(struct VV_vif *VV_vif,
+int wl1271_acx_keep_alive_config(struct wifi_vif *wifi_vif,
 				 u8 index, u8 tpl_valid)
 {
 	struct wl1271_acx_keep_alive_config *acx = NULL;
@@ -1145,13 +1145,13 @@ int wl1271_acx_keep_alive_config(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->period = cpu_to_le32(wifi_data->conf.conn.keep_alive_interval);
 	acx->index = index;
 	acx->tpl_validation = tpl_valid;
 	acx->trigger = ACX_KEEP_ALIVE_NO_TX;
 
-	ret = VV_cmd_configure(ACX_SET_KEEP_ALIVE_CONFIG,
+	ret = wifi_cmd_configure(ACX_SET_KEEP_ALIVE_CONFIG,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx keep alive config failed: %d", ret);
@@ -1163,7 +1163,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rssi_snr_trigger(struct VV_vif *VV_vif,
+int wl1271_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
 				bool enable, s16 thold, u8 hyst)
 {
 	struct wl1271_acx_rssi_snr_trigger *acx = NULL;
@@ -1177,9 +1177,9 @@ int wl1271_acx_rssi_snr_trigger(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	//VV_vif->last_rssi_event = -1;
+	//wifi_vif->last_rssi_event = -1;
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->pacing = cpu_to_le16(wifi_data->conf.roam_trigger.trigger_pacing);
 	acx->metric = WL1271_ACX_TRIG_METRIC_RSSI_BEACON;
 	acx->type = WL1271_ACX_TRIG_TYPE_EDGE;
@@ -1193,7 +1193,7 @@ int wl1271_acx_rssi_snr_trigger(struct VV_vif *VV_vif,
 	acx->threshold = cpu_to_le16(thold);
 	acx->hysteresis = hyst;
 
-	ret = VV_cmd_configure(ACX_RSSI_SNR_TRIGGER, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_RSSI_SNR_TRIGGER, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx rssi snr trigger setting failed: %d", ret);
 		goto out;
@@ -1205,7 +1205,7 @@ out:
 }
 
 int wl1271_acx_rssi_snr_avg_weights(
-				    struct VV_vif *VV_vif)
+				    struct wifi_vif *wifi_vif)
 {
 	struct wl1271_acx_rssi_snr_avg_weights *acx = NULL;
 	struct conf_roam_trigger_settings *c = &wifi_data->conf.roam_trigger;
@@ -1219,13 +1219,13 @@ int wl1271_acx_rssi_snr_avg_weights(
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->rssi_beacon = c->avg_weight_rssi_beacon;
 	acx->rssi_data = c->avg_weight_rssi_data;
 	acx->snr_beacon = c->avg_weight_snr_beacon;
 	acx->snr_data = c->avg_weight_snr_data;
 
-	ret = VV_cmd_configure(ACX_RSSI_SNR_WEIGHTS, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_RSSI_SNR_WEIGHTS, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx rssi snr trigger weights failed: %d", ret);
 		goto out;
@@ -1237,7 +1237,7 @@ out:
 }
 
 int wl1271_acx_set_ht_information(
-				   struct VV_vif *VV_vif,
+				   struct wifi_vif *wifi_vif,
 				   u16 ht_operation_mode)
 {
 	struct wl1271_acx_ht_information *acx;
@@ -1251,7 +1251,7 @@ int wl1271_acx_set_ht_information(
 		goto out;
 	}
 
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->ht_protection =
 		(u8)(ht_operation_mode & IEEE80211_HT_OP_MODE_PROTECTION);
 	acx->rifs_mode = 0;
@@ -1260,7 +1260,7 @@ int wl1271_acx_set_ht_information(
 	acx->ht_tx_burst_limit = 0;
 	acx->dual_cts_protection = 0;
 
-	ret = VV_cmd_configure(ACX_HT_BSS_OPERATION, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_HT_BSS_OPERATION, acx, sizeof(*acx));
 
 	if (ret < 0) {
 		wl1271_warning("acx ht information setting failed: %d", ret);
@@ -1274,7 +1274,7 @@ out:
 
 /* Configure BA session initiator/receiver parameters setting in the FW. */
 int wl12xx_acx_set_ba_initiator_policy(
-				       struct VV_vif *VV_vif)
+				       struct wifi_vif *wifi_vif)
 {
 	struct wl1271_acx_ba_initiator_policy *acx;
 	int ret;
@@ -1288,12 +1288,12 @@ int wl12xx_acx_set_ba_initiator_policy(
 	}
 
 	/* set for the current role */
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->tid_bitmap = wifi_data->conf.ht.tx_ba_tid_bitmap;
 	acx->win_size = wifi_data->conf.ht.tx_ba_win_size;
 	acx->inactivity_timeout = wifi_data->conf.ht.inactivity_timeout;
 
-	ret = VV_cmd_configure(
+	ret = wifi_cmd_configure(
 				   ACX_BA_SESSION_INIT_POLICY,
 				   acx,
 				   sizeof(*acx));
@@ -1307,7 +1307,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_ps_rx_streaming(struct VV_vif *VV_vif,
+int wl1271_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
 			       bool enable)
 {
 	struct wl1271_acx_ps_rx_streaming *rx_streaming;
@@ -1337,13 +1337,13 @@ int wl1271_acx_ps_rx_streaming(struct VV_vif *VV_vif,
 		if (!(conf_queues & BIT(i)))
 			continue;
 
-		rx_streaming->role_id = VV_vif->role_id;
+		rx_streaming->role_id = wifi_vif->role_id;
 		rx_streaming->tid = i;
 		rx_streaming->enable = enable_queues & BIT(i);
 		rx_streaming->period = wifi_data->conf.rx_streaming.interval;
 		rx_streaming->timeout = wifi_data->conf.rx_streaming.interval;
 
-		ret = VV_cmd_configure(ACX_PS_RX_STREAMING,
+		ret = wifi_cmd_configure(ACX_PS_RX_STREAMING,
 					   rx_streaming,
 					   sizeof(*rx_streaming));
 		if (ret < 0) {
@@ -1385,7 +1385,7 @@ int wl1271_acx_fm_coex(void)
 		wifi_data->conf.fm_coex.fm_disturbed_band_margin;
 	acx->swallow_clk_diff = wifi_data->conf.fm_coex.swallow_clk_diff;
 
-	ret = VV_cmd_configure(ACX_FM_COEX_CFG, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_FM_COEX_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx fm coex setting failed: %d", ret);
 		goto out;
@@ -1426,7 +1426,7 @@ int wl12xx_acx_set_rate_mgmt_params(void)
 	memcpy(acx->rate_retry_policy, conf->rate_retry_policy,
 	       sizeof(acx->rate_retry_policy));
 
-	ret = VV_cmd_configure(ACX_SET_RATE_MGMT_PARAMS,
+	ret = wifi_cmd_configure(ACX_SET_RATE_MGMT_PARAMS,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx set rate mgmt params failed: %d", ret);
@@ -1464,7 +1464,7 @@ int wl12xx_acx_config_hangover(void)
 	acx->increase_time = conf->increase_time;
 	acx->window_size = conf->window_size;
 
-	ret = VV_cmd_configure(ACX_CONFIG_HANGOVER, acx,
+	ret = wifi_cmd_configure(ACX_CONFIG_HANGOVER, acx,
 				   sizeof(*acx));
 
 	if (ret < 0) {

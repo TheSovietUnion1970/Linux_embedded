@@ -1,24 +1,24 @@
 #include "wl18.h"
 
-int VV_cmd_set_cac(struct VV_vif *VV_vif, bool start)
+int wifi_cmd_set_cac(struct wifi_vif *wifi_vif, bool start)
 {
-	struct VV_cmd_cac_start *cmd;
+	struct wifi_cmd_cac_start *cmd;
 	int ret = 0;
 
 	wl1271_debug(DEBUG_CMD, "cmd cac (channel %d) %s",
-		     VV_vif->channel, start ? "start" : "stop");
+		     wifi_vif->channel, start ? "start" : "stop");
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
 
-	cmd->role_id = VV_vif->role_id;
-	cmd->channel = VV_vif->channel;
-	if (VV_vif->band == NL80211_BAND_5GHZ)
+	cmd->role_id = wifi_vif->role_id;
+	cmd->channel = wifi_vif->channel;
+	if (wifi_vif->band == NL80211_BAND_5GHZ)
 		cmd->band = WLCORE_BAND_5GHZ;
-	cmd->bandwidth = wlcore_get_native_channel_type(VV_vif->channel_type);
+	cmd->bandwidth = wlcore_get_native_channel_type(wifi_vif->channel_type);
 
-	ret = VV_cmd_send(
+	ret = wifi_cmd_send(
 			      start ? CMD_CAC_START : CMD_CAC_STOP,
 			      cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
@@ -36,12 +36,12 @@ out_free:
  * with the addition of supported rates. they should be unified in
  * the next fw api change
  */
-int VV_acx_set_peer_cap(
+int wifi_acx_set_peer_cap(
 			    struct ieee80211_sta_ht_cap *ht_cap,
 			    bool allow_ht_operation,
 			    u32 rate_set, u8 hlid)
 {
-	struct VV_acx_peer_cap *acx;
+	struct wifi_acx_peer_cap *acx;
 	int ret = 0;
 	u32 ht_capabilites = 0;
 
@@ -74,7 +74,7 @@ int VV_acx_set_peer_cap(
 	acx->ht_capabilites = cpu_to_le32(ht_capabilites);
 	acx->supported_rates = cpu_to_le32(rate_set);
 
-	ret = VV_cmd_configure(ACX_PEER_CAP, acx, sizeof(*acx));
+	ret = wifi_cmd_configure(ACX_PEER_CAP, acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("acx ht capabilities setting failed: %d", ret);
 		goto out;
@@ -85,18 +85,18 @@ out:
 	return ret;
 }
 
-int VV_handle_static_data(struct wl1271_static_data *static_data)
+int wifi_handle_static_data(struct wl1271_static_data *static_data)
 {
-	struct VV_static_data_priv *static_data_priv =
-		(struct VV_static_data_priv *) static_data->priv;
+	struct wifi_static_data_priv *static_data_priv =
+		(struct wifi_static_data_priv *) static_data->priv;
 
-	strncpy(VV_chip->phy_fw_ver_str, static_data_priv->phy_version,
-		sizeof(VV_chip->phy_fw_ver_str));
+	strncpy(wifi_chip->phy_fw_ver_str, static_data_priv->phy_version,
+		sizeof(wifi_chip->phy_fw_ver_str));
 
 	/* make sure the string is NULL-terminated */
-	VV_chip->phy_fw_ver_str[sizeof(VV_chip->phy_fw_ver_str) - 1] = '\0';
+	wifi_chip->phy_fw_ver_str[sizeof(wifi_chip->phy_fw_ver_str) - 1] = '\0';
 
-	wl1271_info("**PHY firmware version: %s", static_data_priv->phy_version);
+	printk("**PHY firmware version: %s", static_data_priv->phy_version);
 
 	return 0;
 }

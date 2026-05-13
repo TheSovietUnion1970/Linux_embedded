@@ -19,6 +19,7 @@
 #include "common.h"
 #include "wl18xx.h"
 #include "ops.h"
+#include "main.h"
 
 #define WL18XX_LOGGER_SDIO_BUFF_MAX	(0x1020)
 #define WL18XX_DATA_RAM_BASE_ADDRESS	(0x20000000)
@@ -56,52 +57,59 @@ enum wlcore_vendor_attributes {
 	MAX_WLCORE_VENDOR_ATTR = NUM_WLCORE_VENDOR_ATTR - 1
 };
 
-static void VV_scan_completed(void)
+static void wifi_scan_completed(void)
 {
-	//wifi_data->scan.failed = false;
-	printk("VV_scan_completed\n");
-	VV_scan_failed = false;
-	cancel_delayed_work(&VV_work.scan_complete_work);
-	ieee80211_queue_delayed_work(wifi_data->hw, &VV_work.scan_complete_work,
+#if (PRINT_DEBUG)
+	printk("wifi_scan_completed\n");
+#endif
+	wifi_scan_failed = false;
+	cancel_delayed_work(&wifi_work.scan_complete_work);
+	ieee80211_queue_delayed_work(wifi_data->hw, &wifi_work.scan_complete_work,
 				     msecs_to_jiffies(0));
 }
 
 #include <linux/bitops.h>
-static int VV_process_mailbox_events(void)
+static int wifi_process_mailbox_events(void)
 {
 	struct wl18xx_event_mailbox *mbox = wifi_data->mbox;
 	u32 vector;
 	int i = 0;
 
 	vector = le32_to_cpu(mbox->events_vector);
+#if (PRINT_DEBUG)
 	printk("[EVENTS] - MBOX vector: 0x%x, bit: %d", vector, fls(vector) - 1);
-
+#endif
 	// 0x100
 	if (vector & SCAN_COMPLETE_EVENT_ID) {
 		wl1271_debug(DEBUG_EVENT, "scan results: %d",
 			     mbox->number_of_scan_results);
 
-		for (i = 0; i < VV_vif_ptr_id; i++){
-			if (!wlcore_is_p2p_mgmt(VV_vif_ptr[i])){
-				printk("[EVENTS] [%d] - bss = %d", i, VV_vif_ptr[i]->bss_type);
-				if (VV_vif_ptr[i]->bss_type == BSS_TYPE_STA_BSS)
-					VV_scan_completed();
+		for (i = 0; i < wifi_vif_ptr_id; i++){
+			if (!wlcore_is_p2p_mgmt(wifi_vif_ptr[i])){
+#if (PRINT_DEBUG)
+				printk("[EVENTS] [%d] - bss = %d", i, wifi_vif_ptr[i]->bss_type);
+#endif
+				if (wifi_vif_ptr[i]->bss_type == BSS_TYPE_STA_BSS)
+					wifi_scan_completed();
 			}
 		}
 	}
 
 	// 0x40000
+#if (PRINT_DEBUG)
 	else if (vector & REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID)
 		printk("REMAIN_ON_CHANNEL_COMPLETE_EVENT_ID\n");
 
-	else printk("OTHER EVENTS, vector = 0x%x\n", vector);
+	else 
+		printk("OTHER EVENTS, vector = 0x%x\n", vector);
+#endif
 	return 0;
 }
 
 #define WL18XX_INTR_TRIG_EVENT_ACK BIT(29)
-static int VV_ack_event(void)
+static int wifi_ack_event(void)
 {
-	return VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	return wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
 int wl1271_event_handle(u8 mbox_num)
@@ -114,12 +122,12 @@ int wl1271_event_handle(u8 mbox_num)
 		return -EINVAL;
 
 	/* first we read the mbox descriptor */
-	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data->mbox_ptr[mbox_num]), (u32*)wifi_data->mbox, sizeof(struct wl18xx_event_mailbox), false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->mbox_ptr[mbox_num]), (u32*)wifi_data->mbox, sizeof(struct wl18xx_event_mailbox), false);
 	if (ret < 0)
 		return ret;
 
 	/* process the descriptor */
-	ret = VV_process_mailbox_events();
+	ret = wifi_process_mailbox_events();
 	if (ret < 0)
 		return ret;
 
@@ -127,7 +135,7 @@ int wl1271_event_handle(u8 mbox_num)
 	 * TODO: we just need this because one bit is in a different
 	 * place.  Is there any better way?
 	 */
-	ret = VV_ack_event();
+	ret = wifi_ack_event();
 
 	return ret;
 }

@@ -16,9 +16,9 @@
 #include "io.h"
 #include "event.h"
 #include "rx.h"
-//#include "hw_ops.h"
 
 #include "common.h"
+#include "main.h"
 #include "wl18.h"
 
 static int wl1271_boot_set_ecpu_ctrl(u32 flag)
@@ -27,13 +27,13 @@ static int wl1271_boot_set_ecpu_ctrl(u32 flag)
 	int ret;
 
 	/* 10.5.0 run the firmware (I) */
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* 10.5.1 run the firmware (II) */
 	cpu_ctrl |= flag;
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
 
 out:
 	return ret;
@@ -44,20 +44,20 @@ static int wlcore_boot_parse_fw_ver(
 {
 	int ret;
 
-	strncpy(VV_chip->fw_ver_str, static_data->fw_version,
-		sizeof(VV_chip->fw_ver_str));
+	strncpy(wifi_chip->fw_ver_str, static_data->fw_version,
+		sizeof(wifi_chip->fw_ver_str));
 
 	/* make sure the string is NULL-terminated */
-	VV_chip->fw_ver_str[sizeof(VV_chip->fw_ver_str) - 1] = '\0';
+	wifi_chip->fw_ver_str[sizeof(wifi_chip->fw_ver_str) - 1] = '\0';
 
-	ret = sscanf(VV_chip->fw_ver_str + 4, "%u.%u.%u.%u.%u",
-		     &VV_chip->fw_ver[0], &VV_chip->fw_ver[1],
-		     &VV_chip->fw_ver[2], &VV_chip->fw_ver[3],
-		     &VV_chip->fw_ver[4]);
+	ret = sscanf(wifi_chip->fw_ver_str + 4, "%u.%u.%u.%u.%u",
+		     &wifi_chip->fw_ver[0], &wifi_chip->fw_ver[1],
+		     &wifi_chip->fw_ver[2], &wifi_chip->fw_ver[3],
+		     &wifi_chip->fw_ver[4]);
 
 	if (ret != 5) {
 		wl1271_warning("fw version incorrect value");
-		memset(VV_chip->fw_ver, 0, sizeof(VV_chip->fw_ver));
+		memset(wifi_chip->fw_ver, 0, sizeof(wifi_chip->fw_ver));
 		ret = -EINVAL;
 		goto out;
 	}
@@ -68,7 +68,7 @@ out:
 
 static int wlcore_validate_fw_ver(void)
 {
-	unsigned int *fw_ver = VV_chip->fw_ver;
+	unsigned int *fw_ver = wifi_chip->fw_ver;
 	unsigned int *min_ver = (wifi_data->fw_type == WL12XX_FW_TYPE_MULTI) ?
 		wifi_data->min_mr_fw_ver : wifi_data->min_sr_fw_ver;
 	char min_fw_str[32] = "";
@@ -126,7 +126,7 @@ fail:
 	return -EINVAL;
 }
 
-static int VV_boot_static_data(void)
+static int wifi_boot_static_data(void)
 {
 	struct wl1271_static_data *static_data;
 	size_t len = sizeof(*static_data) + wifi_data->static_data_priv_len;
@@ -138,7 +138,7 @@ static int VV_boot_static_data(void)
 		goto out;
 	}
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(*wifi_data->cmd_box_addr), (u32*)static_data, len, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->cmd_box_addr), (u32*)static_data, len, false);
 	if (ret < 0)
 		goto out_free;
 
@@ -150,7 +150,7 @@ static int VV_boot_static_data(void)
 	if (ret < 0)
 		goto out_free;
 
-	ret = VV_handle_static_data(static_data);
+	ret = wifi_handle_static_data(static_data);
 	if (ret < 0)
 		goto out_free;
 
@@ -164,7 +164,7 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 					     size_t fw_data_len, u32 dest)
 {
 	// struct wlcore_partition_set partition;
-	struct VV_partition_set partition;
+	struct wifi_partition_set partition;
 	int addr, chunk_num, partition_limit;
 	u8 *p, *chunk;
 	int ret;
@@ -190,7 +190,7 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 	// memcpy(&partition, &wifi_data->ptable[PART_DOWN], sizeof(partition));
 	memcpy(&partition, &wifi_data->ptable[PART_DOWN], sizeof(partition));
 	partition.mem.start = dest;
-	ret = VV_set_partition_core(&partition);
+	ret = wifi_set_partition_core(&partition);
 	if (ret < 0)
 		goto out;
 
@@ -206,7 +206,7 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 			partition_limit = chunk_num * CHUNK_SIZE +
 				wifi_data->ptable[PART_DOWN].mem.size;
 			partition.mem.start = addr;
-			ret = VV_set_partition_core(&partition);
+			ret = wifi_set_partition_core(&partition);
 			if (ret < 0)
 				goto out;
 		}
@@ -217,7 +217,7 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 		memcpy(chunk, p, CHUNK_SIZE);
 		wl1271_debug(DEBUG_BOOT, "uploading fw chunk 0x%p to 0x%x",
 			     p, addr);
-		ret = VV_sdio_raw_write1(wlcore_translate_addr(addr), chunk, CHUNK_SIZE, false);
+		ret = wifi_sdio_raw_write1(wlcore_translate_addr(addr), chunk, CHUNK_SIZE, false);
 		if (ret < 0)
 			goto out;
 
@@ -230,7 +230,7 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 	memcpy(chunk, p, fw_data_len % CHUNK_SIZE);
 	wl1271_debug(DEBUG_BOOT, "uploading fw last chunk (%zd B) 0x%p to 0x%x",
 		     fw_data_len % CHUNK_SIZE, p, addr);
-	ret = VV_sdio_raw_write1(wlcore_translate_addr(addr), chunk, fw_data_len % CHUNK_SIZE, false);
+	ret = wifi_sdio_raw_write1(wlcore_translate_addr(addr), chunk, fw_data_len % CHUNK_SIZE, false);
 
 out:
 	kfree(chunk);
@@ -256,7 +256,7 @@ int wlcore_boot_upload_firmware(void)
 		fw += sizeof(u32);
 
 		if (len > 300000) {
-			wl1271_info("firmware chunk too long: %u", len);
+			printk("firmware chunk too long: %u", len);
 			return -EINVAL;
 		}
 		wl1271_debug(DEBUG_BOOT, "chunk %d addr 0x%x len %u",
@@ -278,7 +278,7 @@ int wlcore_boot_run_firmware(void)
 	u32 chip_id, intr;
 
 	/* Make sure we have the boot partition */
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_BOOT]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_BOOT]);
 	if (ret < 0)
 		return ret;
 
@@ -286,13 +286,13 @@ int wlcore_boot_run_firmware(void)
 	if (ret < 0)
 		return ret;
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
 	if (ret < 0)
 		return ret;
 
 	wl1271_debug(DEBUG_BOOT, "chip id after firmware boot: 0x%x", chip_id);
 
-	if (chip_id != VV_chip->id) {
+	if (chip_id != wifi_chip->id) {
 		wl1271_error("chip id doesn't match after firmware boot");
 		return -EIO;
 	}
@@ -301,7 +301,7 @@ int wlcore_boot_run_firmware(void)
 	loop = 0;
 	while (loop++ < INIT_LOOP) {
 		udelay(INIT_LOOP_DELAY);
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
+		ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
 		if (ret < 0)
 			return ret;
 
@@ -312,7 +312,7 @@ int wlcore_boot_run_firmware(void)
 		}
 		/* check that ACX_INTR_INIT_COMPLETE is enabled */
 		else if (intr & WL1271_ACX_INTR_INIT_COMPLETE) {
-			ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
+			ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
 			if (ret < 0)
 				return ret;
 			break;
@@ -326,18 +326,18 @@ int wlcore_boot_run_firmware(void)
 	}
 
 	/* get hardware config command mail box */
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data->cmd_box_addr, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data->cmd_box_addr, 4, false);
 	if (ret < 0)
 		return ret;
-
-	wl1271_info("cmd_box_addr 0x%x", wifi_data->cmd_box_addr);
-
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data->mbox_ptr[0], 4, false);
+#if (PRINT_DEBUG)
+	printk("cmd_box_addr 0x%x", wifi_data->cmd_box_addr);
+#endif
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data->mbox_ptr[0], 4, false);
 	if (ret < 0)
 		return ret;
 	*(wifi_data->mbox_ptr[1]) = *(wifi_data->mbox_ptr[0]) + sizeof(struct wl18xx_event_mailbox);
 
-	ret = VV_boot_static_data();
+	ret = wifi_boot_static_data();
 	if (ret < 0) {
 		wl1271_error("error getting static data");
 		return ret;
@@ -356,7 +356,7 @@ int wlcore_boot_run_firmware(void)
 	}
 
 	/* set the working partition to its "running" mode offset */
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_WORK]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_WORK]);
 
 	/* firmware startup completed */
 	return ret;

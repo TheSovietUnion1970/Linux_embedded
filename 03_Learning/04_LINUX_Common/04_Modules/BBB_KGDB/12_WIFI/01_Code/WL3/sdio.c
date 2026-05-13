@@ -27,6 +27,7 @@
 #include "io.h"
 
 #include "common.h"
+#include "main.h"
 
 static bool dump = false;
 
@@ -46,9 +47,9 @@ static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 	int ret;
 	struct sdio_func *func = dev_to_sdio_func(glue->dev);
 	struct mmc_card *card = func->card;
-
+#if (PRINT_DEBUG)
 	printk("wl12xx_sdio_power_on -> 0x%x 0x%x %x\n", glue->dev, func, card);
-
+#endif
 	ret = pm_runtime_get_sync(&card->dev);
 	if (ret < 0) {
 		pm_runtime_put_noidle(&card->dev);
@@ -181,9 +182,9 @@ static int wl1271_probe(struct sdio_func *func,
 	int ret = -ENOMEM;
 	int irq, wakeirq, num_irqs;
 	const char *chip_family;
-
+#if (PRINT_DEBUG)
 	printk("[MERGE] - wl1271_probe\n");
-
+#endif
 	/* We are only able to handle the wlan function */
 	if (func->num != 0x02)
 		return -ENODEV;
@@ -221,9 +222,9 @@ static int wl1271_probe(struct sdio_func *func,
 
 	/* Tell PM core that we don't need the card to be powered now */
 	pm_runtime_put_noidle(&func->dev);
-
+#if (PRINT_DEBUG)
 	printk("[MERGE] - glue->dev: 0x%x, parent = 0x%x\n", glue->dev, glue->dev->parent);
-
+#endif
 	/*
 	 * Due to a hardware bug, we can't differentiate wl18xx from
 	 * wl12xx, because both report the same device ID.  The only
@@ -291,7 +292,9 @@ out:
 static void wl1271_remove(struct sdio_func *func)
 {
 	struct wl12xx_sdio_glue *glue = sdio_get_drvdata(func);
+#if (PRINT_DEBUG)
 	printk("[MERGE] - wl1271_remove\n");
+#endif
 	/* Undo decrement done above in wl1271_probe */
 	pm_runtime_get_noresume(&func->dev);
 

@@ -14,8 +14,12 @@
 #include <linux/bitops.h>
 #include <linux/printk.h>
 
-#define DRIVER_NAME "wlcore"
+#define DRIVER_NAME "wifi0"
+#define DEBUG_NAME "wifi0_debug"
+#define WARN_NAME "wifi0_warning"
 #define DRIVER_PREFIX DRIVER_NAME ": "
+#define DRIVER_DEBUG DEBUG_NAME ": "
+#define DRIVER_WARN WARN_NAME ": "
 
 enum {
 	DEBUG_NONE	= 0,
@@ -47,17 +51,15 @@ extern u32 wl12xx_debug_level;
 
 #define DEBUG_DUMP_LIMIT 1024
 
+#define wl1271_info(fmt, arg...) \
+	pr_info(DRIVER_PREFIX fmt "\n", ##arg)
+
 #define wl1271_error(fmt, arg...) \
 	pr_err(DRIVER_PREFIX "ERROR " fmt "\n", ##arg)
 
 #define wl1271_warning(fmt, arg...) \
 	pr_warn(DRIVER_PREFIX "WARNING " fmt "\n", ##arg)
 
-#define wl1271_notice(fmt, arg...) \
-	pr_info(DRIVER_PREFIX fmt "\n", ##arg)
-
-#define wl1271_info(fmt, arg...) \
-	pr_info(DRIVER_PREFIX fmt "\n", ##arg)
 
 /* define the debug macro differently if dynamic debug is supported */
 #if defined(CONFIG_DYNAMIC_DEBUG)
@@ -83,16 +85,6 @@ extern u32 wl12xx_debug_level;
 					buf,				      \
 					min_t(size_t, len, DEBUG_DUMP_LIMIT), \
 					0);				      \
-	} while (0)
-
-#define wl1271_dump_ascii(level, prefix, buf, len)			      \
-	do {								      \
-		if (level & wl12xx_debug_level)				      \
-			print_hex_dump_debug(DRIVER_PREFIX prefix,	      \
-					DUMP_PREFIX_OFFSET, 16, 1,	      \
-					buf,				      \
-					min_t(size_t, len, DEBUG_DUMP_LIMIT), \
-					true);				      \
 	} while (0)
 
 #endif /* __DEBUG_H__ */

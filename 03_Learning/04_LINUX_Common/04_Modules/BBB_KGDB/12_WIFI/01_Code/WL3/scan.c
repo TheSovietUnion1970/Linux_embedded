@@ -18,6 +18,7 @@
 #include "tx.h"
 #include "ops.h"
 #include "common.h"
+#include "main.h"
 
 void wl1271_scan_complete_work(struct work_struct *work)
 {
@@ -25,9 +26,9 @@ void wl1271_scan_complete_work(struct work_struct *work)
 		.aborted = false,
 	};
 	int ret;
-
+#if (PRINT_DEBUG)
 	printk("[WORK] Scan complete state: %d\n", wifi_data->scan_state);
-
+#endif
 	mutex_lock(&wifi_data->mutex);
 
 	if (unlikely(wifi_data->state != WLCORE_STATE_ON))
@@ -47,7 +48,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	wifi_data->scan_state = WL1271_SCAN_STATE_IDLE;
 	//memset(wifi_data->scan.scanned_ch, 0, sizeof(wifi_data->scan.scanned_ch));
 	//wifi_data->scan.req = NULL;
-	//wifi_data->scan_VV_vif = NULL;
+	//wifi_data->scan_wifi_vif = NULL;
 
 	ret = pm_runtime_get_sync(wifi_data->dev);
 	if (ret < 0) {
@@ -56,9 +57,9 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	}
 
 	// if (wifi_data->scan.failed) {
-	if (VV_scan_failed) {
-		wl1271_info("Scan completed due to error.");
-		printk("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
+	if (wifi_scan_failed) {
+		wl1271_error("Scan completed due to error.");
+		wl1271_error("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
 	}
 
 	wlcore_cmd_regdomain_config_locked();
@@ -77,7 +78,7 @@ int wlcore_scan(struct ieee80211_vif *vif,
 		const u8 *ssid, size_t ssid_len,
 		struct cfg80211_scan_request *req)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 
 	/*
 	 * cfg80211 should guarantee that we don't get more channels
@@ -90,12 +91,13 @@ int wlcore_scan(struct ieee80211_vif *vif,
 
 	wifi_data->scan_state = WL1271_SCAN_STATE_2GHZ_ACTIVE;
 
-	VV_scan_failed = true;
-	ieee80211_queue_delayed_work(wifi_data->hw, &VV_work.scan_complete_work,
+	wifi_scan_failed = true;
+	ieee80211_queue_delayed_work(wifi_data->hw, &wifi_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
-
-	printk("SCHEDULE SCAN - VV_vif = 0x%x\n", VV_vif);
-	(void)VV_scan_send(VV_vif, req); 
+#if (PRINT_DEBUG)
+	printk("SCHEDULE SCAN - wifi_vif = 0x%x\n", wifi_vif);
+#endif
+	(void)wifi_scan_send(wifi_vif, req); 
 	// Config cmd for CMD_SCAN, template for probe req if active[0], dtf, active[1] > 0
 	
 

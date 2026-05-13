@@ -16,10 +16,11 @@
 #include "rx.h"
 #include "tx.h"
 #include "io.h"
-//#include "hw_ops.h"
+#include "wl18xx.h"
 
 
 #include "common.h"
+#include "main.h"
 
 /*
  * TODO: this is here just for now, it must be removed when the data
@@ -57,16 +58,21 @@ static void wl1271_rx_status(
 {
 	memset(status, 0, sizeof(struct ieee80211_rx_status));
 
-	if ((desc->flags & WL1271_RX_DESC_BAND_MASK) == WL1271_RX_DESC_BAND_BG)
+	if ((desc->flags & WL1271_RX_DESC_BAND_MASK) == WL1271_RX_DESC_BAND_BG) // 2.4 GHz
 		status->band = NL80211_BAND_2GHZ;
 	else
-		status->band = NL80211_BAND_5GHZ;
+		status->band = NL80211_BAND_5GHZ; // WL1271_RX_DESC_BAND_A -> 5 GHz Band (A = 802.11a)
 
 	status->rate_idx = wlcore_rate_to_idx(desc->rate, status->band);
+	// -> rate_idx is used for interal idx of mac80211
 
 	/* 11n support */
 	if (desc->rate <= 15) // WL18XX_CONF_HW_RXTX_RATE_MCS0
 		status->encoding = RX_ENC_HT;
+
+#if (PRINT_DEBUG_RATE)
+	printk("[RX_RATE] - RX rate = %s\n", wifi_rx_rate_to_string(desc->rate));
+#endif
 
 	/*
 	* Read the signal level and antenna diversity indication.
@@ -84,6 +90,7 @@ static void wl1271_rx_status(
 	 */
 	//wifi_data->noise = desc->rssi - (desc->snr >> 1);
 
+	// status->freq is usually 0x994 = 2452 -> 2.4 GHz at ch 2, 5, 7, 9
 	status->freq = ieee80211_channel_to_frequency(desc->channel,
 						      status->band);
 
@@ -108,7 +115,7 @@ static void wl1271_rx_status(
 						status->band);
 }
 
-static u32 VV_get_rx_packet_len(void *rx_data,
+static u32 wifi_get_rx_packet_len(void *rx_data,
 				    u32 data_len)
 {
 	struct wl1271_rx_descriptor *desc = rx_data;
@@ -132,7 +139,7 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 	u16 seq_num;
 	u32 pkt_data_len;
 
-	pkt_data_len = VV_get_rx_packet_len(data, length);
+	pkt_data_len = wifi_get_rx_packet_len(data, length); // length - sizeof(*desc);
 	if (!pkt_data_len) {
 		wl1271_error("Invalid packet arrived from HW. length %d",
 			     length);
@@ -187,6 +194,8 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 	if (ieee80211_is_data_present(hdr->frame_control))
 		is_data = 1;
 
+	// display info of wifi on userspace
+	// status->signal = ((desc->rssi & RSSI_LEVEL_BITMASK) | BIT(7));
 	wl1271_rx_status(desc, IEEE80211_SKB_RXCB(skb), beacon,
 			 ieee80211_is_probe_resp(hdr->frame_control));
 
@@ -196,17 +205,20 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 		     beacon ? "beacon" : "",
 		     seq_num, *hlid);
 
-	skb_queue_tail(&VV_deferred_rx_queue, skb);
-	//queue_work(VV_work.freezable_wq, &wifi_data->netstack_work);
-	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
+#if (PRINT_DEBUG)
+	printk("rx skb: beacon: %d, is_data: %d\n", beacon, is_data);
+#endif
+
+	skb_queue_tail(&wifi_deferred_rx_queue, skb);
+	queue_work(wifi_work.freezable_wq, &wifi_work.netstack_work);
 
 	return is_data;
 }
 
 static enum wl_rx_buf_align
-VV_get_rx_buf_align(u32 rx_desc)
+wifi_get_rx_buf_align(u32 rx_desc)
 {
-	if (rx_desc & RX_BUF_PADDED_PAYLOAD)
+	if (rx_desc & RX_BUF_PADDED_PAYLOAD) // bit 30
 		return WLCORE_RX_BUF_PADDED;
 
 	return WLCORE_RX_BUF_ALIGNED; // this is the return
@@ -217,8 +229,8 @@ int wlcore_rx(void)
 {
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
 	u32 buf_size;
-	u32 fw_rx_counter = VV_status_reg->fw_rx_counter % WL18XX_NUM_RX_DESCRIPTORS;
-	u32 drv_rx_counter = VV_rx_counter % WL18XX_NUM_RX_DESCRIPTORS;
+	u32 fw_rx_counter = wifi_status_reg->fw_rx_counter % WL18XX_NUM_RX_DESCRIPTORS;
+	u32 drv_rx_counter = wifi_rx_counter % WL18XX_NUM_RX_DESCRIPTORS;
 	u32 rx_counter;
 	u32 pkt_len, align_pkt_len;
 	u32 pkt_offset, des;
@@ -227,18 +239,17 @@ int wlcore_rx(void)
 	int ret = 0;
 
 	/* update rates per link */
-	hlid = VV_status_reg->hlid;
+	hlid = wifi_status_reg->hlid;
 
 	if (hlid < WLCORE_MAX_LINKS)
-		VV_links[hlid].fw_rate_mbps =
-				VV_status_reg->tx_last_rate_mbps;
-	//printk("wifi_data->quirks = 0x%x\n", wifi_data->quirks);
+		wifi_links[hlid].fw_rate_mbps =
+				wifi_status_reg->tx_last_rate_mbps;
 
 	while (drv_rx_counter != fw_rx_counter) {
 		buf_size = 0;
 		rx_counter = drv_rx_counter;
 		while (rx_counter != fw_rx_counter) {
-			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[rx_counter]);
+			des = le32_to_cpu(wifi_status_reg->rx_pkt_descs[rx_counter]);
 			pkt_len = wlcore_rx_get_buf_size(des);
 			align_pkt_len = wlcore_rx_get_align_buf_size(pkt_len);
 			if (buf_size + align_pkt_len > WL18XX_AGGR_BUFFER_SIZE)
@@ -253,20 +264,23 @@ int wlcore_rx(void)
 			break;
 		}
 
+		// buf_size is don here to know the limit for breaking the wifi_aggr_buf below
+
 		/* Read all available packets at once */
-		des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
+		des = le32_to_cpu(wifi_status_reg->rx_pkt_descs[drv_rx_counter]);
 		
-		ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_SLV_MEM_DATA]), (u32*)VV_aggr_buf, buf_size, true);
+		ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_SLV_MEM_DATA]), (u32*)wifi_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 
 		/* Split data into separate packets */
 		pkt_offset = 0;
 		while (pkt_offset < buf_size) {
-			des = le32_to_cpu(VV_status_reg->rx_pkt_descs[drv_rx_counter]);
+			des = le32_to_cpu(wifi_status_reg->rx_pkt_descs[drv_rx_counter]);
+
+			// des => [30] - rx_align, [23, 8] - pkt_len
 			pkt_len = wlcore_rx_get_buf_size(des);
-			rx_align = VV_get_rx_buf_align(des);
-			//printk("rx_align = %d\n", rx_align);
+			rx_align = wifi_get_rx_buf_align(des);
 
 			/*
 			 * the handle data call can only fail in memory-outage
@@ -274,7 +288,7 @@ int wlcore_rx(void)
 			 * be dropped.
 			 */
 			if (wl1271_rx_handle_data(
-						  VV_aggr_buf + pkt_offset,
+						  wifi_aggr_buf + pkt_offset,
 						  pkt_len, rx_align,
 						  &hlid) == 1) {
 				if (hlid < WL18XX_MAX_LINKS)
@@ -285,7 +299,7 @@ int wlcore_rx(void)
 					     hlid);
 			}
 
-			VV_rx_counter++;
+			wifi_rx_counter++;
 			drv_rx_counter++;
 			drv_rx_counter %= WL18XX_NUM_RX_DESCRIPTORS;
 			pkt_offset += wlcore_rx_get_align_buf_size(pkt_len);

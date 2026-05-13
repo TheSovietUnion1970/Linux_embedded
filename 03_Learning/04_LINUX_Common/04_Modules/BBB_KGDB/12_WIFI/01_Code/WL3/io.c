@@ -45,7 +45,7 @@ EXPORT_SYMBOL_GPL(wlcore_synchronize_interrupts);
 int wlcore_translate_addr(int addr)
 {
 	// struct wlcore_partition_set *part = &wifi_data->curr_part;
-	struct VV_partition_set *part = &wifi_data->curr_part;
+	struct wifi_partition_set *part = &wifi_data->curr_part;
 
 	/*
 	 * To translate, first check to which window of addresses the
@@ -113,15 +113,12 @@ EXPORT_SYMBOL_GPL(wlcore_translate_addr);
  */
 
 /* Vinh custom */
-int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)
+int wifi_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)
 {
 	int ret = 0;
 	struct sdio_func *func = dev_to_sdio_func(wifi_data->dev->parent);
 
 	sdio_claim_host(func);
-
-	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-	// 	addr, len);
 
 	if (fixed)
 		ret = sdio_writesb(func, addr, &var, len);
@@ -134,15 +131,12 @@ int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed)
 	return ret;
 }
 
-int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed)
+int wifi_sdio_raw_write1(int addr, void* var, size_t len, bool fixed)
 {
 	int ret = 0;
 	struct sdio_func *func = dev_to_sdio_func(wifi_data->dev->parent);
 
 	sdio_claim_host(func);
-
-	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-	// 	addr, len);
 
 	if (fixed)
 		ret = sdio_writesb(func, addr, var, len);
@@ -155,15 +149,12 @@ int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed)
 	return ret;
 }
 
-int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed)
+int wifi_sdio_raw_read(int addr, u32* var, size_t len, bool fixed)
 {
 	int ret = 0;
 	struct sdio_func *func = dev_to_sdio_func(wifi_data->dev->parent);
 
 	sdio_claim_host(func);
-
-	// printk("sdio write 53 addr 0x%x, %zu bytes\n",
-	// 	addr, len);
 
 	if (fixed)
 		ret = sdio_readsb(func, var, addr, len);
@@ -176,7 +167,7 @@ int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed)
 	return ret;
 }
 
-int VV_set_partition_core(struct VV_partition_set *p)
+int wifi_set_partition_core(const struct wifi_partition_set *p)
 {
 	int ret;
 
@@ -184,35 +175,35 @@ int VV_set_partition_core(struct VV_partition_set *p)
 	//memcpy(&wifi_data->curr_part, p, sizeof(*p));
 	memcpy(&wifi_data->curr_part, p, sizeof(*p));
 
-	ret = VV_sdio_raw_write(HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
+	ret = wifi_sdio_raw_write(HW_PART0_START_ADDR, p->mem.start, sizeof(p->mem.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
+	ret = wifi_sdio_raw_write(HW_PART0_SIZE_ADDR, p->mem.size, sizeof(p->mem.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
+	ret = wifi_sdio_raw_write(HW_PART1_START_ADDR, p->reg.start, sizeof(p->reg.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
+	ret = wifi_sdio_raw_write(HW_PART1_SIZE_ADDR, p->reg.size, sizeof(p->reg.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
+	ret = wifi_sdio_raw_write(HW_PART2_START_ADDR, p->mem2.start, sizeof(p->mem2.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
+	ret = wifi_sdio_raw_write(HW_PART2_SIZE_ADDR, p->mem2.size, sizeof(p->mem2.size), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
+	ret = wifi_sdio_raw_write(HW_PART3_START_ADDR, p->mem3.start, sizeof(p->mem3.start), false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write(HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
+	ret = wifi_sdio_raw_write(HW_PART3_SIZE_ADDR, p->mem3.size, sizeof(p->mem3.size), false);
 	if (ret < 0)
 		goto out;
 
@@ -220,7 +211,7 @@ out:
 	return ret;
 }
 
-void VV_sdio_set_block_size(unsigned int blksz)
+void wifi_sdio_set_block_size(unsigned int blksz)
 {
 	struct sdio_func *func = dev_to_sdio_func(wifi_data->dev->parent);
 

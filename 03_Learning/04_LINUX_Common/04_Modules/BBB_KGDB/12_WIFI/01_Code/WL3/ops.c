@@ -1,11 +1,12 @@
 #include "ops.h"
+#include "main.h"
 
 static int
-VV_scan_get_channels(
+wifi_scan_get_channels(
 			 struct ieee80211_channel *req_channels[],
 			 u32 n_channels,
 			 u32 n_ssids,
-			 struct VV_scan_ch_params *channels,
+			 struct wifi_scan_ch_params *channels,
 			 u32 band, bool radar, bool passive,
 			 int start, int max_channels,
 			 u8 *n_pactive_ch,
@@ -32,8 +33,9 @@ VV_scan_get_channels(
 
 	// from multiple req_channels[i] -> only conditional channels[j]
 	// multiple req_channels[i] is scaned for passive0, active0, ... active1
-
+#if (PRINT_DEBUG)
 	printk("START LOOP\n");
+#endif
 	for (i = 0, j = start;
 	     i < n_channels && j < max_channels;
 	     i++) {
@@ -50,7 +52,9 @@ VV_scan_get_channels(
 		    (radar ||
 		     !!(flags & IEEE80211_CHAN_NO_IR) == passive)) 
 		{
+#if (PRINT_DEBUG)
 			printk("%d is selected, channel = %d\n", i, req_channels[i]->hw_value);
+#endif
 			if (flags & IEEE80211_CHAN_RADAR) {
 				channels[j].flags |= SCAN_CHANNEL_FLAGS_DFS;
 
@@ -98,20 +102,20 @@ VV_scan_get_channels(
 }
 
 static bool
-VV_set_scan_chan_params(
-			    struct VV_scan_channels *cfg,
+wifi_set_scan_chan_params(
+			    struct wifi_scan_channels *cfg,
 			    struct ieee80211_channel *channels[],
 			    u32 n_channels,
 			    u32 n_ssids,
 			    int scan_type)
 {
 	u8 n_pactive_ch = 0;
-
+#if (PRINT_DEBUG)
 	printk("[SCAN] - %d, %d, %d\n", n_channels, n_ssids, scan_type);
-
+#endif
 
 	cfg->passive[0] =
-		VV_scan_get_channels(
+		wifi_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -122,7 +126,7 @@ VV_set_scan_chan_params(
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->active[0] =
-		VV_scan_get_channels(
+		wifi_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -134,7 +138,7 @@ VV_set_scan_chan_params(
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->passive[1] =
-		VV_scan_get_channels(
+		wifi_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -145,7 +149,7 @@ VV_set_scan_chan_params(
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->dfs =
-		VV_scan_get_channels(
+		wifi_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -157,7 +161,7 @@ VV_set_scan_chan_params(
 					 &n_pactive_ch,
 					 scan_type);
 	cfg->active[1] =
-		VV_scan_get_channels(
+		wifi_scan_get_channels(
 					 channels,
 					 n_channels,
 					 n_ssids,
@@ -186,8 +190,8 @@ VV_set_scan_chan_params(
 		cfg->passive[2] || cfg->active[2];
 }
 
-static void VV_adjust_channels(struct VV_cmd_scan_params *cmd,
-				   struct VV_scan_channels *cmd_channels)
+static void wifi_adjust_channels(struct wifi_cmd_scan_params *cmd,
+				   struct wifi_scan_channels *cmd_channels)
 {
 	memcpy(cmd->passive, cmd_channels->passive, sizeof(cmd->passive));
 	memcpy(cmd->active, cmd_channels->active, sizeof(cmd->active));
@@ -201,11 +205,11 @@ static void VV_adjust_channels(struct VV_cmd_scan_params *cmd,
 	/* channels_4 are not supported, so no need to copy them */
 }
 
-int VV_scan_send(struct VV_vif *VV_vif,
+int wifi_scan_send(struct wifi_vif *wifi_vif,
 			    struct cfg80211_scan_request *req)
 {
-	struct VV_cmd_scan_params *cmd;
-	struct VV_scan_channels *cmd_channels = NULL;
+	struct wifi_cmd_scan_params *cmd;
+	struct wifi_scan_channels *cmd_channels = NULL;
 	int ret;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
@@ -215,10 +219,10 @@ int VV_scan_send(struct VV_vif *VV_vif,
 	}
 
 	/* scan on the dev role if the regular one is not started */
-	if (wlcore_is_p2p_mgmt(VV_vif))
-		cmd->role_id = VV_vif->dev_role_id;
+	if (wlcore_is_p2p_mgmt(wifi_vif))
+		cmd->role_id = wifi_vif->dev_role_id;
 	else
-		cmd->role_id = VV_vif->role_id;
+		cmd->role_id = wifi_vif->role_id;
 
 	if (cmd->role_id == WL12XX_INVALID_ROLE_ID) {
 		printk("INVALID - role_id\n");
@@ -252,13 +256,13 @@ int VV_scan_send(struct VV_vif *VV_vif,
 		goto out;
 	}
 
-	VV_set_scan_chan_params(cmd_channels, req->channels,
+	wifi_set_scan_chan_params(cmd_channels, req->channels,
 				    req->n_channels, req->n_ssids,
 				    SCAN_TYPE_SEARCH);
 	// returning cmd_channels->passive[0], active[0]      -> 2.4 GHz
 						//	 ->passive[1], dfs, active[1] -> 5 GHz
 	// FROM un-ordered req->channels
-	VV_adjust_channels(cmd, cmd_channels); // cpy cmd_channels->active|passive|dtfs -> cmd
+	wifi_adjust_channels(cmd, cmd_channels); // cpy cmd_channels->active|passive|dtfs -> cmd
 
 	/*
 	 * all the cycles params (except total cycles) should
@@ -279,7 +283,7 @@ int VV_scan_send(struct VV_vif *VV_vif,
 	/* TODO: per-band ies? */
 	if (cmd->active[0]) {
 		u8 band = NL80211_BAND_2GHZ;
-		ret = wl12xx_cmd_build_probe_req(VV_vif,
+		ret = wl12xx_cmd_build_probe_req(wifi_vif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -296,7 +300,7 @@ int VV_scan_send(struct VV_vif *VV_vif,
 
 	if (cmd->active[1] || cmd->dfs) {
 		u8 band = NL80211_BAND_5GHZ;
-		ret = wl12xx_cmd_build_probe_req(VV_vif,
+		ret = wl12xx_cmd_build_probe_req(wifi_vif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -313,7 +317,7 @@ int VV_scan_send(struct VV_vif *VV_vif,
 
 	//wl1271_dump(DEBUG_SCAN, "SCAN: ", cmd, sizeof(*cmd));
 
-	ret = VV_cmd_send(CMD_SCAN, cmd, sizeof(*cmd), 0);
+	ret = wifi_cmd_send(CMD_SCAN, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
 		printk("SCAN failed");
 		goto out;
@@ -325,20 +329,20 @@ out:
 	return ret;
 }
 
-int VV_get_mac(void)
+int wifi_get_mac(void)
 {
 	u32 mac1, mac2;
 	int ret;
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -357,39 +361,13 @@ int VV_get_mac(void)
 		//printk("MAC address from fuse not available, using random locally administered addresses.");
 	}
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_DOWN]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_DOWN]);
 
 out:
 	return ret;
 }
 
-static const char *VV_rdl_name(enum wl18xx_rdl_num rdl_num)
-{
-	switch (rdl_num) {
-	case RDL_1_HP:
-		return "183xH";
-	case RDL_2_SP:
-		return "183x or 180x";
-	case RDL_3_HP:
-		return "187xH";
-	case RDL_4_SP:
-		return "187x";
-	case RDL_5_SP:
-		return "RDL11 - Not Supported";
-	case RDL_6_SP:
-		return "180xD";
-	case RDL_7_SP:
-		return "RDL13 - Not Supported (1893Q)";
-	case RDL_8_SP:
-		return "18xxQ";
-	case RDL_NONE:
-		return "UNTRIMMED";
-	default:
-		return "UNKNOWN";
-	}
-}
-
-int VV_wait_for_event(enum wlcore_wait_event event, bool *timeout)
+int wifi_wait_for_event(enum wlcore_wait_event event, bool *timeout)
 {
 	u32 local_event;
 
@@ -429,14 +407,14 @@ wlcore_set_min_fw_ver(unsigned int chip,
 	wifi_data->min_mr_fw_ver[FW_VER_MINOR] = minor_mr;
 }
 
-int VV_identify_chip(void)
+int wifi_identify_chip(void)
 {
 	int ret = 0;
 
-	switch (VV_chip->id) {
+	switch (wifi_chip->id) {
 	case CHIP_ID_185x_PG20:
 		// wl1271_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
-		// 		 VV_chip->id);
+		// 		 wifi_chip->id);
 		wifi_data->sr_fw_name = WL18XX_FW_NAME;
 		/* wl18xx uses the same firmware for PLT */
 		//wifi_data->plt_fw_name = WL18XX_FW_NAME;
@@ -455,12 +433,12 @@ int VV_identify_chip(void)
 		break;
 	case CHIP_ID_185x_PG10:
 		printk("chip id 0x%x (185x PG10) is deprecated",
-			       VV_chip->id);
+			       wifi_chip->id);
 		ret = -ENODEV;
 		goto out;
 
 	default:
-		printk("unsupported chip id: 0x%x", VV_chip->id);
+		printk("unsupported chip id: 0x%x", wifi_chip->id);
 		ret = -ENODEV;
 		goto out;
 	}

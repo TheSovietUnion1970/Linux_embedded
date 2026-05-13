@@ -9,7 +9,7 @@
 #include "common.h"
 #include "io.h"
 
-struct VV_cmd_scan_stop {
+struct wifi_cmd_scan_stop {
 	struct wl1271_cmd_header header;
 
 	u8 role_id;
@@ -29,7 +29,7 @@ enum
 	WL18XX_SCAN_RATE_5_5	= 1,
 	WL18XX_SCAN_RATE_6	= 2,
 };
-struct VV_scan_ch_params {
+struct wifi_scan_ch_params {
 	__le16 min_duration;
 	__le16 max_duration;
 	__le16 passive_duration;
@@ -43,19 +43,19 @@ struct VV_scan_ch_params {
 	u8  padding[3];
 } __packed;
 
-struct VV_scan_channels {
+struct wifi_scan_channels {
 	u8 passive[SCAN_MAX_BANDS]; /* number of passive scan channels */
 	u8 active[SCAN_MAX_BANDS];  /* number of active scan channels */
 	u8 dfs;		   /* number of dfs channels in 5ghz */
 	u8 passive_active; /* number of passive before active channels 2.4ghz */
 
-	struct VV_scan_ch_params channels_2[MAX_CHANNELS_2GHZ];
-	struct VV_scan_ch_params channels_5[MAX_CHANNELS_5GHZ];
-	struct VV_scan_ch_params channels_4[MAX_CHANNELS_4GHZ];
+	struct wifi_scan_ch_params channels_2[MAX_CHANNELS_2GHZ];
+	struct wifi_scan_ch_params channels_5[MAX_CHANNELS_5GHZ];
+	struct wifi_scan_ch_params channels_4[MAX_CHANNELS_4GHZ];
 };
 
-struct VV_tracking_ch_params {
-	struct VV_scan_ch_params channel;
+struct wifi_tracking_ch_params {
+	struct wifi_scan_ch_params channel;
 
 	__le32 bssid_lsb;
 	__le16 bssid_msb;
@@ -63,7 +63,7 @@ struct VV_tracking_ch_params {
 	u8 padding[2];
 } __packed;
 
-struct VV_cmd_scan_params {
+struct wifi_cmd_scan_params {
 	struct wl1271_cmd_header header;
 
 	u8 role_id;
@@ -100,11 +100,11 @@ struct VV_cmd_scan_params {
 
 	union {
 		struct {
-			struct VV_scan_ch_params channels_2[MAX_CHANNELS_2GHZ];
-			struct VV_scan_ch_params channels_5[WL18XX_MAX_CHANNELS_5GHZ];
-			struct VV_scan_ch_params channels_4[MAX_CHANNELS_4GHZ];
+			struct wifi_scan_ch_params channels_2[MAX_CHANNELS_2GHZ];
+			struct wifi_scan_ch_params channels_5[WL18XX_MAX_CHANNELS_5GHZ];
+			struct wifi_scan_ch_params channels_4[MAX_CHANNELS_4GHZ];
 		};
-		struct VV_tracking_ch_params channels_tracking[WL1271_SCAN_MAX_CHANNELS]; // WL1271_SCAN_MAX_CHANNELS
+		struct wifi_tracking_ch_params channels_tracking[WL1271_SCAN_MAX_CHANNELS]; // WL1271_SCAN_MAX_CHANNELS
 	} ;
 
 	u8 ssid[IEEE80211_MAX_SSID_LEN];
@@ -126,10 +126,10 @@ struct VV_cmd_scan_params {
 	u8 padding1[3];
 } __packed;
 
-int VV_scan_send(struct VV_vif *VV_vif,
+int wifi_scan_send(struct wifi_vif *wifi_vif,
 			    struct cfg80211_scan_request *req);
 
-int VV_get_mac(void);
+int wifi_get_mac(void);
 
 #define WL18XX_TRACE_LOSS_GAPS_TX 10
 #define WL18XX_TRACE_LOSS_GAPS_RX 18
@@ -137,7 +137,7 @@ int VV_get_mac(void);
 #define NUM_OF_CHANNELS_11_P 7
 #define SRF_TABLE_LEN 16
 #define PIN_MUXING_SIZE 2
-struct VV_conf_ap_sleep_settings {
+struct wifi_conf_ap_sleep_settings {
 	/* Duty Cycle (20-80% of staying Awake) for IDLE AP
 	 * (0: disable)
 	 */
@@ -156,12 +156,12 @@ struct VV_conf_ap_sleep_settings {
 	u8 idle_conn_thresh;
 } __packed;
 
-struct VV_ht_settings {
+struct wifi_ht_settings {
 	/* DEFAULT / WIDE / SISO20 */
 	u8 mode;
 } __packed;
 
-struct VV_mac_and_phy_params {
+struct wifi_mac_and_phy_params {
 	u8 phy_standalone;
 	u8 spare0;
 	u8 enable_clpc;
@@ -220,16 +220,6 @@ struct VV_mac_and_phy_params {
 	u8 padding[1];
 } __packed;
 
-struct VV_priv_conf {
-	/* Module params structures */
-	struct VV_ht_settings ht;
-
-	/* this structure is copied wholesale to FW */
-	struct VV_mac_and_phy_params phy;
-
-	struct VV_conf_ap_sleep_settings ap_sleep;
-} __packed;
-
 enum {
 	SCAN_COMPLETE_EVENT_ID                   = BIT(8),
 	RADAR_DETECTED_EVENT_ID                  = BIT(9),
@@ -250,7 +240,7 @@ enum {
 	TIME_SYNC_EVENT_ID                       = BIT(24),
 	FW_LOGGER_INDICATION			= BIT(25),
 };
-int VV_wait_for_event(enum wlcore_wait_event event,
+int wifi_wait_for_event(enum wlcore_wait_event event,
 			  bool *timeout);
 
               #define WL18XX_CHIP_VER		8
@@ -260,6 +250,6 @@ int VV_wait_for_event(enum wlcore_wait_event event,
 #define WL18XX_MINOR_VER	58
 #define WL18XX_RX_BA_MAX_SESSIONS 13
 #define WL18XX_FW_NAME "ti-connectivity/wl18xx-fw-4.bin"
-int VV_identify_chip(void);
+int wifi_identify_chip(void);
 
 #endif

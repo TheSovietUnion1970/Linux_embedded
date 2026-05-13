@@ -172,14 +172,6 @@ struct wl_fw_status {
 };
 
 #define WL1271_MAX_CHANNELS 64
-// struct wl1271_scan {
-// 	//struct cfg80211_scan_request *req;
-// 	//unsigned long scanned_ch[BITS_TO_LONGS(WL1271_MAX_CHANNELS)];
-// 	//bool failed;
-// 	u8 state;
-// 	//u8 ssid[IEEE80211_MAX_SSID_LEN+1];
-// 	//size_t ssid_len;
-// };
 
 struct wl1271_if_operations {
 	int __must_check (*read)(struct device *child, int addr, void *buf,
@@ -234,21 +226,21 @@ enum wl12xx_flags {
 	WL1271_FLAG_REINIT_TX_WDOG,
 };
 
-enum VV_vif_flags {
-	VV_vif_FLAG_INITIALIZED,
-	VV_vif_FLAG_STA_ASSOCIATED,
-	VV_vif_FLAG_STA_AUTHORIZED,
-	VV_vif_FLAG_IBSS_JOINED,
-	VV_vif_FLAG_AP_STARTED,
-	VV_vif_FLAG_IN_PS,
-	VV_vif_FLAG_STA_STATE_SENT,
-	VV_vif_FLAG_RX_STREAMING_STARTED,
-	VV_vif_FLAG_PSPOLL_FAILURE,
-	VV_vif_FLAG_CS_PROGRESS,
-	VV_vif_FLAG_AP_PROBE_RESP_SET,
-	VV_vif_FLAG_IN_USE,
-	VV_vif_FLAG_ACTIVE,
-	VV_vif_FLAG_BEACON_DISABLED,
+enum wifi_vif_flags {
+	wifi_vif_FLAG_INITIALIZED,
+	wifi_vif_FLAG_STA_ASSOCIATED,
+	wifi_vif_FLAG_STA_AUTHORIZED,
+	wifi_vif_FLAG_IBSS_JOINED,
+	wifi_vif_FLAG_AP_STARTED,
+	wifi_vif_FLAG_IN_PS,
+	wifi_vif_FLAG_STA_STATE_SENT,
+	wifi_vif_FLAG_RX_STREAMING_STARTED,
+	wifi_vif_FLAG_PSPOLL_FAILURE,
+	wifi_vif_FLAG_CS_PROGRESS,
+	wifi_vif_FLAG_AP_PROBE_RESP_SET,
+	wifi_vif_FLAG_IN_USE,
+	wifi_vif_FLAG_ACTIVE,
+	wifi_vif_FLAG_BEACON_DISABLED,
 };
 
 #define WL1271_MAX_RX_FILTERS 5
@@ -305,25 +297,25 @@ struct wl1271_station {
 };
 
 
-static inline struct VV_vif *VV_vif_to_data(struct ieee80211_vif *vif)
+static inline struct wifi_vif *wifi_vif_to_data(struct ieee80211_vif *vif)
 {
 	WARN_ON(!vif);
-	return (struct VV_vif *)vif->drv_priv;
+	return (struct wifi_vif *)vif->drv_priv;
 }
 
 static inline
-struct ieee80211_vif *wl12xx_VV_vif_to_vif(struct VV_vif *VV_vif)
+struct ieee80211_vif *wl12xx_wifi_vif_to_vif(struct wifi_vif *wifi_vif)
 {
-	return container_of((void *)VV_vif, struct ieee80211_vif, drv_priv);
+	return container_of((void *)wifi_vif, struct ieee80211_vif, drv_priv);
 }
 
-static inline bool wlcore_is_p2p_mgmt(struct VV_vif *VV_vif)
+static inline bool wlcore_is_p2p_mgmt(struct wifi_vif *wifi_vif)
 {
-	return wl12xx_VV_vif_to_vif(VV_vif)->type == NL80211_IFTYPE_P2P_DEVICE;
+	return wl12xx_wifi_vif_to_vif(wifi_vif)->type == NL80211_IFTYPE_P2P_DEVICE;
 }
 
-#define wl12xx_for_each_VV_vif(VV_vif) \
-		list_for_each_entry(VV_vif, &wifi_data->VV_vif_list, list)
+#define wl12xx_for_each_wifi_vif(wifi_vif) \
+		list_for_each_entry(wifi_vif, &wifi_data->wifi_vif_list, list)
 
 void wl12xx_queue_recovery_work(void);
 

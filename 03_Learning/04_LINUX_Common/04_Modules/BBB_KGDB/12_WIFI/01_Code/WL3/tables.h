@@ -17,7 +17,7 @@
 #include "reg.h"
 
 
-static const int VV_rtable[REG_TABLE_LEN] = {
+static const int wifi_rtable[REG_TABLE_LEN] = {
 	[REG_ECPU_CONTROL]		= WL18XX_REG_ECPU_CONTROL,
 	[REG_INTERRUPT_NO_CLEAR]	= WL18XX_REG_INTERRUPT_NO_CLEAR,
 	[REG_INTERRUPT_ACK]		= WL18XX_REG_INTERRUPT_ACK,
@@ -37,7 +37,7 @@ static const int VV_rtable[REG_TABLE_LEN] = {
 	[REG_RAW_FW_STATUS_ADDR]	= WL18XX_FW_STATUS_ADDR,
 };
 
-static const struct VV_partition_set VV_ptable[PART_TABLE_LEN] = {
+static const struct wifi_partition_set wifi_ptable[PART_TABLE_LEN] = {
 	[PART_TOP_PRCM_ELP_SOC] = {
 		.mem  = { .start = 0x00A00000, .size  = 0x00012000 },
 		.reg  = { .start = 0x00807000, .size  = 0x00005000 },

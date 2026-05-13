@@ -23,15 +23,9 @@
 #include "ops.h"
 #include "wl18.h"
 
-// #include "reg.h"
-// #include "conf.h"
-// #include "acx.h"
-// #include "tx.h"
 #include "wl18xx.h"
 #include "common.h"
-// #include "io.h"
-// #include "scan.h"
-// #include "event.h"
+#include "main.h"
 
 
 /* Vinh custom */
@@ -49,19 +43,19 @@ int wl18xx_top_reg_write(int addr, u16 val)
 		return -EINVAL;
 
 	if ((addr % 4) == 0) {
-		ret = VV_sdio_raw_read(wlcore_translate_addr(addr), &tmp, 4, false);
+		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff0000) | val;
-		ret = VV_sdio_raw_write(wlcore_translate_addr(addr), tmp, 4, false);
+		ret = wifi_sdio_raw_write(wlcore_translate_addr(addr), tmp, 4, false);
 	} else {
-		ret = VV_sdio_raw_read(wlcore_translate_addr(addr - 2), &tmp, 4, false);
+		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr - 2), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff) | (val << 16);
-		ret = VV_sdio_raw_write(wlcore_translate_addr(addr - 2), tmp, 4, false);
+		ret = wifi_sdio_raw_write(wlcore_translate_addr(addr - 2), tmp, 4, false);
 	}
 
 out:
@@ -78,11 +72,11 @@ int wl18xx_top_reg_read(int addr, u16 *out)
 
 	if ((addr % 4) == 0) {
 		/* address is 4-bytes aligned */
-		ret = VV_sdio_raw_read(wlcore_translate_addr(addr), &val, 4, false);
+		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = val & 0xffff;
 	} else {
-		ret = VV_sdio_raw_read(wlcore_translate_addr(addr - 2), &val, 4, false);
+		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr - 2), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = (val & 0xffff0000) >> 16;
 	}
@@ -205,6 +199,7 @@ static const u8 *wl18xx_band_rate_to_idx[] = {
 	[NL80211_BAND_5GHZ] = wl18xx_rate_to_idx_5ghz
 };
 
+// display here to map it to wl18xx_rate_to_idx_2ghz/ wl18xx_rate_to_idx_5ghz
 enum wl18xx_hw_rates {
 	WL18XX_CONF_HW_RXTX_RATE_MCS15 = 0,
 	WL18XX_CONF_HW_RXTX_RATE_MCS14,
@@ -237,6 +232,50 @@ enum wl18xx_hw_rates {
 	WL18XX_CONF_HW_RXTX_RATE_1,
 	WL18XX_CONF_HW_RXTX_RATE_MAX,
 };
+
+const char *wifi_rx_rate_to_string(u8 rate)
+{
+    switch (rate) {
+    case WL18XX_CONF_HW_RXTX_RATE_MCS15:    return "MCS15 (130 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS14:    return "MCS14 (117 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS13:    return "MCS13 (104 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS12:    return "MCS12 (78 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS11:    return "MCS11 (65 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS10:    return "MCS10 (58.5 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS9:     return "MCS9 (52 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS8:     return "MCS8 (39 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS7:     return "MCS7 (65 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS6:     return "MCS6 (58.5 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS5:     return "MCS5 (52 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS4:     return "MCS4 (39 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS3:     return "MCS3 (26 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS2:     return "MCS2 (19.5 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS1:     return "MCS1 (13 Mbps)";
+    case WL18XX_CONF_HW_RXTX_RATE_MCS0:     return "MCS0 (6.5 Mbps)";
+
+    /* Legacy OFDM rates */
+    case WL18XX_CONF_HW_RXTX_RATE_54:       return "54 Mbps (802.11g)";
+    case WL18XX_CONF_HW_RXTX_RATE_48:       return "48 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_36:       return "36 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_24:       return "24 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_18:       return "18 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_12:       return "12 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_9:        return "9 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_6:        return "6 Mbps";
+
+    /* Legacy CCK rates */
+    case WL18XX_CONF_HW_RXTX_RATE_11:       return "11 Mbps (802.11b)";
+    case WL18XX_CONF_HW_RXTX_RATE_5_5:      return "5.5 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_2:        return "2 Mbps";
+    case WL18XX_CONF_HW_RXTX_RATE_1:        return "1 Mbps";
+
+    /* Special cases */
+    case WL18XX_CONF_HW_RXTX_RATE_22:       return "22 Mbps (TI special)";
+
+    default:
+        return "Unknown Rate";
+    }
+}
 
 #define SCAN_MAX_CYCLE_INTERVALS 16
 
@@ -662,7 +701,7 @@ static struct wifi_priv_conf wl18xx_default_priv_conf = {
 	},
 };
 
-static const struct VV_partition_set wl18xx_ptable[PART_TABLE_LEN] = {
+static const struct wifi_partition_set wl18xx_ptable[PART_TABLE_LEN] = {
 	[PART_TOP_PRCM_ELP_SOC] = {
 		.mem  = { .start = 0x00A00000, .size  = 0x00012000 },
 		.reg  = { .start = 0x00807000, .size  = 0x00005000 },
@@ -745,7 +784,7 @@ static int wl18xx_set_clk(void)
 	u16 clk_freq;
 	int ret;
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
 	if (ret < 0)
 		goto out;
 
@@ -857,28 +896,28 @@ static int wl18xx_pre_boot(void)
 		goto out;
 
 	/* Continue the ELP wake up sequence */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	udelay(500);
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_BOOT]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
 	/* Disable interrupts */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable Rx/Tx */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -893,22 +932,22 @@ static int wl18xx_pre_upload(void)
 	BUILD_BUG_ON(sizeof(struct wl18xx_mac_and_phy_params) >
 		WL18XX_PHY_INIT_MEM_SIZE);
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_BOOT]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto out;
 
 	/* TODO: check if this is all needed */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wl1271_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -919,29 +958,29 @@ static int wl18xx_pre_upload(void)
 	 * its own clock.
 	 */
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_PHY_INIT]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
 	/* disable FDSP clock */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* set ATPG clock toward FDSP Code RAM rather than its own clock */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* re-enable FDSP clock */
-	ret = VV_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	ret = irq_get_trigger_type(wifi_data->irq);
 	if ((ret == IRQ_TYPE_LEVEL_LOW) || (ret == IRQ_TYPE_EDGE_FALLING)) {
-		wl1271_info("using inverted interrupt logic: %d", ret);
-		ret = VV_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
+		printk("using inverted interrupt logic: %d", ret);
+		ret = wifi_set_partition_core(&wifi_data->ptable[PART_TOP_PRCM_ELP_SOC]);
 		if (ret < 0)
 			goto out;
 
@@ -954,7 +993,7 @@ static int wl18xx_pre_upload(void)
 		if (ret < 0)
 			goto out;
 
-		ret = VV_set_partition_core(&wifi_data->ptable[PART_PHY_INIT]);
+		ret = wifi_set_partition_core(&wifi_data->ptable[PART_PHY_INIT]);
 	}
 
 out:
@@ -973,11 +1012,11 @@ static int wl18xx_set_mac_and_phy(void)
 		goto out;
 	}
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_PHY_INIT]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_PHY_INIT]);
 	if (ret < 0)
 		goto out;
 
-	ret = VV_sdio_raw_write1(wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
+	ret = wifi_sdio_raw_write1(wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
 
 out:
 	kfree(params);
@@ -992,13 +1031,13 @@ static int wl18xx_enable_interrupts(void)
 	event_mask = WL18XX_ACX_EVENTS_VECTOR;
 	intr_mask = WL18XX_INTR_MASK;
 
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wlcore_enable_interrupts();
 
-	ret = VV_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
+	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
 
@@ -1062,7 +1101,7 @@ out:
 	return ret;
 }
 
-static int VV_acx_host_if_cfg_bitmap(u32 host_cfg_bitmap,
+static int wifi_acx_host_if_cfg_bitmap(u32 host_cfg_bitmap,
 				  u32 sdio_blk_size, u32 extra_mem_blks,
 				  u32 len_field_size)
 {
@@ -1084,7 +1123,7 @@ static int VV_acx_host_if_cfg_bitmap(u32 host_cfg_bitmap,
 	bitmap_conf->extra_mem_blocks = cpu_to_le32(extra_mem_blks);
 	bitmap_conf->length_field_size = cpu_to_le32(len_field_size);
 
-	ret = VV_cmd_configure(ACX_HOST_IF_CFG_BITMAP,
+	ret = wifi_cmd_configure(ACX_HOST_IF_CFG_BITMAP,
 				   bitmap_conf, sizeof(*bitmap_conf));
 	if (ret < 0) {
 		wl1271_warning("wl1271 bitmap config opt failed: %d", ret);
@@ -1116,7 +1155,7 @@ static int wl18xx_set_host_cfg_bitmap(u32 extra_mem_blk)
 		sdio_align_size = WL12XX_BUS_BLOCK_SIZE;
 	}
 
-	ret = VV_acx_host_if_cfg_bitmap(host_cfg_bitmap,
+	ret = wifi_acx_host_if_cfg_bitmap(host_cfg_bitmap,
 					    sdio_align_size, extra_mem_blk,
 					    WL18XX_HOST_IF_LEN_SIZE_FIELD);
 	if (ret < 0)
@@ -1128,7 +1167,6 @@ static int wl18xx_set_host_cfg_bitmap(u32 extra_mem_blk)
 static int wl18xx_hw_init(void)
 {
 	int ret;
-	struct wifi_priv *priv = wifi_data->priv;
 
 	/* set the default amount of spare blocks in the bitmap */
 	ret = wl18xx_set_host_cfg_bitmap(WL18XX_TX_HW_BLOCK_SPARE);
@@ -1149,7 +1187,7 @@ static bool wl18xx_is_mimo_supported(void)
 	       (priv->conf.ht.mode != HT_MODE_WIDE) &&
 	       (priv->conf.ht.mode != HT_MODE_SISO20);
 }
-
+#if (APPLY_EXTERNAL_CONFIG)
 static int wl18xx_load_conf_file(struct device *dev, struct wlcore_conf *conf,
 				 struct wifi_priv_conf *priv_conf,
 				 const char *file)
@@ -1197,13 +1235,16 @@ out_release:
 	release_firmware(fw);
 	return ret;
 }
-
+#endif
 static int wl18xx_conf_init(struct device *dev)
 {
+#if (APPLY_EXTERNAL_CONFIG)
 	struct platform_device *pdev = wifi_data->pdev;
 	struct wlcore_platdev_data *pdata = dev_get_platdata(&pdev->dev);
+#endif
 	struct wifi_priv *priv = wifi_data->priv;
 
+#if (APPLY_EXTERNAL_CONFIG)
 	if (wl18xx_load_conf_file(dev, &wifi_data->conf, &priv->conf,
 				  pdata->family->cfg_name) < 0) {
 		wl1271_warning("falling back to default config");
@@ -1214,6 +1255,14 @@ static int wl18xx_conf_init(struct device *dev)
 		memcpy(&priv->conf, &wl18xx_default_priv_conf,
 		       sizeof(priv->conf));
 	}
+#else
+	wl1271_info("Apply default config\n");
+	/* apply driver default configuration */
+	memcpy(&wifi_data->conf, &wl18xx_conf, sizeof(wifi_data->conf));
+	/* apply default private configuration */
+	memcpy(&priv->conf, &wl18xx_default_priv_conf,
+			sizeof(priv->conf));
+#endif
 
 	return 0;
 }
@@ -1359,25 +1408,13 @@ static int wl18xx_setup(void)
 
 	wifi_data->rtable = wl18xx_rtable;
 
-	//WL18XX_NUM_TX_DESCRIPTORS = WL18XX_NUM_TX_DESCRIPTORS;
-	//wifi_data->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
-	//wifi_data->num_links = WL18XX_MAX_LINKS;
-	//wifi_data->max_ap_stations = WL18XX_MAX_AP_STATIONS;
 	wifi_data->iface_combinations = wl18xx_iface_combinations;
 	wifi_data->n_iface_combinations = ARRAY_SIZE(wl18xx_iface_combinations);
 	wifi_data->num_mac_addr = WL18XX_NUM_MAC_ADDRESSES;
-	//wifi_data->band_rate_to_idx = wl18xx_band_rate_to_idx;
-	//wifi_data->hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
-	//wifi_data->hw_min_ht_rate = WL18XX_CONF_HW_RXTX_RATE_MCS0;
-	// wifi_data->fw_status_len = sizeof(struct wl18xx_fw_status);
-	//wifi_data->fw_status_priv_len = sizeof(struct wl18xx_fw_status_priv);
-	//wifi_data->stats.fw_stats_len = sizeof(struct wl18xx_acx_statistics);
 	wifi_data->static_data_priv_len = sizeof(struct wl18xx_static_data_priv);
 
 	wifi_data->band_rate_to_idx = wl18xx_band_rate_to_idx;
 
-	// if (num_rx_desc_param != -1)
-	// 	wifi_data->num_rx_desc = num_rx_desc_param;
 
 	ret = wl18xx_conf_init(wifi_data->dev);
 	if (ret < 0)
@@ -1468,12 +1505,6 @@ static int wl18xx_setup(void)
 				  &wl18xx_siso20_ht_cap);
 	}
 
-	// printk("checksum_param = 0x%x\n", checksum_param);
-	// if (!checksum_param) {
-	// 	wl18xx_ops.set_rx_csum = NULL;
-	// 	wl18xx_ops.init_vif = NULL;
-	// }
-
 	/* Enable 11a Band only if we have 5G antennas */
 	wifi_data->enable_11a = (priv->conf.phy.number_of_assembled_ant5 != 0);
 
@@ -1485,8 +1516,6 @@ static int wl18xx_probe(struct platform_device *pdev)
 	//struct wl1271 *wl;
 	struct ieee80211_hw *hw;
 	int ret;
-
-	printk("Hello - wl18xx_probe\n");
 
 	hw = wlcore_alloc_hw(sizeof(struct wifi_priv),
 			     WL18XX_AGGR_BUFFER_SIZE,
@@ -1502,7 +1531,9 @@ static int wl18xx_probe(struct platform_device *pdev)
 	wifi_data->ptable = wl18xx_ptable;
 
 	ret = wlcore_probe(pdev);
+#if (PRINT_DEBUG)
 	printk("[MERGE] - wifi_data->dev: 0x%x, parent = 0x%x\n", wifi_data->dev, wifi_data->dev->parent);
+#endif
 	if (ret)
 		goto out_free;
 

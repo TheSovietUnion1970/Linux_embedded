@@ -23,7 +23,7 @@ enum {
 };
 
 /* cac_start and cac_stop share the same params */
-struct VV_cmd_cac_start {
+struct wifi_cmd_cac_start {
 	struct wl1271_cmd_header header;
 
 	u8 role_id;
@@ -31,7 +31,7 @@ struct VV_cmd_cac_start {
 	u8 band;
 	u8 bandwidth;
 } __packed;
-int VV_cmd_set_cac(struct VV_vif *VV_vif, bool start);
+int wifi_cmd_set_cac(struct wifi_vif *wifi_vif, bool start);
 
 
 struct wl18xx_cmd_smart_config_set_group_key {
@@ -58,7 +58,7 @@ struct acx1_header {
  * this struct is very similar to wl1271_acx_ht_capabilities, with the
  * addition of supported rates
  */
-struct VV_acx_peer_cap {
+struct wifi_acx_peer_cap {
 	struct acx1_header header;
 
 	/* bitmask of capability bits supported by the peer */
@@ -81,15 +81,15 @@ struct VV_acx_peer_cap {
 
 	u8 padding;
 } __packed;
-int VV_acx_set_peer_cap(
+int wifi_acx_set_peer_cap(
 			    struct ieee80211_sta_ht_cap *ht_cap,
 			    bool allow_ht_operation,
 			    u32 rate_set, u8 hlid);
 
 #define WL18XX_PHY_VERSION_MAX_LEN 20
-struct VV_static_data_priv {
+struct wifi_static_data_priv {
 	char phy_version[WL18XX_PHY_VERSION_MAX_LEN];
 };
-int VV_handle_static_data(struct wl1271_static_data *static_data);
+int wifi_handle_static_data(struct wl1271_static_data *static_data);
 
 #endif

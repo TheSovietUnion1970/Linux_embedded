@@ -155,19 +155,19 @@ static int wl12xx_init_rx_config(void)
 }
 
 static int wl12xx_init_phy_vif_config(
-					    struct VV_vif *VV_vif)
+					    struct wifi_vif *wifi_vif)
 {
 	int ret;
 
-	ret = wl1271_acx_slot(VV_vif, DEFAULT_SLOT_TIME);
+	ret = wl1271_acx_slot(wifi_vif, DEFAULT_SLOT_TIME);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_service_period_timeout(VV_vif);
+	ret = wl1271_acx_service_period_timeout(wifi_vif);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_rts_threshold(VV_vif, wifi_data->hw->wiphy->rts_threshold);
+	ret = wl1271_acx_rts_threshold(wifi_vif, wifi_data->hw->wiphy->rts_threshold);
 	if (ret < 0)
 		return ret;
 
@@ -175,16 +175,16 @@ static int wl12xx_init_phy_vif_config(
 }
 
 static int wl1271_init_sta_beacon_filter(
-					 struct VV_vif *VV_vif)
+					 struct wifi_vif *wifi_vif)
 {
 	int ret;
 
-	ret = wl1271_acx_beacon_filter_table(VV_vif);
+	ret = wl1271_acx_beacon_filter_table(wifi_vif);
 	if (ret < 0)
 		return ret;
 
 	/* disable beacon filtering until we get the first beacon */
-	ret = wl1271_acx_beacon_filter_opt(VV_vif, false);
+	ret = wl1271_acx_beacon_filter_opt(wifi_vif, false);
 	if (ret < 0)
 		return ret;
 
@@ -218,11 +218,11 @@ static int wl1271_init_energy_detection(void)
 }
 
 static int wl1271_init_beacon_broadcast(
-					struct VV_vif *VV_vif)
+					struct wifi_vif *wifi_vif)
 {
 	int ret;
 
-	ret = wl1271_acx_bcn_dtim_options(VV_vif);
+	ret = wl1271_acx_bcn_dtim_options(wifi_vif);
 	if (ret < 0)
 		return ret;
 
@@ -244,7 +244,7 @@ static int wl12xx_init_fwlog(void)
 }
 
 /* generic sta initialization (non vif-specific) */
-int wl1271_sta_hw_init(struct VV_vif *VV_vif)
+int wl1271_sta_hw_init(struct wifi_vif *wifi_vif)
 {
 	int ret;
 
@@ -253,7 +253,7 @@ int wl1271_sta_hw_init(struct VV_vif *VV_vif)
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_acx_sta_rate_policies(VV_vif);
+	ret = wl1271_acx_sta_rate_policies(wifi_vif);
 	if (ret < 0)
 		return ret;
 
@@ -263,62 +263,62 @@ int wl1271_sta_hw_init(struct VV_vif *VV_vif)
 static int wl1271_sta_hw_init_post_mem(
 				       struct ieee80211_vif *vif)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret;
 
 	/* disable the keep-alive feature */
-	ret = wl1271_acx_keep_alive_mode(VV_vif, false);
+	ret = wl1271_acx_keep_alive_mode(wifi_vif, false);
 	if (ret < 0)
 		return ret;
 
 	return 0;
 }
 
-static int wl1271_set_ba_policies(struct VV_vif *VV_vif)
+static int wl1271_set_ba_policies(struct wifi_vif *wifi_vif)
 {
 	/* Reset the BA RX indicators */
-	//VV_vif->ba_allowed = true;
+	//wifi_vif->ba_allowed = true;
 	//wifi_data->ba_rx_session_count = 0;
 
 	/* BA is supported in STA/AP modes */
-	if (VV_vif->bss_type != BSS_TYPE_AP_BSS &&
-	    VV_vif->bss_type != BSS_TYPE_STA_BSS) {
-		//VV_vif->ba_support = false;
+	if (wifi_vif->bss_type != BSS_TYPE_AP_BSS &&
+	    wifi_vif->bss_type != BSS_TYPE_STA_BSS) {
+		//wifi_vif->ba_support = false;
 		return 0;
 	}
 
-	//VV_vif->ba_support = true;
+	//wifi_vif->ba_support = true;
 
 	/* 802.11n initiator BA session setting */
-	return wl12xx_acx_set_ba_initiator_policy(VV_vif);
+	return wl12xx_acx_set_ba_initiator_policy(wifi_vif);
 }
 
 /* vif-specifc initialization */
-static int wl12xx_init_sta_role(struct VV_vif *VV_vif)
+static int wl12xx_init_sta_role(struct wifi_vif *wifi_vif)
 {
 	int ret;
 
-	ret = wl1271_acx_group_address_tbl(VV_vif, true, NULL, 0);
+	ret = wl1271_acx_group_address_tbl(wifi_vif, true, NULL, 0);
 	if (ret < 0)
 		return ret;
 
 	/* Initialize connection monitoring thresholds */
-	ret = wl1271_acx_conn_monit_params(VV_vif, false);
+	ret = wl1271_acx_conn_monit_params(wifi_vif, false);
 	if (ret < 0)
 		return ret;
 
 	/* Beacon filtering */
-	ret = wl1271_init_sta_beacon_filter(VV_vif);
+	ret = wl1271_init_sta_beacon_filter(wifi_vif);
 	if (ret < 0)
 		return ret;
 
 	/* Beacons and broadcast settings */
-	ret = wl1271_init_beacon_broadcast(VV_vif);
+	ret = wl1271_init_beacon_broadcast(wifi_vif);
 	if (ret < 0)
 		return ret;
 
 	/* Configure rssi/snr averaging weights */
-	ret = wl1271_acx_rssi_snr_avg_weights(VV_vif);
+	ret = wl1271_acx_rssi_snr_avg_weights(wifi_vif);
 	if (ret < 0)
 		return ret;
 
@@ -328,10 +328,9 @@ static int wl12xx_init_sta_role(struct VV_vif *VV_vif)
 /* vif-specific initialization */
 int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	struct conf_tx_ac_category *conf_ac;
 	struct conf_tx_tid *conf_tid;
-	bool is_ap = (VV_vif->bss_type == BSS_TYPE_AP_BSS);
 	int ret, i;
 
 	/* consider all existing roles before configuring psm. */
@@ -347,28 +346,28 @@ int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 		return ret;
 
 	/* Mode specific init */
-	ret = wl1271_sta_hw_init(VV_vif);
+	ret = wl1271_sta_hw_init(wifi_vif);
 	if (ret < 0)
 		return ret;
 
-	ret = wl12xx_init_sta_role(VV_vif);
+	ret = wl12xx_init_sta_role(wifi_vif);
 	if (ret < 0)
 		return ret;
 
-	wl12xx_init_phy_vif_config(VV_vif);
+	wl12xx_init_phy_vif_config(wifi_vif);
 
 	/* Default TID/AC configuration */
 	BUG_ON(wifi_data->conf.tx.tid_conf_count != wifi_data->conf.tx.ac_conf_count);
 	for (i = 0; i < wifi_data->conf.tx.tid_conf_count; i++) {
 		conf_ac = &wifi_data->conf.tx.ac_conf[i];
-		ret = wl1271_acx_ac_cfg(VV_vif, conf_ac->ac,
+		ret = wl1271_acx_ac_cfg(wifi_vif, conf_ac->ac,
 					conf_ac->cw_min, conf_ac->cw_max,
 					conf_ac->aifsn, conf_ac->tx_op_limit);
 		if (ret < 0)
 			return ret;
 
 		conf_tid = &wifi_data->conf.tx.tid_conf[i];
-		ret = wl1271_acx_tid_cfg(VV_vif,
+		ret = wl1271_acx_tid_cfg(wifi_vif,
 					 conf_tid->queue_id,
 					 conf_tid->channel_type,
 					 conf_tid->tsid,
@@ -381,7 +380,7 @@ int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 	}
 
 	/* Configure HW encryption */
-	ret = wl1271_acx_feature_cfg(VV_vif);
+	ret = wl1271_acx_feature_cfg(wifi_vif);
 	if (ret < 0)
 		return ret;
 
@@ -392,7 +391,7 @@ int wl1271_init_vif_specific(struct ieee80211_vif *vif)
 		return ret;
 
 	/* Configure initiator BA sessions policies */
-	ret = wl1271_set_ba_policies(VV_vif);
+	ret = wl1271_set_ba_policies(wifi_vif);
 	if (ret < 0)
 		return ret;
 

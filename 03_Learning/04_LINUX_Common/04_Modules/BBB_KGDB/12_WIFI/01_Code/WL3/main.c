@@ -23,46 +23,43 @@
 #include "rx.h"
 #include "ps.h"
 #include "init.h"
-//#include "debugfs.h"
-#include "testmode.h"
 #include "scan.h"
-//#include "hw_ops.h"
-//#include "sysfs.h"
 
 #include "common.h"
 #include "wl18.h"
 #include "reg.h"
 #include "ops.h"
-struct sk_buff_head VV_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
-struct sk_buff_head VV_deferred_rx_queue;
-struct sk_buff_head VV_deferred_tx_queue;
-u8 VV_allocated_pkts[WLCORE_MAX_LINKS];
-int VV_tx_queue_count[NUM_TX_QUEUES];
-u32 VV_tx_pkts_freed[NUM_TX_QUEUES];
-u32 VV_tx_allocated_pkts[NUM_TX_QUEUES];
-struct VV_wl18xx_fw_status *VV_status_reg;
-u32 VV_tx_allocated_blocks;
-u32 VV_tx_blocks_available;
-struct sk_buff *VV_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
-struct sk_buff *VV_dummy_packet;
-struct VV_link VV_links[WLCORE_MAX_LINKS];
-int VV_skb_tx_frames_cnt;
-u32 VV_last_updated_tmp_tx_blocks_freed;
-u32 VV_tx_packets_count; 
-u8 VV_last_fw_rls_idx = 0;
-struct VV_Work VV_work;
-u8 VV_session_ids[WLCORE_MAX_LINKS];
-s64 VV_time_offset;
+#include "main.h"
+struct sk_buff_head wifi_tx_queue[WLCORE_MAX_LINKS][NUM_TX_QUEUES];
+struct sk_buff_head wifi_deferred_rx_queue;
+struct sk_buff_head wifi_deferred_tx_queue;
+u8 wifi_allocated_pkts[WLCORE_MAX_LINKS];
+int wifi_tx_queue_count[NUM_TX_QUEUES];
+u32 wifi_tx_pkts_freed[NUM_TX_QUEUES];
+u32 wifi_tx_allocated_pkts[NUM_TX_QUEUES];
+struct wifi_wl18xx_fw_status *wifi_status_reg;
+u32 wifi_tx_allocated_blocks;
+u32 wifi_tx_blocks_available;
+struct sk_buff *wifi_skb_tx_frames[WLCORE_MAX_TX_DESCRIPTORS];
+struct sk_buff *wifi_dummy_packet;
+struct wifi_link wifi_links[WLCORE_MAX_LINKS];
+int wifi_skb_tx_frames_cnt;
+u32 wifi_last_updated_tmp_tx_blocks_freed;
+u32 wifi_tx_packets_count; 
+u8 wifi_last_fw_rls_idx = 0;
+struct wifi_Work wifi_work;
+u8 wifi_session_ids[WLCORE_MAX_LINKS];
+s64 wifi_time_offset;
 
 /* Main */
 struct Wifi_data* wifi_data;
-struct VV_map VV_map;
-struct VV_vif* VV_vif_ptr[10];
-struct VV_chip* VV_chip;
-int VV_vif_ptr_id = 0;
-u8 *VV_aggr_buf;
-u32 VV_rx_counter;
-bool VV_scan_failed;
+struct wifi_map wifi_map;
+struct wifi_vif* wifi_vif_ptr[10];
+struct wifi_chip* wifi_chip;
+int wifi_vif_ptr_id = 0;
+u8 *wifi_aggr_buf;
+u32 wifi_rx_counter;
+bool wifi_scan_failed;
 
 #define WL1271_BOOT_RETRIES 3
 #define WL1271_WAKEUP_TIMEOUT 500
@@ -77,20 +74,20 @@ static void __wl1271_op_remove_interface(
 					 bool reset_tx_queues);
 static void wlcore_op_stop_locked(void);
 
-static int wl12xx_set_authorized(struct VV_vif *VV_vif)
+static int wl12xx_set_authorized(struct wifi_vif *wifi_vif)
 {
 	int ret;
 
-	if (WARN_ON(VV_vif->bss_type != BSS_TYPE_STA_BSS))
+	if (WARN_ON(wifi_vif->bss_type != BSS_TYPE_STA_BSS))
 		return -EINVAL;
 
-	if (!test_bit(VV_vif_FLAG_STA_ASSOCIATED, &VV_vif->flags))
+	if (!test_bit(wifi_vif_FLAG_STA_ASSOCIATED, &wifi_vif->flags))
 		return 0;
 
-	if (test_and_set_bit(VV_vif_FLAG_STA_STATE_SENT, &VV_vif->flags))
+	if (test_and_set_bit(wifi_vif_FLAG_STA_STATE_SENT, &wifi_vif->flags))
 		return 0;
 
-	ret = wl12xx_cmd_set_peer_state(VV_vif, VV_vif->sta.hlid);
+	ret = wl12xx_cmd_set_peer_state(wifi_vif, wifi_vif->sta.hlid);
 	if (ret < 0)
 		return ret;
 
@@ -114,18 +111,22 @@ void wl12xx_rearm_tx_watchdog_locked(void)
 	/* if the watchdog is not armed, don't do anything */
 	// If there are no blocks currently allocated for TX -> no need to transmit
 	// so no need to check TX data is stuck
-	printk("[WORK] TX watchdog: %d\n", VV_tx_allocated_blocks);
-	if (VV_tx_allocated_blocks == 0)
+#if (PRINT_DEBUG)
+	printk("[WORK] TX watchdog: %d\n", wifi_tx_allocated_blocks);
+#endif
+	if (wifi_tx_allocated_blocks == 0)
 		return;
 
-	cancel_delayed_work(&VV_work.tx_watchdog_work);
-	ieee80211_queue_delayed_work(wifi_data->hw, &VV_work.tx_watchdog_work,
+	cancel_delayed_work(&wifi_work.tx_watchdog_work);
+	ieee80211_queue_delayed_work(wifi_data->hw, &wifi_work.tx_watchdog_work,
 		msecs_to_jiffies(wifi_data->conf.tx.tx_watchdog_timeout));
 }
 
 static void wl12xx_tx_watchdog_work(struct work_struct *work)
 {
+#if (PRINT_DEBUG)
 	printk("[WORK] - wl12xx_tx_watchdog_work\n");
+#endif
 	struct delayed_work *dwork;
 
 	dwork = to_delayed_work(work);
@@ -136,7 +137,7 @@ static void wl12xx_tx_watchdog_work(struct work_struct *work)
 		goto out;
 
 	/* Tx went out in the meantime - everything is ok */
-	if (unlikely(VV_tx_allocated_blocks == 0))
+	if (unlikely(wifi_tx_allocated_blocks == 0))
 		goto out;
 
 	/*
@@ -212,64 +213,64 @@ static void wlcore_adjust_conf(void)
 #include "wl18xx.h"
 static int wlcore_fw_status(void)
 {
-	//struct VV_vif *VV_vif;
-	//u32 old_tx_blk_count = VV_tx_blocks_available;
+	//struct wifi_vif *wifi_vif;
+	//u32 old_tx_blk_count = wifi_tx_blocks_available;
 	int avail, freed_blocks;
 	int i;
 	int ret;
 
-	ret = VV_sdio_raw_read(wifi_data->rtable[REG_RAW_FW_STATUS_ADDR],
-				   (void*)VV_status_reg,
-				   sizeof(struct VV_wl18xx_fw_status), false);
+	ret = wifi_sdio_raw_read(wifi_data->rtable[REG_RAW_FW_STATUS_ADDR],
+				   (void*)wifi_status_reg,
+				   sizeof(struct wifi_wl18xx_fw_status), false);
 	if (ret < 0)
 		return ret;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		/* prevent wrap-around in freed-packets counter */
-		VV_tx_allocated_pkts[i] -=
-				(VV_status_reg->tx_released_pkts[i] -
-				VV_tx_pkts_freed[i]) & 0xff;
+		wifi_tx_allocated_pkts[i] -=
+				(wifi_status_reg->tx_released_pkts[i] -
+				wifi_tx_pkts_freed[i]) & 0xff;
 
-		VV_tx_pkts_freed[i] = VV_status_reg->tx_released_pkts[i];
+		wifi_tx_pkts_freed[i] = wifi_status_reg->tx_released_pkts[i];
 
 		// counters.tx_released_pkts and counters.tx_released_pkts are read from Interrupt
 	}
 
 	//printk("START\n");
-	for_each_set_bit(i, VV_map.links_map, WL18XX_MAX_LINKS) {
+	for_each_set_bit(i, wifi_map.links_map, WL18XX_MAX_LINKS) {
 		//printk("wlcore_fw_status i = %d\n", i);
 		u8 diff;
 
 		/* prevent wrap-around in freed-packets counter */
-		diff = (VV_status_reg->tx_lnk_free_pkts[i] -
-		       VV_links[i].prev_freed_pkts) & 0xff;
+		diff = (wifi_status_reg->tx_lnk_free_pkts[i] -
+		       wifi_links[i].prev_freed_pkts) & 0xff;
 
 		if (diff == 0)
 			continue;
 
-		VV_allocated_pkts[i] -= diff;
-		VV_links[i].prev_freed_pkts = VV_status_reg->tx_lnk_free_pkts[i];
+		wifi_allocated_pkts[i] -= diff;
+		wifi_links[i].prev_freed_pkts = wifi_status_reg->tx_lnk_free_pkts[i];
 
 		/* accumulate the prev_freed_pkts counter */
-		VV_links[i].total_freed_pkts += diff;
+		wifi_links[i].total_freed_pkts += diff;
 	}
 	//printk("END\n");
 
 	/* prevent wrap-around in total blocks counter */
-	if (likely(VV_last_updated_tmp_tx_blocks_freed <= VV_status_reg->total_released_blks))
-		freed_blocks = VV_status_reg->total_released_blks -
-			       VV_last_updated_tmp_tx_blocks_freed;
+	if (likely(wifi_last_updated_tmp_tx_blocks_freed <= wifi_status_reg->total_released_blks))
+		freed_blocks = wifi_status_reg->total_released_blks -
+			       wifi_last_updated_tmp_tx_blocks_freed;
 	else
-		freed_blocks = 0x100000000LL - VV_last_updated_tmp_tx_blocks_freed +
-			       VV_status_reg->total_released_blks;
+		freed_blocks = 0x100000000LL - wifi_last_updated_tmp_tx_blocks_freed +
+			       wifi_status_reg->total_released_blks;
 
-	VV_last_updated_tmp_tx_blocks_freed = VV_status_reg->total_released_blks;
+	wifi_last_updated_tmp_tx_blocks_freed = wifi_status_reg->total_released_blks;
 	// => freed_blocks = new (total_released_blks) - last (tx_blocks_freed)
 	//				   = the ctr number of released blocks
 
 
 	
-	VV_tx_allocated_blocks = VV_tx_allocated_blocks - freed_blocks;
+	wifi_tx_allocated_blocks = wifi_tx_allocated_blocks - freed_blocks;
 
 	/*
 	 * If the FW freed some blocks:
@@ -277,15 +278,15 @@ static int wlcore_fw_status(void)
 	 * not stuck. Otherwise, cancel the timer (no Tx currently).
 	 */
 	if (freed_blocks) {
-		if (VV_tx_allocated_blocks) 
+		if (wifi_tx_allocated_blocks) 
 			wl12xx_rearm_tx_watchdog_locked();
 		else
-			cancel_delayed_work(&VV_work.tx_watchdog_work);
+			cancel_delayed_work(&wifi_work.tx_watchdog_work);
 	}
 	// // if tx_allocated_blocks > 0 -> there is blocks in fw -> raise TX stuck when there
 	// is no action to send these blks out
 
-	avail = VV_status_reg->tx_total - VV_tx_allocated_blocks;
+	avail = wifi_status_reg->tx_total - wifi_tx_allocated_blocks;
 
 	/*
 	 * The FW might change the total number of TX memblocks before
@@ -295,20 +296,20 @@ static int wlcore_fw_status(void)
 	 * mind that only blocks that were allocated can be moved from
 	 * TX to RX, tx_blocks_available should never decrease here.
 	 */
-	VV_tx_blocks_available = max((int)VV_tx_blocks_available,
+	wifi_tx_blocks_available = max((int)wifi_tx_blocks_available,
 				      avail);
-	// printk("[RUN] - 0x%x vs 0x%x - 0x%x vs 0x%x\n", VV_status_reg->tx_total, VV_tx_allocated_blocks
-	// 				, VV_tx_blocks_available, old_tx_blk_count);
+	// printk("[RUN] - 0x%x vs 0x%x - 0x%x vs 0x%x\n", wifi_status_reg->tx_total, wifi_tx_allocated_blocks
+	// 				, wifi_tx_blocks_available, old_tx_blk_count);
 
 	/* if more blocks are available now, tx work can be scheduled */
-	// if (VV_tx_blocks_available > old_tx_blk_count)
+	// if (wifi_tx_blocks_available > old_tx_blk_count)
 	// 	clear_bit(WL1271_FLAG_FW_TX_BUSY, &wifi_data->flags);
 
 	/* update the host-chipset time offset */
-	VV_time_offset = (ktime_get_boottime_ns() >> 10) -
-		(s64)(VV_status_reg->fw_localtime);
+	wifi_time_offset = (ktime_get_boottime_ns() >> 10) -
+		(s64)(wifi_status_reg->fw_localtime);
 
-	//wifi_data->fw_fast_lnk_map = VV_status_reg->link_fast_bitmap;
+	//wifi_data->fw_fast_lnk_map = wifi_status_reg->link_fast_bitmap;
 
 	return 0;
 }
@@ -318,11 +319,11 @@ static void wl1271_flush_deferred_work(void)
 	struct sk_buff *skb;
 
 	/* Pass all received frames to the network stack */
-	while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
+	while ((skb = skb_dequeue(&wifi_deferred_rx_queue)))
 		ieee80211_rx_ni(wifi_data->hw, skb);
 
 	/* Return sent skbs to the network stack */
-	while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
+	while ((skb = skb_dequeue(&wifi_deferred_tx_queue)))
 		ieee80211_tx_status_ni(wifi_data->hw, skb);
 }
 
@@ -332,21 +333,61 @@ static void wl1271_netstack_work(struct work_struct *work)
 		struct sk_buff *skb;
 
 		/* Pass all received frames to the network stack */
-		while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
+		while ((skb = skb_dequeue(&wifi_deferred_rx_queue)))
 			// ieee80211_rx_ni(wifi_data->hw, skb); // take skb ptr -> pass to nwstack
 			ieee80211_rx_ni(wifi_data->hw, skb); // take skb ptr -> pass to nwstack
 
 		/* Return sent skbs to the network stack */
-		while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
+		while ((skb = skb_dequeue(&wifi_deferred_tx_queue)))
 			// ieee80211_tx_status_ni(wifi_data->hw, skb);
 			ieee80211_tx_status_ni(wifi_data->hw, skb);
-	} while (skb_queue_len(&VV_deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
+	} while (skb_queue_len(&wifi_deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
 }
 
-void VV_get_last_tx_rate(struct ieee80211_vif *vif,
+#if (PRINT_DEBUG)
+static const char *wifi_tx_rate_to_string(u8 rate)
+{
+    switch (rate) {
+    case CONF_HW_RATE_INDEX_1MBPS:          return "1 Mbps";
+    case CONF_HW_RATE_INDEX_2MBPS:          return "2 Mbps";
+    case CONF_HW_RATE_INDEX_5_5MBPS:        return "5.5 Mbps";
+    case CONF_HW_RATE_INDEX_11MBPS:         return "11 Mbps";
+    case CONF_HW_RATE_INDEX_6MBPS:          return "6 Mbps";
+    case CONF_HW_RATE_INDEX_9MBPS:          return "9 Mbps";
+    case CONF_HW_RATE_INDEX_12MBPS:         return "12 Mbps";
+    case CONF_HW_RATE_INDEX_18MBPS:         return "18 Mbps";
+    case CONF_HW_RATE_INDEX_24MBPS:         return "24 Mbps";
+    case CONF_HW_RATE_INDEX_36MBPS:         return "36 Mbps";
+    case CONF_HW_RATE_INDEX_48MBPS:         return "48 Mbps";
+    case CONF_HW_RATE_INDEX_54MBPS:         return "54 Mbps";
+
+    /* 802.11n MCS rates */
+    case CONF_HW_RATE_INDEX_MCS0:           return "MCS0 (6.5 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS1:           return "MCS1 (13 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS2:           return "MCS2 (19.5 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS3:           return "MCS3 (26 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS4:           return "MCS4 (39 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS5:           return "MCS5 (52 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS6:           return "MCS6 (58.5 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS7:           return "MCS7 (65 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS7_SGI:       return "MCS7 SGI (72.2 Mbps)";
+
+    /* 40MHz rates */ /* MIMO rates */
+    case CONF_HW_RATE_INDEX_MCS0_40MHZ:     return "MCS0 40MHz (13.5 Mbps) | MCS8 (13 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS7_40MHZ:     return "MCS7 40MHz (135 Mbps) | MCS15 (130 Mbps)";
+    case CONF_HW_RATE_INDEX_MCS7_40MHZ_SGI: return "MCS7 40MHz SGI (150 Mbps) | MCS15 SGI (144.4 Mbps)";
+
+
+    default:
+        return "Unknown Rate";
+    }
+}
+#endif
+
+static void wifi_get_last_tx_rate(struct ieee80211_vif *vif,
 			     u8 band, struct ieee80211_tx_rate *rate, u8 hlid)
 {
-	u8 fw_rate = VV_links[hlid].fw_rate_idx;
+	u8 fw_rate = wifi_links[hlid].fw_rate_idx; // read from wifi_status_reg->tx_last_rate;
 
 	if (fw_rate > CONF_HW_RATE_INDEX_MAX) {
 		wl1271_error("last Tx rate invalid: %d", fw_rate);
@@ -355,7 +396,6 @@ void VV_get_last_tx_rate(struct ieee80211_vif *vif,
 		return;
 	}
 
-	printk("[TX_RATE] - fw_rate = %d\n", fw_rate);
 	// fw_rate is usually MCS1, MCS3, MCS5 - normal and reasonable for a real-world connection.
 	if (fw_rate <= CONF_HW_RATE_INDEX_54MBPS) {
 		rate->idx = fw_rate;
@@ -378,9 +418,9 @@ void VV_get_last_tx_rate(struct ieee80211_vif *vif,
 			rate->flags |= IEEE80211_TX_RC_SHORT_GI;
 
 		if (fw_rate > CONF_HW_RATE_INDEX_MCS7_SGI && vif) {
-			struct VV_vif *VV_vif = VV_vif_to_data(vif);
-			if (VV_vif->channel_type == NL80211_CHAN_HT40MINUS ||
-			    VV_vif->channel_type == NL80211_CHAN_HT40PLUS) {
+			struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
+			if (wifi_vif->channel_type == NL80211_CHAN_HT40MINUS ||
+			    wifi_vif->channel_type == NL80211_CHAN_HT40PLUS) {
 				/* adjustment needed for range 0-7 */
 				rate->idx -= 8;
 				rate->flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
@@ -388,15 +428,26 @@ void VV_get_last_tx_rate(struct ieee80211_vif *vif,
 		}
 	}
 
+	
+#if (PRINT_DEBUG)
+	printk("[TX_RATE] - fw_rate = %d, rate->idx = %d\n", fw_rate, rate->idx);
+#endif
+#if (PRINT_DEBUG_RATE)
+	printk("[TX_RATE] - TX rate = %s\n", wifi_tx_rate_to_string(fw_rate));
+#endif
+
 	// Final purpose:
 	// Update ieee80211_tx_rate *rate
 		// idx
 		// flags
+
+	// fw_rate -> its name shows the true speed, its integer val -> idx for mac80211 to use
+	// Ex: CONF_HW_RATE_INDEX_6MBPS -> speed: 6Mbps, its idx = 4 -> rate->idx = 4
 }
 
 #define WL18XX_TX_STATUS_DESC_ID_MASK    0x7F
 #define WL18XX_TX_STATUS_STAT_BIT_IDX    7
-static void VV_tx_complete_packet(u8 tx_stat_byte)
+static void wifi_tx_complete_packet(u8 tx_stat_byte)
 {
 	struct ieee80211_tx_info *info;
 	struct sk_buff *skb;
@@ -405,7 +456,7 @@ static void VV_tx_complete_packet(u8 tx_stat_byte)
 	struct wl1271_tx_hw_descr *tx_desc;
 
 	/* check for id legality */
-	if (unlikely(id >= WL18XX_NUM_TX_DESCRIPTORS || VV_skb_tx_frames[id] == NULL)) {
+	if (unlikely(id >= WL18XX_NUM_TX_DESCRIPTORS || wifi_skb_tx_frames[id] == NULL)) {
 		wl1271_warning("illegal id in tx completion: %d", id);
 		return;
 	}
@@ -413,7 +464,7 @@ static void VV_tx_complete_packet(u8 tx_stat_byte)
 	/* a zero bit indicates Tx success */
 	tx_success = !(tx_stat_byte & BIT(WL18XX_TX_STATUS_STAT_BIT_IDX));
 
-	skb = VV_skb_tx_frames[id];
+	skb = wifi_skb_tx_frames[id];
 	info = IEEE80211_SKB_CB(skb);
 	tx_desc = (struct wl1271_tx_hw_descr *)skb->data;
 
@@ -429,7 +480,7 @@ static void VV_tx_complete_packet(u8 tx_stat_byte)
 	 * first pass info->control.vif while it's valid, and then fill out
 	 * the info->status structures
 	 */
-	VV_get_last_tx_rate(info->control.vif,
+	wifi_get_last_tx_rate(info->control.vif,
 				info->band,
 				&info->status.rates[0],
 				tx_desc->hlid);
@@ -446,58 +497,59 @@ static void VV_tx_complete_packet(u8 tx_stat_byte)
 	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
 
 	/* return the packet to the stack */
-	skb_queue_tail(&VV_deferred_tx_queue, skb);
-	//queue_work(VV_work.freezable_wq, &wifi_data->netstack_work);
-	queue_work(VV_work.freezable_wq, &VV_work.netstack_work);
+	skb_queue_tail(&wifi_deferred_tx_queue, skb);
+	//queue_work(wifi_work.freezable_wq, &wifi_data->netstack_work);
+	queue_work(wifi_work.freezable_wq, &wifi_work.netstack_work);
 
 	wl1271_free_tx_id(id);
 }
 
-void VV_tx_immediate_complete(void)
+void wifi_tx_immediate_complete(void)
 {
 	u8 i, hlid;
 
 	/* nothing to do here */
-	if (VV_last_fw_rls_idx == VV_status_reg->fw_release_idx)
+	if (wifi_last_fw_rls_idx == wifi_status_reg->fw_release_idx)
 		return;
 
 	/* update rates per link */
-	hlid = VV_status_reg->hlid;
+	hlid = wifi_status_reg->hlid;
 
 	//printk("fw_release_idx = %d, hlid = %d\n", status_priv->fw_release_idx, hlid);
 
 	if (hlid < WLCORE_MAX_LINKS) {
-		VV_links[hlid].fw_rate_idx =
-				VV_status_reg->tx_last_rate;
-		VV_links[hlid].fw_rate_mbps =
-				VV_status_reg->tx_last_rate_mbps;
+		wifi_links[hlid].fw_rate_idx =
+				wifi_status_reg->tx_last_rate;
+		wifi_links[hlid].fw_rate_mbps =
+				wifi_status_reg->tx_last_rate_mbps;
 	}
 
 	/* freed Tx descriptors */
-	wl1271_info("last released desc = %d, current idx = %d",
-	 	     VV_last_fw_rls_idx, VV_status_reg->fw_release_idx);
-
-	if (VV_status_reg->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
+#if (PRINT_DEBUG)
+	printk("last released desc = %d, current idx = %d",
+	 	     wifi_last_fw_rls_idx, wifi_status_reg->fw_release_idx);
+#endif
+	if (wifi_status_reg->fw_release_idx >= WL18XX_FW_MAX_TX_STATUS_DESC) {
 		wl1271_error("invalid desc release index %d",
-			     VV_status_reg->fw_release_idx);
+			     wifi_status_reg->fw_release_idx);
 		WARN_ON(1);
 		return;
 	}
 
-	for (i = VV_last_fw_rls_idx;
+	for (i = wifi_last_fw_rls_idx;
 	    //i != status_priv->fw_release_idx;
-		i != VV_status_reg->fw_release_idx;
+		i != wifi_status_reg->fw_release_idx;
 	     i = (i + 1) % WL18XX_FW_MAX_TX_STATUS_DESC) {
-		VV_tx_complete_packet(VV_status_reg->released_tx_desc[i]);
+		wifi_tx_complete_packet(wifi_status_reg->released_tx_desc[i]);
 
 	}
 
-	VV_last_fw_rls_idx = VV_status_reg->fw_release_idx;
+	wifi_last_fw_rls_idx = wifi_status_reg->fw_release_idx;
 }
 
 #define WL1271_IRQ_MAX_LOOPS 256
 
-static int VV_irq_locked(void)
+static int wifi_irq_locked(void)
 {
 	int ret = 0;
 	u32 intr;
@@ -524,37 +576,18 @@ static int VV_irq_locked(void)
 	while (!done && loopcount--) {
 		smp_mb__after_atomic();
 
-		ret = wlcore_fw_status();
+		ret = wlcore_fw_status(); // Read wifi_status_reg
 		if (ret < 0)
 			goto err_ret;
 
-		VV_tx_immediate_complete();
+		wifi_tx_immediate_complete(); // Handle TX frame completed
 
-		intr = VV_status_reg->intr;
+		intr = wifi_status_reg->intr;
 		intr &= WLCORE_ALL_INTR_MASK;
 		if (!intr) {
 			done = true;
 			continue;
 		}
-
-		// if (unlikely(intr & WL1271_ACX_INTR_WATCHDOG)) {
-		// 	wl1271_error("HW watchdog interrupt received! starting recovery.");
-		// 	wifi_data->watchdog_recovery = true;
-		// 	ret = -EIO;
-
-		// 	/* restarting the chip. ignore any other interrupt. */
-		// 	goto err_ret;
-		// }
-
-		// if (unlikely(intr & WL1271_ACX_SW_INTR_WATCHDOG)) {
-		// 	wl1271_error("SW watchdog interrupt received! "
-		// 		     "starting recovery.");
-		// 	wifi_data->watchdog_recovery = true;
-		// 	ret = -EIO;
-
-		// 	/* restarting the chip. ignore any other interrupt. */
-		// 	goto err_ret;
-		// }
 
 		if (likely(intr & WL1271_ACX_INTR_DATA)) {
 			wl1271_debug(DEBUG_IRQ, "WL1271_ACX_INTR_DATA");
@@ -572,23 +605,23 @@ static int VV_irq_locked(void)
 
 			// Check if tx_queue in the current link is zero or not
 			if (run_tx_queue) {
-				ret = wlcore_tx_work_locked();
+				ret = wlcore_tx_work_locked(); // Handle TX frame completed
 				if (ret < 0)
 					goto err_ret;
 			}
 
 			/* Make sure the deferred queues don't get too long */
-			defer_count = skb_queue_len(&VV_deferred_tx_queue) +
-				      skb_queue_len(&VV_deferred_rx_queue);
+			defer_count = skb_queue_len(&wifi_deferred_tx_queue) +
+				      skb_queue_len(&wifi_deferred_rx_queue);
 			if (defer_count > WL1271_DEFERRED_QUEUE_LIMIT){
 				struct sk_buff *skb;
 
 				/* Pass all received frames to the network stack */
-				while ((skb = skb_dequeue(&VV_deferred_rx_queue)))
+				while ((skb = skb_dequeue(&wifi_deferred_rx_queue)))
 					ieee80211_rx_ni(wifi_data->hw, skb);
 
 				/* Return sent skbs to the network stack */
-				while ((skb = skb_dequeue(&VV_deferred_tx_queue)))
+				while ((skb = skb_dequeue(&wifi_deferred_tx_queue)))
 					ieee80211_tx_status_ni(wifi_data->hw, skb);
 			}
 		}
@@ -633,24 +666,24 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 
 	/* TX might be handled here, avoid redundant work */
 	set_bit(WL1271_FLAG_TX_PENDING, &wifi_data->flags);
-	cancel_work_sync(&VV_work.tx_work);
+	cancel_work_sync(&wifi_work.tx_work);
 
 	mutex_lock(&wifi_data->mutex);
 
-	ret = VV_irq_locked();
+	ret = wifi_irq_locked();
 
 	/* In case TX was not handled in wlcore_irq_locked(), queue TX work */
 	clear_bit(WL1271_FLAG_TX_PENDING, &wifi_data->flags);
 	if (spin_trylock_irqsave(&wifi_data->lock, flags)) {
 		if (!wl1271_tx_total_queue_count()) // counts of all Frames scheduled for transmission, not handled yet
-												// count += VV_tx_queue_count[i];
+												// count += wifi_tx_queue_count[i];
 			queue_tx_work = false;
 		spin_unlock_irqrestore(&wifi_data->lock, flags);
 	}
 
-	// VV_tx_queue_count is non-zero -> there are frames that not handled yet 
+	// wifi_tx_queue_count is non-zero -> there are frames that not handled yet 
 	if (queue_tx_work)
-		ieee80211_queue_work(wifi_data->hw, &VV_work.tx_work);
+		ieee80211_queue_work(wifi_data->hw, &wifi_work.tx_work);
 	//}
 
 	mutex_unlock(&wifi_data->mutex);
@@ -660,10 +693,12 @@ static irqreturn_t wlcore_irq(int irq, void *cookie)
 	return IRQ_HANDLED;
 }
 
-static void VV_vif_count_iter(void *data, u8 *mac,
+static void wifi_vif_count_iter(void *data, u8 *mac,
 				  struct ieee80211_vif *vif)
 {
+#if (PRINT_DEBUG)
 	printk("ACTIVE - vif = 0x%x\n", vif);
+#endif
 }
 
 static int wl12xx_fetch_firmware(bool plt)
@@ -677,11 +712,13 @@ static int wl12xx_fetch_firmware(bool plt)
 	fw_name = wifi_data->sr_fw_name; // name of signle role
 
 	if (wifi_data->fw_type == fw_type){
+#if (PRINT_DEBUG)
 		printk("SAME fw_type\n");
+#endif
 		return 0;
 	}
 
-	wl1271_info("booting firmware '%s', fw_type = %d", fw_name, fw_type);
+	printk("booting firmware '%s', fw_type = %d", fw_name, fw_type);
 
 	ret = request_firmware(&fw, fw_name, wifi_data->dev);
 
@@ -722,20 +759,20 @@ void wl12xx_queue_recovery_work(void)
 	printk("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
 }
 
-static void wlcore_save_freed_pkts(struct VV_vif *VV_vif,
+static void wlcore_save_freed_pkts(struct wifi_vif *wifi_vif,
 				   u8 hlid, struct ieee80211_sta *sta)
 {
 	struct wl1271_station *wl_sta;
 	u32 sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING;
 
 	wl_sta = (void *)sta->drv_priv;
-	wl_sta->total_freed_pkts = VV_links[hlid].total_freed_pkts;
+	wl_sta->total_freed_pkts = wifi_links[hlid].total_freed_pkts;
 
 	/*
 	 * increment the initial seq number on recovery to account for
 	 * transmitted packets that we haven't yet got in the FW status
 	 */
-	if (VV_vif->encryption_type == KEY_GEM)
+	if (wifi_vif->encryption_type == KEY_GEM)
 		sqn_recovery_padding = WL1271_TX_SQN_POST_RECOVERY_PADDING_GEM;
 
 	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data->flags))
@@ -745,13 +782,13 @@ static void wlcore_save_freed_pkts(struct VV_vif *VV_vif,
 static int wl1271_setup(void)
 {
 	/* Vinh custom */
-	VV_status_reg = kzalloc(sizeof(struct VV_wl18xx_fw_status), GFP_KERNEL);
-	if (!VV_status_reg)
+	wifi_status_reg = kzalloc(sizeof(struct wifi_wl18xx_fw_status), GFP_KERNEL);
+	if (!wifi_status_reg)
 		goto err;
 
 	return 0;
 err:
-	kfree(VV_status_reg);
+	kfree(wifi_status_reg);
 	return -ENOMEM;
 }
 
@@ -821,12 +858,12 @@ static int wl12xx_set_power_on(void)
 		goto out;
 	msleep(WL1271_POWER_ON_SLEEP);
 
-	ret = VV_set_partition_core(&wifi_data->ptable[PART_BOOT]);
+	ret = wifi_set_partition_core(&wifi_data->ptable[PART_BOOT]);
 	if (ret < 0)
 		goto fail;
 
 	/* ELP module wake up = Enhanced Low Power */
-	VV_sdio_raw_write(HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
+	wifi_sdio_raw_write(HW_ACCESS_ELP_CTRL_REG, ELPCTRL_WAKE_UP, sizeof(ELPCTRL_WAKE_UP), false);
 	if (ret < 0)
 		goto fail;
 
@@ -858,16 +895,16 @@ static int wl12xx_chip_wakeup(bool plt)
 	 * doesn't, make sure we don't have the quirk.
 	 */
 
-	VV_sdio_set_block_size(WL12XX_BUS_BLOCK_SIZE);
+	wifi_sdio_set_block_size(WL12XX_BUS_BLOCK_SIZE);
 
 	/* TODO: make sure the lower driver has set things up correctly */
 	ret = wl1271_setup();
 	if (ret < 0)
 		goto out;
 
-	ret = wl12xx_fetch_firmware(plt); // VV_
+	ret = wl12xx_fetch_firmware(plt); // wifi_
 	if (ret < 0) {
-		kfree(VV_status_reg);
+		kfree(wifi_status_reg);
 	}
 
 out:
@@ -880,7 +917,7 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 {
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_vif *vif = info->control.vif;
-	struct VV_vif *VV_vif = NULL;
+	struct wifi_vif *wifi_vif = NULL;
 	unsigned long flags;
 	int q, mapping;
 	u8 hlid;
@@ -892,12 +929,15 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 		return;
 	}
 
-	VV_vif = VV_vif_to_data(vif);
+	wifi_vif = wifi_vif_to_data(vif);
 	mapping = skb_get_queue_mapping(skb);
-	q = wl1271_tx_get_queue(mapping);
-	printk("q = %d, mapping = %d\n", q, mapping);
+	q = mapping;
 
-	hlid = wl12xx_tx_get_hlid(VV_vif, skb, control->sta); // sta.hlid
+#if (PRINT_DEBUG)
+	printk("q = %d, mapping = %d\n", q, mapping);
+#endif
+
+	hlid = wl12xx_tx_get_hlid(wifi_vif, skb, control->sta); // sta.hlid
 
 	spin_lock_irqsave(&wifi_data->lock, flags);
 
@@ -908,31 +948,25 @@ static void wl1271_op_tx(struct ieee80211_hw *hw,
 	 * allow these packets through.
 	 */
 	if (hlid == WL12XX_INVALID_LINK_ID ||
-	    (!test_bit(hlid, VV_vif->links_map))
+	    (!test_bit(hlid, wifi_vif->links_map))
 		) {
 		wl1271_debug(DEBUG_TX, "DROP skb hlid %d q %d", hlid, q);
 		ieee80211_free_txskb(hw, skb);
 		goto out;
 	}
 
-	// Put the packet into the per-link, per-queue list and update counters.
-	wl1271_debug(DEBUG_TX, "queue skb hlid %d q %d len %d",
-		     hlid, q, skb->len);
-	//skb_queue_tail(&VV_links[hlid].tx_queue[q], skb);
-	skb_queue_tail(&VV_tx_queue[hlid][q], skb);
 
-	//wifi_data->tx_queue_count[q]++;
-	VV_tx_queue_count[q]++;
-	//VV_vif->tx_queue_count[q]++;
+	skb_queue_tail(&wifi_tx_queue[hlid][q], skb);
+	wifi_tx_queue_count[q]++;
 
 	/*
 	 * The chip specific setup must run before the first TX packet -
 	 * before that, the tx_work will not be initialized!
 	 */
-	// If the TX work is not already busy or pending, schedule VV_work.tx_work (which eventually calls wlcore_tx_work_locked()
+	// If the TX work is not already busy or pending, schedule wifi_work.tx_work (which eventually calls wlcore_tx_work_locked()
 	// -> This is what triggers the actual transmission.
 	if (!test_bit(WL1271_FLAG_TX_PENDING, &wifi_data->flags))
-		ieee80211_queue_work(wifi_data->hw, &VV_work.tx_work);
+		ieee80211_queue_work(wifi_data->hw, &wifi_work.tx_work);
 
 out:
 	spin_unlock_irqrestore(&wifi_data->lock, flags);
@@ -982,7 +1016,9 @@ static struct sk_buff *wl12xx_alloc_dummy_packet(void)
 static void wlcore_op_stop_locked(void)
 {
 	int i;
+#if (PRINT_DEBUG)
 	printk("wlcore_op_stop_locked\n");
+#endif
 	if (wifi_data->state == WLCORE_STATE_OFF) {
 		if (test_and_clear_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS,
 					&wifi_data->flags))
@@ -1009,11 +1045,11 @@ static void wlcore_op_stop_locked(void)
 	// if (!test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data->flags))
 	// 	cancel_work_sync(&wifi_data->recovery_work);
 	wl1271_flush_deferred_work();
-	cancel_delayed_work_sync(&VV_work.scan_complete_work);
+	cancel_delayed_work_sync(&wifi_work.scan_complete_work);
 	//cancel_work_sync(&wifi_data->netstack_work);
-	cancel_work_sync(&VV_work.netstack_work);
-	cancel_work_sync(&VV_work.tx_work);
-	cancel_delayed_work_sync(&VV_work.tx_watchdog_work);
+	cancel_work_sync(&wifi_work.netstack_work);
+	cancel_work_sync(&wifi_work.tx_work);
+	cancel_delayed_work_sync(&wifi_work.tx_watchdog_work);
 
 	/* let's notify MAC80211 about the remaining pending TX frames */
 	mutex_lock(&wifi_data->mutex);
@@ -1030,30 +1066,30 @@ static void wlcore_op_stop_locked(void)
 
 	//wifi_data->band = NL80211_BAND_2GHZ;
 
-	VV_rx_counter = 0;
+	wifi_rx_counter = 0;
 	//wifi_data->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	//wifi_data->channel_type = NL80211_CHAN_NO_HT;
-	VV_tx_blocks_available = 0;
-	VV_tx_allocated_blocks = 0;
+	wifi_tx_blocks_available = 0;
+	wifi_tx_allocated_blocks = 0;
 	//wifi_data->tx_results_count = 0;
-	VV_tx_packets_count = 0;
-	VV_time_offset = 0;
+	wifi_tx_packets_count = 0;
+	wifi_time_offset = 0;
 	//wifi_data->ap_fw_ps_map = 0;
 	//wifi_data->ap_ps_map = 0;
 	wifi_data->sleep_auth = WL1271_PSM_ILLEGAL;
 	//memset(wifi_data->roles_map, 0, sizeof(wifi_data->roles_map));
-	memset(VV_map.links_map, 0, sizeof(VV_map.links_map));
+	memset(wifi_map.links_map, 0, sizeof(wifi_map.links_map));
 	memset(wifi_data->roc_map, 0, sizeof(wifi_data->roc_map));
-	memset(VV_session_ids, 0, sizeof(VV_session_ids));
+	memset(wifi_session_ids, 0, sizeof(wifi_session_ids));
 	memset(wifi_data->rx_filter_enabled, 0, sizeof(wifi_data->rx_filter_enabled));
 	//wifi_data->active_sta_count = 0;
 	//wifi_data->active_link_count = 0;
 
 	/* The system link is always allocated */
-	//VV_links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
-	VV_allocated_pkts[WL12XX_SYSTEM_HLID] = 0;
-	VV_links[WL12XX_SYSTEM_HLID].prev_freed_pkts = 0;
-	__set_bit(WL12XX_SYSTEM_HLID, VV_map.links_map);
+	//wifi_links[WL12XX_SYSTEM_HLID].allocated_pkts = 0;
+	wifi_allocated_pkts[WL12XX_SYSTEM_HLID] = 0;
+	wifi_links[WL12XX_SYSTEM_HLID].prev_freed_pkts = 0;
+	__set_bit(WL12XX_SYSTEM_HLID, wifi_map.links_map);
 
 	/*
 	 * this is performed after the cancel_work calls and the associated
@@ -1062,19 +1098,19 @@ static void wlcore_op_stop_locked(void)
 	 */
 	wifi_data->flags = 0;
 
-	VV_last_updated_tmp_tx_blocks_freed = 0;
+	wifi_last_updated_tmp_tx_blocks_freed = 0;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		VV_tx_pkts_freed[i] = 0;
+		wifi_tx_pkts_freed[i] = 0;
 		//wifi_data->tx_allocated_pkts[i] = 0;
-		VV_tx_allocated_pkts[i] = 0;
+		wifi_tx_allocated_pkts[i] = 0;
 	}
 
 	kfree(wifi_data->target_mem_map);
 	wifi_data->target_mem_map = NULL;
 
-	kfree(VV_status_reg);
-	VV_status_reg = NULL;
+	kfree(wifi_status_reg);
+	wifi_status_reg = NULL;
 
 	/*
 	 * FW channels must be re-calibrated after recovery,
@@ -1096,13 +1132,13 @@ static void wlcore_op_stop(struct ieee80211_hw *hw)
 	mutex_unlock(&wifi_data->mutex);
 }
 
-static u8 wl12xx_get_role_type(struct VV_vif *VV_vif)
+static u8 wl12xx_get_role_type(struct wifi_vif *wifi_vif)
 {
-	struct ieee80211_vif *vif = wl12xx_VV_vif_to_vif(VV_vif);
+	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
 
-	switch (VV_vif->bss_type) {
+	switch (wifi_vif->bss_type) {
 	case BSS_TYPE_AP_BSS:
-		if (VV_vif->p2p)
+		if (wifi_vif->p2p)
 			return WL1271_ROLE_P2P_GO;
 		else if (ieee80211_vif_is_mesh(vif))
 			return WL1271_ROLE_MESH_POINT;
@@ -1110,7 +1146,7 @@ static u8 wl12xx_get_role_type(struct VV_vif *VV_vif)
 			return WL1271_ROLE_AP;
 
 	case BSS_TYPE_STA_BSS:
-		if (VV_vif->p2p)
+		if (wifi_vif->p2p)
 			return WL1271_ROLE_P2P_CL;
 		else
 			return WL1271_ROLE_STA;
@@ -1119,48 +1155,48 @@ static u8 wl12xx_get_role_type(struct VV_vif *VV_vif)
 		return WL1271_ROLE_IBSS;
 
 	default:
-		wl1271_error("invalid bss_type: %d", VV_vif->bss_type);
+		wl1271_error("invalid bss_type: %d", wifi_vif->bss_type);
 	}
 	return WL12XX_INVALID_ROLE_TYPE;
 }
 
 static int wl12xx_init_vif_data(struct ieee80211_vif *vif)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 
 	/* clear everything but the persistent data */
-	memset(VV_vif, 0, offsetof(struct VV_vif, persistent));
+	memset(wifi_vif, 0, offsetof(struct wifi_vif, persistent));
 
-	VV_vif->bss_type = BSS_TYPE_STA_BSS;
+	wifi_vif->bss_type = BSS_TYPE_STA_BSS;
 
-	VV_vif->role_id = WL12XX_INVALID_ROLE_ID;
-	VV_vif->dev_role_id = WL12XX_INVALID_ROLE_ID;
-	VV_vif->dev_hlid = WL12XX_INVALID_LINK_ID;
+	wifi_vif->role_id = WL12XX_INVALID_ROLE_ID;
+	wifi_vif->dev_role_id = WL12XX_INVALID_ROLE_ID;
+	wifi_vif->dev_hlid = WL12XX_INVALID_LINK_ID;
 
 	/* init sta/ibss data */
-	VV_vif->sta.hlid = WL12XX_INVALID_LINK_ID;
+	wifi_vif->sta.hlid = WL12XX_INVALID_LINK_ID;
 
-	VV_vif->basic_rate_set = CONF_TX_RATE_MASK_BASIC;
+	wifi_vif->basic_rate_set = CONF_TX_RATE_MASK_BASIC;
 
-	VV_vif->basic_rate = CONF_TX_RATE_MASK_BASIC;
-	VV_vif->rate_set = CONF_TX_RATE_MASK_BASIC;
+	wifi_vif->basic_rate = CONF_TX_RATE_MASK_BASIC;
+	wifi_vif->rate_set = CONF_TX_RATE_MASK_BASIC;
 	
 
-	VV_vif->bitrate_masks[NL80211_BAND_2GHZ] = wifi_data->conf.tx.basic_rate;
-	VV_vif->bitrate_masks[NL80211_BAND_5GHZ] = wifi_data->conf.tx.basic_rate_5;
-	VV_vif->beacon_int = WL1271_DEFAULT_BEACON_INT;
+	wifi_vif->bitrate_masks[NL80211_BAND_2GHZ] = CONF_HW_BIT_RATE_1MBPS;
+	wifi_vif->bitrate_masks[NL80211_BAND_5GHZ] = CONF_HW_BIT_RATE_6MBPS;
+	wifi_vif->beacon_int = WL1271_DEFAULT_BEACON_INT;
 
 	/*
 	 * mac80211 configures some values globally, while we treat them
 	 * per-interface. thus, on init, we have to copy them from wl
 	 */
-	VV_vif->band = NL80211_BAND_2GHZ;
-	// VV_vif->channel = wifi_data->channel;
-	VV_vif->channel = 0;
-	VV_vif->power_level = WL1271_DEFAULT_POWER_LEVEL;
-	VV_vif->channel_type = NL80211_CHAN_NO_HT;
+	wifi_vif->band = NL80211_BAND_2GHZ;
+	// wifi_vif->channel = wifi_data->channel;
+	wifi_vif->channel = 0;
+	wifi_vif->power_level = WL1271_DEFAULT_POWER_LEVEL;
+	wifi_vif->channel_type = NL80211_CHAN_NO_HT;
 
-	INIT_LIST_HEAD(&VV_vif->list);
+	INIT_LIST_HEAD(&wifi_vif->list);
 	return 0;
 }
 
@@ -1173,7 +1209,7 @@ static int wl12xx_init_fw(void)
 
 	while (retries) {
 		retries--;
-		ret = wl12xx_chip_wakeup(false); // VV_
+		ret = wl12xx_chip_wakeup(false); // wifi_
 		if (ret < 0)
 			goto power_off;
 
@@ -1200,7 +1236,7 @@ irq_disable:
 		wlcore_disable_interrupts();
 		wl1271_flush_deferred_work();
 		//cancel_work_sync(&wifi_data->netstack_work);
-		cancel_work_sync(&VV_work.netstack_work);
+		cancel_work_sync(&wifi_work.netstack_work);
 		mutex_lock(&wifi_data->mutex);
 power_off:
 		wl1271_power_off();
@@ -1212,11 +1248,11 @@ power_off:
 		goto out;
 	}
 
-	wl1271_info("firmware booted (%s)", VV_chip->fw_ver_str);
+	printk("firmware booted (%s)", wifi_chip->fw_ver_str);
 
 	/* update hw/fw version info in wiphy struct */
-	wiphy->hw_version = VV_chip->id;
-	strncpy(wiphy->fw_version, VV_chip->fw_ver_str,
+	wiphy->hw_version = wifi_chip->id;
+	strncpy(wiphy->fw_version, wifi_chip->fw_ver_str,
 		sizeof(wiphy->fw_version));
 
 	/*
@@ -1234,39 +1270,9 @@ out:
 	return ret;
 }
 
-static bool wl12xx_dev_role_started(struct VV_vif *VV_vif)
+static int wlcore_allocate_hw_queue_base(struct wifi_vif *wifi_vif)
 {
-	return VV_vif->dev_hlid != WL12XX_INVALID_LINK_ID;
-}
-
-// struct wlcore_hw_queue_iter_data {
-// 	unsigned long hw_queue_map[BITS_TO_LONGS(WLCORE_NUM_MAC_ADDRESSES)];
-// 	/* current vif */
-// 	struct ieee80211_vif *vif;
-// 	/* is the current vif among those iterated */
-// 	bool cur_running;
-// };
-
-// static void wlcore_hw_queue_iter(void *data, u8 *mac,
-// 				 struct ieee80211_vif *vif)
-// {
-// 	struct wlcore_hw_queue_iter_data *iter_data = data;
-// 	printk("wlcore_hw_queue_iter\n");
-// 	if (vif->type == NL80211_IFTYPE_P2P_DEVICE ||
-// 	    WARN_ON_ONCE(vif->hw_queue[0] == IEEE80211_INVAL_HW_QUEUE))
-// 		return;
-
-// 	if (iter_data->cur_running || vif == iter_data->vif) {
-// 		iter_data->cur_running = true;
-// 		return;
-// 	}
-// 	printk("wlcore_hw_queue_iter - SETBIT\n");
-// 	__set_bit(vif->hw_queue[0] / NUM_TX_QUEUES, iter_data->hw_queue_map);
-// }
-
-static int wlcore_allocate_hw_queue_base(struct VV_vif *VV_vif)
-{
-	struct ieee80211_vif *vif = wl12xx_VV_vif_to_vif(VV_vif);
+	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
 	//struct wlcore_hw_queue_iter_data iter_data = {};
 	int i;
 
@@ -1274,31 +1280,6 @@ static int wlcore_allocate_hw_queue_base(struct VV_vif *VV_vif)
 		vif->cab_queue = IEEE80211_INVAL_HW_QUEUE;
 		return 0;
 	}
-
-	//iter_data.vif = vif;
-
-	// /* mark all bits taken by active interfaces */
-	// ieee80211_iterate_active_interfaces_atomic(wifi_data->hw,
-	// 				IEEE80211_IFACE_ITER_RESUME_ALL,
-	// 				wlcore_hw_queue_iter, &iter_data);
-
-	// /* the current vif is already running in mac80211 (resume/recovery) */
-	// if (iter_data.cur_running) {
-	// 	VV_vif->hw_queue_base = vif->hw_queue[0];
-	// 	wl1271_debug(DEBUG_MAC80211,
-	// 		     "using pre-allocated hw queue base %d",
-	// 		     VV_vif->hw_queue_base);
-
-	// 	/* interface type might have changed type */
-	// 	goto adjust_cab_queue;
-	// }
-
-	// q_base = find_first_zero_bit(iter_data.hw_queue_map,
-	// 			     WLCORE_NUM_MAC_ADDRESSES);
-	// if (q_base >= WLCORE_NUM_MAC_ADDRESSES)
-	// 	return -EBUSY;
-
-	//VV_vif->hw_queue_base = HW_QUEUE_BASE;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		wifi_data->queue_stop_reasons[HW_QUEUE_BASE + i] = 0;
@@ -1315,9 +1296,10 @@ static int wlcore_allocate_hw_queue_base(struct VV_vif *VV_vif)
 static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 				   struct ieee80211_vif *vif)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret = 0;
 	u8 role_type;
+	int i = 0, exist = 0;
 
 	vif->driver_flags |= IEEE80211_VIF_BEACON_FILTER |
 			     IEEE80211_VIF_SUPPORTS_UAPSD |
@@ -1328,7 +1310,7 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 
 	// Call this to know this if is active or not
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
-					    VV_vif_count_iter, NULL);
+					    wifi_vif_count_iter, NULL);
 
 	mutex_lock(&wifi_data->mutex);
 
@@ -1338,23 +1320,24 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 	 * opt out if that is the case.
 	 */
 	if (test_bit(WL1271_FLAG_RECOVERY_IN_PROGRESS, &wifi_data->flags) ||
-	    test_bit(VV_vif_FLAG_INITIALIZED, &VV_vif->flags)) {
+	    test_bit(wifi_vif_FLAG_INITIALIZED, &wifi_vif->flags)) {
 		ret = -EBUSY;
 		goto out;
 	}
-
+#if (PRINT_DEBUG)
 	printk("[ADD IF] - wl1271_op_add_interface, vif = 0x%x, drv = 0x%x\n", vif, vif->drv_priv);
+#endif
 	ret = wl12xx_init_vif_data(vif);
 	if (ret < 0)
 		goto out;
 
-	role_type = wl12xx_get_role_type(VV_vif);
+	role_type = wl12xx_get_role_type(wifi_vif);
 	if (role_type == WL12XX_INVALID_ROLE_TYPE) {
 		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = wlcore_allocate_hw_queue_base(VV_vif);
+	ret = wlcore_allocate_hw_queue_base(wifi_vif);
 	if (ret < 0)
 		goto out;
 
@@ -1368,14 +1351,16 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 		 * while uploading the nvs
 		 */
 		memcpy(wifi_data->addresses[0].addr, vif->addr, ETH_ALEN);
-
+#if (PRINT_DEBUG)
 		printk("PROGRESS - wl12xx_init_fw\n");
+#endif
 		ret = wl12xx_init_fw();
 		if (ret < 0)
 			goto out;
 	}
+#if (PRINT_DEBUG)
 	printk("DONE - wl12xx_init_fw\n");
-
+#endif
 	/*
 	 * Call runtime PM only after possible wl12xx_init_fw() above
 	 * is done. Otherwise we do not have interrupts enabled.
@@ -1390,41 +1375,41 @@ static int wl1271_op_add_interface(struct ieee80211_hw *hw,
 
 	if (!(vif->type == NL80211_IFTYPE_P2P_DEVICE)) {
 		ret = wl12xx_cmd_role_enable(vif->addr,
-					     role_type, &VV_vif->role_id);
+					     role_type, &wifi_vif->role_id);
 		if (ret < 0)
 			goto out;
-		//printk("IF - VV_vif->role_id = %d\n", VV_vif->role_id);
+		//printk("IF - wifi_vif->role_id = %d\n", wifi_vif->role_id);
 		ret = wl1271_init_vif_specific(vif);
 		if (ret < 0)
 			goto out;
 
 	} else {
 		ret = wl12xx_cmd_role_enable(vif->addr, WL1271_ROLE_DEVICE,
-					     &VV_vif->dev_role_id);
+					     &wifi_vif->dev_role_id);
 		if (ret < 0)
 			goto out;
-		//printk("ELSE - VV_vif->dev_role_id = %d\n", VV_vif->dev_role_id);
+		//printk("ELSE - wifi_vif->dev_role_id = %d\n", wifi_vif->dev_role_id);
 		/* needed mainly for configuring rate policies */
-		ret = wl1271_sta_hw_init(VV_vif);
+		ret = wl1271_sta_hw_init(wifi_vif);
 		if (ret < 0)
 			goto out;
 	}
 
-	list_add(&VV_vif->list, &wifi_data->VV_vif_list);
+	list_add(&wifi_vif->list, &wifi_data->wifi_vif_list);
 
-	/* VV_vif_ptr is set global to use for scanning, configure_filter */
-	int i = 0, exist = 0;
-	for (i = 0; i < VV_vif_ptr_id; i++){
-		if (VV_vif_ptr[i] == VV_vif) exist = 1;
+	/* wifi_vif_ptr is set global to use for scanning, configure_filter */
+	for (i = 0; i < wifi_vif_ptr_id; i++){
+		if (wifi_vif_ptr[i] == wifi_vif) exist = 1;
 	}
 
 	if (!exist){
-		VV_vif_ptr[VV_vif_ptr_id++] = (struct VV_vif *)VV_vif;
+		wifi_vif_ptr[wifi_vif_ptr_id++] = (struct wifi_vif *)wifi_vif;
 	}
 	
-	set_bit(VV_vif_FLAG_INITIALIZED, &VV_vif->flags);
+	set_bit(wifi_vif_FLAG_INITIALIZED, &wifi_vif->flags);
 
 	wifi_data->sta_count++;
+
 out:
 	pm_runtime_mark_last_busy(wifi_data->dev);
 	pm_runtime_put_autosuspend(wifi_data->dev);
@@ -1438,13 +1423,13 @@ static void __wl1271_op_remove_interface(
 					 struct ieee80211_vif *vif,
 					 bool reset_tx_queues)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret;
-	//bool is_ap = (VV_vif->bss_type == BSS_TYPE_AP_BSS);
+	//bool is_ap = (wifi_vif->bss_type == BSS_TYPE_AP_BSS);
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 remove interface");
 
-	if (!test_and_clear_bit(VV_vif_FLAG_INITIALIZED, &VV_vif->flags))
+	if (!test_and_clear_bit(wifi_vif_FLAG_INITIALIZED, &wifi_vif->flags))
 		return;
 
 	/* because of hardware recovery, we may get here twice */
@@ -1454,7 +1439,7 @@ static void __wl1271_op_remove_interface(
 	wl1271_info("down");
 
 	if (wifi_data->scan_state != WL1271_SCAN_STATE_IDLE )
-	    // && wifi_data->scan_VV_vif == VV_vif) 
+	    // && wifi_data->scan_wifi_vif == wifi_vif) 
 		{
 		struct cfg80211_scan_info info = {
 			.aborted = true,
@@ -1469,9 +1454,10 @@ static void __wl1271_op_remove_interface(
 		wifi_data->scan_state = WL1271_SCAN_STATE_IDLE;
 		ieee80211_scan_completed(wifi_data->hw, &info);
 	}
-
-	printk("[MAIN] - 0x%x vs 0x%x\n", wifi_data->sched_vif, VV_vif);
-	if (wifi_data->sched_vif == VV_vif)
+#if (PRINT_DEBUG)
+	printk("[MAIN] - 0x%x vs 0x%x\n", wifi_data->sched_vif, wifi_vif);
+#endif
+	if (wifi_data->sched_vif == wifi_vif)
 		wifi_data->sched_vif = NULL;
 
 	if (wifi_data->roc_vif == vif) {
@@ -1487,14 +1473,14 @@ static void __wl1271_op_remove_interface(
 			goto deinit;
 		}
 
-		if (!wlcore_is_p2p_mgmt(VV_vif)) {
-			ret = wl12xx_cmd_role_disable(&VV_vif->role_id);
+		if (!wlcore_is_p2p_mgmt(wifi_vif)) {
+			ret = wl12xx_cmd_role_disable(&wifi_vif->role_id);
 			if (ret < 0) {
 				pm_runtime_put_noidle(wifi_data->dev);
 				goto deinit;
 			}
 		} else {
-			ret = wl12xx_cmd_role_disable(&VV_vif->dev_role_id);
+			ret = wl12xx_cmd_role_disable(&wifi_vif->dev_role_id);
 			if (ret < 0) {
 				pm_runtime_put_noidle(wifi_data->dev);
 				goto deinit;
@@ -1505,19 +1491,19 @@ static void __wl1271_op_remove_interface(
 		pm_runtime_put_autosuspend(wifi_data->dev);
 	}
 deinit:
-	wl12xx_tx_reset_VV_vif(VV_vif);
+	wl12xx_tx_reset_wifi_vif(wifi_vif);
 
 	/* clear all hlids (except system_hlid) */
-	VV_vif->dev_hlid = WL12XX_INVALID_LINK_ID;
+	wifi_vif->dev_hlid = WL12XX_INVALID_LINK_ID;
 
-	VV_vif->sta.hlid = WL12XX_INVALID_LINK_ID;
+	wifi_vif->sta.hlid = WL12XX_INVALID_LINK_ID;
 
-	dev_kfree_skb(VV_vif->probereq);
-	VV_vif->probereq = NULL;
-	list_del(&VV_vif->list);
-	//memset(VV_vif->ap.sta_hlid_map, 0, sizeof(VV_vif->ap.sta_hlid_map));
-	VV_vif->role_id = WL12XX_INVALID_ROLE_ID;
-	VV_vif->dev_role_id = WL12XX_INVALID_ROLE_ID;
+	dev_kfree_skb(wifi_vif->probereq);
+	wifi_vif->probereq = NULL;
+	list_del(&wifi_vif->list);
+	//memset(wifi_vif->ap.sta_hlid_map, 0, sizeof(wifi_vif->ap.sta_hlid_map));
+	wifi_vif->role_id = WL12XX_INVALID_ROLE_ID;
+	wifi_vif->dev_role_id = WL12XX_INVALID_ROLE_ID;
 
 	wifi_data->sta_count--;
 
@@ -1538,17 +1524,17 @@ static void wl1271_op_remove_interface(struct ieee80211_hw *hw,
 				       struct ieee80211_vif *vif)
 {
 	//struct wl1271 *wl = hw->priv;
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
-	//struct VV_vif *iter;
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
+	//struct wifi_vif *iter;
 
 	// Call this to know this if is active or not
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
-					    VV_vif_count_iter, NULL);
+					    wifi_vif_count_iter, NULL);
 
 	mutex_lock(&wifi_data->mutex);
 
 	if (wifi_data->state == WLCORE_STATE_OFF ||
-	    !test_bit(VV_vif_FLAG_INITIALIZED, &VV_vif->flags))
+	    !test_bit(wifi_vif_FLAG_INITIALIZED, &wifi_vif->flags))
 		goto out;
 
 	/*
@@ -1561,7 +1547,7 @@ out:
 	mutex_unlock(&wifi_data->mutex);
 }
 
-static int wlcore_join(struct VV_vif *VV_vif)
+static int wlcore_join(struct wifi_vif *wifi_vif)
 {
 	int ret;
 
@@ -1574,25 +1560,27 @@ static int wlcore_join(struct VV_vif *VV_vif)
 	 * Keep the below message for now, unless it starts bothering
 	 * users who really like to roam a lot :)
 	 */
-	if (test_bit(VV_vif_FLAG_STA_ASSOCIATED, &VV_vif->flags))
-		wl1271_info("JOIN while associated.");
+	if (test_bit(wifi_vif_FLAG_STA_ASSOCIATED, &wifi_vif->flags))
+		printk("JOIN while associated.");
 
 	/* clear encryption type */
-	VV_vif->encryption_type = KEY_NONE;
+	wifi_vif->encryption_type = KEY_NONE;
 
-	ret = wl12xx_cmd_role_start_sta(VV_vif);
+	ret = wl12xx_cmd_role_start_sta(wifi_vif);
 
 	return ret;
 }
 
-static int wlcore_set_ssid(struct VV_vif *VV_vif)
+static int wlcore_set_ssid(struct wifi_vif *wifi_vif)
 {
-	struct ieee80211_vif *vif = wl12xx_VV_vif_to_vif(VV_vif);
+	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
 	struct sk_buff *skb;
 	int ieoffset;
+	u8 ssid_len;
+	const u8 *ptr;
 
 	/* we currently only support setting the ssid from the ap probe req */
-	if (VV_vif->bss_type != BSS_TYPE_STA_BSS)
+	if (wifi_vif->bss_type != BSS_TYPE_STA_BSS)
 		return -EINVAL;
 
 	// returns a fake Probe Request packet that contains the SSID
@@ -1602,13 +1590,12 @@ static int wlcore_set_ssid(struct VV_vif *VV_vif)
 
 	ieoffset = offsetof(struct ieee80211_mgmt,
 			    u.probe_req.variable);
-	// wl1271_ssid_set(VV_vif, skb, ieoffset);
-	u8 ssid_len;
-	const u8 *ptr = cfg80211_find_ie(WLAN_EID_SSID, skb->data + ieoffset,
+
+	ptr = cfg80211_find_ie(WLAN_EID_SSID, skb->data + ieoffset,
 					 skb->len - ieoffset);
 	ssid_len = ptr[1];
-	VV_vif->ssid_len = ssid_len;
-	memcpy(VV_vif->ssid, ptr+2, ssid_len);
+	wifi_vif->ssid_len = ssid_len;
+	memcpy(wifi_vif->ssid, ptr+2, ssid_len);
 	// → ptr[0] = Element ID (WLAN_EID_SSID)
 	// → ptr[1] = Length of SSID
 	// → ptr+2  = Actual SSID string -> "64DVC" or "NGOC VY"
@@ -1618,19 +1605,18 @@ static int wlcore_set_ssid(struct VV_vif *VV_vif)
 	return 0;
 }
 
-static int wlcore_set_assoc(struct VV_vif *VV_vif,
+static int wlcore_set_assoc(struct wifi_vif *wifi_vif,
 			    struct ieee80211_bss_conf *bss_conf,
 			    u32 sta_rate_set)
 {
-	int ieoffset;
 	int ret;
 
-	VV_vif->aid = bss_conf->aid;
-	VV_vif->channel_type = cfg80211_get_chandef_type(&bss_conf->chandef);
-	VV_vif->beacon_int = bss_conf->beacon_int;
-	VV_vif->wmm_enabled = bss_conf->qos;
+	wifi_vif->aid = bss_conf->aid;
+	wifi_vif->channel_type = cfg80211_get_chandef_type(&bss_conf->chandef);
+	wifi_vif->beacon_int = bss_conf->beacon_int;
+	wifi_vif->wmm_enabled = bss_conf->qos;
 
-	set_bit(VV_vif_FLAG_STA_ASSOCIATED, &VV_vif->flags);
+	set_bit(wifi_vif_FLAG_STA_ASSOCIATED, &wifi_vif->flags);
 
 	/*
 	 * with wl1271, we don't need to update the
@@ -1638,7 +1624,7 @@ static int wlcore_set_assoc(struct VV_vif *VV_vif,
 	 * updates it by itself when the first beacon is
 	 * received after a join.
 	 */
-	ret = wl1271_cmd_build_ps_poll(VV_vif, VV_vif->aid);
+	ret = wl1271_cmd_build_ps_poll(wifi_vif, wifi_vif->aid);
 	if (ret < 0)
 		return ret;
 
@@ -1648,13 +1634,13 @@ static int wlcore_set_assoc(struct VV_vif *VV_vif,
 	// Re-play the step of getting ssid plus wl1271_cmd_template_set - CMD_TEMPL_CFG_PROBE_REQ_2_4
 	// The firmware uses this template when it needs to send a Probe Request (for scanning, roaming, reconnecting, etc.).
 	// The template is stored in firmware memory instead of from CPU building
-	dev_kfree_skb(VV_vif->probereq);
+	dev_kfree_skb(wifi_vif->probereq);
 
 	// synch_fail_thold + bss_lose_timeout
 	// = How many consecutive beacons the firmware can miss before it considers the link "broken".
 	// = Maximum time (in milliseconds) the firmware will wait without receiving any beacon from the AP before declaring the connection lost.
 	/* enable the connection monitoring feature */
-	ret = wl1271_acx_conn_monit_params(VV_vif, true);
+	ret = wl1271_acx_conn_monit_params(wifi_vif, true);
 	if (ret < 0)
 		return ret;
 
@@ -1665,22 +1651,22 @@ static int wlcore_set_assoc(struct VV_vif *VV_vif,
 	 * of the commands below is relevant.
 	 */
 	// Make sure STA sending Null Data (wl12xx_cmd_build_klv_null_data) frames periodically
-	ret = wl1271_acx_keep_alive_mode(VV_vif, true);
+	ret = wl1271_acx_keep_alive_mode(wifi_vif, true);
 	if (ret < 0)
 		return ret;
 
 	// Sending AID to fw
-	ret = wl1271_acx_aid(VV_vif, VV_vif->aid);
+	ret = wl1271_acx_aid(wifi_vif, wifi_vif->aid);
 	if (ret < 0)
 		return ret;
 
 	// Building a special Null Data template dedicated to Keep-Alive.
-	ret = wl12xx_cmd_build_klv_null_data(VV_vif);
+	ret = wl12xx_cmd_build_klv_null_data(wifi_vif);
 	if (ret < 0)
 		return ret;
 
 	// main configuration command that tells the firmware how to use Keep-Alive.
-	ret = wl1271_acx_keep_alive_config(VV_vif,
+	ret = wl1271_acx_keep_alive_config(wifi_vif,
 					   STA_KLV_TEMPLATE_IDX,
 					   ACX_KEEP_ALIVE_TPL_VALID);
 	if (ret < 0)
@@ -1690,16 +1676,16 @@ static int wlcore_set_assoc(struct VV_vif *VV_vif,
 	 * The default fw psm configuration is AUTO, while mac80211 default
 	 * setting is off (ACTIVE), so sync the fw with the correct value.
 	 */
-	ret = wl1271_ps_set_mode(VV_vif, STATION_ACTIVE_MODE);
+	ret = wl1271_ps_set_mode(wifi_vif, STATION_ACTIVE_MODE);
 	if (ret < 0)
 		return ret;
 
 	if (sta_rate_set) {
-		VV_vif->rate_set =
+		wifi_vif->rate_set =
 			wl1271_tx_enabled_rates_get(
 						    sta_rate_set,
-						    VV_vif->band);
-		ret = wl1271_acx_sta_rate_policies(VV_vif);
+						    wifi_vif->band);
+		ret = wl1271_acx_sta_rate_policies(wifi_vif);
 		if (ret < 0)
 			return ret;
 	}
@@ -1707,65 +1693,65 @@ static int wlcore_set_assoc(struct VV_vif *VV_vif,
 	return ret;
 }
 
-static int wlcore_unset_assoc(struct VV_vif *VV_vif)
+static int wlcore_unset_assoc(struct wifi_vif *wifi_vif)
 {
 	int ret;
-	bool sta = VV_vif->bss_type == BSS_TYPE_STA_BSS;
+	bool sta = wifi_vif->bss_type == BSS_TYPE_STA_BSS;
 
 	/* make sure we are connected (sta) joined */
 	if (sta &&
-	    !test_and_clear_bit(VV_vif_FLAG_STA_ASSOCIATED, &VV_vif->flags))
+	    !test_and_clear_bit(wifi_vif_FLAG_STA_ASSOCIATED, &wifi_vif->flags))
 		return false;
 
 	/* make sure we are joined (ibss) */
 	if (!sta &&
-	    test_and_clear_bit(VV_vif_FLAG_IBSS_JOINED, &VV_vif->flags))
+	    test_and_clear_bit(wifi_vif_FLAG_IBSS_JOINED, &wifi_vif->flags))
 		return false;
 
 	if (sta) {
 		/* use defaults when not associated */
-		VV_vif->aid = 0;
+		wifi_vif->aid = 0;
 
 		/* free probe-request template */
-		dev_kfree_skb(VV_vif->probereq);
-		VV_vif->probereq = NULL;
+		dev_kfree_skb(wifi_vif->probereq);
+		wifi_vif->probereq = NULL;
 
 		/* disable connection monitor features */
-		ret = wl1271_acx_conn_monit_params(VV_vif, false);
+		ret = wl1271_acx_conn_monit_params(wifi_vif, false);
 		if (ret < 0)
 			return ret;
 
 		/* Disable the keep-alive feature */
-		ret = wl1271_acx_keep_alive_mode(VV_vif, false);
+		ret = wl1271_acx_keep_alive_mode(wifi_vif, false);
 		if (ret < 0)
 			return ret;
 
 		/* disable beacon filtering */
-		ret = wl1271_acx_beacon_filter_opt(VV_vif, false);
+		ret = wl1271_acx_beacon_filter_opt(wifi_vif, false);
 		if (ret < 0)
 			return ret;
 	}
 
-	if (test_and_clear_bit(VV_vif_FLAG_CS_PROGRESS, &VV_vif->flags)) {
-		struct ieee80211_vif *vif = wl12xx_VV_vif_to_vif(VV_vif);
+	if (test_and_clear_bit(wifi_vif_FLAG_CS_PROGRESS, &wifi_vif->flags)) {
+		struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
 
-		wl12xx_cmd_stop_channel_switch(VV_vif);
+		wl12xx_cmd_stop_channel_switch(wifi_vif);
 		ieee80211_chswitch_done(vif, false);
 	}
 
 	/* invalidate keep-alive template */
-	wl1271_acx_keep_alive_config(VV_vif,
+	wl1271_acx_keep_alive_config(wifi_vif,
 					 STA_KLV_TEMPLATE_IDX,
 				     ACX_KEEP_ALIVE_TPL_INVALID);
 
 	return 0;
 }
 
-static void wl1271_set_band_rate(struct VV_vif *VV_vif)
+static void wl1271_set_band_rate(struct wifi_vif *wifi_vif)
 {
-	VV_vif->basic_rate_set = VV_vif->bitrate_masks[VV_vif->band];
-	//printk("[basic_rate_set] = %d\n", VV_vif->basic_rate_set);
-	VV_vif->rate_set = VV_vif->basic_rate_set;
+	wifi_vif->basic_rate_set = wifi_vif->bitrate_masks[wifi_vif->band];
+	//printk("[basic_rate_set] = %d\n", wifi_vif->basic_rate_set);
+	wifi_vif->rate_set = wifi_vif->basic_rate_set;
 }
 
 struct wl1271_filter_params {
@@ -1780,7 +1766,7 @@ struct wl1271_filter_params {
 				  FIF_CONTROL | \
 				  FIF_OTHER_BSS)
 
-int VV_acx_group_address_tbl(struct VV_vif *VV_vif,
+int wifi_acx_group_address_tbl(struct wifi_vif *wifi_vif,
 				 bool enable, void *mc_list, u32 mc_list_len)
 {
 	struct acx_dot11_grp_addr_tbl *acx;
@@ -1795,12 +1781,12 @@ int VV_acx_group_address_tbl(struct VV_vif *VV_vif,
 	}
 
 	/* MAC filtering */
-	acx->role_id = VV_vif->role_id;
+	acx->role_id = wifi_vif->role_id;
 	acx->enabled = enable;
 	acx->num_groups = mc_list_len;
 	memcpy(acx->mac_table, mc_list, mc_list_len * ETH_ALEN);
 
-	ret = VV_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
+	ret = wifi_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
 		wl1271_warning("failed to set group addr table: %d", ret);
@@ -1818,8 +1804,6 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 				       unsigned int *total, u64 multicast)
 {
 	struct wl1271_filter_params *fp = (void *)(unsigned long)multicast;
-	//struct wl1271 *wl = hw->priv;
-	struct VV_vif *VV_vif;
 	int i = 0;
 
 	int ret;
@@ -1841,35 +1825,18 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	// wl12xx_for_each_VV_vif(VV_vif) {
-	// 	if (wlcore_is_p2p_mgmt(VV_vif))
-	// 		continue;
-
-	// 	if (VV_vif->bss_type != BSS_TYPE_AP_BSS) {
-	// 		if (*total & FIF_ALLMULTI)
-	// 			ret = wl1271_acx_group_address_tbl(VV_vif,
-	// 							   false,
-	// 							   NULL, 0);
-	// 		else if (fp)
-	// 			ret = wl1271_acx_group_address_tbl(VV_vif,
-	// 						fp->enabled,
-	// 						fp->mc_list,
-	// 						fp->mc_list_length);
-	// 		if (ret < 0)
-	// 			goto out_sleep;
-	// 	}
-	// }
-
-	for (i = 0; i < VV_vif_ptr_id; i++){
-		if (!wlcore_is_p2p_mgmt(VV_vif_ptr[i])){
-			printk("[FILTER] [%d] - bss = %d", i, VV_vif_ptr[i]->bss_type);
-			if (VV_vif_ptr[i]->bss_type == BSS_TYPE_STA_BSS){
+	for (i = 0; i < wifi_vif_ptr_id; i++){
+		if (!wlcore_is_p2p_mgmt(wifi_vif_ptr[i])){
+#if (PRINT_DEBUG)
+			printk("[FILTER] [%d] - bss = %d", i, wifi_vif_ptr[i]->bss_type);
+#endif
+			if (wifi_vif_ptr[i]->bss_type == BSS_TYPE_STA_BSS){
 				if (*total & FIF_ALLMULTI)
-					ret = VV_acx_group_address_tbl(VV_vif_ptr[0],
+					ret = wifi_acx_group_address_tbl(wifi_vif_ptr[0],
 										false,
 										NULL, 0);
 				else if (fp)
-					ret = VV_acx_group_address_tbl(VV_vif_ptr[0],
+					ret = wifi_acx_group_address_tbl(wifi_vif_ptr[0],
 								fp->enabled,
 								fp->mc_list,
 								fp->mc_list_length);
@@ -1894,14 +1861,13 @@ out:
 	kfree(fp);
 }
 
-static int wl1271_set_key(struct VV_vif *VV_vif,
+static int wl1271_set_key(struct wifi_vif *wifi_vif,
 		       u16 action, u8 id, u8 key_type,
 		       u8 key_size, const u8 *key, u32 tx_seq_32,
 		       u16 tx_seq_16, struct ieee80211_sta *sta,
 		       bool is_pairwise)
 {
 	int ret;
-	bool is_ap = (VV_vif->bss_type == BSS_TYPE_AP_BSS);
 	const u8 *addr;
 	static const u8 bcast_addr[ETH_ALEN] = {
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff
@@ -1923,10 +1889,10 @@ static int wl1271_set_key(struct VV_vif *VV_vif,
 
 	/* don't remove key if hlid was already deleted */
 	if (action == KEY_REMOVE &&
-		VV_vif->sta.hlid == WL12XX_INVALID_LINK_ID)
+		wifi_vif->sta.hlid == WL12XX_INVALID_LINK_ID)
 		return 0;
 
-	ret = wl1271_cmd_set_sta_key(VV_vif, action,
+	ret = wl1271_cmd_set_sta_key(wifi_vif, action,
 						id, key_type, key_size,
 						key, addr, tx_seq_32,
 						tx_seq_16);
@@ -1975,7 +1941,7 @@ int wlcore_set_key(enum set_key_cmd cmd,
 		   struct ieee80211_sta *sta,
 		   struct ieee80211_key_conf *key_conf)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret;
 	u32 tx_seq_32 = 0;
 	u16 tx_seq_16 = 0;
@@ -1991,10 +1957,10 @@ int wlcore_set_key(enum set_key_cmd cmd,
 		     key_conf->keylen, key_conf->flags);
 	wl1271_dump(DEBUG_CRYPT, "KEY: ", key_conf->key, key_conf->keylen);
 
-	hlid = VV_vif->sta.hlid;
+	hlid = wifi_vif->sta.hlid;
 
 	if (hlid != WL12XX_INVALID_LINK_ID) {
-		u64 tx_seq = VV_links[hlid].total_freed_pkts;
+		u64 tx_seq = wifi_links[hlid].total_freed_pkts;
 		tx_seq_32 = WL1271_TX_SECURITY_HI32(tx_seq);
 		tx_seq_16 = WL1271_TX_SECURITY_LO16(tx_seq);
 	}
@@ -2006,7 +1972,7 @@ int wlcore_set_key(enum set_key_cmd cmd,
 
 	switch (cmd) {
 	case SET_KEY:
-		ret = wl1271_set_key(VV_vif, KEY_ADD_OR_REPLACE,
+		ret = wl1271_set_key(wifi_vif, KEY_ADD_OR_REPLACE,
 				 key_conf->keyidx, key_type,
 				 key_conf->keylen, key_conf->key,
 				 tx_seq_32, tx_seq_16, sta, is_pairwise);
@@ -2019,11 +1985,11 @@ int wlcore_set_key(enum set_key_cmd cmd,
 		 * reconfiguring arp response if the unicast (or common)
 		 * encryption key type was changed
 		 */
-		if (VV_vif->bss_type == BSS_TYPE_STA_BSS &&
+		if (wifi_vif->bss_type == BSS_TYPE_STA_BSS &&
 		    (sta || key_type == KEY_WEP) &&
-		    VV_vif->encryption_type != key_type) {
-			VV_vif->encryption_type = key_type;
-			ret = wl1271_cmd_build_arp_rsp(VV_vif);
+		    wifi_vif->encryption_type != key_type) {
+			wifi_vif->encryption_type = key_type;
+			ret = wl1271_cmd_build_arp_rsp(wifi_vif);
 			if (ret < 0) {
 				wl1271_warning("build arp rsp failed: %d", ret);
 				return ret;
@@ -2032,7 +1998,7 @@ int wlcore_set_key(enum set_key_cmd cmd,
 		break;
 
 	case DISABLE_KEY:
-		ret = wl1271_set_key(VV_vif, KEY_REMOVE,
+		ret = wl1271_set_key(wifi_vif, KEY_REMOVE,
 				     key_conf->keyidx, key_type,
 				     key_conf->keylen, key_conf->key,
 				     0, 0, sta, is_pairwise);
@@ -2086,8 +2052,9 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 	u8 *ssid = NULL;
 	size_t len = 0;
 
-	//wl1271_debug(DEBUG_MAC80211, "mac80211 hw scan");
+#if (PRINT_DEBUG)
 	printk("wl1271_op_hw_scan\n");
+#endif
 
 	if (req->n_ssids) {
 		ssid = req->ssids[0].ssid;
@@ -2118,7 +2085,7 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 		ret = -EBUSY;
 		goto out_sleep;
 	}
-	//printk("[HW SCAN] - ssid len = %d\n", len);
+
 	ret = wlcore_scan(vif, ssid, len, req);
 out_sleep:
 	pm_runtime_mark_last_busy(wifi_data->dev);
@@ -2134,14 +2101,14 @@ static int wl1271_bss_erp_info_changed(
 				       struct ieee80211_bss_conf *bss_conf,
 				       u32 changed)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret = 0;
 
 	if (changed & BSS_CHANGED_ERP_SLOT) {
 		if (bss_conf->use_short_slot)
-			ret = wl1271_acx_slot(VV_vif, SLOT_TIME_SHORT);
+			ret = wl1271_acx_slot(wifi_vif, SLOT_TIME_SHORT);
 		else
-			ret = wl1271_acx_slot(VV_vif, SLOT_TIME_LONG);
+			ret = wl1271_acx_slot(wifi_vif, SLOT_TIME_LONG);
 		if (ret < 0) {
 			wl1271_warning("Set slot time failed %d", ret);
 			goto out;
@@ -2150,17 +2117,17 @@ static int wl1271_bss_erp_info_changed(
 
 	if (changed & BSS_CHANGED_ERP_PREAMBLE) {
 		if (bss_conf->use_short_preamble)
-			wl1271_acx_set_preamble(VV_vif, ACX_PREAMBLE_SHORT);
+			wl1271_acx_set_preamble(wifi_vif, ACX_PREAMBLE_SHORT);
 		else
-			wl1271_acx_set_preamble(VV_vif, ACX_PREAMBLE_LONG);
+			wl1271_acx_set_preamble(wifi_vif, ACX_PREAMBLE_LONG);
 	}
 
 	if (changed & BSS_CHANGED_ERP_CTS_PROT) {
 		if (bss_conf->use_cts_prot)
-			ret = wl1271_acx_cts_protect(VV_vif,
+			ret = wl1271_acx_cts_protect(wifi_vif,
 						     CTSPROTECT_ENABLE);
 		else
-			ret = wl1271_acx_cts_protect(VV_vif,
+			ret = wl1271_acx_cts_protect(wifi_vif,
 						     CTSPROTECT_DISABLE);
 		if (ret < 0) {
 			wl1271_warning("Set ctsprotect failed %d", ret);
@@ -2172,7 +2139,7 @@ out:
 	return ret;
 }
 
-static int wlcore_set_bssid(struct VV_vif *VV_vif,
+static int wlcore_set_bssid(struct wifi_vif *wifi_vif,
 			    struct ieee80211_bss_conf *bss_conf,
 			    u32 sta_rate_set)
 {
@@ -2185,57 +2152,57 @@ static int wlcore_set_bssid(struct VV_vif *VV_vif,
 	     bss_conf->basic_rates, sta_rate_set);
 
 	// Beacon Interval - AP announce the network’s presence, SSID, supported rates, capabilities, timing information
-	VV_vif->beacon_int = bss_conf->beacon_int;
+	wifi_vif->beacon_int = bss_conf->beacon_int;
 
 	if (sta_rate_set)
-		VV_vif->rate_set =
+		wifi_vif->rate_set =
 			wl1271_tx_enabled_rates_get(
 						sta_rate_set,
-						VV_vif->band);
+						wifi_vif->band);
 	// raw:      sta_rate_set    -> 0xFF0FFF
-	// firmware: VV_vif->rate_set -> 0x1FFEFF
+	// firmware: wifi_vif->rate_set -> 0x1FFEFF
 
 	// Set rate policies -> STA_BASIC_RATE_IDX, STA_AP_RATE_IDX, STA_P2P_RATE_IDX
-	ret = wl1271_acx_sta_rate_policies(VV_vif);
+	ret = wl1271_acx_sta_rate_policies(wifi_vif);
 	if (ret < 0)
 		return ret;
 
-	ret = wl12xx_cmd_build_null_data(VV_vif);
+	ret = wl12xx_cmd_build_null_data(wifi_vif);
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_build_qos_null_data(wl12xx_VV_vif_to_vif(VV_vif));
+	ret = wl1271_build_qos_null_data(wl12xx_wifi_vif_to_vif(wifi_vif));
 	if (ret < 0)
 		return ret;
 
-	// get VV_vif->ssid_len and ssid string
-	wlcore_set_ssid(VV_vif); 
+	// get wifi_vif->ssid_len and ssid string
+	wlcore_set_ssid(wifi_vif); 
 
-	set_bit(VV_vif_FLAG_IN_USE, &VV_vif->flags);
+	set_bit(wifi_vif_FLAG_IN_USE, &wifi_vif->flags);
 
 	return 0;
 }
 
-static int wlcore_clear_bssid(struct VV_vif *VV_vif)
+static int wlcore_clear_bssid(struct wifi_vif *wifi_vif)
 {
 	int ret;
 
 	/* revert back to minimum rates for the current band */
-	wl1271_set_band_rate(VV_vif);
-	VV_vif->basic_rate = wl1271_tx_min_rate_get(VV_vif->basic_rate_set);
+	wl1271_set_band_rate(wifi_vif);
+	wifi_vif->basic_rate = wl1271_tx_min_rate_get(wifi_vif->basic_rate_set);
 
-	ret = wl1271_acx_sta_rate_policies(VV_vif);
+	ret = wl1271_acx_sta_rate_policies(wifi_vif);
 	if (ret < 0)
 		return ret;
 
-	if (VV_vif->bss_type == BSS_TYPE_STA_BSS &&
-	    test_bit(VV_vif_FLAG_IN_USE, &VV_vif->flags)) {
-		ret = wl12xx_cmd_role_stop_sta(VV_vif);
+	if (wifi_vif->bss_type == BSS_TYPE_STA_BSS &&
+	    test_bit(wifi_vif_FLAG_IN_USE, &wifi_vif->flags)) {
+		ret = wl12xx_cmd_role_stop_sta(wifi_vif);
 		if (ret < 0)
 			return ret;
 	}
 
-	clear_bit(VV_vif_FLAG_IN_USE, &VV_vif->flags);
+	clear_bit(wifi_vif_FLAG_IN_USE, &wifi_vif->flags);
 	return 0;
 }
 /* STA/IBSS mode changes */
@@ -2244,9 +2211,10 @@ static void wl1271_bss_info_changed_sta(
 					struct ieee80211_bss_conf *bss_conf,
 					u32 changed)
 {
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	printk("wl1271_bss_info_changed_sta\n");
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	bool do_join = false;
-	bool is_ibss = (VV_vif->bss_type == BSS_TYPE_IBSS);
+	bool is_ibss = (wifi_vif->bss_type == BSS_TYPE_IBSS);
 	//bool ibss_joined = false;
 	u32 sta_rate_set = 0;
 	int ret;
@@ -2254,32 +2222,36 @@ static void wl1271_bss_info_changed_sta(
 	bool sta_exists = false;
 	struct ieee80211_sta_ht_cap sta_ht_cap;
 
-	if (changed & BSS_CHANGED_IDLE && !is_ibss)
-		set_bit(VV_vif_FLAG_ACTIVE, &VV_vif->flags);
+	if (changed & BSS_CHANGED_IDLE && !is_ibss){
+		printk("STATE - 1\n");
+		set_bit(wifi_vif_FLAG_ACTIVE, &wifi_vif->flags);
+	}
 
 	// Connection Quality Monitor -> signal strength of the connected Access Point
 	if (changed & BSS_CHANGED_CQM) {
+		printk("STATE - 2\n");
 		bool enable = false;
 		if (bss_conf->cqm_rssi_thold) // RSSI threshold in dBm
 			enable = true;
-		ret = wl1271_acx_rssi_snr_trigger(VV_vif, enable,
+		ret = wl1271_acx_rssi_snr_trigger(wifi_vif, enable,
 						  bss_conf->cqm_rssi_thold,
 						  bss_conf->cqm_rssi_hyst); // Hysteresis (how much the signal must improve before notifying again)
 		if (ret < 0)
 			goto out;
-		//VV_vif->rssi_thold = bss_conf->cqm_rssi_thold;
+		//wifi_vif->rssi_thold = bss_conf->cqm_rssi_thold;
 	}
 
 	// Info of AP  - sta rate cap
 	if (changed & (BSS_CHANGED_BSSID | BSS_CHANGED_HT |
 		       BSS_CHANGED_ASSOC)) {
+		printk("STATE - 3\n");
 		rcu_read_lock();
 		sta = ieee80211_find_sta(vif, bss_conf->bssid); // info of AP
 		if (sta) {
 			u8 *rx_mask = sta->ht_cap.mcs.rx_mask;
 
 			/* save the supp_rates of the ap */
-			sta_rate_set = sta->supp_rates[VV_vif->band];
+			sta_rate_set = sta->supp_rates[wifi_vif->band];
 			if (sta->ht_cap.ht_supported)
 				sta_rate_set |=
 					(rx_mask[0] << HW_HT_RATES_OFFSET) |
@@ -2297,8 +2269,9 @@ static void wl1271_bss_info_changed_sta(
 	}
 
 	if (changed & BSS_CHANGED_BSSID) {
+		printk("STATE - 4\n");
 		if (!is_zero_ether_addr(bss_conf->bssid)) {
-			ret = wlcore_set_bssid(VV_vif, bss_conf,
+			ret = wlcore_set_bssid(wifi_vif, bss_conf,
 					       sta_rate_set); // sta_rate_set is get from the step above
 			if (ret < 0)
 				goto out;
@@ -2306,7 +2279,7 @@ static void wl1271_bss_info_changed_sta(
 			/* Need to update the BSSID (for filtering etc) */
 			do_join = true;
 		} else {
-			ret = wlcore_clear_bssid(VV_vif);
+			ret = wlcore_clear_bssid(wifi_vif);
 			if (ret < 0)
 				goto out;
 		}
@@ -2314,8 +2287,9 @@ static void wl1271_bss_info_changed_sta(
 
 	// Traffic Indication Map.
 	if ((changed & BSS_CHANGED_BEACON_INFO) && bss_conf->dtim_period) {
+		printk("STATE - 5\n");
 		/* enable beacon filtering */
-		ret = wl1271_acx_beacon_filter_opt(VV_vif, true);
+		ret = wl1271_acx_beacon_filter_opt(wifi_vif, true);
 		if (ret < 0)
 			goto out;
 	}
@@ -2326,7 +2300,7 @@ static void wl1271_bss_info_changed_sta(
 		goto out;
 
 	if (do_join) {
-		ret = wlcore_join(VV_vif);
+		ret = wlcore_join(wifi_vif);
 		if (ret < 0) {
 			wl1271_warning("cmd join failed %d", ret);
 			goto out;
@@ -2334,16 +2308,17 @@ static void wl1271_bss_info_changed_sta(
 	}
 
 	if (changed & BSS_CHANGED_ASSOC) {
+		printk("STATE - 6\n");
 		if (bss_conf->assoc) {
-			ret = wlcore_set_assoc(VV_vif, bss_conf,
+			ret = wlcore_set_assoc(wifi_vif, bss_conf,
 					       sta_rate_set);
 			if (ret < 0)
 				goto out;
 
-			if (test_bit(VV_vif_FLAG_STA_AUTHORIZED, &VV_vif->flags))
-				wl12xx_set_authorized(VV_vif);
+			if (test_bit(wifi_vif_FLAG_STA_AUTHORIZED, &wifi_vif->flags))
+				wl12xx_set_authorized(wifi_vif);
 		} else {
-			wlcore_unset_assoc(VV_vif);
+			wlcore_unset_assoc(wifi_vif);
 		}
 	}
 
@@ -2352,11 +2327,11 @@ static void wl1271_bss_info_changed_sta(
 		bool enabled =
 			bss_conf->chandef.width != NL80211_CHAN_WIDTH_20_NOHT;
 
-		ret = VV_acx_set_peer_cap(
+		ret = wifi_acx_set_peer_cap(
 					     &sta_ht_cap,
 					     enabled,
-					     VV_vif->rate_set,
-					     VV_vif->sta.hlid);
+					     wifi_vif->rate_set,
+					     wifi_vif->sta.hlid);
 		if (ret < 0) {
 			wl1271_warning("Set ht cap failed %d", ret);
 			goto out;
@@ -2364,7 +2339,7 @@ static void wl1271_bss_info_changed_sta(
 		}
 
 		if (enabled) {
-			ret = wl1271_acx_set_ht_information(VV_vif,
+			ret = wl1271_acx_set_ht_information(wifi_vif,
 						bss_conf->ht_operation_mode);
 			if (ret < 0) {
 				wl1271_warning("Set ht information failed %d",
@@ -2378,31 +2353,32 @@ static void wl1271_bss_info_changed_sta(
 	/* Handle arp filtering. Done after join. */
 	if ((changed & BSS_CHANGED_ARP_FILTER) ||
 	    (!is_ibss && (changed & BSS_CHANGED_QOS))) {
+		printk("STATE - 7\n");
 		__be32 addr = bss_conf->arp_addr_list[0];
-		VV_vif->sta.qos = bss_conf->qos;
-		WARN_ON(VV_vif->bss_type != BSS_TYPE_STA_BSS);
+		wifi_vif->sta.qos = bss_conf->qos;
+		WARN_ON(wifi_vif->bss_type != BSS_TYPE_STA_BSS);
 
 		if (bss_conf->arp_addr_cnt == 1 && bss_conf->assoc) {
-			VV_vif->ip_addr = addr;
+			wifi_vif->ip_addr = addr;
 			/*
 			 * The template should have been configured only upon
 			 * association. however, it seems that the correct ip
 			 * isn't being set (when sending), so we have to
 			 * reconfigure the template upon every ip change.
 			 */
-			ret = wl1271_cmd_build_arp_rsp(VV_vif);
+			ret = wl1271_cmd_build_arp_rsp(wifi_vif);
 			if (ret < 0) {
 				wl1271_warning("build arp rsp failed: %d", ret);
 				goto out;
 			}
 
-			ret = wl1271_acx_arp_ip_filter(VV_vif,
+			ret = wl1271_acx_arp_ip_filter(wifi_vif,
 				(ACX_ARP_FILTER_ARP_FILTERING |
 				 ACX_ARP_FILTER_AUTO_ARP),
 				addr);
 		} else {
-			VV_vif->ip_addr = 0;
-			ret = wl1271_acx_arp_ip_filter(VV_vif, 0, addr);
+			wifi_vif->ip_addr = 0;
+			ret = wl1271_acx_arp_ip_filter(wifi_vif, 0, addr);
 		}
 
 		if (ret < 0)
@@ -2419,7 +2395,7 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 				       u32 changed)
 {
 	//struct wl1271 *wl = hw->priv;
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret;
 
 	mutex_lock(&wifi_data->mutex);
@@ -2432,14 +2408,13 @@ static void wl1271_op_bss_info_changed(struct ieee80211_hw *hw,
 
 	// change the transmit power of the radio.
 	if ((changed & BSS_CHANGED_TXPOWER) &&
-	    bss_conf->txpower != VV_vif->power_level) {
-			//printk("[changed & BSS_CHANGED_TXPOWER]\n");
+	    bss_conf->txpower != wifi_vif->power_level) {
 
-		ret = wl1271_acx_tx_power(VV_vif, bss_conf->txpower);
+		ret = wl1271_acx_tx_power(wifi_vif, bss_conf->txpower);
 		if (ret < 0)
 			goto out;
 
-		VV_vif->power_level = bss_conf->txpower;
+		wifi_vif->power_level = bss_conf->txpower;
 	}
 
 	wl1271_bss_info_changed_sta(vif, bss_conf, changed);
@@ -2456,23 +2431,17 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 					struct ieee80211_chanctx_conf *ctx)
 {
 	//struct wl1271 *wl = hw->priv;
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int channel = ieee80211_frequency_to_channel(
 		ctx->def.chan->center_freq);
 	int ret = -EINVAL;
-
-	wl1271_debug(DEBUG_MAC80211,
-		     "mac80211 assign chanctx (role %d) %d (type %d) (radar %d dfs_state %d)",
-		     VV_vif->role_id, channel,
-		     cfg80211_get_chandef_type(&ctx->def),
-		     ctx->radar_enabled, ctx->def.chan->dfs_state);
 
 	mutex_lock(&wifi_data->mutex);
 
 	if (unlikely(wifi_data->state != WLCORE_STATE_ON))
 		goto out;
 
-	if (unlikely(!test_bit(VV_vif_FLAG_INITIALIZED, &VV_vif->flags)))
+	if (unlikely(!test_bit(wifi_vif_FLAG_INITIALIZED, &wifi_vif->flags)))
 		goto out;
 
 	ret = pm_runtime_get_sync(wifi_data->dev);
@@ -2481,19 +2450,12 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	VV_vif->band = ctx->def.chan->band;
-	VV_vif->channel = channel;
-	VV_vif->channel_type = cfg80211_get_chandef_type(&ctx->def);
+	wifi_vif->band = ctx->def.chan->band;
+	wifi_vif->channel = channel;
+	wifi_vif->channel_type = cfg80211_get_chandef_type(&ctx->def);
 
 	/* update default rates according to the band */
-	wl1271_set_band_rate(VV_vif);
-
-	if (ctx->radar_enabled &&
-	    ctx->def.chan->dfs_state == NL80211_DFS_USABLE) {
-		wl1271_info("Start radar detection");
-		VV_cmd_set_cac(VV_vif, true);
-		VV_vif->radar_enabled = true;
-	}
+	wl1271_set_band_rate(wifi_vif);
 
 	pm_runtime_mark_last_busy(wifi_data->dev);
 	pm_runtime_put_autosuspend(wifi_data->dev);
@@ -2503,40 +2465,38 @@ out:
 	return 0;
 }
 
-void wl1271_free_sta(struct VV_vif *VV_vif, u8 hlid)
+void wl1271_free_sta(struct wifi_vif *wifi_vif, u8 hlid)
 {
 	/*
 	 * save the last used PN in the private part of iee80211_sta,
 	 * in case of recovery/suspend
 	 */
 	struct ieee80211_sta *sta;
-	struct ieee80211_vif *vif = wl12xx_VV_vif_to_vif(VV_vif);
+	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
 
 	if (WARN_ON(hlid == WL12XX_INVALID_LINK_ID ||
-		    is_zero_ether_addr(VV_links[hlid].addr)))
+		    is_zero_ether_addr(wifi_links[hlid].addr)))
 		return;
 
 	rcu_read_lock();
-	sta = ieee80211_find_sta(vif, VV_links[hlid].addr);
+	sta = ieee80211_find_sta(vif, wifi_links[hlid].addr);
 	if (sta)
-		wlcore_save_freed_pkts(VV_vif, hlid, sta);
+		wlcore_save_freed_pkts(wifi_vif, hlid, sta);
 	rcu_read_unlock();
 
 
-	wl12xx_free_link(VV_vif, &hlid);
+	wl12xx_free_link(wifi_vif, &hlid);
 }
 
 static int wl12xx_update_sta_state(
-				   struct VV_vif *VV_vif,
+				   struct wifi_vif *wifi_vif,
 				   struct ieee80211_sta *sta,
 				   enum ieee80211_sta_state old_state,
 				   enum ieee80211_sta_state new_state)
 {
 	struct wl1271_station *wl_sta;
-	bool is_sta = VV_vif->bss_type == BSS_TYPE_STA_BSS;
+	bool is_sta = wifi_vif->bss_type == BSS_TYPE_STA_BSS;
 	int ret;
-
-	//printk("id = %d, band = %d, ch = %d\n", VV_vif->role_id, VV_vif->band, VV_vif->channel);
 
 	wl_sta = (struct wl1271_station *)sta->drv_priv;
 
@@ -2545,9 +2505,11 @@ static int wl12xx_update_sta_state(
 	/* Authorize station */
 	if (is_sta &&
 	    new_state == IEEE80211_STA_AUTHORIZED) {
+#if (PRINT_DEBUG)
 		printk("STATE - 1\n");
-		set_bit(VV_vif_FLAG_STA_AUTHORIZED, &VV_vif->flags);
-		ret = wl12xx_set_authorizedV(VV_vif); // VV_ -> Association completed.
+#endif
+		set_bit(wifi_vif_FLAG_STA_AUTHORIZED, &wifi_vif->flags);
+		ret = wl12xx_set_authorizedV(wifi_vif); // wifi_ -> Association completed.
 		if (ret)
 			return ret;
 	}
@@ -2556,9 +2518,11 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    old_state == IEEE80211_STA_AUTHORIZED &&
 	    new_state == IEEE80211_STA_ASSOC) {
+#if (PRINT_DEBUG)
 		printk("STATE - 2\n");
-		clear_bit(VV_vif_FLAG_STA_AUTHORIZED, &VV_vif->flags);
-		clear_bit(VV_vif_FLAG_STA_STATE_SENT, &VV_vif->flags);
+#endif
+		clear_bit(wifi_vif_FLAG_STA_AUTHORIZED, &wifi_vif->flags);
+		clear_bit(wifi_vif_FLAG_STA_STATE_SENT, &wifi_vif->flags);
 	}
 
 	// the next step with down with WIFI
@@ -2566,17 +2530,21 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    old_state == IEEE80211_STA_ASSOC &&
 	    new_state == IEEE80211_STA_AUTH) {
+#if (PRINT_DEBUG)
 		printk("STATE - 3\n");
-		wlcore_save_freed_pkts(VV_vif, VV_vif->sta.hlid, sta);
-		VV_vif->total_freed_pkts = 0;
+#endif
+		wlcore_save_freed_pkts(wifi_vif, wifi_vif->sta.hlid, sta);
+		wifi_vif->total_freed_pkts = 0;
 	}
 
 	/* restore seq number on assoc (resume) */
 	if (is_sta &&
 	    old_state == IEEE80211_STA_AUTH &&
 	    new_state == IEEE80211_STA_ASSOC) {
+#if (PRINT_DEBUG)
 		printk("STATE - 4\n");
-		VV_vif->total_freed_pkts = wl_sta->total_freed_pkts;
+#endif
+		wifi_vif->total_freed_pkts = wl_sta->total_freed_pkts;
 	}
 
 	/* clear ROCs on failure or authorization */
@@ -2584,21 +2552,28 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    (new_state == IEEE80211_STA_AUTHORIZED ||
 	     new_state == IEEE80211_STA_NOTEXIST)) {
+#if (PRINT_DEBUG)
 		printk("STATE - 5\n");
-		if (test_bit(VV_vif->role_id, wifi_data->roc_map))
-			wl12xx_crocV(VV_vif->role_id); // VV_
+#endif
+		if (test_bit(wifi_vif->role_id, wifi_data->roc_map)){
+			wl12xx_crocV(wifi_vif->role_id); // wifi_
+		}
 	}
 
 	// WHEN not fully connected -> REMAIN on CHANNEL
 	if (is_sta &&
 	    old_state == IEEE80211_STA_NOTEXIST &&
 	    new_state == IEEE80211_STA_NONE) {
+#if (PRINT_DEBUG)
 		printk("STATE - 6\n");
+#endif
 		if (find_first_bit(wifi_data->roc_map,
 				   WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES) {
-			WARN_ON(VV_vif->role_id == WL12XX_INVALID_ROLE_ID);
-			wl12xx_rocV(VV_vif, VV_vif->role_id,
-				   VV_vif->band, VV_vif->channel); // VV_
+			WARN_ON(wifi_vif->role_id == WL12XX_INVALID_ROLE_ID);
+
+			// printk("wl12xx_roc, roc_map = 0x%x\n", wifi_data->roc_map);
+			wl12xx_roc(wifi_vif, wifi_vif->role_id,
+				   wifi_vif->band, wifi_vif->channel); // wifi_
 		}
 	}
 	return 0;
@@ -2611,7 +2586,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 			       enum ieee80211_sta_state new_state)
 {
 	//struct wl1271 *wl = hw->priv;
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
+	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	int ret;
 
 	wl1271_debug(DEBUG_MAC80211, "mac80211 sta %d state=%d->%d",
@@ -2630,7 +2605,7 @@ static int wl12xx_op_sta_state(struct ieee80211_hw *hw,
 		goto out;
 	}
 
-	ret = wl12xx_update_sta_state(VV_vif, sta, old_state, new_state); // VV_
+	ret = wl12xx_update_sta_state(wifi_vif, sta, old_state, new_state); // wifi_
 
 	pm_runtime_mark_last_busy(wifi_data->dev);
 	pm_runtime_put_autosuspend(wifi_data->dev);
@@ -2780,309 +2755,268 @@ static struct ieee80211_supported_band wl1271_band_5ghz = {
 	.n_bitrates = ARRAY_SIZE(wl1271_rates_5ghz),
 };
 
+/* === CUSTOM ====*/
 static void wlcore_op_unassign_vif_chanctx(struct ieee80211_hw *hw,
 					   struct ieee80211_vif *vif,
 					   struct ieee80211_chanctx_conf *ctx)
 {
-	//struct wl1271 *wl = hw->priv;
-	struct VV_vif *VV_vif = VV_vif_to_data(vif);
-	int ret;
-
-	wl1271_debug(DEBUG_MAC80211,
-		     "mac80211 unassign chanctx (role %d) %d (type %d)",
-		     VV_vif->role_id,
-		     ieee80211_frequency_to_channel(ctx->def.chan->center_freq),
-		     cfg80211_get_chandef_type(&ctx->def));
-
-	wl1271_tx_flush();
-
-	mutex_lock(&wifi_data->mutex);
-
-	if (unlikely(wifi_data->state != WLCORE_STATE_ON))
-		goto out;
-
-	if (unlikely(!test_bit(VV_vif_FLAG_INITIALIZED, &VV_vif->flags)))
-		goto out;
-
-	ret = pm_runtime_get_sync(wifi_data->dev);
-	if (ret < 0) {
-		pm_runtime_put_noidle(wifi_data->dev);
-		goto out;
-	}
-
-	if (VV_vif->radar_enabled) {
-		wl1271_debug(DEBUG_MAC80211, "Stop radar detection");
-		VV_cmd_set_cac(VV_vif, false);
-		VV_vif->radar_enabled = false;
-	}
-
-	pm_runtime_mark_last_busy(wifi_data->dev);
-	pm_runtime_put_autosuspend(wifi_data->dev);
-out:
-	mutex_unlock(&wifi_data->mutex);
-}
-
-/* === CUSTOM ====*/
-void VV_wl1271_op_remove_interface(struct ieee80211_hw *hw,
-				       struct ieee80211_vif *vif)
-{
-	//printk("STUBBBBB - VV_wl1271_op_remove_interface\n");
-    return;
-}
-
-int VV_wl12xx_op_change_interface(struct ieee80211_hw *hw,
-				      struct ieee80211_vif *vif,
-				      enum nl80211_iftype new_type, bool p2p)
-{
-	//printk("STUBBBBB - VV_wl12xx_op_change_interface\n");
-    return 0;
-}
-
-u64 VV_wl1271_op_prepare_multicast(struct ieee80211_hw *hw,
-				       struct netdev_hw_addr_list *mc_list)
-{
-	//printk("STUBBBBB - VV_wl1271_op_prepare_multicast\n");
-	return 0;
-}
-
-void VV_wl1271_op_cancel_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
-{
-	//printk("STUBBBBB - VV_wl1271_op_cancel_hw_scan\n");
 	return;
 }
 
-int VV_wl1271_op_sched_scan_start(struct ieee80211_hw *hw, struct ieee80211_vif *vif, struct cfg80211_sched_scan_request *req, struct ieee80211_scan_ies *ies)
+
+int wifi_wl12xx_op_change_interface(struct ieee80211_hw *hw,
+				      struct ieee80211_vif *vif,
+				      enum nl80211_iftype new_type, bool p2p)
 {
-	//printk("STUBBBBB - VV_wl1271_op_sched_scan_start\n");
+	//printk("STUBBBBB - wifi_wl12xx_op_change_interface\n");
+    return 0;
+}
+
+u64 wifi_wl1271_op_prepare_multicast(struct ieee80211_hw *hw,
+				       struct netdev_hw_addr_list *mc_list)
+{
+	//printk("STUBBBBB - wifi_wl1271_op_prepare_multicast\n");
 	return 0;
 }
 
-int VV_wl1271_op_sched_scan_stop(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+void wifi_wl1271_op_cancel_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
 {
-	//printk("STUBBBBB - VV_wl1271_op_sched_scan_stop\n");
+	//printk("STUBBBBB - wifi_wl1271_op_cancel_hw_scan\n");
+	return;
+}
+
+int wifi_wl1271_op_sched_scan_start(struct ieee80211_hw *hw, struct ieee80211_vif *vif, struct cfg80211_sched_scan_request *req, struct ieee80211_scan_ies *ies)
+{
+	//printk("STUBBBBB - wifi_wl1271_op_sched_scan_start\n");
+	return 0;
+}
+
+int wifi_wl1271_op_sched_scan_stop(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+{
+	//printk("STUBBBBB - wifi_wl1271_op_sched_scan_stop\n");
 	return 0;
 }
 
 /* Stub for .set_frag_threshold */
-static int VV_set_frag_threshold(struct ieee80211_hw *hw, u32 value)
+static int wifi_set_frag_threshold(struct ieee80211_hw *hw, u32 value)
 {
-	//printk("STUBBBBB - VV_set_frag_threshold\n");
+	//printk("STUBBBBB - wifi_set_frag_threshold\n");
     return 0;
 }
 
 /* Stub for .set_rts_threshold */
-static int VV_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
+static int wifi_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
 {
-	//printk("STUBBBBB - VV_set_rts_threshold\n");
+	//printk("STUBBBBB - wifi_set_rts_threshold\n");
     return 0;
 }
 
 /* Stub for .conf_tx */
-static int VV_conf_tx(struct ieee80211_hw *hw,
+static int wifi_conf_tx(struct ieee80211_hw *hw,
                       struct ieee80211_vif *vif,
                       u16 queue,
                       const struct ieee80211_tx_queue_params *params)
 {
-	//printk("STUBBBBB - VV_conf_tx\n");
+	//printk("STUBBBBB - wifi_conf_tx\n");
     return 0;
 }
 
 /* Stub for .get_tsf */
-static u64 VV_get_tsf(struct ieee80211_hw *hw,
+static u64 wifi_get_tsf(struct ieee80211_hw *hw,
                       struct ieee80211_vif *vif)
 {
-	//printk("STUBBBBB - VV_get_tsf\n");
+	//printk("STUBBBBB - wifi_get_tsf\n");
     return 0;           // or ULLONG_MAX if you prefer
 }
 
 /* Stub for .get_survey */
-static int VV_get_survey(struct ieee80211_hw *hw, int idx,
+static int wifi_get_survey(struct ieee80211_hw *hw, int idx,
                          struct survey_info *survey)
 {
-	//printk("STUBBBBB - VV_get_survey\n");
+	//printk("STUBBBBB - wifi_get_survey\n");
     return -ENOENT;     // or 0
 }
 
 /* Stub for .ampdu_action */
-static int VV_ampdu_action(struct ieee80211_hw *hw,
+static int wifi_ampdu_action(struct ieee80211_hw *hw,
                            struct ieee80211_vif *vif,
                            struct ieee80211_ampdu_params *params)
 {
-	//printk("STUBBBBB - VV_ampdu_action\n");
+	//printk("STUBBBBB - wifi_ampdu_action\n");
     return 0;
 }
 
 /* Stub for .tx_frames_pending */
-static bool VV_tx_frames_pending(struct ieee80211_hw *hw)
+static bool wifi_tx_frames_pending(struct ieee80211_hw *hw)
 {
-	//printk("STUBBBBB - VV_tx_frames_pending\n");
+	//printk("STUBBBBB - wifi_tx_frames_pending\n");
     return false;
 }
 
 /* Stub for .set_bitrate_mask */
-static int VV_set_bitrate_mask(struct ieee80211_hw *hw,
+static int wifi_set_bitrate_mask(struct ieee80211_hw *hw,
                                struct ieee80211_vif *vif,
                                const struct cfg80211_bitrate_mask *mask)
 {
-	//printk("STUBBBBB - VV_set_bitrate_mask\n");
+	//printk("STUBBBBB - wifi_set_bitrate_mask\n");
     return 0;
 }
 
 /* Stub for .set_default_unicast_key */
-static void VV_set_default_unicast_key(struct ieee80211_hw *hw,
+static void wifi_set_default_unicast_key(struct ieee80211_hw *hw,
                                       struct ieee80211_vif *vif,
                                       int idx)
 {
-	//printk("STUBBBBB - VV_set_default_unicast_key\n");
+	//printk("STUBBBBB - wifi_set_default_unicast_key\n");
     //return 0;
 }
 
 /* Stub for .channel_switch */
-static void VV_channel_switch(struct ieee80211_hw *hw,
+static void wifi_channel_switch(struct ieee80211_hw *hw,
                               struct ieee80211_vif *vif,
                               struct ieee80211_channel_switch *ch_switch)
 {
-	//printk("STUBBBBB - VV_channel_switch\n");
+	//printk("STUBBBBB - wifi_channel_switch\n");
     /* No-op for stub */
 }
 
 /* Stub for .channel_switch_beacon */
-static void VV_channel_switch_beacon(struct ieee80211_hw *hw,
+static void wifi_channel_switch_beacon(struct ieee80211_hw *hw,
                                      struct ieee80211_vif *vif,
                                      struct cfg80211_chan_def *chandef)
 {
-	//printk("STUBBBBB - VV_channel_switch_beacon\n");
+	//printk("STUBBBBB - wifi_channel_switch_beacon\n");
     /* No-op for stub */
 }
 
 /* Stub for .flush */
-static void VV_flush(struct ieee80211_hw *hw,
+static void wifi_flush(struct ieee80211_hw *hw,
                      struct ieee80211_vif *vif,
                      u32 queues,
                      bool drop)
 {
-	//printk("STUBBBBB - VV_flush\n");
+	//printk("STUBBBBB - wifi_flush\n");
     /* No-op for stub */
 }
 
 /* Stub for .remain_on_channel */
-static int VV_remain_on_channel(struct ieee80211_hw *hw,
+static int wifi_remain_on_channel(struct ieee80211_hw *hw,
                                 struct ieee80211_vif *vif,
                                 struct ieee80211_channel *chan,
                                 int duration,
                                 enum ieee80211_roc_type type)
 {
-	//printk("STUBBBBB - VV_remain_on_channel\n");
+	//printk("STUBBBBB - wifi_remain_on_channel\n");
     return 0;
 }
 
 /* Stub for .cancel_remain_on_channel */
-static int VV_cancel_remain_on_channel(struct ieee80211_hw *hw,
+static int wifi_cancel_remain_on_channel(struct ieee80211_hw *hw,
                                        struct ieee80211_vif *vif)
 {
-	//printk("STUBBBBB - VV_cancel_remain_on_channel\n");
+	//printk("STUBBBBB - wifi_cancel_remain_on_channel\n");
     return 0;
 }
 
 /* Stub for .add_chanctx */
-static int VV_add_chanctx(struct ieee80211_hw *hw,
+static int wifi_add_chanctx(struct ieee80211_hw *hw,
                           struct ieee80211_chanctx_conf *ctx)
 {
-	//printk("STUBBBBB - VV_add_chanctx\n");
+	//printk("STUBBBBB - wifi_add_chanctx\n");
     return 0;
 }
 
 /* Stub for .remove_chanctx */
-static void VV_remove_chanctx(struct ieee80211_hw *hw,
+static void wifi_remove_chanctx(struct ieee80211_hw *hw,
                               struct ieee80211_chanctx_conf *ctx)
 {
-	//printk("STUBBBBB - VV_remove_chanctx\n");
+	//printk("STUBBBBB - wifi_remove_chanctx\n");
     /* No-op */
 }
 
 /* Stub for .change_chanctx */
-static void VV_change_chanctx(struct ieee80211_hw *hw,
+static void wifi_change_chanctx(struct ieee80211_hw *hw,
                               struct ieee80211_chanctx_conf *ctx,
                               u32 changed)
 {
-	//printk("STUBBBBB - VV_change_chanctx\n");
+	//printk("STUBBBBB - wifi_change_chanctx\n");
     /* No-op */
 }
 
 /* Stub for .switch_vif_chanctx */
-static int VV_switch_vif_chanctx(struct ieee80211_hw *hw,
+static int wifi_switch_vif_chanctx(struct ieee80211_hw *hw,
                                  struct ieee80211_vif_chanctx_switch *vifs,
                                  int n_vifs,
                                  enum ieee80211_chanctx_switch_mode mode)
 {
-	//printk("STUBBBBB - VV_switch_vif_chanctx\n");
+	//printk("STUBBBBB - wifi_switch_vif_chanctx\n");
     return 0;
 }
 
 /* Stub for .sta_rc_update */
-static void VV_sta_rc_update(struct ieee80211_hw *hw,
+static void wifi_sta_rc_update(struct ieee80211_hw *hw,
                              struct ieee80211_vif *vif,
                              struct ieee80211_sta *sta,
                              u32 changed)
 {
-	//printk("STUBBBBB - VV_sta_rc_update\n");
+	//printk("STUBBBBB - wifi_sta_rc_update\n");
     /* No-op */
 }
 
 /* Stub for .sta_statistics */
-static void VV_sta_statistics(struct ieee80211_hw *hw,
+static void wifi_sta_statistics(struct ieee80211_hw *hw,
                               struct ieee80211_vif *vif,
                               struct ieee80211_sta *sta,
                               struct station_info *sinfo)
 {
-	//printk("STUBBBBB - VV_sta_statistics\n");
+	//printk("STUBBBBB - wifi_sta_statistics\n");
     /* No-op */
 }
 
 /* Stub for .get_expected_throughput */
-static u32 VV_get_expected_throughput(struct ieee80211_hw *hw,
+static u32 wifi_get_expected_throughput(struct ieee80211_hw *hw,
                                       struct ieee80211_sta *sta)
 {
-	//printk("STUBBBBB - VV_get_expected_throughput\n");
+	//printk("STUBBBBB - wifi_get_expected_throughput\n");
     return 0;
 }
 
-int VV_wl1271_op_start(struct ieee80211_hw *hw)
+int wifi_wl1271_op_start(struct ieee80211_hw *hw)
 {
-	//printk("STUBBBBB - VV_wl1271_op_start\n");
+	//printk("STUBBBBB - wifi_wl1271_op_start\n");
 	return 0;
 }
 
-int VV_op_suspend(struct ieee80211_hw *hw,
+int wifi_op_suspend(struct ieee80211_hw *hw,
 					    struct cfg80211_wowlan *wow)
 						{
-							printk("STUBBBBB - VV_op_suspend\n");
+							printk("STUBBBBB - wifi_op_suspend\n");
 							return 0;
 						}
 
-int VV_op_resume(struct ieee80211_hw *hw){
-	//printk("STUBBBBB - VV_op_resume\n");
+int wifi_op_resume(struct ieee80211_hw *hw){
+	//printk("STUBBBBB - wifi_op_resume\n");
 	return 0;
 }
 
-int VV_op_config(struct ieee80211_hw *hw, u32 changed){
+int wifi_op_config(struct ieee80211_hw *hw, u32 changed){
 	return 0;
 }
 
 static const struct ieee80211_ops wl1271_ops = {
-	.stop = wlcore_op_stop, // VV_
+	.stop = wlcore_op_stop, // wifi_
 
-	.add_interface = wl1271_op_add_interface, // ~VV_
-	.remove_interface = wl1271_op_remove_interface, // ~VV_
+	.add_interface = wl1271_op_add_interface, // ~wifi_
+	.remove_interface = wl1271_op_remove_interface, // ~wifi_
 
-	.configure_filter = wl1271_op_configure_filter, // VV_
-	.tx = wl1271_op_tx, // VV_
-	.set_key = wlcore_op_set_key, // VV_
-	.hw_scan = wl1271_op_hw_scan, // VV_
+	.configure_filter = wl1271_op_configure_filter, // wifi_
+	.tx = wl1271_op_tx, // wifi_
+	.set_key = wlcore_op_set_key, // wifi_
+	.hw_scan = wl1271_op_hw_scan, // wifi_
 
-	.bss_info_changed = wl1271_op_bss_info_changed, // VV_
-	.sta_state = wl12xx_op_sta_state, // VV_
-	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, // VV_
+	.bss_info_changed = wl1271_op_bss_info_changed, // wifi_
+	.sta_state = wl12xx_op_sta_state, // Remain on chip -> focusing on association / deauthenticating
+	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, // assign rate_set = basic_rate
 
 // 	/* =====================*/ /* =====================*/ /* =====================*/
 
@@ -3102,44 +3036,43 @@ static const struct ieee80211_ops wl1271_ops = {
 	// .switch_vif_chanctx = wlcore_op_switch_vif_chanctx,
 	// .unassign_vif_chanctx = wlcore_op_unassign_vif_chanctx,
 
-	.config = VV_op_config,
-	.prepare_multicast = VV_wl1271_op_prepare_multicast,
-	.cancel_hw_scan = VV_wl1271_op_cancel_hw_scan,
-	.conf_tx            = VV_conf_tx,
-	.get_survey         = VV_get_survey,
-	.ampdu_action              = VV_ampdu_action,
-	.set_default_unicast_key   = VV_set_default_unicast_key,
-    .add_chanctx               = VV_add_chanctx,
-    .remove_chanctx            = VV_remove_chanctx,
-    .change_chanctx            = VV_change_chanctx,
-	.sta_statistics = VV_sta_statistics,
-	.get_expected_throughput = VV_get_expected_throughput,
-    .flush                     = VV_flush,
-	.switch_vif_chanctx = VV_switch_vif_chanctx,
+	.config = wifi_op_config,
+	.prepare_multicast = wifi_wl1271_op_prepare_multicast,
+	.cancel_hw_scan = wifi_wl1271_op_cancel_hw_scan,
+	.conf_tx            = wifi_conf_tx,
+	.get_survey         = wifi_get_survey,
+	.ampdu_action              = wifi_ampdu_action,
+	.set_default_unicast_key   = wifi_set_default_unicast_key,
+    .add_chanctx               = wifi_add_chanctx,
+    .remove_chanctx            = wifi_remove_chanctx,
+    .change_chanctx            = wifi_change_chanctx,
+	.sta_statistics = wifi_sta_statistics,
+	.get_expected_throughput = wifi_get_expected_throughput,
+    .flush                     = wifi_flush,
+	.switch_vif_chanctx = wifi_switch_vif_chanctx,
 	.unassign_vif_chanctx = wlcore_op_unassign_vif_chanctx,
 	/* =====================*/ /* =====================*/ /* =====================*/
 #ifdef CONFIG_PM
-	.suspend = VV_op_suspend,
-	.resume = VV_op_resume,
+	.suspend = wifi_op_suspend,
+	.resume = wifi_op_resume,
 #endif
-	.start = VV_wl1271_op_start,
-	.change_interface = VV_wl12xx_op_change_interface,
-	.sched_scan_start = VV_wl1271_op_sched_scan_start,
-	.sched_scan_stop = VV_wl1271_op_sched_scan_stop,
+	.start = wifi_wl1271_op_start,
+	.change_interface = wifi_wl12xx_op_change_interface,
+	.sched_scan_start = wifi_wl1271_op_sched_scan_start,
+	.sched_scan_stop = wifi_wl1271_op_sched_scan_stop,
 
-	.set_frag_threshold = VV_set_frag_threshold,
-    .set_rts_threshold  = VV_set_rts_threshold,
-    .get_tsf            = VV_get_tsf,
+	.set_frag_threshold = wifi_set_frag_threshold,
+    .set_rts_threshold  = wifi_set_rts_threshold,
+    .get_tsf            = wifi_get_tsf,
 
-    .tx_frames_pending         = VV_tx_frames_pending,
-    .set_bitrate_mask          = VV_set_bitrate_mask,
-    .channel_switch            = VV_channel_switch,
-    .channel_switch_beacon     = VV_channel_switch_beacon,
-    .remain_on_channel         = VV_remain_on_channel,
-    .cancel_remain_on_channel  = VV_cancel_remain_on_channel,
-    .switch_vif_chanctx        = VV_switch_vif_chanctx,
-    .sta_rc_update             = VV_sta_rc_update,
-	CFG80211_TESTMODE_CMD(wl1271_tm_cmd)
+    .tx_frames_pending         = wifi_tx_frames_pending,
+    .set_bitrate_mask          = wifi_set_bitrate_mask,
+    .channel_switch            = wifi_channel_switch,
+    .channel_switch_beacon     = wifi_channel_switch_beacon,
+    .remain_on_channel         = wifi_remain_on_channel,
+    .cancel_remain_on_channel  = wifi_cancel_remain_on_channel,
+    .switch_vif_chanctx        = wifi_switch_vif_chanctx,
+    .sta_rc_update             = wifi_sta_rc_update,
 };
 
 
@@ -3206,14 +3139,14 @@ static int wl12xx_get_hw_info(void)
 {
 	int ret;
 
-	ret = VV_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &VV_chip->id, 4, false);
+	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &wifi_chip->id, 4, false);
 	if (ret < 0)
 		goto out;
 
 	wifi_data->fuse_oui_addr = 0;
 	wifi_data->fuse_nic_addr = 0;
 
-	ret = VV_get_mac();
+	ret = wifi_get_mac();
 
 out:
 	return ret;
@@ -3280,7 +3213,7 @@ static int wl1271_register_hw(void)
 
 	wifi_data->mac80211_registered = true;
 
-	wl1271_notice("loaded");
+	printk("loaded");
 
 out:
 	return ret;
@@ -3432,7 +3365,7 @@ static int wl1271_init_ieee80211(void)
 	SET_IEEE80211_DEV(wifi_data->hw, wifi_data->dev);
 
 	wifi_data->hw->sta_data_size = sizeof(struct wl1271_station);
-	wifi_data->hw->vif_data_size = sizeof(struct VV_vif);
+	wifi_data->hw->vif_data_size = sizeof(struct wifi_vif);
 
 	wifi_data->hw->max_rx_aggregation_subframes = wifi_data->conf.ht.rx_ba_win_size;
 
@@ -3443,7 +3376,6 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 				     u32 mbox_size)
 {
 	struct ieee80211_hw *hw;
-	struct wl1271 *wl;
 	int i, j, ret;
 	unsigned int order;
 
@@ -3465,7 +3397,7 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 		goto err_priv_alloc;
 	}
 
-	INIT_LIST_HEAD(&wifi_data->VV_vif_list);
+	INIT_LIST_HEAD(&wifi_data->wifi_vif_list);
 	INIT_LIST_HEAD(&wifi_data->wifi_vif_list);
 
 	wifi_data->hw = hw;
@@ -3476,36 +3408,36 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	 */
 	for (i = 0; i < NUM_TX_QUEUES; i++){
 		for (j = 0; j < WLCORE_MAX_LINKS; j++){
-			skb_queue_head_init(&VV_tx_queue[j][i]);
+			skb_queue_head_init(&wifi_tx_queue[j][i]);
 		}
 	}
 
-	skb_queue_head_init(&VV_deferred_rx_queue);
-	skb_queue_head_init(&VV_deferred_tx_queue);
+	skb_queue_head_init(&wifi_deferred_rx_queue);
+	skb_queue_head_init(&wifi_deferred_tx_queue);
 
-	INIT_WORK(&VV_work.netstack_work, wl1271_netstack_work);
+	INIT_WORK(&wifi_work.netstack_work, wl1271_netstack_work);
 
-	INIT_WORK(&VV_work.tx_work, wl1271_tx_work);
-	INIT_DELAYED_WORK(&VV_work.scan_complete_work, wl1271_scan_complete_work);
-	INIT_DELAYED_WORK(&VV_work.tx_watchdog_work, wl12xx_tx_watchdog_work);
+	INIT_WORK(&wifi_work.tx_work, wl1271_tx_work);
+	INIT_DELAYED_WORK(&wifi_work.scan_complete_work, wl1271_scan_complete_work);
+	INIT_DELAYED_WORK(&wifi_work.tx_watchdog_work, wl12xx_tx_watchdog_work);
 
-	VV_work.freezable_wq = create_freezable_workqueue("wl12xx_wq");
-	if (!VV_work.freezable_wq) {
+	wifi_work.freezable_wq = create_freezable_workqueue("wl12xx_wq");
+	if (!wifi_work.freezable_wq) {
 		ret = -ENOMEM;
 		goto err_hw;
 	}
 
 	wifi_data->channel = 0;
-	VV_rx_counter = 0;
+	wifi_rx_counter = 0;
 	wifi_data->flags = 0;
 	wifi_data->sleep_auth = WL1271_PSM_ILLEGAL;
 	wifi_data->quirks = 0;
 
 	/* The system link is always allocated */
-	__set_bit(WL12XX_SYSTEM_HLID, VV_map.links_map);
+	__set_bit(WL12XX_SYSTEM_HLID, wifi_map.links_map);
 
 	for (i = 0; i < WL18XX_NUM_TX_DESCRIPTORS; i++)
-		VV_skb_tx_frames[i] = NULL;
+		wifi_skb_tx_frames[i] = NULL;
 
 	spin_lock_init(&wifi_data->lock);
 
@@ -3516,8 +3448,8 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	init_completion(&wifi_data->nvs_loading_complete);
 
 	order = get_order(aggr_buf_size);
-	VV_aggr_buf = (u8 *)__get_free_pages(GFP_KERNEL, order);
-	if (!VV_aggr_buf) {
+	wifi_aggr_buf = (u8 *)__get_free_pages(GFP_KERNEL, order);
+	if (!wifi_aggr_buf) {
 		ret = -ENOMEM;
 		goto err_wq;
 	}
@@ -3526,22 +3458,19 @@ struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 	// get_order returns the number has the power of 2
 	// -> order = 4 -> 2^4 = 16 > 13
 
-	VV_dummy_packet = wl12xx_alloc_dummy_packet();
-	if (!VV_dummy_packet) {
+	wifi_dummy_packet = wl12xx_alloc_dummy_packet();
+	if (!wifi_dummy_packet) {
 		ret = -ENOMEM;
 		goto err_aggr;
 	}
 
 	return hw;
 
-err_dummy_packet:
-	dev_kfree_skb(VV_dummy_packet);
-
 err_aggr:
-	free_pages((unsigned long)VV_aggr_buf, order);
+	free_pages((unsigned long)wifi_aggr_buf, order);
 
 err_wq:
-	destroy_workqueue(VV_work.freezable_wq);
+	destroy_workqueue(wifi_work.freezable_wq);
 
 err_hw:
 	kfree(wifi_data->priv);
@@ -3561,8 +3490,8 @@ int wlcore_free_hw(void)
 	mutex_lock(&wifi_data->mutex);
 	mutex_unlock(&wifi_data->mutex);
 
-	dev_kfree_skb(VV_dummy_packet);
-	free_pages((unsigned long)VV_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));
+	dev_kfree_skb(wifi_dummy_packet);
+	free_pages((unsigned long)wifi_aggr_buf, get_order(WL18XX_AGGR_BUFFER_SIZE));
 
 	vfree(wifi_data->fw);
 	wifi_data->fw = NULL;
@@ -3570,8 +3499,8 @@ int wlcore_free_hw(void)
 	kfree(wifi_data->nvs);
 	wifi_data->nvs = NULL;
 
-	kfree(VV_status_reg);
-	destroy_workqueue(VV_work.freezable_wq);
+	kfree(wifi_status_reg);
+	destroy_workqueue(wifi_work.freezable_wq);
 
 	kfree(wifi_data->priv);
 	ieee80211_free_hw(wifi_data->hw);
@@ -3625,7 +3554,7 @@ static void wlcore_nvs_cb(const struct firmware *fw)
 		goto out_free_nvs;
 
 	/* VInh custom */
-	wifi_data->rtable = VV_rtable;
+	wifi_data->rtable = wifi_rtable;
 
 
 	BUG_ON(WL18XX_NUM_TX_DESCRIPTORS > WLCORE_MAX_TX_DESCRIPTORS);
@@ -3692,7 +3621,7 @@ static void wlcore_nvs_cb(const struct firmware *fw)
 	disable_irq(wifi_data->irq);
 	wl1271_power_off();
 
-	ret = VV_identify_chip();
+	ret = wifi_identify_chip();
 	if (ret < 0)
 		goto out_irq;
 
@@ -3734,7 +3663,7 @@ int wlcore_probe(struct platform_device *pdev)
 	wifi_data->dev = &pdev->dev;
 	wifi_data->pdev = pdev;
 
-	VV_chip = (struct VV_chip*)devm_kzalloc(wifi_data->dev, sizeof(struct VV_chip), GFP_KERNEL);
+	wifi_chip = (struct wifi_chip*)devm_kzalloc(wifi_data->dev, sizeof(struct wifi_chip), GFP_KERNEL);
 
 	wlcore_nvs_cb(NULL);
 

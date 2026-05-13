@@ -183,26 +183,10 @@ enum wlcore_queue_stop_reason {
 	WLCORE_QUEUE_STOP_REASON_SPARE_BLK, /* 18xx specific */
 };
 
-static inline int wl1271_tx_get_queue(int queue)
-{
-	switch (queue) {
-	case 0:
-		return CONF_TX_AC_VO;
-	case 1:
-		return CONF_TX_AC_VI;
-	case 2:
-		return CONF_TX_AC_BE;
-	case 3:
-		return CONF_TX_AC_BK;
-	default:
-		return CONF_TX_AC_BE;
-	}
-}
-
 static inline
-int wlcore_tx_get_mac80211_queue(struct VV_vif *VV_vif, int queue)
+int wlcore_tx_get_mac80211_queue(struct wifi_vif *wifi_vif, int queue)
 {
-	//int mac_queue = VV_vif->hw_queue_base;
+	//int mac_queue = wifi_vif->hw_queue_base;
 	int mac_queue = HW_QUEUE_BASE;
 
 	switch (queue) {
@@ -225,21 +209,21 @@ static inline int wl1271_tx_total_queue_count(void)
 
 	for (i = 0; i < NUM_TX_QUEUES; i++)
 		//count += wifi_data->tx_queue_count[i];
-		count += VV_tx_queue_count[i];
+		count += wifi_tx_queue_count[i];
 
 	return count;
 }
 
 void wl1271_tx_work(struct work_struct *work);
 int wlcore_tx_work_locked(void);
-void wl12xx_tx_reset_VV_vif(struct VV_vif *VV_vif);
+void wl12xx_tx_reset_wifi_vif(struct wifi_vif *wifi_vif);
 void wl12xx_tx_reset(void);
 void wl1271_tx_flush(void);
 u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band);
 u32 wl1271_tx_enabled_rates_get(u32 rate_set,
 				enum nl80211_band rate_band);
 u32 wl1271_tx_min_rate_get(u32 rate_set);
-u8 wl12xx_tx_get_hlid(struct VV_vif *VV_vif,
+u8 wl12xx_tx_get_hlid(struct wifi_vif *wifi_vif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta);
 void wl1271_tx_reset_link_queues(u8 hlid);
 bool wl12xx_is_dummy_packet(struct sk_buff *skb);
@@ -250,12 +234,12 @@ void wlcore_wake_queues(
 			enum wlcore_queue_stop_reason reason);
 bool
 wlcore_is_queue_stopped_by_reason_locked(
-					 struct VV_vif *VV_vif,
+					 struct wifi_vif *wifi_vif,
 					 u8 queue,
 					 enum wlcore_queue_stop_reason reason);
 
 /* from main.c */
-void wl1271_free_sta(struct VV_vif *VV_vif, u8 hlid);
+void wl1271_free_sta(struct wifi_vif *wifi_vif, u8 hlid);
 void wl12xx_rearm_tx_watchdog_locked(void);
 
 #endif

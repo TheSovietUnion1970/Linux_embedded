@@ -1014,44 +1014,44 @@ enum {
 
 
 int wl1271_acx_wake_up_conditions(
-				  struct VV_vif *VV_vif,
+				  struct wifi_vif *wifi_vif,
 				  u8 wake_up_event, u8 listen_interval);
 int wl1271_acx_sleep_auth(u8 sleep_auth);
-int wl1271_acx_tx_power(struct VV_vif *VV_vif,
+int wl1271_acx_tx_power(struct wifi_vif *wifi_vif,
 			int power);
-int wl1271_acx_feature_cfg(struct VV_vif *VV_vif);
+int wl1271_acx_feature_cfg(struct wifi_vif *wifi_vif);
 int wl1271_acx_mem_map(
 		       struct acx_header *mem_map, size_t len);
 int wl1271_acx_rx_msdu_life_time(void);
-int wl1271_acx_slot(struct VV_vif *VV_vif,
+int wl1271_acx_slot(struct wifi_vif *wifi_vif,
 		    enum acx_slot_type slot_time);
-int wl1271_acx_group_address_tbl(struct VV_vif *VV_vif,
+int wl1271_acx_group_address_tbl(struct wifi_vif *wifi_vif,
 				 bool enable, void *mc_list, u32 mc_list_len);
 int wl1271_acx_service_period_timeout(
-				      struct VV_vif *VV_vif);
-int wl1271_acx_rts_threshold(struct VV_vif *VV_vif,
+				      struct wifi_vif *wifi_vif);
+int wl1271_acx_rts_threshold(struct wifi_vif *wifi_vif,
 			     u32 rts_threshold);
 int wl1271_acx_dco_itrim_params(void);
-int wl1271_acx_beacon_filter_opt(struct VV_vif *VV_vif,
+int wl1271_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
 				 bool enable_filter);
 int wl1271_acx_beacon_filter_table(
-				   struct VV_vif *VV_vif);
-int wl1271_acx_conn_monit_params(struct VV_vif *VV_vif,
+				   struct wifi_vif *wifi_vif);
+int wl1271_acx_conn_monit_params(struct wifi_vif *wifi_vif,
 				 bool enable);
 int wl1271_acx_sg_enable(bool enable);
 int wl12xx_acx_sg_cfg(void);
 int wl1271_acx_cca_threshold(void);
-int wl1271_acx_bcn_dtim_options(struct VV_vif *VV_vif);
-int wl1271_acx_aid(struct VV_vif *VV_vif, u16 aid);
+int wl1271_acx_bcn_dtim_options(struct wifi_vif *wifi_vif);
+int wl1271_acx_aid(struct wifi_vif *wifi_vif, u16 aid);
 int wl1271_acx_event_mbox_mask(u32 event_mask);
-int wl1271_acx_set_preamble(struct VV_vif *VV_vif,
+int wl1271_acx_set_preamble(struct wifi_vif *wifi_vif,
 			    enum acx_preamble_type preamble);
-int wl1271_acx_cts_protect(struct VV_vif *VV_vif,
+int wl1271_acx_cts_protect(struct wifi_vif *wifi_vif,
 			   enum acx_ctsprotect_type ctsprotect);
-int wl1271_acx_sta_rate_policies(struct VV_vif *VV_vif);
-int wl1271_acx_ac_cfg(struct VV_vif *VV_vif,
+int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif);
+int wl1271_acx_ac_cfg(struct wifi_vif *wifi_vif,
 		      u8 ac, u8 cw_min, u16 cw_max, u8 aifsn, u16 txop);
-int wl1271_acx_tid_cfg(struct VV_vif *VV_vif,
+int wl1271_acx_tid_cfg(struct wifi_vif *wifi_vif,
 		       u8 queue_id, u8 channel_type,
 		       u8 tsid, u8 ps_scheme, u8 ack_policy,
 		       u32 apsd_conf0, u32 apsd_conf1);
@@ -1060,25 +1060,25 @@ int wl1271_acx_tx_config_options(void);
 int wl12xx_acx_mem_cfg(void);
 int wl1271_acx_init_mem_config(void);
 int wl1271_acx_init_rx_interrupt(void);
-int wl1271_acx_bet_enable(struct VV_vif *VV_vif,
+int wl1271_acx_bet_enable(struct wifi_vif *wifi_vif,
 			  bool enable);
-int wl1271_acx_arp_ip_filter(struct VV_vif *VV_vif,
+int wl1271_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
 			     u8 enable, __be32 address);
 int wl1271_acx_pm_config(void);
-int wl1271_acx_keep_alive_mode(struct VV_vif *vif,
+int wl1271_acx_keep_alive_mode(struct wifi_vif *vif,
 			       bool enable);
-int wl1271_acx_keep_alive_config(struct VV_vif *VV_vif,
+int wl1271_acx_keep_alive_config(struct wifi_vif *wifi_vif,
 				 u8 index, u8 tpl_valid);
-int wl1271_acx_rssi_snr_trigger(struct VV_vif *VV_vif,
+int wl1271_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
 				bool enable, s16 thold, u8 hyst);
 int wl1271_acx_rssi_snr_avg_weights(
-				    struct VV_vif *VV_vif);
+				    struct wifi_vif *wifi_vif);
 int wl1271_acx_set_ht_information(
-				   struct VV_vif *VV_vif,
+				   struct wifi_vif *wifi_vif,
 				   u16 ht_operation_mode);
 int wl12xx_acx_set_ba_initiator_policy(
-				       struct VV_vif *VV_vif);
-int wl1271_acx_ps_rx_streaming(struct VV_vif *VV_vif,
+				       struct wifi_vif *wifi_vif);
+int wl1271_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
 			       bool enable);
 int wl1271_acx_fm_coex(void);
 int wl12xx_acx_set_rate_mgmt_params(void);

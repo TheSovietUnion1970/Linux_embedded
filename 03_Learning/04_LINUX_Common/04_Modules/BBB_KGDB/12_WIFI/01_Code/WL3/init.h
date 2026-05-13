@@ -14,6 +14,6 @@
 
 int wl1271_hw_init(void);
 int wl1271_init_vif_specific(struct ieee80211_vif *vif);
-int wl1271_sta_hw_init(struct VV_vif *VV_vif);
+int wl1271_sta_hw_init(struct wifi_vif *wifi_vif);
 
 #endif

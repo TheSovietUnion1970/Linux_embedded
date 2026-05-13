@@ -245,6 +245,8 @@ struct wifi_priv {
 	struct wifi_priv_conf conf;
 };
 
+const char *wifi_rx_rate_to_string(u8 rate);
+
 #define WL18XX_FW_MAX_TX_STATUS_DESC 33
 
 struct wl18xx_fw_status_priv {

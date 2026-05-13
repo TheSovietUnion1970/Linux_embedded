@@ -59,11 +59,11 @@ static inline void wl1271_power_off(void)
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
 #include "common.h"
-int VV_sdio_raw_write(int addr, u32 var, size_t len, bool fixed);
-int VV_sdio_raw_write1(int addr, void* var, size_t len, bool fixed);
-int VV_sdio_raw_read(int addr, u32* var, size_t len, bool fixed);
+int wifi_sdio_raw_write(int addr, u32 var, size_t len, bool fixed);
+int wifi_sdio_raw_write1(int addr, void* var, size_t len, bool fixed);
+int wifi_sdio_raw_read(int addr, u32* var, size_t len, bool fixed);
 int wlcore_translate_addr(int addr);
-int VV_set_partition_core(struct VV_partition_set *p);
-void VV_sdio_set_block_size(unsigned int blksz);
+int wifi_set_partition_core(const struct wifi_partition_set *p);
+void wifi_sdio_set_block_size(unsigned int blksz);
 
 #endif
