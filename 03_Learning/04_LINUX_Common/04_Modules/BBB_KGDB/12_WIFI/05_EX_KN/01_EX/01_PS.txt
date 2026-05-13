@@ -1,0 +1,28 @@
+Adding + Porting PS features on new board:
+1. wl1271_ps_set_mode	-> wl1271_acx_wake_up_conditions	: set wake up condition
+			-> wl1271_acx_bet_enable		: Beacon early terminated
+			
+	wl1271_acx_wake_up_conditions:
+	enum {
+		CONF_WAKE_UP_EVENT_BEACON    = 0x01, /* Wake on every Beacon*/
+		CONF_WAKE_UP_EVENT_DTIM      = 0x02, /* Wake on every DTIM*/
+		CONF_WAKE_UP_EVENT_N_DTIM    = 0x04, /* Wake every Nth DTIM */
+		CONF_WAKE_UP_EVENT_N_BEACONS = 0x08, /* Wake every Nth beacon */
+		CONF_WAKE_UP_EVENT_BITS_MASK = 0x0F
+	};
+		-> wakeup condition is beacon,    dtim, 
+				       n_beacons, n_dtims
+				       
+2. wl1271_ps_filter_frames -> DROP all queued msg -> mark them as filterd
+			   -> mac80211 can re-send them later
+		
+		
+				
+== EX
+DTIM - special type of TIM - every N beacon
+TIM  - wake up 1 sta -> unicast -> it - 102.4 ms
+DTIM - wake up all   -> bro/multicast -> all
+				
+NOTE:
+TIM  = Traffic Indication Map
+DTIM = Delivery Traffic Indication Map
