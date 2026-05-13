@@ -1777,6 +1777,31 @@ out:
 	return ret;
 }
 
+#if (PRINT_DEBUG_CONFIG_FILTER)
+static void wl1271_print_mc_list(struct wl1271_filter_params *fp)
+{
+    int i;
+
+    if (!fp) {
+        printk(KERN_INFO "[FILTER] fp is NULL\n");
+        return;
+    }
+
+    printk(KERN_INFO "[FILTER] Multicast Filter Config:\n");
+    printk(KERN_INFO "[FILTER]   enabled       = %d\n", fp->enabled);
+    printk(KERN_INFO "[FILTER]   mc_list_length = %d\n", fp->mc_list_length);
+
+    if (!fp->enabled || fp->mc_list_length <= 0) {
+        printk(KERN_INFO "[FILTER]   No multicast addresses configured\n");
+        return;
+    }
+
+    for (i = 0; i < fp->mc_list_length && i < ACX_MC_ADDRESS_GROUP_MAX; i++) {
+        printk(KERN_INFO "[FILTER]   MC[%2d] = %pM\n", 
+               i, fp->mc_list[i]);
+    }
+}
+#endif
 
 static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 				       unsigned int changed,
@@ -1787,8 +1812,12 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 
 	int ret;
 
-	wl1271_debug(DEBUG_MAC80211, "mac80211 configure filter changed %x"
-		     " total %x", changed, *total);
+#if (PRINT_DEBUG_CONFIG_FILTER)
+		printk("multicast = 0x%x\n", multicast);
+		printk("mac80211 configure filter changed 0x%x"
+		     " total 0x%x, supported_filters = 0x%x", changed, *total, WL1271_SUPPORTED_FILTERS);
+		wl1271_print_mc_list(fp);
+#endif
 
 	mutex_lock(&wifi_data->mutex);
 
@@ -1811,11 +1840,11 @@ static void wl1271_op_configure_filter(struct ieee80211_hw *hw,
 #endif
 			if (wifi_vif_ptr[i]->bss_type == BSS_TYPE_STA_BSS){
 				if (*total & FIF_ALLMULTI)
-					ret = wifi_acx_group_address_tbl(wifi_vif_ptr[0],
+					ret = wifi_acx_group_address_tbl(wifi_vif_ptr[i],
 										false,
 										NULL, 0);
 				else if (fp)
-					ret = wifi_acx_group_address_tbl(wifi_vif_ptr[0],
+					ret = wifi_acx_group_address_tbl(wifi_vif_ptr[i],
 								fp->enabled,
 								fp->mc_list,
 								fp->mc_list_length);
@@ -1888,7 +1917,6 @@ static int wlcore_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 			     struct ieee80211_sta *sta,
 			     struct ieee80211_key_conf *key_conf)
 {
-	//struct wl1271 *wl = hw->priv;
 	int ret;
 
 	mutex_lock(&wifi_data->mutex);
@@ -3082,9 +3110,12 @@ static const struct ieee80211_ops wl1271_ops = {
 	.add_interface = wl1271_op_add_interface, // ~wifi_
 	.remove_interface = wl1271_op_remove_interface, // ~wifi_
 
-	.configure_filter = wl1271_op_configure_filter, // wifi_
-	.tx = wl1271_op_tx, // wifi_
-	.set_key = wlcore_op_set_key, // wifi_
+	.configure_filter = wl1271_op_configure_filter, // config rx frame filtering
+													// Ex: FIF_ALLMULTI -> accept all
+	.tx = wl1271_op_tx, // when want to transmit data
+	.set_key = wlcore_op_set_key, // set key for WPAx after association
+								  // After assoc + authrized, data transfered is encrypted (WPA2 = AES_CCMP | WPA3 = AES_GCMP)
+								  // struct ieee80211_key_conf *key_conf->keyidx | keylen | key
 	.hw_scan = wl1271_op_hw_scan, // if roc is 0 -> allow to scan, else -> no allow
 								  // Get wifi_scan_channels *ch->passive | active | flags => build probe req if active > 0
 								  // => CMD_SCAN

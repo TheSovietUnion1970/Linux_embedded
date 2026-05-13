@@ -63,7 +63,10 @@ Only happens if connected to wifi hotspot
 */
 
 /* wl1271_op_hw_scan is triggered periodically if no connection */
-#define PRINT_DEBUG_SCAN 1
+#define PRINT_DEBUG_SCAN 0
+
+/* config rx frame filtering */
+#define PRINT_DEBUG_CONFIG_FILTER 0
 
 #define APPLY_EXTERNAL_CONFIG 0
 
