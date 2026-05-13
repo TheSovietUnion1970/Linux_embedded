@@ -1,0 +1,33 @@
+.tx = wl1271_op_tx	
+					-> skb_queue_tail(&wifi_tx_queue[hlid][q], skb);
+					-> wifi_tx_queue_cnt++;
+					-> ieee80211_queue_work(wifi_data->hw, &wifi_work.tx_work);
+					
+wl1271_tx_work
+wlcore_tx_work_locked
+			WHILE(skb):
+					-> skb = skb_dequeue(&wifi_tx_queue[hlid][q]);
+										
+					wl1271_prepare_tx_frame
+										-> desc = skb_push(skb); // Add  sizeof(struct wl1271_tx_hw_descr) at the begning
+										-> update desc
+										
+										-> wl1271_tx_fill_hdr:
+															-> update desc
+															
+			wifi_aggr_buf (added by skb->data) -> rtable[REG_SLV_MEM_DATA] => trigger TX transfer
+															
+INTERUPT TX:
+wifi_irq_locked 
+wifi_tx_immediate_complete	
+wifi_tx_complete_packet
+					-> skb_pull(skb, sizeof(struct wl1271_tx_hw_descr)); // remove private header
+					-> skb_queue_tail(&wifi_deferred_tx_queue, skb);
+					-> SCHEDULE netstack_work
+					
+SCHEDULED WORK
+wl1271_netstack_work:
+			WHILE(skb = skb_dequeue(&wifi_deferred_tx_queue)
+				ieee80211_tx_status_ni(wifi_data->hw, skb);
+															
+															

@@ -1,1 +1,0 @@
-cmd_/home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl/wl18xx/modules.order := {   echo /home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl/wl18xx/wl18.ko; :; } | awk '!x[$$0]++' - > /home/vinh/build_BBB_custom/linux-stable-rcn-ee/wl/wl18xx/modules.order
