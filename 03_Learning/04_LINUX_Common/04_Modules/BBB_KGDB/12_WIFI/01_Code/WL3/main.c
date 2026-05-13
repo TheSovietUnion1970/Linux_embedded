@@ -24,6 +24,7 @@
 #include "ps.h"
 #include "init.h"
 #include "scan.h"
+#include "cmd.h"
 
 #include "common.h"
 #include "wl18.h"
@@ -73,27 +74,6 @@ static void __wl1271_op_remove_interface(
 					 struct ieee80211_vif *vif,
 					 bool reset_tx_queues);
 static void wlcore_op_stop_locked(void);
-
-static int wl12xx_set_authorized(struct wifi_vif *wifi_vif)
-{
-	int ret;
-
-	if (WARN_ON(wifi_vif->bss_type != BSS_TYPE_STA_BSS))
-		return -EINVAL;
-
-	if (!test_bit(wifi_vif_FLAG_STA_ASSOCIATED, &wifi_vif->flags))
-		return 0;
-
-	if (test_and_set_bit(wifi_vif_FLAG_STA_STATE_SENT, &wifi_vif->flags))
-		return 0;
-
-	ret = wl12xx_cmd_set_peer_state(wifi_vif, wifi_vif->sta.hlid);
-	if (ret < 0)
-		return ret;
-
-	wl1271_info("Association completed.");
-	return 0;
-}
 
 static void wl1271_reg_notify(struct wiphy *wiphy,
 			      struct regulatory_request *request)
@@ -2160,7 +2140,8 @@ static int wlcore_set_bssid(struct wifi_vif *wifi_vif,
 						sta_rate_set,
 						wifi_vif->band);
 	// raw:      sta_rate_set    -> 0xFF0FFF
-	// firmware: wifi_vif->rate_set -> 0x1FFEFF
+	// firmware: wifi_vif->rate_set -> 0x1FFEFF -> map to HW bit enum (28 bit) in conf.h
+	// -> maximum supported on AP: CONF_HW_BIT_RATE_MCS_7
 
 	// Set rate policies -> STA_BASIC_RATE_IDX, STA_AP_RATE_IDX, STA_P2P_RATE_IDX
 	ret = wl1271_acx_sta_rate_policies(wifi_vif);
@@ -2205,13 +2186,82 @@ static int wlcore_clear_bssid(struct wifi_vif *wifi_vif)
 	clear_bit(wifi_vif_FLAG_IN_USE, &wifi_vif->flags);
 	return 0;
 }
+
+/*
+[ 6413.330376] wlan0: authenticate with f4:27:56:13:90:d8
+[ 6413.347031] wl1271_bss_info_changed_sta, [0x40000, 0]
+[ 6413.352278] wl1271_bss_info_changed_sta, [0x4000, 0] 						-> BSS_CHANGED_IDLE
+[ 6413.357341] STATE - 1
+[ 6413.359660] wl1271_bss_info_changed_sta, [0xe0, 0]  						-> BSS_CHANGED_BSSID
+[ 6413.364503] STATE - 3, sta = 0x0
+[ 6413.366811] STATE - 4 - SET							=> wl12xx_cmd_role_start_sta
+
+
+
+[ 6413.394130] wlan0: send auth to f4:27:56:13:90:d8 (try 1/3)
+[ 6413.422809] wlan0: authenticated
+[ 6413.434633] wlan0: associate with f4:27:56:13:90:d8 (try 1/3)
+[ 6413.455721] wlan0: RX AssocResp from f4:27:56:13:90:d8 (capab=0x
+1431 status=0 aid=1)
+[ 6413.463696] wl1271_bss_info_changed_sta, [0x10200d, 0] 						-> BSS_CHANGED_ASSOC
+[ 6413.468932] STATE - 3, sta = 0xca7267a0
+[ 6413.471242] STATE - 5
+[ 6413.496488] STATE - 6
+[ 6413.520038] STATE - 7
+
+
+[ 6413.523490] wlan0: associated
+[ 6413.564523] wl1271_bss_info_changed_sta, [0x10, 0] 								-> BSS_CHANGED_HT
+[ 6413.569525] STATE - 3, sta = 0xca7267a0
+[ 6413.611124] IPv6: ADDRCONF(NETDEV_CHANGE): wlan0: link becomes r
+eady
+[ 6413.635245] wl1271_bss_info_changed_sta, [0x400, 0] 							-> BSS_CHANGED_CQM
+[ 6413.640347] STATE - 2
+
+
+[ 6413.649453] wifi0: Association completed.
+[ 6413.656209] wl1271_bss_info_changed_sta, [0x20000, 0]
+[ 6413.815010] wl1271_bss_info_changed_sta, [0x1000, 0] 							-> BSS_CHANGED_ARP_FILTER
+[ 6413.820154] STATE - 7
+
+
+
+
+
+debian@arm:~$ [ 7561.666865] wlan0: deauthenticating from f4:27:56:
+13:90:d8 by local choice (Reason: 3=DEAUTH_LEAVING)
+[ 7561.676309] wl1271_bss_info_changed_sta, [0x20000, 0]
+[ 7561.681789] wl1271_bss_info_changed_sta, [0x80309f, 0]  					-> BSS_CHANGED_ASSOC |  BSS_CHANGED_BSSID
+[ 3282.687947] STATE - 3, sta = 0x0
+[ 3282.700392] STATE - 4 - CLEAR
+[ 3282.706596] STATE - 6
+[ 3282.715132] STATE - 7
+[ 7561.785507] wl1271_bss_info_changed_sta, [0x4000, 0]
+[ 7561.790582] STATE - 1
+[ 7561.881982] wifi0: down
+[ 7561.953422] wl1271_bss_info_changed_sta, [0xe, 0]
+[ 7561.962877] wl1271_bss_info_changed_sta, [0x2000, 0]
+[ 7561.967950] STATE - 7
+[ 7562.315485] wifi0: down
+[ 7562.377046] wl1271_bss_info_changed_sta, [0xe, 0]
+[ 7562.386298] wl1271_bss_info_changed_sta, [0x2000, 0]
+[ 7562.391415] STATE - 7
+*/
+
+/*
+1 -> 3 -> 4
+3 -> 5 -> 6 -> 7
+3 -> 2 -> 7 ...
+
+3 -> 4 -> 6 -> 7
+*/
+
 /* STA/IBSS mode changes */
 static void wl1271_bss_info_changed_sta(
 					struct ieee80211_vif *vif,
 					struct ieee80211_bss_conf *bss_conf,
 					u32 changed)
 {
-	printk("wl1271_bss_info_changed_sta\n");
 	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	bool do_join = false;
 	bool is_ibss = (wifi_vif->bss_type == BSS_TYPE_IBSS);
@@ -2222,31 +2272,40 @@ static void wl1271_bss_info_changed_sta(
 	bool sta_exists = false;
 	struct ieee80211_sta_ht_cap sta_ht_cap;
 
+#if (PRINT_DEBUG_ROC)
+	printk("info_changed_sta, [0x%x, %d]\n", changed, is_ibss);
+#endif
+
 	if (changed & BSS_CHANGED_IDLE && !is_ibss){
-		printk("STATE - 1\n");
+#if (PRINT_DEBUG_ROC)
+		printk("[BSS_STATE] - 1\n");
+#endif
 		set_bit(wifi_vif_FLAG_ACTIVE, &wifi_vif->flags);
 	}
 
 	// Connection Quality Monitor -> signal strength of the connected Access Point
 	if (changed & BSS_CHANGED_CQM) {
-		printk("STATE - 2\n");
+#if (PRINT_DEBUG_ROC)
+		printk("[BSS_STATE] - 2, %d, %d\n", bss_conf->cqm_rssi_thold, bss_conf->cqm_rssi_hyst);
+#endif
 		bool enable = false;
 		if (bss_conf->cqm_rssi_thold) // RSSI threshold in dBm
 			enable = true;
 		ret = wl1271_acx_rssi_snr_trigger(wifi_vif, enable,
 						  bss_conf->cqm_rssi_thold,
-						  bss_conf->cqm_rssi_hyst); // Hysteresis (how much the signal must improve before notifying again)
+						  bss_conf->cqm_rssi_hyst); 
 		if (ret < 0)
 			goto out;
-		//wifi_vif->rssi_thold = bss_conf->cqm_rssi_thold;
 	}
 
 	// Info of AP  - sta rate cap
 	if (changed & (BSS_CHANGED_BSSID | BSS_CHANGED_HT |
 		       BSS_CHANGED_ASSOC)) {
-		printk("STATE - 3\n");
 		rcu_read_lock();
 		sta = ieee80211_find_sta(vif, bss_conf->bssid); // info of AP
+#if (PRINT_DEBUG_ROC)
+		printk("[BSS_STATE] - 3, sta = 0x%x\n", sta);
+#endif
 		if (sta) {
 			u8 *rx_mask = sta->ht_cap.mcs.rx_mask;
 
@@ -2258,36 +2317,44 @@ static void wl1271_bss_info_changed_sta(
 					(rx_mask[1] << HW_MIMO_RATES_OFFSET);
 			sta_ht_cap = sta->ht_cap;
 			sta_exists = true;
-
-			// sta_rate_set is 0xFF0FFF
-			// Bits 0–7   -> 0xFF All legacy rates supported (11b/g)
-			// Bits 8–15  -> 0x0F HT rates (MCS 0–7) — basic single-stream 802.11n rates
-			// Bits 16–23 -> 0xFF MIMO / Higher MCS — usually MCS 8–15 (2 spatial streams)
 		}
 
 		rcu_read_unlock();
 	}
 
 	if (changed & BSS_CHANGED_BSSID) {
-		printk("STATE - 4\n");
 		if (!is_zero_ether_addr(bss_conf->bssid)) {
+			// sta_rate_set = enabled_rates | ht_rates | mimo_rates -> vif->rate_set
+			//  vif->rate_set -> wl1271_acx_sta_rate_policies with rate set
+			// Get wifi_vif->ssid, vif->ssid_len
 			ret = wlcore_set_bssid(wifi_vif, bss_conf,
-					       sta_rate_set); // sta_rate_set is get from the step above
+					       sta_rate_set); 
 			if (ret < 0)
 				goto out;
 
 			/* Need to update the BSSID (for filtering etc) */
 			do_join = true;
+#if (PRINT_DEBUG_ROC)
+			printk("[BSS_STATE] - 4 - SET\n");
+#endif
 		} else {
+			// wl1271_acx_sta_rate_policies with rate set
+			// Get wifi_vif->ssid, vif->ssid_len
+			// wl12xx_cmd_role_stop_sta
 			ret = wlcore_clear_bssid(wifi_vif);
 			if (ret < 0)
 				goto out;
+#if (PRINT_DEBUG_ROC)
+			printk("[BSS_STATE] - 4 - CLEAR\n");
+#endif
 		}
 	}
 
 	// Traffic Indication Map.
 	if ((changed & BSS_CHANGED_BEACON_INFO) && bss_conf->dtim_period) {
-		printk("STATE - 5\n");
+#if (PRINT_DEBUG_ROC)
+		printk("[BSS_STATE] - 5\n");
+#endif
 		/* enable beacon filtering */
 		ret = wl1271_acx_beacon_filter_opt(wifi_vif, true);
 		if (ret < 0)
@@ -2308,7 +2375,9 @@ static void wl1271_bss_info_changed_sta(
 	}
 
 	if (changed & BSS_CHANGED_ASSOC) {
-		printk("STATE - 6\n");
+#if (PRINT_DEBUG_ROC)
+		printk("[BSS_STATE] - 6\n");
+#endif
 		if (bss_conf->assoc) {
 			ret = wlcore_set_assoc(wifi_vif, bss_conf,
 					       sta_rate_set);
@@ -2353,13 +2422,15 @@ static void wl1271_bss_info_changed_sta(
 	/* Handle arp filtering. Done after join. */
 	if ((changed & BSS_CHANGED_ARP_FILTER) ||
 	    (!is_ibss && (changed & BSS_CHANGED_QOS))) {
-		printk("STATE - 7\n");
 		__be32 addr = bss_conf->arp_addr_list[0];
 		wifi_vif->sta.qos = bss_conf->qos;
 		WARN_ON(wifi_vif->bss_type != BSS_TYPE_STA_BSS);
 
 		if (bss_conf->arp_addr_cnt == 1 && bss_conf->assoc) {
 			wifi_vif->ip_addr = addr;
+#if (PRINT_DEBUG_ROC)
+			printk("[BSS_STATE] - 7 - ENABLE\n");
+#endif
 			/*
 			 * The template should have been configured only upon
 			 * association. however, it seems that the correct ip
@@ -2378,6 +2449,9 @@ static void wl1271_bss_info_changed_sta(
 				addr);
 		} else {
 			wifi_vif->ip_addr = 0;
+#if (PRINT_DEBUG_ROC)
+			printk("[BSS_STATE] - 7 - DISABLE\n");
+#endif
 			ret = wl1271_acx_arp_ip_filter(wifi_vif, 0, addr);
 		}
 
@@ -2505,11 +2579,11 @@ static int wl12xx_update_sta_state(
 	/* Authorize station */
 	if (is_sta &&
 	    new_state == IEEE80211_STA_AUTHORIZED) {
-#if (PRINT_DEBUG)
-		printk("STATE - 1\n");
+#if (PRINT_DEBUG_ROC)
+		printk("	[STA_STATE] - 1\n");
 #endif
 		set_bit(wifi_vif_FLAG_STA_AUTHORIZED, &wifi_vif->flags);
-		ret = wl12xx_set_authorizedV(wifi_vif); // wifi_ -> Association completed.
+		ret = wl12xx_set_authorized(wifi_vif); // wifi_ -> Association completed.
 		if (ret)
 			return ret;
 	}
@@ -2518,8 +2592,8 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    old_state == IEEE80211_STA_AUTHORIZED &&
 	    new_state == IEEE80211_STA_ASSOC) {
-#if (PRINT_DEBUG)
-		printk("STATE - 2\n");
+#if (PRINT_DEBUG_ROC)
+		printk("	[STA_STATE] - 2\n");
 #endif
 		clear_bit(wifi_vif_FLAG_STA_AUTHORIZED, &wifi_vif->flags);
 		clear_bit(wifi_vif_FLAG_STA_STATE_SENT, &wifi_vif->flags);
@@ -2530,8 +2604,8 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    old_state == IEEE80211_STA_ASSOC &&
 	    new_state == IEEE80211_STA_AUTH) {
-#if (PRINT_DEBUG)
-		printk("STATE - 3\n");
+#if (PRINT_DEBUG_ROC)
+		printk("	[STA_STATE] - 3\n");
 #endif
 		wlcore_save_freed_pkts(wifi_vif, wifi_vif->sta.hlid, sta);
 		wifi_vif->total_freed_pkts = 0;
@@ -2541,8 +2615,8 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    old_state == IEEE80211_STA_AUTH &&
 	    new_state == IEEE80211_STA_ASSOC) {
-#if (PRINT_DEBUG)
-		printk("STATE - 4\n");
+#if (PRINT_DEBUG_ROC)
+		printk("	[STA_STATE] - 4\n");
 #endif
 		wifi_vif->total_freed_pkts = wl_sta->total_freed_pkts;
 	}
@@ -2552,8 +2626,8 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    (new_state == IEEE80211_STA_AUTHORIZED ||
 	     new_state == IEEE80211_STA_NOTEXIST)) {
-#if (PRINT_DEBUG)
-		printk("STATE - 5\n");
+#if (PRINT_DEBUG_ROC)
+		printk("	[STA_STATE] - 5\n");
 #endif
 		if (test_bit(wifi_vif->role_id, wifi_data->roc_map)){
 			wl12xx_crocV(wifi_vif->role_id); // wifi_
@@ -2564,8 +2638,8 @@ static int wl12xx_update_sta_state(
 	if (is_sta &&
 	    old_state == IEEE80211_STA_NOTEXIST &&
 	    new_state == IEEE80211_STA_NONE) {
-#if (PRINT_DEBUG)
-		printk("STATE - 6\n");
+#if (PRINT_DEBUG_ROC)
+		printk("	[STA_STATE] - 6\n");
 #endif
 		if (find_first_bit(wifi_data->roc_map,
 				   WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES) {

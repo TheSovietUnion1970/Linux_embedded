@@ -1218,7 +1218,7 @@ out:
 	return ret;
 }
 
-int wl12xx_set_authorizedV(struct wifi_vif *wifi_vif)
+int wl12xx_set_authorized(struct wifi_vif *wifi_vif)
 {
 	int ret;
 

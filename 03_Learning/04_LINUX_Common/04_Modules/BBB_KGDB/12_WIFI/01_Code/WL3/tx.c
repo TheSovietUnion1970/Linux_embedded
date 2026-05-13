@@ -269,7 +269,16 @@ u32 wl1271_tx_enabled_rates_get(u32 rate_set,
 	u32 enabled_rates = 0;
 	int bit;
 
+	// rate_set = [MCS_rate][unsued][n_bitrates_id]
+	//			   31 - 16             12 - 0
+	//             HW bit             band->bitrates[id].hw_value
+
+	// enabled_rates = 
+	//    28 bit - aligned with HW_bit enum in conf.h
+
+
 	band = wifi_data->hw->wiphy->bands[rate_band];
+
 	for (bit = 0; bit < band->n_bitrates; bit++) {
 		if (rate_set & 0x1)
 			enabled_rates |= band->bitrates[bit].hw_value;

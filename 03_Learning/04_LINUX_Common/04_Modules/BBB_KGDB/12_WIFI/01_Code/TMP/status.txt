@@ -39,7 +39,7 @@ STA role:
 			
 Rates (HW bits):
 	basic_rate = basic_rate_set = CONF_HW_BIT_RATE_1MBPS | CONF_HW_BIT_RATE_2MBPS => sta_rate_policies / arp_rsp / probe_req (bitrate_masks - 1Mbps)
-	rate_set   = wl1271_tx_enabled_rates_get -> enabled_rate | MCS => cap of this STA
+	rate_set   = wl1271_tx_enabled_rates_get -> enabled_rate | MCS => cap of the AP that STA must align
 		/ -> wifi_acx_set_peer_cap -> setting capibilities, after association
 	
 			

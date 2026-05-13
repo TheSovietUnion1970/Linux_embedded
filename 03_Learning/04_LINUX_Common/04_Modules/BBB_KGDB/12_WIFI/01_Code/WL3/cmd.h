@@ -68,7 +68,7 @@ u8 wlcore_get_native_channel_type(u8 nl_channel_type);
 int wl12xx_roc(struct wifi_vif *wifi_vif, u8 role_id,
 	       enum nl80211_band band, u8 channel);
 int wl12xx_crocV(u8 role_id);
-int wl12xx_set_authorizedV(struct wifi_vif *wifi_vif);
+int wl12xx_set_authorized(struct wifi_vif *wifi_vif);
 
 enum wl1271_commands {
 	CMD_INTERROGATE	= 1, /* use this to read information elements */
