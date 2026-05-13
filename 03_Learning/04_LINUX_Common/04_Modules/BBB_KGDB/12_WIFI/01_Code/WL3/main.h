@@ -9,6 +9,8 @@
 /* Debug for association process */
 #define PRINT_DEBUG_ROC 0
 /*
+Only happens if connected to wifi hotspot
+
 ==================== wlan0: authenticate with f4:27:56:13:90:d8 ===============
 [BSS_STATE] - 1					    => BSS_CHANGED_IDLE
 [BSS_STATE] - 3, sta = 0x0			=> X
@@ -51,7 +53,7 @@
 ==================== wlan0: deauthenticating from f4:27:56:13:90:d8 ===============
 	[STA_STATE] - 2				    => AUTHORIZED -> ASSOC
 	[STA_STATE] - 3				    => ASSOC      -> AUTH
-	[STA_STATE] - 5				    => ASSOC      -> NOTEXIST
+	[STA_STATE] - 5				    => AUTH       -> NOTEXIST
 	
 [BSS_STATE] - 3, sta = 0x0			=> X
 [BSS_STATE] - 4 - CLEAR				=> wlcore_clear_bssid, wl12xx_cmd_role_stop_sta
@@ -59,6 +61,9 @@
 [BSS_STATE] - 7 - DISABLE
 [BSS_STATE] - 1                     => => BSS_CHANGED_IDLE
 */
+
+/* wl1271_op_hw_scan is triggered periodically if no connection */
+#define PRINT_DEBUG_SCAN 1
 
 #define APPLY_EXTERNAL_CONFIG 0
 

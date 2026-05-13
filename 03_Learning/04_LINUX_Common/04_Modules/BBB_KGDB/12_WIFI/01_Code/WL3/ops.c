@@ -33,8 +33,8 @@ wifi_scan_get_channels(
 
 	// from multiple req_channels[i] -> only conditional channels[j]
 	// multiple req_channels[i] is scaned for passive0, active0, ... active1
-#if (PRINT_DEBUG)
-	printk("START LOOP\n");
+#if (PRINT_DEBUG_SCAN)
+	printk("START LOOP - %s\n", (band == NL80211_BAND_2GHZ) ? "2.4GHz" : "5GHz");
 #endif
 	for (i = 0, j = start;
 	     i < n_channels && j < max_channels;
@@ -52,8 +52,9 @@ wifi_scan_get_channels(
 		    (radar ||
 		     !!(flags & IEEE80211_CHAN_NO_IR) == passive)) 
 		{
-#if (PRINT_DEBUG)
-			printk("%d is selected, channel = %d\n", i, req_channels[i]->hw_value);
+#if (PRINT_DEBUG_SCAN)
+			printk("%d is selected, channel = %d, freq = %d\n", i, req_channels[i]->hw_value, 
+							ieee80211_channel_to_frequency(req_channels[i]->hw_value, band));
 #endif
 			if (flags & IEEE80211_CHAN_RADAR) {
 				channels[j].flags |= SCAN_CHANNEL_FLAGS_DFS;

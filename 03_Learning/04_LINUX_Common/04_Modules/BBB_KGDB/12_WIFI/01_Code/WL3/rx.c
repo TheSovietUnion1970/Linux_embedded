@@ -93,6 +93,7 @@ static void wl1271_rx_status(
 	// status->freq is usually 0x994 = 2452 -> 2.4 GHz at ch 2, 5, 7, 9
 	status->freq = ieee80211_channel_to_frequency(desc->channel,
 						      status->band);
+	//printk("desc->channel = 0x%x, freq = %d\n", desc->channel, status->freq);
 
 	if (desc->flags & WL1271_RX_DESC_ENCRYPT_MASK) {
 		u8 desc_err_code = desc->status & WL1271_RX_DESC_STATUS_MASK;

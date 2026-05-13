@@ -1171,7 +1171,6 @@ static int wl12xx_init_vif_data(struct ieee80211_vif *vif)
 	 * per-interface. thus, on init, we have to copy them from wl
 	 */
 	wifi_vif->band = NL80211_BAND_2GHZ;
-	// wifi_vif->channel = wifi_data->channel;
 	wifi_vif->channel = 0;
 	wifi_vif->power_level = WL1271_DEFAULT_POWER_LEVEL;
 	wifi_vif->channel_type = NL80211_CHAN_NO_HT;
@@ -2032,8 +2031,8 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 	u8 *ssid = NULL;
 	size_t len = 0;
 
-#if (PRINT_DEBUG)
-	printk("wl1271_op_hw_scan\n");
+#if (PRINT_DEBUG_SCAN)
+	printk("========= wl1271_op_hw_scan =========\n");
 #endif
 
 	if (req->n_ssids) {
@@ -3086,11 +3085,18 @@ static const struct ieee80211_ops wl1271_ops = {
 	.configure_filter = wl1271_op_configure_filter, // wifi_
 	.tx = wl1271_op_tx, // wifi_
 	.set_key = wlcore_op_set_key, // wifi_
-	.hw_scan = wl1271_op_hw_scan, // wifi_
+	.hw_scan = wl1271_op_hw_scan, // if roc is 0 -> allow to scan, else -> no allow
+								  // Get wifi_scan_channels *ch->passive | active | flags => build probe req if active > 0
+								  // => CMD_SCAN
 
-	.bss_info_changed = wl1271_op_bss_info_changed, // wifi_
+								  // if not connected, wl1271_op_hw_scan is triggered periodically
+
+								  // wlcore_op_assign_vif_chanctx -> CHOOSE channel from freq
+
+	.bss_info_changed = wl1271_op_bss_info_changed, // collab with wl12xx_op_sta_state 
 	.sta_state = wl12xx_op_sta_state, // Remain on chip -> focusing on association / deauthenticating
 	.assign_vif_chanctx = wlcore_op_assign_vif_chanctx, // assign rate_set = basic_rate
+														// also get the same channel between AP and STA
 
 // 	/* =====================*/ /* =====================*/ /* =====================*/
 

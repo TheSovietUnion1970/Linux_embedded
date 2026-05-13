@@ -94,7 +94,7 @@ int wlcore_scan(struct ieee80211_vif *vif,
 	wifi_scan_failed = true;
 	ieee80211_queue_delayed_work(wifi_data->hw, &wifi_work.scan_complete_work,
 				     msecs_to_jiffies(WL1271_SCAN_TIMEOUT));
-#if (PRINT_DEBUG)
+#if (PRINT_DEBUG_SCAN)
 	printk("SCHEDULE SCAN - wifi_vif = 0x%x\n", wifi_vif);
 #endif
 	(void)wifi_scan_send(wifi_vif, req); 
