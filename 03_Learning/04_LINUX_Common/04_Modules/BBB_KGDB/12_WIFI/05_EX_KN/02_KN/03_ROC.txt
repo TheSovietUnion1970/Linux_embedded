@@ -1,0 +1,4 @@
+Case: before being connected, sta may listen on multi channel -> make sure sucessful connection -> STAY on ONE CHANNEL
+
+Remain On Chip -> Remain on one channel 
+-> usually ROC in association by staying in one channel for connection and association

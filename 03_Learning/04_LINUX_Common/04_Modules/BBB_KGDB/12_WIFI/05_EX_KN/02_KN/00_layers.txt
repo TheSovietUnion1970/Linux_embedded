@@ -1,5 +1,5 @@
 cfg80211 -> mac80211 -> wifi drivers
 
-cfg80211 -> manages Wi-Fi settings (SSID, scanning, idle -> auth -> assoc -> authorized)
+cfg80211 -> manages Wi-Fi settings (SSID, scanning, idle -> auth -> assoc)
 mac80211 -> manages 802.11 frame processing (beaconing, encryption (WPA/WPA2/WPA3), and rate control.)
 drivers  -> provide real funcs to func ptrs (by mac80211)

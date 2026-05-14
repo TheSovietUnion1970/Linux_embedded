@@ -1,0 +1,51 @@
+1. Only happens if connected to wifi hotspot:
+
+	==================== wlan0: authenticate with f4:27:56:13:90:d8 ===============
+	[BSS_STATE] - 1					    => BSS_CHANGED_IDLE
+	[BSS_STATE] - 3, sta = 0x0			    => X
+	[BSS_STATE] - 4 - SET				    => wlcore_set_bssid, wl12xx_cmd_role_start_sta
+
+		[STA_STATE] - 6				    => ROC -> sta_no_exist -> sta_none
+		
+	==================== wlan0: send auth to f4:27:56:13:90:d8 (try 1/3) 
+			     wlan0: authenticated
+			     wlan0: associate with f4:27:56:13:90:d8 (try 1/3)
+			     wlan0: RX AssocResp from f4:27:56:13:90:d8 (capab=0x1431 status=0 aid=1) ===============
+			     
+		[STA_STATE] - 4				    => auth -> assoc
+		
+	[BSS_STATE] - 3, sta = 0xca0077a0	            => Get supported rates from AP
+	[BSS_STATE] - 6					    => wlcore_set_assoc
+	[BSS_STATE] - 7 - DISABLE		            => DISBALE arp filter
+
+	==================== wlan0: associated ===============
+
+	[BSS_STATE] - 3, sta = 0xca0077a0	            => Get supported rates from AP
+	[BSS_STATE] - 5					    => enable beacon filtering
+
+	==================== IPv6: ADDRCONF(NETDEV_CHANGE): wlan0: link becomes ready ==========
+
+	[BSS_STATE] - 2					    => Connection Quality Monitor (for rssi)
+
+		[STA_STATE] - 1 			    => wl12xx_set_authorized
+		
+	==================== wifi0: Association completed. ============================
+		
+		[STA_STATE] - 5				    => X ROC -> authrized
+		
+	[BSS_STATE] - 7 - ENABLE			    => ENABLE arp filter
+
+
+
+2. Only happens if connection is down:
+
+	==================== wlan0: deauthenticating from f4:27:56:13:90:d8 ===============
+		[STA_STATE] - 2				    => AUTHORIZED -> ASSOC
+		[STA_STATE] - 3				    => ASSOC      -> AUTH
+		[STA_STATE] - 5				    => AUTH       -> NOTEXIST
+		
+	[BSS_STATE] - 3, sta = 0x0			    => X
+	[BSS_STATE] - 4 - CLEAR				    => wlcore_clear_bssid, wl12xx_cmd_role_stop_sta
+	[BSS_STATE] - 6					    => wlcore_set_unssoc
+	[BSS_STATE] - 7 - DISABLE
+	[BSS_STATE] - 1                                     => BSS_CHANGED_IDLE
