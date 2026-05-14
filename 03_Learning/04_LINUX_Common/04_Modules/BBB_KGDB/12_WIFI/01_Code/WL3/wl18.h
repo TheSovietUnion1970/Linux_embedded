@@ -31,8 +31,6 @@ struct wifi_cmd_cac_start {
 	u8 band;
 	u8 bandwidth;
 } __packed;
-int wifi_cmd_set_cac(struct wifi_vif *wifi_vif, bool start);
-
 
 struct wl18xx_cmd_smart_config_set_group_key {
 	struct wl1271_cmd_header header;

@@ -447,4 +447,26 @@ out:
 	return ret;
 }
 
+#if (PRINT_DEBUG_DATA_FRAME)
+void WIFI_Print_Hex(u8 *data, u16 len, u8 *name){
+    char line[3 * 8 + 1]; // "XX " * 8 bytes + null terminator = 25 chars
+    u16 i;
+
+    if (!data || len == 0)
+        return;
+
+    printk("# %s (len=%u bytes):\n", name, len);
+
+    for (i = 0; i < len; i++) {
+        int pos = (i % 8) * 3;
+        snprintf(&line[pos], sizeof(line) - pos, "%02X ", data[i]);
+
+        // Print every 8 bytes, or at the end of data
+        if ((i % 8) == 7 || i == len - 1) {
+            printk("  %s\n", line);
+            memset(line, 0, sizeof(line));
+        }
+    }
+}
+#endif
 

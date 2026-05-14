@@ -4,7 +4,7 @@
 #define PRINT_DEBUG 0
 
 /* Debug init */
-#define PRINT_DEBUG_INIT 1
+#define PRINT_DEBUG_INIT 0
 
 /* Debug for tx, rx rate */
 #define PRINT_DEBUG_RATE 0
@@ -70,6 +70,11 @@ Only happens if connected to wifi hotspot
 
 /* config rx frame filtering */
 #define PRINT_DEBUG_CONFIG_FILTER 0
+
+/* Print tx and rx frame */
+#define PRINT_DEBUG_DATA_FRAME 0
+#define RX_LIMIT 50 /* limit rx frame up to RX_LIMIT */
+#define TX_LIMIT 50 /* limit tx frame up to TX_LIMIT */
 
 #define APPLY_EXTERNAL_CONFIG 0
 

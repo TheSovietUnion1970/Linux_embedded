@@ -1,36 +1,5 @@
 #include "wl18.h"
 
-int wifi_cmd_set_cac(struct wifi_vif *wifi_vif, bool start)
-{
-	struct wifi_cmd_cac_start *cmd;
-	int ret = 0;
-
-	wl1271_debug(DEBUG_CMD, "cmd cac (channel %d) %s",
-		     wifi_vif->channel, start ? "start" : "stop");
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd)
-		return -ENOMEM;
-
-	cmd->role_id = wifi_vif->role_id;
-	cmd->channel = wifi_vif->channel;
-	if (wifi_vif->band == NL80211_BAND_5GHZ)
-		cmd->band = WLCORE_BAND_5GHZ;
-	cmd->bandwidth = wlcore_get_native_channel_type(wifi_vif->channel_type);
-
-	ret = wifi_cmd_send(
-			      start ? CMD_CAC_START : CMD_CAC_STOP,
-			      cmd, sizeof(*cmd), 0);
-	if (ret < 0) {
-		wl1271_error("failed to send cac command");
-		goto out_free;
-	}
-
-out_free:
-	kfree(cmd);
-	return ret;
-}
-
 /*
  * this command is basically the same as wl1271_acx_ht_capabilities,
  * with the addition of supported rates. they should be unified in

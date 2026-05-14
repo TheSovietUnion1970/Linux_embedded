@@ -17,6 +17,7 @@
 #include "tx.h"
 #include "io.h"
 #include "wl18xx.h"
+#include "ops.h"
 
 
 #include "common.h"
@@ -186,6 +187,10 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 	skb_put_data(skb, data + sizeof(*desc), pkt_data_len);
 	if (rx_align == WLCORE_RX_BUF_PADDED)
 		skb_pull(skb, RX_BUF_ALIGN);
+
+#if (PRINT_DEBUG_DATA_FRAME)
+	WIFI_Print_Hex(skb->data, (RX_LIMIT < skb->len) ? RX_LIMIT : skb->len, "RX frame");
+#endif
 
 	*hlid = desc->hlid;
 

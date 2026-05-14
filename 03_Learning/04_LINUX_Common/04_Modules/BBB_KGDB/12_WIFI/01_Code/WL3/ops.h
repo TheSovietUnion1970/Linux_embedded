@@ -8,6 +8,7 @@
 #include "scan.h"
 #include "common.h"
 #include "io.h"
+#include "main.h"
 
 struct wifi_cmd_scan_stop {
 	struct wl1271_cmd_header header;
@@ -251,5 +252,7 @@ int wifi_wait_for_event(enum wlcore_wait_event event,
 #define WL18XX_RX_BA_MAX_SESSIONS 13
 #define WL18XX_FW_NAME "ti-connectivity/wl18xx-fw-4.bin"
 int wifi_identify_chip(void);
-
+#if (PRINT_DEBUG_DATA_FRAME)
+void WIFI_Print_Hex(u8 *data, u16 len, u8 *name);
+#endif
 #endif

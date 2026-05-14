@@ -324,7 +324,7 @@ static void wl1271_netstack_work(struct work_struct *work)
 	} while (skb_queue_len(&wifi_deferred_rx_queue)); // drain until there is no queue left (no list of ptrs)
 }
 
-#if (PRINT_DEBUG)
+#if (PRINT_DEBUG_RATE)
 static const char *wifi_tx_rate_to_string(u8 rate)
 {
     switch (rate) {
@@ -475,6 +475,10 @@ static void wifi_tx_complete_packet(u8 tx_stat_byte)
 
 	/* remove private header from packet */
 	skb_pull(skb, sizeof(struct wl1271_tx_hw_descr));
+
+#if (PRINT_DEBUG_DATA_FRAME)
+	WIFI_Print_Hex(skb->data, (TX_LIMIT < skb->len) ? TX_LIMIT : skb->len, "TX frame:");
+#endif
 
 	/* return the packet to the stack */
 	skb_queue_tail(&wifi_deferred_tx_queue, skb);
@@ -2541,6 +2545,11 @@ static int wlcore_op_assign_vif_chanctx(struct ieee80211_hw *hw,
 	int channel = ieee80211_frequency_to_channel(
 		ctx->def.chan->center_freq);
 	int ret = -EINVAL;
+
+#if (PRINT_DEBUG_SCAN)
+	printk("SCAN DONE -> choose channel: %d, freq: %d\n", channel
+						, ctx->def.chan->center_freq);
+#endif
 
 	mutex_lock(&wifi_data->mutex);
 

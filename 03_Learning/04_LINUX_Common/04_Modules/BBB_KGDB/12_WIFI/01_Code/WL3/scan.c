@@ -67,7 +67,12 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	pm_runtime_mark_last_busy(wifi_data->dev);
 	pm_runtime_put_autosuspend(wifi_data->dev);
 
-	ieee80211_scan_completed(wifi_data->hw, &info);
+	/*
+	this function needs to be called by the driver to notify
+	mac80211 that the scan finished. This function can be called from
+	any context, including hardirq context.
+	*/
+	ieee80211_scan_completed(wifi_data->hw, &info); 
 
 out:
 	mutex_unlock(&wifi_data->mutex);
