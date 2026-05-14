@@ -78,7 +78,7 @@ struct wilink_family_data {
 #define WL1271_AP_BSS_INDEX        0
 #define WL1271_AP_DEF_BEACON_EXP   20
 
-enum wlcore_state {
+enum wificore_state {
 	WLCORE_STATE_OFF,
 	WLCORE_STATE_RESTARTING,
 	WLCORE_STATE_ON,
@@ -91,7 +91,6 @@ enum wifi_fw_type {
 	WL12XX_FW_TYPE_PLT,
 };
 
-struct wl1271;
 
 enum {
 	FW_VER_CHIP,
@@ -103,7 +102,7 @@ enum {
 	NUM_FW_VER
 };
 
-// struct wl1271_chip {
+// struct wifi_chip {
 // 	u32 id;
 // 	char fw_ver_str[ETHTOOL_FWVERS_LEN];
 // 	unsigned int fw_ver[NUM_FW_VER];
@@ -173,7 +172,7 @@ struct wl_fw_status {
 
 #define WL1271_MAX_CHANNELS 64
 
-struct wl1271_if_operations {
+struct wifi_if_operations {
 	int __must_check (*read)(struct device *child, int addr, void *buf,
 				 size_t len, bool fixed);
 	int __must_check (*write)(struct device *child, int addr, void *buf,
@@ -184,8 +183,8 @@ struct wl1271_if_operations {
 	void (*set_block_size) (struct device *child, unsigned int blksz);
 };
 
-struct wlcore_platdev_data {
-	struct wl1271_if_operations *if_ops;
+struct wificore_platdev_data {
+	struct wifi_if_operations *if_ops;
 	const struct wilink_family_data *family;
 
 	bool ref_clock_xtal;	/* specify whether the clock is XTAL or not */
@@ -197,7 +196,7 @@ struct wlcore_platdev_data {
 #define MAX_NUM_KEYS 14
 #define MAX_KEY_SIZE 32
 
-struct wl1271_ap_key {
+struct wifi_ap_key {
 	u8 id;
 	u8 key_type;
 	u8 key_size;
@@ -283,14 +282,14 @@ struct wifi_rx_filter {
 	struct wifi_rx_filter_field fields[WL1271_RX_FILTER_MAX_FIELDS];
 };
 
-struct wl1271_station {
+struct wifi_station {
 	u8 hlid;
 	bool in_connection;
 
 	/*
 	 * total freed FW packets on the link to the STA - used for tracking the
 	 * AES/TKIP PN across recoveries. Re-initialized each time from the
-	 * wl1271_station structure.
+	 * wifi_station structure.
 	 * Used in both AP and STA mode.
 	 */
 	u64 total_freed_pkts;
@@ -309,7 +308,7 @@ struct ieee80211_vif *wifi_wifi_vif_to_vif(struct wifi_vif *wifi_vif)
 	return container_of((void *)wifi_vif, struct ieee80211_vif, drv_priv);
 }
 
-static inline bool wlcore_is_p2p_mgmt(struct wifi_vif *wifi_vif)
+static inline bool wificore_is_p2p_mgmt(struct wifi_vif *wifi_vif)
 {
 	return wifi_wifi_vif_to_vif(wifi_vif)->type == NL80211_IFTYPE_P2P_DEVICE;
 }

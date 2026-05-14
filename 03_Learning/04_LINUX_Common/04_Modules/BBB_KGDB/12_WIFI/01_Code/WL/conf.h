@@ -1063,7 +1063,7 @@ struct conf_fwlog {
 	/* Include/exclude timestamps from the log messages */
 	u8 timestamp;
 
-	/* See enum wl1271_fwlogger_output */
+	/* See enum wifi_fwlogger_output */
 	u8 output;
 
 	/* Regulates the frequency of log messages */
@@ -1118,16 +1118,16 @@ struct conf_recovery_settings {
  */
 #define WLCORE_CONF_VERSION	(0x0007 << 16)
 #define WLCORE_CONF_MASK	0xffff0000
-#define WLCORE_CONF_SIZE	(sizeof(struct wlcore_conf_header) +	\
-				 sizeof(struct wlcore_conf))
+#define WLCORE_CONF_SIZE	(sizeof(struct wificore_conf_header) +	\
+				 sizeof(struct wificore_conf))
 
-struct wlcore_conf_header {
+struct wificore_conf_header {
 	__le32 magic;
 	__le32 version;
 	__le32 checksum;
 } __packed;
 
-struct wlcore_conf {
+struct wificore_conf {
 	struct conf_sg_settings sg;
 	struct conf_rx_settings rx;
 	struct conf_tx_settings tx;
@@ -1147,9 +1147,9 @@ struct wlcore_conf {
 	struct conf_recovery_settings recovery;
 } __packed;
 
-struct wlcore_conf_file {
-	struct wlcore_conf_header header;
-	struct wlcore_conf core;
+struct wificore_conf_file {
+	struct wificore_conf_header header;
+	struct wificore_conf core;
 	u8 priv[];
 } __packed;
 

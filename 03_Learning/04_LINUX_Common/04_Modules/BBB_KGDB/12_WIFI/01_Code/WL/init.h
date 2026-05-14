@@ -12,8 +12,8 @@
 
 #include "wlcore.h"
 
-int wl1271_hw_init(void);
-int wl1271_init_vif_specific(struct ieee80211_vif *vif);
-int wl1271_sta_hw_init(struct wifi_vif *wifi_vif);
+int wifi_hw_init(void);
+int wifi_init_vif_specific(struct ieee80211_vif *vif);
+int wifi_sta_hw_init(struct wifi_vif *wifi_vif);
 
 #endif

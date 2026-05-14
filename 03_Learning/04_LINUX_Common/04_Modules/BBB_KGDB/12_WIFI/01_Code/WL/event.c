@@ -13,7 +13,7 @@
 #include "event.h"
 #include "ps.h"
 #include "scan.h"
-#include "wl12xx_80211.h"
+#include "wifi_80211.h"
 //#include "hw_ops.h"
 
 #include "common.h"
@@ -27,12 +27,12 @@
 #define WL18XX_LOGGER_BUFF_OFFSET	(sizeof(struct fw_logger_information))
 #define WL18XX_LOGGER_READ_POINT_OFFSET		(12)
 
-int wl1271_event_unmask(void)
+int wifi_event_unmask(void)
 {
 	int ret;
 
-	wl1271_debug(DEBUG_EVENT, "unmasking event_mask 0x%x", wifi_data->event_mask);
-	ret = wl1271_acx_event_mbox_mask(~(wifi_data->event_mask));
+	wifi_debug(DEBUG_EVENT, "unmasking event_mask 0x%x", wifi_data->event_mask);
+	ret = wifi_acx_event_mbox_mask(~(wifi_data->event_mask));
 	if (ret < 0)
 		return ret;
 
@@ -41,12 +41,12 @@ int wl1271_event_unmask(void)
 
 // #include "../wl18xx/event.h"
 
-enum wlcore_vendor_events {
+enum wificore_vendor_events {
 	WLCORE_VENDOR_EVENT_SC_SYNC,
 	WLCORE_VENDOR_EVENT_SC_DECODE,
 };
 
-enum wlcore_vendor_attributes {
+enum wificore_vendor_attributes {
 	WLCORE_VENDOR_ATTR_FREQ,
 	WLCORE_VENDOR_ATTR_PSK,
 	WLCORE_VENDOR_ATTR_SSID,
@@ -81,11 +81,11 @@ static int wifi_process_mailbox_events(void)
 #endif
 	// 0x100
 	if (vector & SCAN_COMPLETE_EVENT_ID) {
-		wl1271_debug(DEBUG_EVENT, "scan results: %d",
+		wifi_debug(DEBUG_EVENT, "scan results: %d",
 			     mbox->number_of_scan_results);
 
 		for (i = 0; i < wifi_vif_ptr_id; i++){
-			if (!wlcore_is_p2p_mgmt(wifi_vif_ptr[i])){
+			if (!wificore_is_p2p_mgmt(wifi_vif_ptr[i])){
 #if (PRINT_DEBUG)
 				printk("[EVENTS] [%d] - bss = %d", i, wifi_vif_ptr[i]->bss_type);
 #endif
@@ -109,20 +109,20 @@ static int wifi_process_mailbox_events(void)
 #define WL18XX_INTR_TRIG_EVENT_ACK BIT(29)
 static int wifi_ack_event(void)
 {
-	return wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
+	return wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_TRIG]), WL18XX_INTR_TRIG_EVENT_ACK, 4, false);
 }
 
-int wl1271_event_handle(u8 mbox_num)
+int wifi_event_handle(u8 mbox_num)
 {
 	int ret;
 
-	wl1271_debug(DEBUG_EVENT, "EVENT on mbox %d", mbox_num);
+	wifi_debug(DEBUG_EVENT, "EVENT on mbox %d", mbox_num);
 
 	if (mbox_num > 1)
 		return -EINVAL;
 
 	/* first we read the mbox descriptor */
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->mbox_ptr[mbox_num]), (u32*)wifi_data->mbox, sizeof(struct wl18xx_event_mailbox), false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(*wifi_data->mbox_ptr[mbox_num]), (u32*)wifi_data->mbox, sizeof(struct wl18xx_event_mailbox), false);
 	if (ret < 0)
 		return ret;
 

@@ -19,7 +19,7 @@
 #include "debug.h"
 #include "io.h"
 #include "acx.h"
-#include "wl12xx_80211.h"
+#include "wifi_80211.h"
 #include "cmd.h"
 #include "event.h"
 #include "tx.h"
@@ -34,7 +34,7 @@
 #define WL18XX_CMD_MAX_SIZE          740
 int wifi_cmd_send(u16 id, void *buf, size_t len, size_t res_len)
 {
-	struct wl1271_cmd_header *cmd;
+	struct wifi_cmd_header *cmd;
 	unsigned long timeout;
 	u32 intr;
 	int ret;
@@ -45,41 +45,41 @@ int wifi_cmd_send(u16 id, void *buf, size_t len, size_t res_len)
 	cmd->id = cpu_to_le16(id);
 	cmd->status = 0;
 
-	ret = wifi_sdio_raw_write1(wlcore_translate_addr(*wifi_data->cmd_box_addr), buf, len, false);
+	ret = wifi_sdio_raw_write1(wificore_translate_addr(*wifi_data->cmd_box_addr), buf, len, false);
 	if (ret < 0)
 		return ret;
 
 	memcpy(cmd_max, buf, len);
 	memset(cmd_max + len, 0, WL18XX_CMD_MAX_SIZE - len);
 
-	ret = wifi_sdio_raw_write1(wlcore_translate_addr(*wifi_data->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
+	ret = wifi_sdio_raw_write1(wificore_translate_addr(*wifi_data->cmd_box_addr), cmd_max, WL18XX_CMD_MAX_SIZE, false);
 
 
 	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 	if (ret < 0)
 		return ret;
 
 	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
 		if (time_after(jiffies, timeout)) {
-			wl1271_error("command complete timeout");
+			wifi_error("command complete timeout");
 			return -ETIMEDOUT;
 		}
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, sizeof(intr), false);
 		if (ret < 0)
 			return ret;
 	}
 
 	/* read back the status code of the command */
 	if (res_len == 0)
-		res_len = sizeof(struct wl1271_cmd_header);
+		res_len = sizeof(struct wifi_cmd_header);
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(*wifi_data->cmd_box_addr), (u32*)cmd, sizeof(*cmd), false);
 	if (ret < 0)
 		return ret;
 	status = le16_to_cpu(cmd->status);
 
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_ACK]), 
+	ret = wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_ACK]), 
 				WL1271_ACX_INTR_CMD_COMPLETE, sizeof(WL1271_ACX_INTR_CMD_COMPLETE), false);
 	if (ret < 0){
 		printk("[FAILED] - 1.wifi_cmd_send\n");
@@ -107,7 +107,7 @@ int wifi_cmd_configure(u16 id, void *buf,
 
 	ret = wifi_cmd_send(CMD_CONFIGURE, acx, len, 0);
 	if (ret < 0) {
-		wl1271_warning("CONFIGURE command NOK");
+		wifi_warning("CONFIGURE command NOK");
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ int wifi_cmd_configure(u16 id, void *buf,
  * Poll the mailbox event field until any of the bits in the mask is set or a
  * timeout occurs (WL1271_EVENT_TIMEOUT in msecs)
  */
-int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout)
+int wificore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout)
 {
 	u32 *events_vector;
 	u32 event;
@@ -142,7 +142,7 @@ int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout)
 
 	do {
 		if (time_after(jiffies, timeout_time)) {
-			wl1271_debug(DEBUG_CMD, "timeout waiting for event %d",
+			wifi_debug(DEBUG_CMD, "timeout waiting for event %d",
 				     (int)mask);
 			*timeout = true;
 			goto out;
@@ -155,12 +155,12 @@ int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout)
 			usleep_range(1000, 5000);
 
 		/* read from both event fields */
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->mbox_ptr[0]), (u32*)events_vector, sizeof(*events_vector), false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(*wifi_data->mbox_ptr[0]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 
 		event = *events_vector & mask;
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->mbox_ptr[1]), (u32*)events_vector, sizeof(*events_vector), false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(*wifi_data->mbox_ptr[1]), (u32*)events_vector, sizeof(*events_vector), false);
 		if (ret < 0)
 			goto out;
 
@@ -174,15 +174,15 @@ free_vector:
 	kfree(events_vector);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wlcore_cmd_wait_for_event_or_timeout);
+EXPORT_SYMBOL_GPL(wificore_cmd_wait_for_event_or_timeout);
 
-int wl12xx_cmd_role_enable(u8 *addr, u8 role_type,
+int wifi_cmd_role_enable(u8 *addr, u8 role_type,
 			   u8 *role_id)
 {
-	struct wl12xx_cmd_role_enable *cmd;
+	struct wifi_cmd_role_enable *cmd;
 	int ret;
 
-	wl1271_debug(DEBUG_CMD, "cmd role enable");
+	wifi_debug(DEBUG_CMD, "cmd role enable");
 
 	if (WARN_ON(*role_id != WL12XX_INVALID_ROLE_ID))
 		return -EBUSY;
@@ -212,7 +212,7 @@ int wl12xx_cmd_role_enable(u8 *addr, u8 role_type,
 
 	ret = wifi_cmd_send(CMD_ROLE_ENABLE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role enable");
+		wifi_error("failed to initiate cmd role enable");
 		goto out_free;
 	}
 
@@ -227,12 +227,12 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_role_disable(u8 *role_id)
+int wifi_cmd_role_disable(u8 *role_id)
 {
-	struct wl12xx_cmd_role_disable *cmd;
+	struct wifi_cmd_role_disable *cmd;
 	int ret;
 
-	wl1271_debug(DEBUG_CMD, "cmd role disable");
+	wifi_debug(DEBUG_CMD, "cmd role disable");
 
 	if (WARN_ON(*role_id == WL12XX_INVALID_ROLE_ID))
 		return -ENOENT;
@@ -246,7 +246,7 @@ int wl12xx_cmd_role_disable(u8 *role_id)
 
 	ret = wifi_cmd_send(CMD_ROLE_DISABLE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role disable");
+		wifi_error("failed to initiate cmd role disable");
 		goto out_free;
 	}
 
@@ -260,7 +260,7 @@ out:
 	return ret;
 }
 
-static int wlcore_get_new_session_id(u8 hlid)
+static int wificore_get_new_session_id(u8 hlid)
 {
 	if (wifi_session_ids[hlid] >= SESSION_COUNTER_MAX)
 		wifi_session_ids[hlid] = 0;
@@ -271,7 +271,7 @@ static int wlcore_get_new_session_id(u8 hlid)
 }
 
 #define WL18XX_MAX_LINKS 16
-int wl12xx_allocate_link(struct wifi_vif *wifi_vif, u8 *hlid)
+int wifi_allocate_link(struct wifi_vif *wifi_vif, u8 *hlid)
 {
 	unsigned long flags;
 
@@ -279,7 +279,7 @@ int wl12xx_allocate_link(struct wifi_vif *wifi_vif, u8 *hlid)
 	if (link >= WL18XX_MAX_LINKS)
 		return -EBUSY;
 
-	wifi_session_ids[link] = wlcore_get_new_session_id(link);
+	wifi_session_ids[link] = wificore_get_new_session_id(link);
 
 	/* these bits are used by op_tx */
 	spin_lock_irqsave(&wifi_data->lock, flags);
@@ -312,7 +312,7 @@ int wl12xx_allocate_link(struct wifi_vif *wifi_vif, u8 *hlid)
 	return 0;
 }
 
-void wl12xx_free_link(struct wifi_vif *wifi_vif, u8 *hlid)
+void wifi_free_link(struct wifi_vif *wifi_vif, u8 *hlid)
 {
 	unsigned long flags;
 
@@ -335,7 +335,7 @@ void wl12xx_free_link(struct wifi_vif *wifi_vif, u8 *hlid)
 	 * At this point op_tx() will not add more packets to the queues. We
 	 * can purge them.
 	 */
-	wl1271_tx_reset_link_queues(*hlid);
+	wifi_tx_reset_link_queues(*hlid);
 	wifi_links[*hlid].wifi_vif = NULL;
 
 	wifi_links[*hlid].total_freed_pkts = 0;
@@ -345,7 +345,7 @@ void wl12xx_free_link(struct wifi_vif *wifi_vif, u8 *hlid)
 	//WARN_ON_ONCE(wifi_data->active_link_count < 0);
 }
 
-u8 wlcore_get_native_channel_type(u8 nl_channel_type)
+u8 wificore_get_native_channel_type(u8 nl_channel_type)
 {
 	switch (nl_channel_type) {
 	case NL80211_CHAN_NO_HT:
@@ -361,12 +361,12 @@ u8 wlcore_get_native_channel_type(u8 nl_channel_type)
 		return WLCORE_CHAN_NO_HT;
 	}
 }
-EXPORT_SYMBOL_GPL(wlcore_get_native_channel_type);
+EXPORT_SYMBOL_GPL(wificore_get_native_channel_type);
 
-int wl12xx_cmd_role_start_sta(struct wifi_vif *wifi_vif)
+int wifi_cmd_role_start_sta(struct wifi_vif *wifi_vif)
 {
-	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
-	struct wl12xx_cmd_role_start *cmd;
+	struct ieee80211_vif *vif = wifi_wifi_vif_to_vif(wifi_vif);
+	struct wifi_cmd_role_start *cmd;
 	u32 supported_rates;
 	int ret;
 
@@ -376,7 +376,7 @@ int wl12xx_cmd_role_start_sta(struct wifi_vif *wifi_vif)
 		goto out;
 	}
 
-	wl1271_debug(DEBUG_CMD, "cmd role start sta %d", wifi_vif->role_id);
+	wifi_debug(DEBUG_CMD, "cmd role start sta %d", wifi_vif->role_id);
 
 	cmd->role_id = wifi_vif->role_id;
 	if (wifi_vif->band == NL80211_BAND_5GHZ)
@@ -395,10 +395,10 @@ int wl12xx_cmd_role_start_sta(struct wifi_vif *wifi_vif)
 
 	cmd->sta.local_rates = cpu_to_le32(supported_rates);
 
-	cmd->channel_type = wlcore_get_native_channel_type(wifi_vif->channel_type);
+	cmd->channel_type = wificore_get_native_channel_type(wifi_vif->channel_type);
 
 	if (wifi_vif->sta.hlid == WL12XX_INVALID_LINK_ID) {
-		ret = wl12xx_allocate_link(wifi_vif, &wifi_vif->sta.hlid);
+		ret = wifi_allocate_link(wifi_vif, &wifi_vif->sta.hlid);
 		if (ret)
 			goto out_free;
 	}
@@ -414,7 +414,7 @@ int wl12xx_cmd_role_start_sta(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_send(CMD_ROLE_START, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role start sta");
+		wifi_error("failed to initiate cmd role start sta");
 		goto err_hlid;
 	}
 
@@ -422,7 +422,7 @@ int wl12xx_cmd_role_start_sta(struct wifi_vif *wifi_vif)
 
 err_hlid:
 	/* clear links on error. */
-	wl12xx_free_link(wifi_vif, &wifi_vif->sta.hlid);
+	wifi_free_link(wifi_vif, &wifi_vif->sta.hlid);
 
 out_free:
 	kfree(cmd);
@@ -432,9 +432,9 @@ out:
 }
 
 /* use this function to stop ibss as well */
-int wl12xx_cmd_role_stop_sta(struct wifi_vif *wifi_vif)
+int wifi_cmd_role_stop_sta(struct wifi_vif *wifi_vif)
 {
-	struct wl12xx_cmd_role_stop *cmd;
+	struct wifi_cmd_role_stop *cmd;
 	int ret;
 
 	if (WARN_ON(wifi_vif->sta.hlid == WL12XX_INVALID_LINK_ID))
@@ -446,7 +446,7 @@ int wl12xx_cmd_role_stop_sta(struct wifi_vif *wifi_vif)
 		goto out;
 	}
 
-	wl1271_debug(DEBUG_CMD, "cmd role stop sta %d", wifi_vif->role_id);
+	wifi_debug(DEBUG_CMD, "cmd role stop sta %d", wifi_vif->role_id);
 
 	cmd->role_id = wifi_vif->role_id;
 	cmd->disc_type = DISCONNECT_IMMEDIATE;
@@ -454,11 +454,11 @@ int wl12xx_cmd_role_stop_sta(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_send(CMD_ROLE_STOP, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to initiate cmd role stop sta");
+		wifi_error("failed to initiate cmd role stop sta");
 		goto out_free;
 	}
 
-	wl12xx_free_link(wifi_vif, &wifi_vif->sta.hlid);
+	wifi_free_link(wifi_vif, &wifi_vif->sta.hlid);
 
 out_free:
 	kfree(cmd);
@@ -468,7 +468,7 @@ out:
 }
 
 /**
- * wl1271_cmd_interrogate - read acx from firmware
+ * wifi_cmd_interrogate - read acx from firmware
  *
  * @wl: wl struct
  * @id: acx id
@@ -476,13 +476,13 @@ out:
  * @cmd_len: length of command
  * @res_len: length of payload
  */
-int wl1271_cmd_interrogate(u16 id, void *buf,
+int wifi_cmd_interrogate(u16 id, void *buf,
 			   size_t cmd_len, size_t res_len)
 {
 	struct acx_header *acx = buf;
 	int ret;
 
-	wl1271_debug(DEBUG_CMD, "cmd interrogate");
+	wifi_debug(DEBUG_CMD, "cmd interrogate");
 
 	acx->id = cpu_to_le16(id);
 
@@ -491,18 +491,18 @@ int wl1271_cmd_interrogate(u16 id, void *buf,
 
 	ret = wifi_cmd_send(CMD_INTERROGATE, acx, cmd_len, res_len);
 	if (ret < 0)
-		wl1271_error("INTERROGATE command failed");
+		wifi_error("INTERROGATE command failed");
 
 	return ret;
 }
 
-int wl1271_cmd_data_path(bool enable)
+int wifi_cmd_data_path(bool enable)
 {
 	struct cmd_enabledisable_path *cmd;
 	int ret;
 	u16 cmd_rx, cmd_tx;
 
-	wl1271_debug(DEBUG_CMD, "cmd data path");
+	wifi_debug(DEBUG_CMD, "cmd data path");
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd) {
@@ -523,37 +523,37 @@ int wl1271_cmd_data_path(bool enable)
 
 	ret = wifi_cmd_send(cmd_rx, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("rx %s cmd for channel %d failed",
+		wifi_error("rx %s cmd for channel %d failed",
 			     enable ? "start" : "stop", cmd->channel);
 		goto out;
 	}
 
-	wl1271_debug(DEBUG_BOOT, "rx %s cmd channel %d",
+	wifi_debug(DEBUG_BOOT, "rx %s cmd channel %d",
 		     enable ? "start" : "stop", cmd->channel);
 
 	ret = wifi_cmd_send(cmd_tx, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("tx %s cmd for channel %d failed",
+		wifi_error("tx %s cmd for channel %d failed",
 			     enable ? "start" : "stop", cmd->channel);
 		goto out;
 	}
 
-	wl1271_debug(DEBUG_BOOT, "tx %s cmd channel %d",
+	wifi_debug(DEBUG_BOOT, "tx %s cmd channel %d",
 		     enable ? "start" : "stop", cmd->channel);
 
 out:
 	kfree(cmd);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wl1271_cmd_data_path);
+EXPORT_SYMBOL_GPL(wifi_cmd_data_path);
 
-int wl1271_cmd_ps_mode(struct wifi_vif *wifi_vif,
+int wifi_cmd_ps_mode(struct wifi_vif *wifi_vif,
 		       u8 ps_mode, u16 auto_ps_timeout)
 {
-	struct wl1271_cmd_ps_params *ps_params = NULL;
+	struct wifi_cmd_ps_params *ps_params = NULL;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_CMD, "cmd set ps mode");
+	wifi_debug(DEBUG_CMD, "cmd set ps mode");
 
 	ps_params = kzalloc(sizeof(*ps_params), GFP_KERNEL);
 	if (!ps_params) {
@@ -568,7 +568,7 @@ int wl1271_cmd_ps_mode(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_send(CMD_SET_PS_MODE, ps_params,
 			      sizeof(*ps_params), 0);
 	if (ret < 0) {
-		wl1271_error("cmd set_ps_mode failed");
+		wifi_error("cmd set_ps_mode failed");
 		goto out;
 	}
 
@@ -577,14 +577,14 @@ out:
 	return ret;
 }
 
-int wl1271_cmd_template_set(u8 role_id,
+int wifi_cmd_template_set(u8 role_id,
 			    u16 template_id, void *buf, size_t buf_len,
 			    int index, u32 rates)
 {
-	struct wl1271_cmd_template_set *cmd;
+	struct wifi_cmd_template_set *cmd;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_CMD, "cmd template_set %d (role %d)",
+	wifi_debug(DEBUG_CMD, "cmd template_set %d (role %d)",
 		     template_id, role_id);
 
 	WARN_ON(buf_len > WL1271_CMD_TEMPL_MAX_SIZE);
@@ -612,7 +612,7 @@ int wl1271_cmd_template_set(u8 role_id,
 
 	ret = wifi_cmd_send(CMD_SET_TEMPLATE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_warning("cmd set_template failed: %d", ret);
+		wifi_warning("cmd set_template failed: %d", ret);
 		goto out_free;
 	}
 
@@ -623,7 +623,7 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_build_null_data(struct wifi_vif *wifi_vif)
+int wifi_cmd_build_null_data(struct wifi_vif *wifi_vif)
 {
 	struct sk_buff *skb = NULL;
 	int size;
@@ -632,11 +632,11 @@ int wl12xx_cmd_build_null_data(struct wifi_vif *wifi_vif)
 
 
 	if (wifi_vif->bss_type == BSS_TYPE_IBSS) {
-		size = sizeof(struct wl12xx_null_data_template);
+		size = sizeof(struct wifi_null_data_template);
 		ptr = NULL;
 	} else {
 		skb = ieee80211_nullfunc_get(wifi_data->hw,
-					     wl12xx_wifi_vif_to_vif(wifi_vif),
+					     wifi_wifi_vif_to_vif(wifi_vif),
 					     false);
 		if (!skb)
 			goto out;
@@ -644,23 +644,23 @@ int wl12xx_cmd_build_null_data(struct wifi_vif *wifi_vif)
 		ptr = skb->data;
 	}
 
-	ret = wl1271_cmd_template_set(wifi_vif->role_id,
+	ret = wifi_cmd_template_set(wifi_vif->role_id,
 				      CMD_TEMPL_NULL_DATA, ptr, size, 0,
 				      wifi_vif->basic_rate);
 
 out:
 	dev_kfree_skb(skb);
 	if (ret)
-		wl1271_warning("cmd build null data failed %d", ret);
+		wifi_warning("cmd build null data failed %d", ret);
 
 	return ret;
 
 }
 
-int wl12xx_cmd_build_klv_null_data(
+int wifi_cmd_build_klv_null_data(
 				   struct wifi_vif *wifi_vif)
 {
-	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
+	struct ieee80211_vif *vif = wifi_wifi_vif_to_vif(wifi_vif);
 	struct sk_buff *skb = NULL;
 	int ret = -ENOMEM;
 
@@ -668,7 +668,7 @@ int wl12xx_cmd_build_klv_null_data(
 	if (!skb)
 		goto out;
 
-	ret = wl1271_cmd_template_set(wifi_vif->role_id, CMD_TEMPL_KLV,
+	ret = wifi_cmd_template_set(wifi_vif->role_id, CMD_TEMPL_KLV,
 				      skb->data, skb->len,
 					  STA_KLV_TEMPLATE_IDX,
 				      wifi_vif->basic_rate);
@@ -676,16 +676,16 @@ int wl12xx_cmd_build_klv_null_data(
 out:
 	dev_kfree_skb(skb);
 	if (ret)
-		wl1271_warning("cmd build klv null data failed %d", ret);
+		wifi_warning("cmd build klv null data failed %d", ret);
 
 	return ret;
 
 }
 
-int wl1271_cmd_build_ps_poll(struct wifi_vif *wifi_vif,
+int wifi_cmd_build_ps_poll(struct wifi_vif *wifi_vif,
 			     u16 aid)
 {
-	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
+	struct ieee80211_vif *vif = wifi_wifi_vif_to_vif(wifi_vif);
 	struct sk_buff *skb;
 	int ret = 0;
 
@@ -694,7 +694,7 @@ int wl1271_cmd_build_ps_poll(struct wifi_vif *wifi_vif,
 		goto out;
 
 	//wifi_vif->basic_rate_set here is 1
-	ret = wl1271_cmd_template_set(wifi_vif->role_id,
+	ret = wifi_cmd_template_set(wifi_vif->role_id,
 				      CMD_TEMPL_PS_POLL, skb->data,
 				      skb->len, 0, wifi_vif->basic_rate_set);
 
@@ -703,20 +703,20 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_build_probe_req(struct wifi_vif *wifi_vif,
+int wifi_cmd_build_probe_req(struct wifi_vif *wifi_vif,
 			       u8 role_id, u8 band,
 			       const u8 *ssid, size_t ssid_len,
 			       const u8 *ie0, size_t ie0_len, const u8 *ie1,
 			       size_t ie1_len, bool sched_scan)
 {
-	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
+	struct ieee80211_vif *vif = wifi_wifi_vif_to_vif(wifi_vif);
 	struct sk_buff *skb;
 	int ret;
 	u32 rate;
 	u16 template_id_2_4 = CMD_TEMPL_CFG_PROBE_REQ_2_4;
 	u16 template_id_5 = CMD_TEMPL_CFG_PROBE_REQ_5;
 
-	wl1271_debug(DEBUG_SCAN, "build probe request band %d", band);
+	wifi_debug(DEBUG_SCAN, "build probe request band %d", band);
 
 	skb = ieee80211_probereq_get(wifi_data->hw, vif->addr, ssid, ssid_len,
 				     ie0_len + ie1_len);
@@ -730,16 +730,16 @@ int wl12xx_cmd_build_probe_req(struct wifi_vif *wifi_vif,
 		skb_put_data(skb, ie1, ie1_len);
 
 
-	rate = wl1271_tx_min_rate_get(wifi_vif->bitrate_masks[band]);
+	rate = wifi_tx_min_rate_get(wifi_vif->bitrate_masks[band]);
 #if (PRINT_DEBUG)
 	printk("rate = %d from %d\n", rate, wifi_vif->bitrate_masks[band]);
 #endif
 	if (band == NL80211_BAND_2GHZ)
-		ret = wl1271_cmd_template_set(role_id,
+		ret = wifi_cmd_template_set(role_id,
 					      template_id_2_4,
 					      skb->data, skb->len, 0, rate);
 	else
-		ret = wl1271_cmd_template_set(role_id,
+		ret = wifi_cmd_template_set(role_id,
 					      template_id_5,
 					      skb->data, skb->len, 0, rate);
 
@@ -747,22 +747,22 @@ out:
 	dev_kfree_skb(skb);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wl12xx_cmd_build_probe_req);
+EXPORT_SYMBOL_GPL(wifi_cmd_build_probe_req);
 
-int wl1271_cmd_build_arp_rsp(struct wifi_vif *wifi_vif)
+int wifi_cmd_build_arp_rsp(struct wifi_vif *wifi_vif)
 {
 	int ret, extra = 0;
 	u16 fc;
-	struct ieee80211_vif *vif = wl12xx_wifi_vif_to_vif(wifi_vif);
+	struct ieee80211_vif *vif = wifi_wifi_vif_to_vif(wifi_vif);
 	struct sk_buff *skb;
-	struct wl12xx_arp_rsp_template *tmpl;
+	struct wifi_arp_rsp_template *tmpl;
 	struct ieee80211_hdr_3addr *hdr;
 	struct arphdr *arp_hdr;
 
 	skb = dev_alloc_skb(sizeof(*hdr) + sizeof(__le16) + sizeof(*tmpl) +
 			    WL1271_EXTRA_SPACE_MAX);
 	if (!skb) {
-		wl1271_error("failed to allocate buffer for arp rsp template");
+		wifi_error("failed to allocate buffer for arp rsp template");
 		return -ENOMEM;
 	}
 
@@ -801,7 +801,7 @@ int wl1271_cmd_build_arp_rsp(struct wifi_vif *wifi_vif)
 		extra = 0;
 		break;
 	default:
-		wl1271_warning("Unknown encryption type: %d",
+		wifi_warning("Unknown encryption type: %d",
 			       wifi_vif->encryption_type);
 		ret = -EINVAL;
 		goto out;
@@ -832,7 +832,7 @@ int wl1271_cmd_build_arp_rsp(struct wifi_vif *wifi_vif)
 	memcpy(hdr->addr2, vif->addr, ETH_ALEN);
 	eth_broadcast_addr(hdr->addr3);
 
-	ret = wl1271_cmd_template_set(wifi_vif->role_id, CMD_TEMPL_ARP_RSP,
+	ret = wifi_cmd_template_set(wifi_vif->role_id, CMD_TEMPL_ARP_RSP,
 				      skb->data, skb->len, 0,
 				      wifi_vif->basic_rate);
 out:
@@ -840,7 +840,7 @@ out:
 	return ret;
 }
 
-int wl1271_build_qos_null_data(struct ieee80211_vif *vif)
+int wifi_build_qos_null_data(struct ieee80211_vif *vif)
 {
 	struct wifi_vif *wifi_vif = wifi_vif_to_data(vif);
 	struct ieee80211_qos_hdr template;
@@ -858,18 +858,18 @@ int wl1271_build_qos_null_data(struct ieee80211_vif *vif)
 	/* FIXME: not sure what priority to use here */
 	template.qos_ctrl = cpu_to_le16(0);
 
-	return wl1271_cmd_template_set(wifi_vif->role_id,
+	return wifi_cmd_template_set(wifi_vif->role_id,
 				       CMD_TEMPL_QOS_NULL_DATA, &template,
 				       sizeof(template), 0,
 				       wifi_vif->basic_rate);
 }
 
-int wl1271_cmd_set_sta_key(struct wifi_vif *wifi_vif,
+int wifi_cmd_set_sta_key(struct wifi_vif *wifi_vif,
 		       u16 action, u8 id, u8 key_type,
 		       u8 key_size, const u8 *key, const u8 *addr,
 		       u32 tx_seq_32, u16 tx_seq_16)
 {
-	struct wl1271_cmd_set_keys *cmd;
+	struct wifi_cmd_set_keys *cmd;
 	int ret = 0;
 
 	/* hlid might have already been deleted */
@@ -915,11 +915,11 @@ int wl1271_cmd_set_sta_key(struct wifi_vif *wifi_vif,
 		memcpy(cmd->key, key, key_size);
 	}
 
-	wl1271_dump(DEBUG_CRYPT, "TARGET KEY: ", cmd, sizeof(*cmd));
+	wifi_dump(DEBUG_CRYPT, "TARGET KEY: ", cmd, sizeof(*cmd));
 
 	ret = wifi_cmd_send(CMD_SET_KEYS, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_warning("could not set keys");
+		wifi_warning("could not set keys");
 		goto out;
 	}
 
@@ -929,13 +929,13 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_set_peer_state(struct wifi_vif *wifi_vif,
+int wifi_cmd_set_peer_state(struct wifi_vif *wifi_vif,
 			      u8 hlid)
 {
-	struct wl12xx_cmd_set_peer_state *cmd;
+	struct wifi_cmd_set_peer_state *cmd;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_CMD, "cmd set peer state (hlid=%d)", hlid);
+	wifi_debug(DEBUG_CMD, "cmd set peer state (hlid=%d)", hlid);
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd) {
@@ -952,7 +952,7 @@ int wl12xx_cmd_set_peer_state(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_send(CMD_SET_PEER_STATE, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to send set peer state command");
+		wifi_error("failed to send set peer state command");
 		goto out_free;
 	}
 
@@ -963,7 +963,7 @@ out:
 	return ret;
 }
 
-static int wlcore_get_reg_conf_ch_idx(enum nl80211_band band, u16 ch)
+static int wificore_get_reg_conf_ch_idx(enum nl80211_band band, u16 ch)
 {
 	/*
 	 * map the given band/channel to the respective predefined
@@ -1000,11 +1000,11 @@ static int wlcore_get_reg_conf_ch_idx(enum nl80211_band band, u16 ch)
 		break;
 	}
 
-	wl1271_error("%s: unknown band/channel: %d/%d", __func__, band, ch);
+	wifi_error("%s: unknown band/channel: %d/%d", __func__, band, ch);
 	return -1;
 }
 
-void wlcore_set_pending_regdomain_ch(u16 channel,
+void wificore_set_pending_regdomain_ch(u16 channel,
 				     enum nl80211_band band)
 {
 	int ch_bit_idx = 0;
@@ -1012,15 +1012,15 @@ void wlcore_set_pending_regdomain_ch(u16 channel,
 	// if (!(wifi_data->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
 	// 	return;
 
-	ch_bit_idx = wlcore_get_reg_conf_ch_idx(band, channel);
+	ch_bit_idx = wificore_get_reg_conf_ch_idx(band, channel);
 
 	if (ch_bit_idx >= 0 && ch_bit_idx <= WL1271_MAX_CHANNELS)
 		__set_bit_le(ch_bit_idx, (long *)wifi_data->reg_ch_conf_pending);
 }
 
-int wlcore_cmd_regdomain_config_locked(void)
+int wificore_cmd_regdomain_config_locked(void)
 {
-	struct wl12xx_cmd_regdomain_dfs_config *cmd = NULL;
+	struct wifi_cmd_regdomain_dfs_config *cmd = NULL;
 	int ret = 0, i, b, ch_bit_idx;
 	__le32 tmp_ch_bitmap[2] __aligned(sizeof(unsigned long));
 	struct wiphy *wiphy = wifi_data->hw->wiphy;
@@ -1030,7 +1030,7 @@ int wlcore_cmd_regdomain_config_locked(void)
 	// if (!(wifi_data->quirks & WLCORE_QUIRK_REGDOMAIN_CONF))
 	// 	return 0;
 
-	wl1271_debug(DEBUG_CMD, "cmd reg domain config");
+	wifi_debug(DEBUG_CMD, "cmd reg domain config");
 
 	memcpy(tmp_ch_bitmap, wifi_data->reg_ch_conf_pending, sizeof(tmp_ch_bitmap));
 
@@ -1049,7 +1049,7 @@ int wlcore_cmd_regdomain_config_locked(void)
 			    channel->dfs_state != NL80211_DFS_AVAILABLE)
 				continue;
 
-			ch_bit_idx = wlcore_get_reg_conf_ch_idx(b, ch);
+			ch_bit_idx = wificore_get_reg_conf_ch_idx(b, ch);
 			if (ch_bit_idx < 0)
 				continue;
 
@@ -1070,13 +1070,13 @@ int wlcore_cmd_regdomain_config_locked(void)
 	cmd->ch_bit_map2 = tmp_ch_bitmap[1];
 	cmd->dfs_region = wifi_data->dfs_region;
 
-	wl1271_debug(DEBUG_CMD,
+	wifi_debug(DEBUG_CMD,
 		     "cmd reg domain bitmap1: 0x%08x, bitmap2: 0x%08x",
 		     cmd->ch_bit_map1, cmd->ch_bit_map2);
 
 	ret = wifi_cmd_send(CMD_DFS_CHANNEL_CONFIG, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to send reg domain dfs config");
+		wifi_error("failed to send reg domain dfs config");
 		goto out;
 	}
 
@@ -1084,7 +1084,7 @@ int wlcore_cmd_regdomain_config_locked(void)
 				      WLCORE_EVENT_DFS_CONFIG_COMPLETE,
 				      &timeout);
 	if (ret < 0 || timeout) {
-		wl1271_error("reg domain conf %serror",
+		wifi_error("reg domain conf %serror",
 			     timeout ? "completion " : "");
 		ret = timeout ? -ETIMEDOUT : ret;
 		goto out;
@@ -1098,12 +1098,12 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_config_fwlog(void)
+int wifi_cmd_config_fwlog(void)
 {
-	struct wl12xx_cmd_config_fwlog *cmd;
+	struct wifi_cmd_config_fwlog *cmd;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_CMD, "cmd config firmware logger");
+	wifi_debug(DEBUG_CMD, "cmd config firmware logger");
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd) {
@@ -1119,7 +1119,7 @@ int wl12xx_cmd_config_fwlog(void)
 
 	ret = wifi_cmd_send(CMD_CONFIG_FWLOGGER, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to send config firmware logger command");
+		wifi_error("failed to send config firmware logger command");
 		goto out_free;
 	}
 
@@ -1130,12 +1130,12 @@ out:
 	return ret;
 }
 
-int wl12xx_cmd_stop_channel_switch(struct wifi_vif *wifi_vif)
+int wifi_cmd_stop_channel_switch(struct wifi_vif *wifi_vif)
 {
-	struct wl12xx_cmd_stop_channel_switch *cmd;
+	struct wifi_cmd_stop_channel_switch *cmd;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "cmd stop channel switch");
+	wifi_debug(DEBUG_ACX, "cmd stop channel switch");
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd) {
@@ -1147,7 +1147,7 @@ int wl12xx_cmd_stop_channel_switch(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_send(CMD_STOP_CHANNEL_SWICTH, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
-		wl1271_error("failed to stop channel switch command");
+		wifi_error("failed to stop channel switch command");
 		goto out_free;
 	}
 
@@ -1159,11 +1159,11 @@ out:
 }
 
 /* Vinh custom */
-int wl12xx_roc(struct wifi_vif *wifi_vif, u8 role_id,
+int wifi_roc(struct wifi_vif *wifi_vif, u8 role_id,
 	       enum nl80211_band band, u8 channel)
 {
 	int ret = 0;
-	struct wl12xx_cmd_roc cmd;
+	struct wifi_cmd_roc cmd;
 
 	if (test_bit(role_id, wifi_data->roc_map)){
 		return 0;
@@ -1190,13 +1190,13 @@ out:
 	return ret;
 }
 
-int wl12xx_crocV(u8 role_id)
+int wifi_crocV(u8 role_id)
 {
 	int ret = 0;
-	struct wl12xx_cmd_croc cmd;
+	struct wifi_cmd_croc cmd;
 
 	if ((!test_bit(role_id, wifi_data->roc_map))){
-        printk("ALREADY - wl12xx_crocV\n");
+        printk("ALREADY - wifi_crocV\n");
         return 0;
     }
 
@@ -1213,12 +1213,12 @@ int wl12xx_crocV(u8 role_id)
 	 * a chance to get out.
 	 */
 	if (find_first_bit(wifi_data->roc_map, WL12XX_MAX_ROLES) >= WL12XX_MAX_ROLES)
-		wl12xx_rearm_tx_watchdog_locked();
+		wifi_rearm_tx_watchdog_locked();
 out:
 	return ret;
 }
 
-int wl12xx_set_authorized(struct wifi_vif *wifi_vif)
+int wifi_set_authorized(struct wifi_vif *wifi_vif)
 {
 	int ret;
 
@@ -1233,10 +1233,10 @@ int wl12xx_set_authorized(struct wifi_vif *wifi_vif)
 	if (test_and_set_bit(wifi_vif_FLAG_STA_STATE_SENT, &wifi_vif->flags))
 		return 0;
 
-	ret = wl12xx_cmd_set_peer_state(wifi_vif, wifi_vif->sta.hlid);
+	ret = wifi_cmd_set_peer_state(wifi_vif, wifi_vif->sta.hlid);
 	if (ret < 0)
 		return ret;
 
-	wl1271_info("Association completed.");
+	wifi_info("Association completed.");
 	return 0;
 }

@@ -10,7 +10,7 @@
 
 #include <linux/platform_device.h>
 
-#include "wlcore_i.h"
+#include "wificore_i.h"
 #include "event.h"
 #include "boot.h"
 // extern struct Wifi_data wifi_data;
@@ -31,17 +31,17 @@
 #define WLCORE_TI_OUI_ADDRESS 0x080028
 
 /* forward declaration */
-struct wl1271_tx_hw_descr;
+struct wifi_tx_hw_descr;
 enum wl_rx_buf_align;
-struct wl1271_rx_descriptor;
+struct wifi_rx_descriptor;
 
-struct wlcore_ops {
+struct wificore_ops {
 	int (*setup)(void);
 	int (*boot)(void);
 	int (*hw_init)(void);
 };
 
-enum wlcore_partitions {
+enum wificore_partitions {
 	PART_DOWN,
 	PART_WORK,
 	PART_BOOT,
@@ -52,19 +52,19 @@ enum wlcore_partitions {
 	PART_TABLE_LEN,
 };
 
-struct wlcore_partition {
+struct wificore_partition {
 	u32 size;
 	u32 start;
 };
 
-struct wlcore_partition_set {
-	struct wlcore_partition mem;
-	struct wlcore_partition reg;
-	struct wlcore_partition mem2;
-	struct wlcore_partition mem3;
+struct wificore_partition_set {
+	struct wificore_partition mem;
+	struct wificore_partition reg;
+	struct wificore_partition mem2;
+	struct wificore_partition mem3;
 };
 
-enum wlcore_registers {
+enum wificore_registers {
 	/* register addresses, used with partition translation */
 	REG_ECPU_CONTROL,
 	REG_INTERRUPT_NO_CLEAR,
@@ -87,16 +87,16 @@ enum wlcore_registers {
 	REG_TABLE_LEN,
 };
 
-int wlcore_probe(struct platform_device *pdev);
-int wlcore_remove(struct platform_device *pdev);
-struct ieee80211_hw *wlcore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
+int wificore_probe(struct platform_device *pdev);
+int wificore_remove(struct platform_device *pdev);
+struct ieee80211_hw *wificore_alloc_hw(size_t priv_size, u32 aggr_buf_size,
 				     u32 mbox_size);
-int wlcore_free_hw(void);
-int wlcore_set_key(enum set_key_cmd cmd,
+int wificore_free_hw(void);
+int wificore_set_key(enum set_key_cmd cmd,
 		   struct ieee80211_vif *vif,
 		   struct ieee80211_sta *sta,
 		   struct ieee80211_key_conf *key_conf);
-void wlcore_regdomain_config(void);
+void wificore_regdomain_config(void);
 
 /* Tell wlcore not to care about this element when checking the version */
 #define WLCORE_FW_VER_IGNORE	-1

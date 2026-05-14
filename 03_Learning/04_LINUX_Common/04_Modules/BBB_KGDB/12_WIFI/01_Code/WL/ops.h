@@ -11,7 +11,7 @@
 #include "main.h"
 
 struct wifi_cmd_scan_stop {
-	struct wl1271_cmd_header header;
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 scan_type;
@@ -65,7 +65,7 @@ struct wifi_tracking_ch_params {
 } __packed;
 
 struct wifi_cmd_scan_params {
-	struct wl1271_cmd_header header;
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 scan_type;
@@ -241,7 +241,7 @@ enum {
 	TIME_SYNC_EVENT_ID                       = BIT(24),
 	FW_LOGGER_INDICATION			= BIT(25),
 };
-int wifi_wait_for_event(enum wlcore_wait_event event,
+int wifi_wait_for_event(enum wificore_wait_event event,
 			  bool *timeout);
 
               #define WL18XX_CHIP_VER		8

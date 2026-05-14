@@ -20,7 +20,7 @@
 #include "common.h"
 #include "main.h"
 
-void wl1271_scan_complete_work(struct work_struct *work)
+void wifi_scan_complete_work(struct work_struct *work)
 {
 	struct cfg80211_scan_info info = {
 		.aborted = false,
@@ -43,7 +43,7 @@ void wl1271_scan_complete_work(struct work_struct *work)
 	 * Rearm the tx watchdog just before idling scan. This
 	 * prevents just-finished scans from triggering the watchdog
 	 */
-	wl12xx_rearm_tx_watchdog_locked();
+	wifi_rearm_tx_watchdog_locked();
 
 	wifi_data->scan_state = WL1271_SCAN_STATE_IDLE;
 	//memset(wifi_data->scan.scanned_ch, 0, sizeof(wifi_data->scan.scanned_ch));
@@ -58,11 +58,11 @@ void wl1271_scan_complete_work(struct work_struct *work)
 
 	// if (wifi_data->scan.failed) {
 	if (wifi_scan_failed) {
-		wl1271_error("Scan completed due to error.");
-		wl1271_error("wl12xx_queue_recovery_work -> SHOULD RESTART\n");
+		wifi_error("Scan completed due to error.");
+		wifi_error("wifi_queue_recovery_work -> SHOULD RESTART\n");
 	}
 
-	wlcore_cmd_regdomain_config_locked();
+	wificore_cmd_regdomain_config_locked();
 
 	pm_runtime_mark_last_busy(wifi_data->dev);
 	pm_runtime_put_autosuspend(wifi_data->dev);
@@ -79,7 +79,7 @@ out:
 
 }
 
-int wlcore_scan(struct ieee80211_vif *vif,
+int wificore_scan(struct ieee80211_vif *vif,
 		const u8 *ssid, size_t ssid_len,
 		struct cfg80211_scan_request *req)
 {

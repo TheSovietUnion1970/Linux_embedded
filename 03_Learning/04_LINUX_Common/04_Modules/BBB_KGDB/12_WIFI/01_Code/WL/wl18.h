@@ -24,7 +24,7 @@ enum {
 
 /* cac_start and cac_stop share the same params */
 struct wifi_cmd_cac_start {
-	struct wl1271_cmd_header header;
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 channel;
@@ -33,7 +33,7 @@ struct wifi_cmd_cac_start {
 } __packed;
 
 struct wl18xx_cmd_smart_config_set_group_key {
-	struct wl1271_cmd_header header;
+	struct wifi_cmd_header header;
 
 	__le32 group_id;
 
@@ -43,7 +43,7 @@ struct wl18xx_cmd_smart_config_set_group_key {
 
 /* Target's information element */
 struct acx1_header {
-	struct wl1271_cmd_header cmd;
+	struct wifi_cmd_header cmd;
 
 	/* acx (or information element) header */
 	__le16 id;
@@ -53,7 +53,7 @@ struct acx1_header {
 } __packed;
 /*
  * ACX_PEER_CAP
- * this struct is very similar to wl1271_acx_ht_capabilities, with the
+ * this struct is very similar to wifi_acx_ht_capabilities, with the
  * addition of supported rates
  */
 struct wifi_acx_peer_cap {
@@ -88,6 +88,6 @@ int wifi_acx_set_peer_cap(
 struct wifi_static_data_priv {
 	char phy_version[WL18XX_PHY_VERSION_MAX_LEN];
 };
-int wifi_handle_static_data(struct wl1271_static_data *static_data);
+int wifi_handle_static_data(struct wifi_static_data *static_data);
 
 #endif

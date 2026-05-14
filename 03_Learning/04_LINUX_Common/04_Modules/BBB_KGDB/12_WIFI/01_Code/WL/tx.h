@@ -99,7 +99,7 @@ struct wl18xx_tx_mem {
 #define WL12XX_BUS_BLOCK_SIZE min(512u,	\
 	    (1u << (8 * sizeof(((struct wl128x_tx_mem *) 0)->extra_bytes))))
 
-struct wl1271_tx_hw_descr {
+struct wifi_tx_hw_descr {
 	/* Length of packet in words, including descriptor+header+data */
 	__le16 length;
 	union {
@@ -124,7 +124,7 @@ struct wl1271_tx_hw_descr {
 	u8 hlid;
 
 	union {
-		u8 wl12xx_reserved;
+		u8 wifi_reserved;
 
 		/*
 		 * bit 0   -> 0 = udp, 1 = tcp
@@ -134,7 +134,7 @@ struct wl1271_tx_hw_descr {
 	} __packed;
 } __packed;
 
-enum wl1271_tx_hw_res_status {
+enum wifi_tx_hw_res_status {
 	TX_SUCCESS          = 0,
 	TX_HW_ERROR         = 1,
 	TX_DISABLED         = 2,
@@ -146,7 +146,7 @@ enum wl1271_tx_hw_res_status {
 	TX_LINK_NOT_VALID   = 8,
 };
 
-struct wl1271_tx_hw_res_descr {
+struct wifi_tx_hw_res_descr {
 	/* Packet Identifier - same value used in the Tx descriptor.*/
 	u8 id;
 	/* The status of the transmission, indicating success or one of
@@ -170,13 +170,13 @@ struct wl1271_tx_hw_res_descr {
 	u8 spare;
 } __packed;
 
-struct wl1271_tx_hw_res_if {
+struct wifi_tx_hw_res_if {
 	__le32 tx_result_fw_counter;
 	__le32 tx_result_host_counter;
-	struct wl1271_tx_hw_res_descr tx_results_queue[TX_HW_RESULT_QUEUE_LEN];
+	struct wifi_tx_hw_res_descr tx_results_queue[TX_HW_RESULT_QUEUE_LEN];
 } __packed;
 
-enum wlcore_queue_stop_reason {
+enum wificore_queue_stop_reason {
 	WLCORE_QUEUE_STOP_REASON_WATERMARK,
 	WLCORE_QUEUE_STOP_REASON_FW_RESTART,
 	WLCORE_QUEUE_STOP_REASON_FLUSH,
@@ -184,7 +184,7 @@ enum wlcore_queue_stop_reason {
 };
 
 static inline
-int wlcore_tx_get_mac80211_queue(struct wifi_vif *wifi_vif, int queue)
+int wificore_tx_get_mac80211_queue(struct wifi_vif *wifi_vif, int queue)
 {
 	//int mac_queue = wifi_vif->hw_queue_base;
 	int mac_queue = HW_QUEUE_BASE;
@@ -203,7 +203,7 @@ int wlcore_tx_get_mac80211_queue(struct wifi_vif *wifi_vif, int queue)
 	}
 }
 
-static inline int wl1271_tx_total_queue_count(void)
+static inline int wifi_tx_total_queue_count(void)
 {
 	int i, count = 0;
 
@@ -214,32 +214,32 @@ static inline int wl1271_tx_total_queue_count(void)
 	return count;
 }
 
-void wl1271_tx_work(struct work_struct *work);
-int wlcore_tx_work_locked(void);
-void wl12xx_tx_reset_wifi_vif(struct wifi_vif *wifi_vif);
-void wl12xx_tx_reset(void);
-void wl1271_tx_flush(void);
-u8 wlcore_rate_to_idx(u8 rate, enum nl80211_band band);
-u32 wl1271_tx_enabled_rates_get(u32 rate_set,
+void wifi_tx_work(struct work_struct *work);
+int wificore_tx_work_locked(void);
+void wifi_tx_reset_wifi_vif(struct wifi_vif *wifi_vif);
+void wifi_tx_reset(void);
+void wifi_tx_flush(void);
+u8 wificore_rate_to_idx(u8 rate, enum nl80211_band band);
+u32 wifi_tx_enabled_rates_get(u32 rate_set,
 				enum nl80211_band rate_band);
-u32 wl1271_tx_min_rate_get(u32 rate_set);
-u8 wl12xx_tx_get_hlid(struct wifi_vif *wifi_vif,
+u32 wifi_tx_min_rate_get(u32 rate_set);
+u8 wifi_tx_get_hlid(struct wifi_vif *wifi_vif,
 		      struct sk_buff *skb, struct ieee80211_sta *sta);
-void wl1271_tx_reset_link_queues(u8 hlid);
-bool wl12xx_is_dummy_packet(struct sk_buff *skb);
-void wl1271_free_tx_id(int id);
-void wlcore_stop_queues(
-			enum wlcore_queue_stop_reason reason);
-void wlcore_wake_queues(
-			enum wlcore_queue_stop_reason reason);
+void wifi_tx_reset_link_queues(u8 hlid);
+bool wifi_is_dummy_packet(struct sk_buff *skb);
+void wifi_free_tx_id(int id);
+void wificore_stop_queues(
+			enum wificore_queue_stop_reason reason);
+void wificore_wake_queues(
+			enum wificore_queue_stop_reason reason);
 bool
-wlcore_is_queue_stopped_by_reason_locked(
+wificore_is_queue_stopped_by_reason_locked(
 					 struct wifi_vif *wifi_vif,
 					 u8 queue,
-					 enum wlcore_queue_stop_reason reason);
+					 enum wificore_queue_stop_reason reason);
 
 /* from main.c */
-void wl1271_free_sta(struct wifi_vif *wifi_vif, u8 hlid);
-void wl12xx_rearm_tx_watchdog_locked(void);
+void wifi_free_sta(struct wifi_vif *wifi_vif, u8 hlid);
+void wifi_rearm_tx_watchdog_locked(void);
 
 #endif

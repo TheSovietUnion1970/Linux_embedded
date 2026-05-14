@@ -19,58 +19,58 @@ int wifi_cmd_send(u16 id, void *buf, size_t len, size_t res_len);
 int wifi_cmd_configure(u16 id, void *buf,
 				  size_t len);;
 
-int wl12xx_cmd_role_enable(u8 *addr, u8 role_type,
+int wifi_cmd_role_enable(u8 *addr, u8 role_type,
 			   u8 *role_id);
-int wl12xx_cmd_role_disable(u8 *role_id);
-int wl12xx_cmd_role_start_sta(struct wifi_vif *wifi_vif);
-int wl12xx_cmd_role_stop_sta(struct wifi_vif *wifi_vif);
+int wifi_cmd_role_disable(u8 *role_id);
+int wifi_cmd_role_start_sta(struct wifi_vif *wifi_vif);
+int wifi_cmd_role_stop_sta(struct wifi_vif *wifi_vif);
 
-int wl1271_cmd_interrogate(u16 id, void *buf,
+int wifi_cmd_interrogate(u16 id, void *buf,
 			   size_t cmd_len, size_t res_len);
 
-int wl1271_cmd_data_path(bool enable);
-int wl1271_cmd_ps_mode(struct wifi_vif *wifi_vif,
+int wifi_cmd_data_path(bool enable);
+int wifi_cmd_ps_mode(struct wifi_vif *wifi_vif,
 		       u8 ps_mode, u16 auto_ps_timeout);
-int wl1271_cmd_template_set(u8 role_id,
+int wifi_cmd_template_set(u8 role_id,
 			    u16 template_id, void *buf, size_t buf_len,
 			    int index, u32 rates);
-int wl12xx_cmd_build_null_data(struct wifi_vif *wifi_vif);
-int wl1271_cmd_build_ps_poll(struct wifi_vif *wifi_vif,
+int wifi_cmd_build_null_data(struct wifi_vif *wifi_vif);
+int wifi_cmd_build_ps_poll(struct wifi_vif *wifi_vif,
 			     u16 aid);
-int wl12xx_cmd_build_probe_req(struct wifi_vif *wifi_vif,
+int wifi_cmd_build_probe_req(struct wifi_vif *wifi_vif,
 			       u8 role_id, u8 band,
 			       const u8 *ssid, size_t ssid_len,
 			       const u8 *ie, size_t ie_len, const u8 *common_ie,
 			       size_t common_ie_len, bool sched_scan);
-int wl1271_cmd_build_arp_rsp(struct wifi_vif *wifi_vif);
-int wl1271_build_qos_null_data(struct ieee80211_vif *vif);
-int wl12xx_cmd_build_klv_null_data(
+int wifi_cmd_build_arp_rsp(struct wifi_vif *wifi_vif);
+int wifi_build_qos_null_data(struct ieee80211_vif *vif);
+int wifi_cmd_build_klv_null_data(
 				   struct wifi_vif *wifi_vif);
-int wl1271_cmd_set_sta_key(struct wifi_vif *wifi_vif,
+int wifi_cmd_set_sta_key(struct wifi_vif *wifi_vif,
 			   u16 action, u8 id, u8 key_type,
 			   u8 key_size, const u8 *key, const u8 *addr,
 			   u32 tx_seq_32, u16 tx_seq_16);
-int wl12xx_cmd_set_peer_state(struct wifi_vif *wifi_vif,
+int wifi_cmd_set_peer_state(struct wifi_vif *wifi_vif,
 			      u8 hlid);
-void wlcore_set_pending_regdomain_ch(u16 channel,
+void wificore_set_pending_regdomain_ch(u16 channel,
 				     enum nl80211_band band);
-int wlcore_cmd_regdomain_config_locked(void);
-int wl12xx_cmd_config_fwlog(void);
-int wl12xx_cmd_stop_channel_switch(
+int wificore_cmd_regdomain_config_locked(void);
+int wifi_cmd_config_fwlog(void);
+int wifi_cmd_stop_channel_switch(
 				   struct wifi_vif *wifi_vif);
-int wl12xx_allocate_link(struct wifi_vif *wifi_vif,
+int wifi_allocate_link(struct wifi_vif *wifi_vif,
 			 u8 *hlid);
-void wl12xx_free_link(struct wifi_vif *wifi_vif, u8 *hlid);
-int wlcore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout);
-u8 wlcore_get_native_channel_type(u8 nl_channel_type);
+void wifi_free_link(struct wifi_vif *wifi_vif, u8 *hlid);
+int wificore_cmd_wait_for_event_or_timeout(u32 mask, bool *timeout);
+u8 wificore_get_native_channel_type(u8 nl_channel_type);
 
 /* Vinh custom */
-int wl12xx_roc(struct wifi_vif *wifi_vif, u8 role_id,
+int wifi_roc(struct wifi_vif *wifi_vif, u8 role_id,
 	       enum nl80211_band band, u8 channel);
-int wl12xx_crocV(u8 role_id);
-int wl12xx_set_authorized(struct wifi_vif *wifi_vif);
+int wifi_crocV(u8 role_id);
+int wifi_set_authorized(struct wifi_vif *wifi_vif);
 
-enum wl1271_commands {
+enum wifi_commands {
 	CMD_INTERROGATE	= 1, /* use this to read information elements */
 	CMD_CONFIGURE	= 2, /* use this to write information elements */
 	CMD_ENABLE_RX	= 3,
@@ -180,7 +180,7 @@ enum cmd_templ {
 #define WL1271_CMD_TEMPL_MAX_SIZE  512
 #define WL1271_EVENT_TIMEOUT       5000
 
-struct wl1271_cmd_header {
+struct wifi_cmd_header {
 	__le16 id;
 	__le16 status;
 	/* payload */
@@ -189,8 +189,8 @@ struct wl1271_cmd_header {
 
 #define WL1271_CMD_MAX_PARAMS 572
 
-struct wl1271_command {
-	struct wl1271_cmd_header header;
+struct wifi_command {
+	struct wifi_cmd_header header;
 	u8  parameters[WL1271_CMD_MAX_PARAMS];
 } __packed;
 
@@ -229,22 +229,22 @@ enum {
 #define WL1271_JOIN_CMD_TX_SESSION_OFFSET 1
 #define WL1271_JOIN_CMD_BSS_TYPE_5GHZ 0x10
 
-struct wl12xx_cmd_role_enable {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_role_enable {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 role_type;
 	u8 mac_address[ETH_ALEN];
 } __packed;
 
-struct wl12xx_cmd_role_disable {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_role_disable {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 padding[3];
 } __packed;
 
-enum wlcore_band {
+enum wificore_band {
 	WLCORE_BAND_2_4GHZ		= 0,
 	WLCORE_BAND_5GHZ		= 1,
 	WLCORE_BAND_JAPAN_4_9_GHZ	= 2,
@@ -253,21 +253,21 @@ enum wlcore_band {
 	WLCORE_BAND_MAX_RADIO		= 0x7F,
 };
 
-enum wlcore_channel_type {
+enum wificore_channel_type {
 	WLCORE_CHAN_NO_HT,
 	WLCORE_CHAN_HT20,
 	WLCORE_CHAN_HT40MINUS,
 	WLCORE_CHAN_HT40PLUS
 };
 
-struct wl12xx_cmd_role_start {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_role_start {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 band;
 	u8 channel;
 
-	/* enum wlcore_channel_type */
+	/* enum wificore_channel_type */
 	u8 channel_type;
 
 	union {
@@ -350,8 +350,8 @@ struct wl12xx_cmd_role_start {
 	};
 } __packed;
 
-struct wl12xx_cmd_role_stop {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_role_stop {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 disc_type; /* only STA and P2P_CLI */
@@ -359,7 +359,7 @@ struct wl12xx_cmd_role_stop {
 } __packed;
 
 struct cmd_enabledisable_path {
-	struct wl1271_cmd_header header;
+	struct wifi_cmd_header header;
 
 	u8 channel;
 	u8 padding[3];
@@ -367,8 +367,8 @@ struct cmd_enabledisable_path {
 
 #define WL1271_RATE_AUTOMATIC  0
 
-struct wl1271_cmd_template_set {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_template_set {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 template_type;
@@ -388,7 +388,7 @@ struct wl1271_cmd_template_set {
 #define TIM_ELE_ID    5
 #define PARTIAL_VBM_MAX    251
 
-struct wl1271_tim {
+struct wifi_tim {
 	u8 identity;
 	u8 length;
 	u8 dtim_count;
@@ -397,14 +397,14 @@ struct wl1271_tim {
 	u8 pvb_field[PARTIAL_VBM_MAX]; /* Partial Virtual Bitmap */
 } __packed;
 
-enum wl1271_cmd_ps_mode {
+enum wifi_cmd_ps_mode {
 	STATION_AUTO_PS_MODE,   /* Dynamic Power Save */
 	STATION_ACTIVE_MODE,
 	STATION_POWER_SAVE_MODE
 };
 
-struct wl1271_cmd_ps_params {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_ps_params {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 ps_mode; /* STATION_* */
@@ -414,20 +414,20 @@ struct wl1271_cmd_ps_params {
 /* HW encryption keys */
 #define NUM_ACCESS_CATEGORIES_COPY 4
 
-enum wl1271_cmd_key_action {
+enum wifi_cmd_key_action {
 	KEY_ADD_OR_REPLACE = 1,
 	KEY_REMOVE         = 2,
 	KEY_SET_ID         = 3,
 	MAX_KEY_ACTION     = 0xffff,
 };
 
-enum wl1271_cmd_lid_key_type {
+enum wifi_cmd_lid_key_type {
 	UNICAST_LID_TYPE     = 0,
 	BROADCAST_LID_TYPE   = 1,
 	WEP_DEFAULT_LID_TYPE = 2
 };
 
-enum wl1271_cmd_key_type {
+enum wifi_cmd_key_type {
 	KEY_NONE = 0,
 	KEY_WEP  = 1,
 	KEY_TKIP = 2,
@@ -435,14 +435,14 @@ enum wl1271_cmd_key_type {
 	KEY_GEM  = 4,
 };
 
-struct wl1271_cmd_set_keys {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_set_keys {
+	struct wifi_cmd_header header;
 
 	/*
 	 * Indicates whether the HLID is a unicast key set
 	 * or broadcast key set. A special value 0xFF is
 	 * used to indicate that the HLID is on WEP-default
-	 * (multi-hlids). of type wl1271_cmd_lid_key_type.
+	 * (multi-hlids). of type wifi_cmd_lid_key_type.
 	 */
 	u8 hlid;
 
@@ -480,12 +480,12 @@ struct wl1271_cmd_set_keys {
 	__le32 ac_seq_num32[NUM_ACCESS_CATEGORIES_COPY];
 } __packed;
 
-struct wl1271_cmd_test_header {
+struct wifi_cmd_test_header {
 	u8 id;
 	u8 padding[3];
 } __packed;
 
-enum wl1271_channel_tune_bands {
+enum wifi_channel_tune_bands {
 	WL1271_CHANNEL_TUNE_BAND_2_4,
 	WL1271_CHANNEL_TUNE_BAND_5,
 	WL1271_CHANNEL_TUNE_BAND_4_9
@@ -502,7 +502,7 @@ enum wl1271_channel_tune_bands {
  * DISCONNECT_DISASSOC:  the fw generates a DESASSOC request with the reason
  *                       we have passed
  */
-enum wl1271_disconnect_type {
+enum wifi_disconnect_type {
 	DISCONNECT_IMMEDIATE,
 	DISCONNECT_DEAUTH,
 	DISCONNECT_DISASSOC
@@ -510,8 +510,8 @@ enum wl1271_disconnect_type {
 
 #define WL1271_CMD_STA_STATE_CONNECTED  1
 
-struct wl12xx_cmd_set_peer_state {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_set_peer_state {
+	struct wifi_cmd_header header;
 
 	u8 hlid;
 	u8 state;
@@ -525,8 +525,8 @@ struct wl12xx_cmd_set_peer_state {
 	u8 padding[1];
 } __packed;
 
-struct wl12xx_cmd_roc {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_roc {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 channel;
@@ -534,20 +534,20 @@ struct wl12xx_cmd_roc {
 	u8 padding;
 };
 
-struct wl12xx_cmd_croc {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_croc {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 padding[3];
 };
 
-enum wl12xx_ssid_type {
+enum wifi_ssid_type {
 	WL12XX_SSID_TYPE_PUBLIC = 0,
 	WL12XX_SSID_TYPE_HIDDEN = 1,
 	WL12XX_SSID_TYPE_ANY = 2,
 };
 
-enum wl1271_psd_type {
+enum wifi_psd_type {
 	WL1271_PSD_LEGACY = 0,
 	WL1271_PSD_UPSD_TRIGGER = 1,
 	WL1271_PSD_LEGACY_PSPOLL = 2,
@@ -560,12 +560,12 @@ enum wl1271_psd_type {
  * On demand - Log messages are stored in a cyclic buffer in the
  * firmware, and only transferred to the host when explicitly requested
  */
-enum wl12xx_fwlogger_log_mode {
+enum wifi_fwlogger_log_mode {
 	WL12XX_FWLOG_CONTINUOUS,
 };
 
 /* Include/exclude timestamps from the log messages */
-enum wl12xx_fwlogger_timestamp {
+enum wifi_fwlogger_timestamp {
 	WL12XX_FWLOG_TIMESTAMP_DISABLED,
 	WL12XX_FWLOG_TIMESTAMP_ENABLED
 };
@@ -574,14 +574,14 @@ enum wl12xx_fwlogger_timestamp {
  * Logs can be routed to the debug pinouts (where available), to the host bus
  * (SDIO/SPI), or dropped
  */
-enum wl12xx_fwlogger_output {
+enum wifi_fwlogger_output {
 	WL12XX_FWLOG_OUTPUT_NONE,
 	WL12XX_FWLOG_OUTPUT_DBG_PINS,
 	WL12XX_FWLOG_OUTPUT_HOST,
 };
 
-struct wl12xx_cmd_regdomain_dfs_config {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_regdomain_dfs_config {
+	struct wifi_cmd_header header;
 
 	__le32 ch_bit_map1;
 	__le32 ch_bit_map2;
@@ -589,14 +589,14 @@ struct wl12xx_cmd_regdomain_dfs_config {
 	u8 padding[3];
 } __packed;
 
-enum wlcore_generic_cfg_feature {
+enum wificore_generic_cfg_feature {
 	WLCORE_CFG_FEATURE_RADAR_DEBUG = 2,
 };
 
-struct wl12xx_cmd_config_fwlog {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_config_fwlog {
+	struct wifi_cmd_header header;
 
-	/* See enum wl12xx_fwlogger_log_mode */
+	/* See enum wifi_fwlogger_log_mode */
 	u8 logger_mode;
 
 	/* Minimum log level threshold */
@@ -605,7 +605,7 @@ struct wl12xx_cmd_config_fwlog {
 	/* Include/exclude timestamps from the log messages */
 	u8 timestamp;
 
-	/* See enum wl1271_fwlogger_output */
+	/* See enum wifi_fwlogger_output */
 	u8 output;
 
 	/* Regulates the frequency of log messages */
@@ -615,8 +615,8 @@ struct wl12xx_cmd_config_fwlog {
 } __packed;
 
 
-struct wl12xx_cmd_stop_channel_switch {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_stop_channel_switch {
+	struct wifi_cmd_header header;
 
 	u8 role_id;
 	u8 padding[3];
@@ -626,10 +626,10 @@ struct wl12xx_cmd_stop_channel_switch {
 #define MAX_TLV_LENGTH		500
 #define TEST_CMD_P2G_CAL	2	/* TX BiP */
 
-struct wl1271_cmd_cal_p2g {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_cal_p2g {
+	struct wifi_cmd_header header;
 
-	struct wl1271_cmd_test_header test;
+	struct wifi_cmd_test_header test;
 
 	__le32 ver;
 	__le16 len;

@@ -7,7 +7,7 @@
 #define PRINT_DEBUG_INIT 0
 
 /* Debug for tx, rx rate */
-#define PRINT_DEBUG_RATE 0
+#define PRINT_DEBUG_RATE 1
 
 /* Debug for association process */
 #define PRINT_DEBUG_ROC 0
@@ -17,7 +17,7 @@ Only happens if connected to wifi hotspot
 ==================== wlan0: authenticate with f4:27:56:13:90:d8 ===============
 [BSS_STATE] - 1					    => BSS_CHANGED_IDLE
 [BSS_STATE] - 3, sta = 0x0			=> X
-[BSS_STATE] - 4 - SET				=> wlcore_set_bssid, wl12xx_cmd_role_start_sta
+[BSS_STATE] - 4 - SET				=> wificore_set_bssid, wifi_cmd_role_start_sta
 
 	[STA_STATE] - 6				    => ROC -> sta_no_exist -> sta_none
 	
@@ -29,7 +29,7 @@ Only happens if connected to wifi hotspot
 	[STA_STATE] - 4				    => auth -> assoc
 	
 [BSS_STATE] - 3, sta = 0xca0077a0	=> Get supported rates from AP
-[BSS_STATE] - 6					    => wlcore_set_assoc
+[BSS_STATE] - 6					    => wificore_set_assoc
 [BSS_STATE] - 7 - DISABLE			=> DISBALE arp filter
 
 ==================== wlan0: associated ===============
@@ -41,7 +41,7 @@ Only happens if connected to wifi hotspot
 
 [BSS_STATE] - 2					    => Connection Quality Monitor (for rssi)
 
-	[STA_STATE] - 1 			    => wl12xx_set_authorized
+	[STA_STATE] - 1 			    => wifi_set_authorized
 	
 ==================== wifi0: Association completed. ============================
 	
@@ -59,13 +59,13 @@ Only happens if connected to wifi hotspot
 	[STA_STATE] - 5				    => AUTH       -> NOTEXIST
 	
 [BSS_STATE] - 3, sta = 0x0			=> X
-[BSS_STATE] - 4 - CLEAR				=> wlcore_clear_bssid, wl12xx_cmd_role_stop_sta
-[BSS_STATE] - 6					    => wlcore_set_unssoc
+[BSS_STATE] - 4 - CLEAR				=> wificore_clear_bssid, wifi_cmd_role_stop_sta
+[BSS_STATE] - 6					    => wificore_set_unssoc
 [BSS_STATE] - 7 - DISABLE
 [BSS_STATE] - 1                     => => BSS_CHANGED_IDLE
 */
 
-/* wl1271_op_hw_scan is triggered periodically if no connection */
+/* wifi_op_hw_scan is triggered periodically if no connection */
 #define PRINT_DEBUG_SCAN 0
 
 /* config rx frame filtering */
@@ -73,8 +73,8 @@ Only happens if connected to wifi hotspot
 
 /* Print tx and rx frame */
 #define PRINT_DEBUG_DATA_FRAME 0
-#define RX_LIMIT 50 /* limit rx frame up to RX_LIMIT */
-#define TX_LIMIT 50 /* limit tx frame up to TX_LIMIT */
+#define RX_LIMIT 100 /* limit rx frame up to RX_LIMIT */
+#define TX_LIMIT 100 /* limit tx frame up to TX_LIMIT */
 
 #define APPLY_EXTERNAL_CONFIG 0
 

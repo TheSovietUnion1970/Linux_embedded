@@ -43,19 +43,19 @@ int wl18xx_top_reg_write(int addr, u16 val)
 		return -EINVAL;
 
 	if ((addr % 4) == 0) {
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr), &tmp, 4, false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(addr), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff0000) | val;
-		ret = wifi_sdio_raw_write(wlcore_translate_addr(addr), tmp, 4, false);
+		ret = wifi_sdio_raw_write(wificore_translate_addr(addr), tmp, 4, false);
 	} else {
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr - 2), &tmp, 4, false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(addr - 2), &tmp, 4, false);
 		if (ret < 0)
 			goto out;
 
 		tmp = (tmp & 0xffff) | (val << 16);
-		ret = wifi_sdio_raw_write(wlcore_translate_addr(addr - 2), tmp, 4, false);
+		ret = wifi_sdio_raw_write(wificore_translate_addr(addr - 2), tmp, 4, false);
 	}
 
 out:
@@ -72,11 +72,11 @@ int wl18xx_top_reg_read(int addr, u16 *out)
 
 	if ((addr % 4) == 0) {
 		/* address is 4-bytes aligned */
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr), &val, 4, false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(addr), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = val & 0xffff;
 	} else {
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(addr - 2), &val, 4, false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(addr - 2), &val, 4, false);
 		if (ret >= 0 && out)
 			*out = (val & 0xffff0000) >> 16;
 	}
@@ -285,7 +285,7 @@ const char *wifi_rx_rate_to_string(u8 rate)
  */
 #define SCAN_MAX_SHORT_INTERVALS (SCAN_MAX_CYCLE_INTERVALS - 2)
 
-static struct wlcore_conf wl18xx_conf = {
+static struct wificore_conf wl18xx_conf = {
 	.sg = {
 		.params = {
 			[WL18XX_CONF_SG_PARAM_0] = 0,
@@ -794,7 +794,7 @@ static int wl18xx_set_clk(void)
 	if (ret < 0)
 		goto out;
 
-	wl1271_debug(DEBUG_BOOT, "clock freq %d (%d, %d, %d, %d, %s)", clk_freq,
+	wifi_debug(DEBUG_BOOT, "clock freq %d (%d, %d, %d, %d, %s)", clk_freq,
 		     wl18xx_clk_table[clk_freq].n, wl18xx_clk_table[clk_freq].m,
 		     wl18xx_clk_table[clk_freq].p, wl18xx_clk_table[clk_freq].q,
 		     wl18xx_clk_table[clk_freq].swallow ? "swallow" : "spit");
@@ -896,7 +896,7 @@ static int wl18xx_pre_boot(void)
 		goto out;
 
 	/* Continue the ELP wake up sequence */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_WELP_ARM_COMMAND), WELP_ARM_COMMAND_VAL, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -907,17 +907,17 @@ static int wl18xx_pre_boot(void)
 		goto out;
 
 	/* Disable interrupts */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable Rx/Tx */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_ENABLE), 0x0, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* disable auto calibration on start*/
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_SPARE_A2), 0xffff, 4, false);
 
 out:
 	return ret;
@@ -937,17 +937,17 @@ static int wl18xx_pre_upload(void)
 		goto out;
 
 	/* TODO: check if this is all needed */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_EEPROMLESS_IND), WL18XX_EEPROMLESS_IND, 4, false);
 	if (ret < 0)
 		goto out;
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
-	wl1271_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
+	wifi_debug(DEBUG_BOOT, "chip id 0x%x", tmp);
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(WL18XX_SCR_PAD2), &tmp, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -963,17 +963,17 @@ static int wl18xx_pre_upload(void)
 		goto out;
 
 	/* disable FDSP clock */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_DISABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* set ATPG clock toward FDSP Code RAM rather than its own clock */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CODERAM_FUNC_CLK_SEL, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* re-enable FDSP clock */
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(WL18XX_PHY_FPGA_SPARE_1), MEM_FDSP_CLK_120_ENABLE, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -1016,7 +1016,7 @@ static int wl18xx_set_mac_and_phy(void)
 	if (ret < 0)
 		goto out;
 
-	ret = wifi_sdio_raw_write1(wlcore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
+	ret = wifi_sdio_raw_write1(wificore_translate_addr(WL18XX_PHY_INIT_MEM_ADDR), params, sizeof(*params), false);
 
 out:
 	kfree(params);
@@ -1031,20 +1031,20 @@ static int wl18xx_enable_interrupts(void)
 	event_mask = WL18XX_ACX_EVENTS_VECTOR;
 	intr_mask = WL18XX_INTR_MASK;
 
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), event_mask, 4, false);
 	if (ret < 0)
 		goto out;
 
-	wlcore_enable_interrupts();
+	wificore_enable_interrupts();
 
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_MASK]), WL1271_ACX_INTR_ALL & ~intr_mask, 4, false);
 	if (ret < 0)
 		goto disable_interrupts;
 
 	return ret;
 
 disable_interrupts:
-	wlcore_disable_interrupts();
+	wificore_disable_interrupts();
 
 out:
 	return ret;
@@ -1062,7 +1062,7 @@ static int wl18xx_boot(void)
 	if (ret < 0)
 		goto out;
 
-	ret = wlcore_boot_upload_firmware();
+	ret = wificore_boot_upload_firmware();
 	if (ret < 0)
 		goto out;
 
@@ -1091,7 +1091,7 @@ static int wl18xx_boot(void)
 
 	//wifi_data->ap_event_mask = MAX_TX_FAILURE_EVENT_ID;
 
-	ret = wlcore_boot_run_firmware();
+	ret = wificore_boot_run_firmware();
 	if (ret < 0)
 		goto out;
 
@@ -1108,7 +1108,7 @@ static int wifi_acx_host_if_cfg_bitmap(u32 host_cfg_bitmap,
 	struct wl18xx_acx_host_config_bitmap *bitmap_conf;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx cfg bitmap %d blk %d spare %d field %d",
+	wifi_debug(DEBUG_ACX, "acx cfg bitmap %d blk %d spare %d field %d",
 		     host_cfg_bitmap, sdio_blk_size, extra_mem_blks,
 		     len_field_size);
 
@@ -1126,7 +1126,7 @@ static int wifi_acx_host_if_cfg_bitmap(u32 host_cfg_bitmap,
 	ret = wifi_cmd_configure(ACX_HOST_IF_CFG_BITMAP,
 				   bitmap_conf, sizeof(*bitmap_conf));
 	if (ret < 0) {
-		wl1271_warning("wl1271 bitmap config opt failed: %d", ret);
+		wifi_warning("wl1271 bitmap config opt failed: %d", ret);
 		goto out;
 	}
 
@@ -1188,32 +1188,32 @@ static bool wl18xx_is_mimo_supported(void)
 	       (priv->conf.ht.mode != HT_MODE_SISO20);
 }
 #if (APPLY_EXTERNAL_CONFIG)
-static int wl18xx_load_conf_file(struct device *dev, struct wlcore_conf *conf,
+static int wl18xx_load_conf_file(struct device *dev, struct wificore_conf *conf,
 				 struct wifi_priv_conf *priv_conf,
 				 const char *file)
 {
-	struct wlcore_conf_file *conf_file;
+	struct wificore_conf_file *conf_file;
 	const struct firmware *fw;
 	int ret;
 
 	ret = request_firmware(&fw, file, dev);
 	if (ret < 0) {
-		wl1271_error("could not get configuration binary %s: %d",
+		wifi_error("could not get configuration binary %s: %d",
 			     file, ret);
 		return ret;
 	}
 
 	if (fw->size != WL18XX_CONF_SIZE) {
-		wl1271_error("%s configuration binary size is wrong, expected %zu got %zu",
+		wifi_error("%s configuration binary size is wrong, expected %zu got %zu",
 			     file, WL18XX_CONF_SIZE, fw->size);
 		ret = -EINVAL;
 		goto out_release;
 	}
 
-	conf_file = (struct wlcore_conf_file *) fw->data;
+	conf_file = (struct wificore_conf_file *) fw->data;
 
 	if (conf_file->header.magic != cpu_to_le32(WL18XX_CONF_MAGIC)) {
-		wl1271_error("configuration binary file magic number mismatch, "
+		wifi_error("configuration binary file magic number mismatch, "
 			     "expected 0x%0x got 0x%0x", WL18XX_CONF_MAGIC,
 			     conf_file->header.magic);
 		ret = -EINVAL;
@@ -1221,7 +1221,7 @@ static int wl18xx_load_conf_file(struct device *dev, struct wlcore_conf *conf,
 	}
 
 	if (conf_file->header.version != cpu_to_le32(WL18XX_CONF_VERSION)) {
-		wl1271_error("configuration binary file version not supported, "
+		wifi_error("configuration binary file version not supported, "
 			     "expected 0x%08x got 0x%08x",
 			     WL18XX_CONF_VERSION, conf_file->header.version);
 		ret = -EINVAL;
@@ -1240,14 +1240,14 @@ static int wl18xx_conf_init(struct device *dev)
 {
 #if (APPLY_EXTERNAL_CONFIG)
 	struct platform_device *pdev = wifi_data->pdev;
-	struct wlcore_platdev_data *pdata = dev_get_platdata(&pdev->dev);
+	struct wificore_platdev_data *pdata = dev_get_platdata(&pdev->dev);
 #endif
 	struct wifi_priv *priv = wifi_data->priv;
 
 #if (APPLY_EXTERNAL_CONFIG)
 	if (wl18xx_load_conf_file(dev, &wifi_data->conf, &priv->conf,
 				  pdata->family->cfg_name) < 0) {
-		wl1271_warning("falling back to default config");
+		wifi_warning("falling back to default config");
 
 		/* apply driver default configuration */
 		memcpy(&wifi_data->conf, &wl18xx_conf, sizeof(wifi_data->conf));
@@ -1256,7 +1256,7 @@ static int wl18xx_conf_init(struct device *dev)
 		       sizeof(priv->conf));
 	}
 #else
-	wl1271_info("Apply default config\n");
+	wifi_info("Apply default config\n");
 	/* apply driver default configuration */
 	memcpy(&wifi_data->conf, &wl18xx_conf, sizeof(wifi_data->conf));
 	/* apply default private configuration */
@@ -1269,7 +1269,7 @@ static int wl18xx_conf_init(struct device *dev)
 
 static int wl18xx_setup(void);
 
-static struct wlcore_ops wl18xx_ops = {
+static struct wificore_ops wl18xx_ops = {
 	.setup		= wl18xx_setup,
 	.boot		= wl18xx_boot,
 	.hw_init	= wl18xx_hw_init,
@@ -1391,7 +1391,7 @@ wl18xx_iface_combinations[] = {
 };
 
 static inline void
-wlcore_set_ht_cap(enum nl80211_band band,
+wificore_set_ht_cap(enum nl80211_band band,
 		  struct ieee80211_sta_ht_cap *ht_cap)
 {
 	memcpy(&wifi_data->ht_cap[band], ht_cap, sizeof(*ht_cap));
@@ -1433,14 +1433,14 @@ static int wl18xx_setup(void)
 		} else if (!strcmp(board_type_param, "com8")) {
 			priv->conf.phy.board_type = BOARD_TYPE_COM8_18XX;
 		} else {
-			wl1271_error("invalid board type '%s'",
+			wifi_error("invalid board type '%s'",
 				board_type_param);
 			return -EINVAL;
 		}
 	}
 
 	if (priv->conf.phy.board_type >= NUM_BOARD_TYPES) {
-		wl1271_error("invalid board type '%d'",
+		wifi_error("invalid board type '%d'",
 			priv->conf.phy.board_type);
 		return -EINVAL;
 	}
@@ -1473,7 +1473,7 @@ static int wl18xx_setup(void)
 		else if (!strcmp(ht_mode_param, "siso20"))
 			priv->conf.ht.mode = HT_MODE_SISO20;
 		else {
-			wl1271_error("invalid ht_mode '%s'", ht_mode_param);
+			wifi_error("invalid ht_mode '%s'", ht_mode_param);
 			return -EINVAL;
 		}
 	}
@@ -1484,24 +1484,24 @@ static int wl18xx_setup(void)
 		 * siso40.
 		 */
 		if (wl18xx_is_mimo_supported())
-			wlcore_set_ht_cap(NL80211_BAND_2GHZ,
+			wificore_set_ht_cap(NL80211_BAND_2GHZ,
 					  &wl18xx_mimo_ht_cap_2ghz);
 		else
-			wlcore_set_ht_cap(NL80211_BAND_2GHZ,
+			wificore_set_ht_cap(NL80211_BAND_2GHZ,
 					  &wl18xx_siso40_ht_cap_2ghz);
 
 		/* 5Ghz is always wide */
-		wlcore_set_ht_cap(NL80211_BAND_5GHZ,
+		wificore_set_ht_cap(NL80211_BAND_5GHZ,
 				  &wl18xx_siso40_ht_cap_5ghz);
 	} else if (priv->conf.ht.mode == HT_MODE_WIDE) {
-		wlcore_set_ht_cap(NL80211_BAND_2GHZ,
+		wificore_set_ht_cap(NL80211_BAND_2GHZ,
 				  &wl18xx_siso40_ht_cap_2ghz);
-		wlcore_set_ht_cap(NL80211_BAND_5GHZ,
+		wificore_set_ht_cap(NL80211_BAND_5GHZ,
 				  &wl18xx_siso40_ht_cap_5ghz);
 	} else if (priv->conf.ht.mode == HT_MODE_SISO20) {
-		wlcore_set_ht_cap(NL80211_BAND_2GHZ,
+		wificore_set_ht_cap(NL80211_BAND_2GHZ,
 				  &wl18xx_siso20_ht_cap);
-		wlcore_set_ht_cap(NL80211_BAND_5GHZ,
+		wificore_set_ht_cap(NL80211_BAND_5GHZ,
 				  &wl18xx_siso20_ht_cap);
 	}
 
@@ -1517,11 +1517,11 @@ static int wl18xx_probe(struct platform_device *pdev)
 	struct ieee80211_hw *hw;
 	int ret;
 
-	hw = wlcore_alloc_hw(sizeof(struct wifi_priv),
+	hw = wificore_alloc_hw(sizeof(struct wifi_priv),
 			     WL18XX_AGGR_BUFFER_SIZE,
 			     sizeof(struct wl18xx_event_mailbox));
 	if (IS_ERR(hw)) {
-		wl1271_error("can't allocate hw");
+		wifi_error("can't allocate hw");
 		ret = PTR_ERR(hw);
 		goto out;
 	}
@@ -1530,7 +1530,7 @@ static int wl18xx_probe(struct platform_device *pdev)
 	wifi_data->ops = &wl18xx_ops;
 	wifi_data->ptable = wl18xx_ptable;
 
-	ret = wlcore_probe(pdev);
+	ret = wificore_probe(pdev);
 #if (PRINT_DEBUG)
 	printk("[MERGE] - wifi_data->dev: 0x%x, parent = 0x%x\n", wifi_data->dev, wifi_data->dev->parent);
 #endif
@@ -1545,7 +1545,7 @@ static int wl18xx_probe(struct platform_device *pdev)
 	return ret;
 
 out_free:
-	wlcore_free_hw();
+	wificore_free_hw();
 out:
 	return ret;
 }
@@ -1558,7 +1558,7 @@ MODULE_DEVICE_TABLE(platform, wl18xx_id_table);
 
 static struct platform_driver wl18xx_driver = {
 	.probe		= wl18xx_probe,
-	.remove		= wlcore_remove,
+	.remove		= wificore_remove,
 	.id_table	= wl18xx_id_table,
 	.driver = {
 		.name	= "wl18xx_driver",

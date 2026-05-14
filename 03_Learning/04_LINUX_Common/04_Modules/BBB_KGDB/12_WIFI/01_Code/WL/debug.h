@@ -47,39 +47,39 @@ enum {
 	DEBUG_ALL	= ~0,
 };
 
-extern u32 wl12xx_debug_level;
+extern u32 wifi_debug_level;
 
 #define DEBUG_DUMP_LIMIT 1024
 
-#define wl1271_info(fmt, arg...) \
+#define wifi_info(fmt, arg...) \
 	pr_info(DRIVER_PREFIX fmt "\n", ##arg)
 
-#define wl1271_error(fmt, arg...) \
+#define wifi_error(fmt, arg...) \
 	pr_err(DRIVER_PREFIX "ERROR " fmt "\n", ##arg)
 
-#define wl1271_warning(fmt, arg...) \
+#define wifi_warning(fmt, arg...) \
 	pr_warn(DRIVER_PREFIX "WARNING " fmt "\n", ##arg)
 
 
 /* define the debug macro differently if dynamic debug is supported */
 #if defined(CONFIG_DYNAMIC_DEBUG)
-#define wl1271_debug(level, fmt, arg...) \
+#define wifi_debug(level, fmt, arg...) \
 	do { \
-		if (unlikely(level & wl12xx_debug_level)) \
+		if (unlikely(level & wifi_debug_level)) \
 			dynamic_pr_debug(DRIVER_PREFIX fmt "\n", ##arg); \
 	} while (0)
 #else
-#define wl1271_debug(level, fmt, arg...) \
+#define wifi_debug(level, fmt, arg...) \
 	do { \
-		if (unlikely(level & wl12xx_debug_level)) \
+		if (unlikely(level & wifi_debug_level)) \
 			printk(KERN_DEBUG pr_fmt(DRIVER_PREFIX fmt "\n"), \
 			       ##arg); \
 	} while (0)
 #endif
 
-#define wl1271_dump(level, prefix, buf, len)				      \
+#define wifi_dump(level, prefix, buf, len)				      \
 	do {								      \
-		if (level & wl12xx_debug_level)				      \
+		if (level & wifi_debug_level)				      \
 			print_hex_dump_debug(DRIVER_PREFIX prefix,	      \
 					DUMP_PREFIX_OFFSET, 16, 1,	      \
 					buf,				      \

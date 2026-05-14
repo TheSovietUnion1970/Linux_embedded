@@ -14,37 +14,37 @@
 
 #include "wlcore.h"
 #include "debug.h"
-#include "wl12xx_80211.h"
+#include "wifi_80211.h"
 #include "io.h"
 #include "tx.h"
 
-void wlcore_disable_interrupts(void)
+void wificore_disable_interrupts(void)
 {
 	disable_irq(wifi_data->irq);
 }
-EXPORT_SYMBOL_GPL(wlcore_disable_interrupts);
+EXPORT_SYMBOL_GPL(wificore_disable_interrupts);
 
-void wlcore_disable_interrupts_nosync(void)
+void wificore_disable_interrupts_nosync(void)
 {
 	disable_irq_nosync(wifi_data->irq);
 }
-EXPORT_SYMBOL_GPL(wlcore_disable_interrupts_nosync);
+EXPORT_SYMBOL_GPL(wificore_disable_interrupts_nosync);
 
-void wlcore_enable_interrupts(void)
+void wificore_enable_interrupts(void)
 {
 	enable_irq(wifi_data->irq);
 }
-EXPORT_SYMBOL_GPL(wlcore_enable_interrupts);
+EXPORT_SYMBOL_GPL(wificore_enable_interrupts);
 
-void wlcore_synchronize_interrupts(void)
+void wificore_synchronize_interrupts(void)
 {
 	synchronize_irq(wifi_data->irq);
 }
-EXPORT_SYMBOL_GPL(wlcore_synchronize_interrupts);
+EXPORT_SYMBOL_GPL(wificore_synchronize_interrupts);
 
-int wlcore_translate_addr(int addr)
+int wificore_translate_addr(int addr)
 {
-	// struct wlcore_partition_set *part = &wifi_data->curr_part;
+	// struct wificore_partition_set *part = &wifi_data->curr_part;
 	struct wifi_partition_set *part = &wifi_data->curr_part;
 
 	/*
@@ -75,7 +75,7 @@ int wlcore_translate_addr(int addr)
 	WARN(1, "HW address 0x%x out of range", addr);
 	return 0;
 }
-EXPORT_SYMBOL_GPL(wlcore_translate_addr);
+EXPORT_SYMBOL_GPL(wificore_translate_addr);
 
 /* Set the partitions to access the chip addresses
  *

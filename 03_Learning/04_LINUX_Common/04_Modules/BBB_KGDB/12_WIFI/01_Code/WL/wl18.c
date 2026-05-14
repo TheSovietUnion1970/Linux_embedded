@@ -1,7 +1,7 @@
 #include "wl18.h"
 
 /*
- * this command is basically the same as wl1271_acx_ht_capabilities,
+ * this command is basically the same as wifi_acx_ht_capabilities,
  * with the addition of supported rates. they should be unified in
  * the next fw api change
  */
@@ -14,7 +14,7 @@ int wifi_acx_set_peer_cap(
 	int ret = 0;
 	u32 ht_capabilites = 0;
 
-	wl1271_debug(DEBUG_ACX,
+	wifi_debug(DEBUG_ACX,
 		     "acx set cap ht_supp: %d ht_cap: %d rates: 0x%x",
 		     ht_cap->ht_supported, ht_cap->cap, rate_set);
 
@@ -45,7 +45,7 @@ int wifi_acx_set_peer_cap(
 
 	ret = wifi_cmd_configure(ACX_PEER_CAP, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx ht capabilities setting failed: %d", ret);
+		wifi_warning("acx ht capabilities setting failed: %d", ret);
 		goto out;
 	}
 
@@ -54,7 +54,7 @@ out:
 	return ret;
 }
 
-int wifi_handle_static_data(struct wl1271_static_data *static_data)
+int wifi_handle_static_data(struct wifi_static_data *static_data)
 {
 	struct wifi_static_data_priv *static_data_priv =
 		(struct wifi_static_data_priv *) static_data->priv;

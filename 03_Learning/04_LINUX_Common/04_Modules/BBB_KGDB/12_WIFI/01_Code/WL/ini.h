@@ -15,7 +15,7 @@
 
 #define WL1271_INI_MAX_SMART_REFLEX_PARAM 16
 
-struct wl1271_ini_general_params {
+struct wifi_ini_general_params {
 	u8 ref_clock;
 	u8 settling_time;
 	u8 clk_valid_on_wakeup;
@@ -54,7 +54,7 @@ struct wl128x_ini_general_params {
 
 #define WL1271_INI_RSSI_PROCESS_COMPENS_SIZE 15
 
-struct wl1271_ini_band_params_2 {
+struct wifi_ini_band_params_2 {
 	u8 rx_trace_insertion_loss;
 	u8 tx_trace_loss;
 	u8 rx_rssi_process_compens[WL1271_INI_RSSI_PROCESS_COMPENS_SIZE];
@@ -70,7 +70,7 @@ struct wl128x_ini_band_params_2 {
 
 #define WL1271_INI_RATE_GROUP_COUNT 6
 
-struct wl1271_ini_fem_params_2 {
+struct wifi_ini_fem_params_2 {
 	__le16 tx_bip_ref_pd_voltage;
 	u8 tx_bip_ref_power;
 	u8 tx_bip_ref_offset;
@@ -111,7 +111,7 @@ struct wl128x_ini_fem_params_2 {
 #define WL1271_INI_CHANNEL_COUNT_5 35
 #define WL1271_INI_SUB_BAND_COUNT_5 7
 
-struct wl1271_ini_band_params_5 {
+struct wifi_ini_band_params_5 {
 	u8 rx_trace_insertion_loss[WL1271_INI_SUB_BAND_COUNT_5];
 	u8 tx_trace_loss[WL1271_INI_SUB_BAND_COUNT_5];
 	u8 rx_rssi_process_compens[WL1271_INI_RSSI_PROCESS_COMPENS_SIZE];
@@ -123,7 +123,7 @@ struct wl128x_ini_band_params_5 {
 	u8 rx_rssi_process_compens[WL1271_INI_RSSI_PROCESS_COMPENS_SIZE];
 } __packed;
 
-struct wl1271_ini_fem_params_5 {
+struct wifi_ini_fem_params_5 {
 	__le16 tx_bip_ref_pd_voltage[WL1271_INI_SUB_BAND_COUNT_5];
 	u8 tx_bip_ref_power[WL1271_INI_SUB_BAND_COUNT_5];
 	u8 tx_bip_ref_offset[WL1271_INI_SUB_BAND_COUNT_5];
@@ -174,23 +174,23 @@ struct wl128x_ini_fem_params_5 {
 
 #define WL1271_INI_LEGACY_NVS_FILE_SIZE              800
 
-struct wl1271_nvs_file {
+struct wifi_nvs_file {
 	/* NVS section - must be first! */
 	u8 nvs[WL1271_INI_NVS_SECTION_SIZE];
 
 	/* INI section */
-	struct wl1271_ini_general_params general_params;
+	struct wifi_ini_general_params general_params;
 	u8 padding1;
-	struct wl1271_ini_band_params_2 stat_radio_params_2;
+	struct wifi_ini_band_params_2 stat_radio_params_2;
 	u8 padding2;
 	struct {
-		struct wl1271_ini_fem_params_2 params;
+		struct wifi_ini_fem_params_2 params;
 		u8 padding;
 	} dyn_radio_params_2[WL12XX_NVS_FEM_MODULE_COUNT];
-	struct wl1271_ini_band_params_5 stat_radio_params_5;
+	struct wifi_ini_band_params_5 stat_radio_params_5;
 	u8 padding3;
 	struct {
-		struct wl1271_ini_fem_params_5 params;
+		struct wifi_ini_fem_params_5 params;
 		u8 padding;
 	} dyn_radio_params_5[WL12XX_NVS_FEM_MODULE_COUNT];
 } __packed;

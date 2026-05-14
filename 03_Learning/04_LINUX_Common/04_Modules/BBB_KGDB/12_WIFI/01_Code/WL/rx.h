@@ -116,7 +116,7 @@ enum {
 	WL12XX_RX_CLASS_LOGGER,
 };
 
-struct wl1271_rx_descriptor {
+struct wifi_rx_descriptor {
 	__le16 length;
 	u8  status;
 	u8  flags;
@@ -131,7 +131,7 @@ struct wl1271_rx_descriptor {
 	u8  reserved;
 } __packed;
 
-int wlcore_rx(void);
-u8 wl1271_rate_to_idx(int rate, enum nl80211_band band);
+int wificore_rx(void);
+u8 wifi_rate_to_idx(int rate, enum nl80211_band band);
 
 #endif

@@ -25,8 +25,8 @@ extern struct sk_buff_head wifi_deferred_rx_queue;
 extern struct sk_buff_head wifi_deferred_tx_queue;
 
 extern int wifi_tx_queue_count[NUM_TX_QUEUES]; /* Frames scheduled for transmission, not handled yet */ 
-        // incremented - wl1271_op_tx, wl1271_tx_dummy_packet
-        // decremented - wlcore_lnk_dequeue
+        // incremented - wifi_op_tx, wifi_tx_dummy_packet
+        // decremented - wificore_lnk_dequeue
 
 extern u8 wifi_allocated_pkts[WLCORE_MAX_LINKS]; // refer to links_map
 
@@ -193,7 +193,7 @@ struct wifi_link {
 	/*
 	 * total freed FW packets on the link - used for tracking the
 	 * AES/TKIP PN across recoveries. Re-initialized each time
-	 * from the wl1271_station structure.
+	 * from the wifi_station structure.
 	 */
 	u64 total_freed_pkts;
 };
@@ -364,15 +364,15 @@ struct Wifi_data {
 
 	struct platform_device *pdev;
 
-	struct wl1271_if_operations *if_ops;
+	struct wifi_if_operations *if_ops;
 
 	int irq;
 	int wakeirq;
 
 	int irq_flags;
 
-	enum wlcore_state state;
-	enum wl12xx_fw_type fw_type;
+	enum wificore_state state;
+	enum wifi_fw_type fw_type;
 	//bool plt;
 
 	u8 *fw;
@@ -395,7 +395,7 @@ struct Wifi_data {
 
 	u8 sta_count;
 
-	struct wl1271_acx_mem_map *target_mem_map;
+	struct wifi_acx_mem_map *target_mem_map;
 
 	unsigned long queue_stop_reasons[
 				NUM_TX_QUEUES * WLCORE_NUM_MAC_ADDRESSES];
@@ -411,7 +411,7 @@ struct Wifi_data {
 	struct wifi_vif *sched_vif;
 
 	/* Current chipset configuration */
-	struct wlcore_conf conf;
+	struct wificore_conf conf;
 
 	bool enable_11a;
 
@@ -429,7 +429,7 @@ struct Wifi_data {
 	/* work to fire when Tx is stuck */
 	struct delayed_work tx_watchdog_work;
 
-	struct wlcore_ops *ops;
+	struct wificore_ops *ops;
 
 	const char *sr_fw_name;
 
@@ -470,11 +470,11 @@ struct Wifi_data {
 };
 extern struct Wifi_data* wifi_data;
 
-static inline
-struct ieee80211_vif *wifi_wifi_vif_to_vif(int idx)
-{
-	return container_of((void *)wifi_vif_ptr[idx], struct ieee80211_vif, drv_priv);
-}
+// static inline
+// struct ieee80211_vif *wifi_wifi_vif_to_vif(int idx)
+// {
+// 	return container_of((void *)wifi_vif_ptr[idx], struct ieee80211_vif, drv_priv);
+// }
 
 #endif
 //extern struct wifi_wl18xx_fw_status wifi_status_reg;

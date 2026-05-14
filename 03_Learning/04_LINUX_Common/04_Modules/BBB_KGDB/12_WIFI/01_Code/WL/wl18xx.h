@@ -734,25 +734,25 @@ struct wl18xx_acx_statistics {
 	struct wl18xx_dfs_stats			dfs;
 } __packed;
 
-enum wlcore_bandwidth {
+enum wificore_bandwidth {
 	WLCORE_BANDWIDTH_20MHZ,
 	WLCORE_BANDWIDTH_40MHZ,
 };
 
-struct wlcore_peer_ht_operation_mode {
+struct wificore_peer_ht_operation_mode {
 	struct acx_header header;
 
 	u8 hlid;
-	u8 bandwidth; /* enum wlcore_bandwidth */
+	u8 bandwidth; /* enum wificore_bandwidth */
 	u8 padding[2];
 };
 
 /*
  * ACX_PEER_CAP
- * this struct is very similar to wl1271_acx_ht_capabilities, with the
+ * this struct is very similar to wifi_acx_ht_capabilities, with the
  * addition of supported rates
  */
-struct wlcore_acx_peer_cap {
+struct wificore_acx_peer_cap {
 	struct acx_header header;
 
 	/* bitmask of capability bits supported by the peer */

@@ -1,3 +1,6 @@
+WIFI 		= IEEE 802.11 MAC frame
+ETHERNET	= IEEE 802.3 Ethernet frame
+
 [16179.535656] firmware booted (Rev 8.9.0.0.83)
 [16180.202259] # RX frame (len=100 bytes):
 [16180.210536]   50 00 00 00 F6 30 8E DB 

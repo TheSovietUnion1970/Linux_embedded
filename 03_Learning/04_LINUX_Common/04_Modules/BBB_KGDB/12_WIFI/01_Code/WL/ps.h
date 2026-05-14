@@ -13,8 +13,8 @@
 #include "wlcore.h"
 #include "acx.h"
 
-int wl1271_ps_set_mode(struct wifi_vif *wifi_vif,
-		       enum wl1271_cmd_ps_mode mode);
+int wifi_ps_set_mode(struct wifi_vif *wifi_vif,
+		       enum wifi_cmd_ps_mode mode);
 
 #define WL1271_PS_COMPLETE_TIMEOUT 500
 

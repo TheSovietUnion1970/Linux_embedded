@@ -30,7 +30,7 @@
 // #include "../wl12xx/reg.h"
 #include "reg.h"
 
-static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
+static u32 wificore_rx_get_buf_size(u32 rx_pkt_desc)
 {
 	// if (wifi_data->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
 	// 	return (rx_pkt_desc & ALIGNED_RX_BUF_SIZE_MASK) >>
@@ -42,7 +42,7 @@ static u32 wlcore_rx_get_buf_size(u32 rx_pkt_desc)
 			ALIGNED_RX_BUF_SIZE_SHIFT;
 }
 
-static u32 wlcore_rx_get_align_buf_size(u32 pkt_len)
+static u32 wificore_rx_get_align_buf_size(u32 pkt_len)
 {
 	// if (wifi_data->quirks & WLCORE_QUIRK_RX_BLOCKSIZE_ALIGN)
 	// 	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
@@ -52,8 +52,8 @@ static u32 wlcore_rx_get_align_buf_size(u32 pkt_len)
 	return ALIGN(pkt_len, WL12XX_BUS_BLOCK_SIZE);
 }
 
-static void wl1271_rx_status(
-			     struct wl1271_rx_descriptor *desc,
+static void wifi_rx_status(
+			     struct wifi_rx_descriptor *desc,
 			     struct ieee80211_rx_status *status,
 			     u8 beacon, u8 probe_rsp)
 {
@@ -64,7 +64,7 @@ static void wl1271_rx_status(
 	else
 		status->band = NL80211_BAND_5GHZ; // WL1271_RX_DESC_BAND_A -> 5 GHz Band (A = 802.11a)
 
-	status->rate_idx = wlcore_rate_to_idx(desc->rate, status->band);
+	status->rate_idx = wificore_rate_to_idx(desc->rate, status->band);
 	// -> rate_idx is used for interal idx of mac80211
 
 	/* 11n support */
@@ -104,7 +104,7 @@ static void wl1271_rx_status(
 
 		if (unlikely(desc_err_code & WL1271_RX_DESC_MIC_FAIL)) {
 			status->flag |= RX_FLAG_MMIC_ERROR;
-			wl1271_warning("Michael MIC error. Desc: 0x%x",
+			wifi_warning("Michael MIC error. Desc: 0x%x",
 				       desc_err_code);
 		}
 	}
@@ -113,14 +113,14 @@ static void wl1271_rx_status(
 		status->boottime_ns = ktime_get_boottime_ns();
 
 	if (beacon)
-		wlcore_set_pending_regdomain_ch((u16)desc->channel,
+		wificore_set_pending_regdomain_ch((u16)desc->channel,
 						status->band);
 }
 
 static u32 wifi_get_rx_packet_len(void *rx_data,
 				    u32 data_len)
 {
-	struct wl1271_rx_descriptor *desc = rx_data;
+	struct wifi_rx_descriptor *desc = rx_data;
 
 	/* invalid packet */
 	if (data_len < sizeof(*desc))
@@ -129,10 +129,10 @@ static u32 wifi_get_rx_packet_len(void *rx_data,
 	return data_len - sizeof(*desc);
 }
 
-static int wl1271_rx_handle_data(u8 *data, u32 length,
+static int wifi_rx_handle_data(u8 *data, u32 length,
 				 enum wl_rx_buf_align rx_align, u8 *hlid)
 {
-	struct wl1271_rx_descriptor *desc;
+	struct wifi_rx_descriptor *desc;
 	struct sk_buff *skb;
 	struct ieee80211_hdr *hdr;
 	u8 beacon = 0;
@@ -143,7 +143,7 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 
 	pkt_data_len = wifi_get_rx_packet_len(data, length); // length - sizeof(*desc);
 	if (!pkt_data_len) {
-		wl1271_error("Invalid packet arrived from HW. length %d",
+		wifi_error("Invalid packet arrived from HW. length %d",
 			     length);
 		return -EINVAL;
 	}
@@ -154,15 +154,15 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 		offset_to_data = RX_BUF_ALIGN;
 
 	/* the data read starts with the descriptor */
-	desc = (struct wl1271_rx_descriptor *) data;
+	desc = (struct wifi_rx_descriptor *) data;
 
 	/* discard corrupted packets */
 	if (desc->status & WL1271_RX_DESC_DECRYPT_FAIL) {
 		hdr = (void *)(data + sizeof(*desc) + offset_to_data);
-		wl1271_warning("corrupted packet in RX: status: 0x%x len: %d",
+		wifi_warning("corrupted packet in RX: status: 0x%x len: %d",
 			       desc->status & WL1271_RX_DESC_STATUS_MASK,
 			       pkt_data_len);
-		wl1271_dump((DEBUG_RX|DEBUG_CMD), "PKT: ", data + sizeof(*desc),
+		wifi_dump((DEBUG_RX|DEBUG_CMD), "PKT: ", data + sizeof(*desc),
 			    min(pkt_data_len,
 				ieee80211_hdrlen(hdr->frame_control)));
 		return -EINVAL;
@@ -171,7 +171,7 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 	/* skb length not including rx descriptor */
 	skb = __dev_alloc_skb(pkt_data_len + reserved, GFP_KERNEL);
 	if (!skb) {
-		wl1271_error("Couldn't allocate RX frame");
+		wifi_error("Couldn't allocate RX frame");
 		return -ENOMEM;
 	}
 
@@ -202,11 +202,11 @@ static int wl1271_rx_handle_data(u8 *data, u32 length,
 
 	// display info of wifi on userspace
 	// status->signal = ((desc->rssi & RSSI_LEVEL_BITMASK) | BIT(7));
-	wl1271_rx_status(desc, IEEE80211_SKB_RXCB(skb), beacon,
+	wifi_rx_status(desc, IEEE80211_SKB_RXCB(skb), beacon,
 			 ieee80211_is_probe_resp(hdr->frame_control));
 
 	seq_num = (le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_SEQ) >> 4;
-	wl1271_debug(DEBUG_RX, "rx skb 0x%p: %d B %s seq %d hlid %d", skb,
+	wifi_debug(DEBUG_RX, "rx skb 0x%p: %d B %s seq %d hlid %d", skb,
 		     skb->len - desc->pad_len,
 		     beacon ? "beacon" : "",
 		     seq_num, *hlid);
@@ -231,7 +231,7 @@ wifi_get_rx_buf_align(u32 rx_desc)
 }
 
 #include "wl18xx.h"
-int wlcore_rx(void)
+int wificore_rx(void)
 {
 	unsigned long active_hlids[BITS_TO_LONGS(WLCORE_MAX_LINKS)] = {0};
 	u32 buf_size;
@@ -256,8 +256,8 @@ int wlcore_rx(void)
 		rx_counter = drv_rx_counter;
 		while (rx_counter != fw_rx_counter) {
 			des = le32_to_cpu(wifi_status_reg->rx_pkt_descs[rx_counter]);
-			pkt_len = wlcore_rx_get_buf_size(des);
-			align_pkt_len = wlcore_rx_get_align_buf_size(pkt_len);
+			pkt_len = wificore_rx_get_buf_size(des);
+			align_pkt_len = wificore_rx_get_align_buf_size(pkt_len);
 			if (buf_size + align_pkt_len > WL18XX_AGGR_BUFFER_SIZE)
 				break;
 			buf_size += align_pkt_len;
@@ -266,7 +266,7 @@ int wlcore_rx(void)
 		}
 
 		if (buf_size == 0) {
-			wl1271_warning("received empty data");
+			wifi_warning("received empty data");
 			break;
 		}
 
@@ -275,7 +275,7 @@ int wlcore_rx(void)
 		/* Read all available packets at once */
 		des = le32_to_cpu(wifi_status_reg->rx_pkt_descs[drv_rx_counter]);
 		
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_SLV_MEM_DATA]), (u32*)wifi_aggr_buf, buf_size, true);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_SLV_MEM_DATA]), (u32*)wifi_aggr_buf, buf_size, true);
 		if (ret < 0)
 			goto out;
 
@@ -285,7 +285,7 @@ int wlcore_rx(void)
 			des = le32_to_cpu(wifi_status_reg->rx_pkt_descs[drv_rx_counter]);
 
 			// des => [30] - rx_align, [23, 8] - pkt_len
-			pkt_len = wlcore_rx_get_buf_size(des);
+			pkt_len = wificore_rx_get_buf_size(des);
 			rx_align = wifi_get_rx_buf_align(des);
 
 			/*
@@ -293,7 +293,7 @@ int wlcore_rx(void)
 			 * conditions, in that case the received frame will just
 			 * be dropped.
 			 */
-			if (wl1271_rx_handle_data(
+			if (wifi_rx_handle_data(
 						  wifi_aggr_buf + pkt_offset,
 						  pkt_len, rx_align,
 						  &hlid) == 1) {
@@ -308,7 +308,7 @@ int wlcore_rx(void)
 			wifi_rx_counter++;
 			drv_rx_counter++;
 			drv_rx_counter %= WL18XX_NUM_RX_DESCRIPTORS;
-			pkt_offset += wlcore_rx_get_align_buf_size(pkt_len);
+			pkt_offset += wificore_rx_get_align_buf_size(pkt_len);
 		}
 	}
 

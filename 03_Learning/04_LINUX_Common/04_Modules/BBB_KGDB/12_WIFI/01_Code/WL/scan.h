@@ -13,10 +13,10 @@
 #include "wlcore.h"
 // #include "ops.h"
 
-int wlcore_scan(struct ieee80211_vif *vif,
+int wificore_scan(struct ieee80211_vif *vif,
 		const u8 *ssid, size_t ssid_len,
 		struct cfg80211_scan_request *req);
-void wl1271_scan_complete_work(struct work_struct *work);
+void wifi_scan_complete_work(struct work_struct *work);
 
 #define WL1271_SCAN_MAX_CHANNELS       24
 #define WL1271_SCAN_DEFAULT_TAG        1
@@ -41,8 +41,8 @@ enum {
 	WL1271_SCAN_STATE_DONE
 };
 
-struct wl1271_cmd_trigger_scan_to {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_trigger_scan_to {
+	struct wifi_cmd_header header;
 
 	__le32 timeout;
 } __packed;
@@ -52,7 +52,7 @@ struct wl1271_cmd_trigger_scan_to {
 
 /*
  * This max value here is used only for the struct definition of
- * wlcore_scan_channels. This struct is used by both 12xx
+ * wificore_scan_channels. This struct is used by both 12xx
  * and 18xx (which have different max 5ghz channels value).
  * In order to make sure this is large enough, just use the
  * max possible 5ghz channels.
@@ -106,23 +106,23 @@ enum {
 	SCAN_SSID_TYPE_HIDDEN = 1,
 };
 
-struct wl1271_ssid {
+struct wifi_ssid {
 	u8 type;
 	u8 len;
 	u8 ssid[IEEE80211_MAX_SSID_LEN];
 	/* u8 padding[2]; */
 } __packed;
 
-struct wl1271_cmd_sched_scan_ssid_list {
-	struct wl1271_cmd_header header;
+struct wifi_cmd_sched_scan_ssid_list {
+	struct wifi_cmd_header header;
 
 	u8 n_ssids;
-	struct wl1271_ssid ssids[SCHED_SCAN_MAX_SSIDS];
+	struct wifi_ssid ssids[SCHED_SCAN_MAX_SSIDS];
 	u8 role_id;
 	u8 padding[2];
 } __packed;
 
-struct wlcore_scan_channels {
+struct wificore_scan_channels {
 	u8 passive[SCAN_MAX_BANDS]; /* number of passive scan channels */
 	u8 active[SCAN_MAX_BANDS];  /* number of active scan channels */
 	u8 dfs;		   /* number of dfs channels in 5ghz */

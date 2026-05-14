@@ -37,7 +37,7 @@ enum {
 };
 
 /* events the driver might want to wait for */
-enum wlcore_wait_event {
+enum wificore_wait_event {
 	WLCORE_EVENT_ROLE_STOP_COMPLETE,
 	WLCORE_EVENT_PEER_REMOVE_COMPLETE,
 	WLCORE_EVENT_DFS_CONFIG_COMPLETE
@@ -60,7 +60,7 @@ struct fw_logger_information {
 
 struct wl1271;
 
-int wl1271_event_unmask(void);
-int wl1271_event_handle(u8 mbox);
+int wifi_event_unmask(void);
+int wifi_event_handle(u8 mbox);
 
 #endif

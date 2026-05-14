@@ -16,18 +16,18 @@
 
 #include "wlcore.h"
 #include "debug.h"
-#include "wl12xx_80211.h"
+#include "wifi_80211.h"
 
 #include "common.h"
 #include "main.h"
 
-int wl1271_acx_wake_up_conditions(struct wifi_vif *wifi_vif,
+int wifi_acx_wake_up_conditions(struct wifi_vif *wifi_vif,
 				  u8 wake_up_event, u8 listen_interval)
 {
 	struct acx_wake_up_condition *wake_up;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx wake up conditions (wake_up_event %d listen_interval %d)",
+	wifi_debug(DEBUG_ACX, "acx wake up conditions (wake_up_event %d listen_interval %d)",
 		     wake_up_event, listen_interval);
 
 	wake_up = kzalloc(sizeof(*wake_up), GFP_KERNEL);
@@ -43,7 +43,7 @@ int wl1271_acx_wake_up_conditions(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_configure(ACX_WAKE_UP_CONDITIONS,
 				   wake_up, sizeof(*wake_up));
 	if (ret < 0) {
-		wl1271_warning("could not set wake up conditions: %d", ret);
+		wifi_warning("could not set wake up conditions: %d", ret);
 		goto out;
 	}
 
@@ -52,12 +52,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_sleep_auth(u8 sleep_auth)
+int wifi_acx_sleep_auth(u8 sleep_auth)
 {
 	struct acx_sleep_auth *auth;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx sleep auth %d", sleep_auth);
+	wifi_debug(DEBUG_ACX, "acx sleep auth %d", sleep_auth);
 
 	auth = kzalloc(sizeof(*auth), GFP_KERNEL);
 	if (!auth) {
@@ -69,7 +69,7 @@ int wl1271_acx_sleep_auth(u8 sleep_auth)
 
 	ret = wifi_cmd_configure(ACX_SLEEP_AUTH, auth, sizeof(*auth));
 	if (ret < 0) {
-		wl1271_error("could not configure sleep_auth to %d: %d",
+		wifi_error("could not configure sleep_auth to %d: %d",
 			     sleep_auth, ret);
 		goto out;
 	}
@@ -79,15 +79,15 @@ out:
 	kfree(auth);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wl1271_acx_sleep_auth);
+EXPORT_SYMBOL_GPL(wifi_acx_sleep_auth);
 
-int wl1271_acx_tx_power(struct wifi_vif *wifi_vif,
+int wifi_acx_tx_power(struct wifi_vif *wifi_vif,
 			int power)
 {
 	struct acx_current_tx_power *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx dot11_cur_tx_pwr %d", power);
+	wifi_debug(DEBUG_ACX, "acx dot11_cur_tx_pwr %d", power);
 
 	if (power < 0 || power > 25)
 		return -EINVAL;
@@ -103,7 +103,7 @@ int wl1271_acx_tx_power(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(DOT11_CUR_TX_PWR, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("configure of tx power failed: %d", ret);
+		wifi_warning("configure of tx power failed: %d", ret);
 		goto out;
 	}
 
@@ -112,12 +112,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_feature_cfg(struct wifi_vif *wifi_vif)
+int wifi_acx_feature_cfg(struct wifi_vif *wifi_vif)
 {
 	struct acx_feature_config *feature;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx feature cfg");
+	wifi_debug(DEBUG_ACX, "acx feature cfg");
 
 	feature = kzalloc(sizeof(*feature), GFP_KERNEL);
 	if (!feature) {
@@ -133,7 +133,7 @@ int wl1271_acx_feature_cfg(struct wifi_vif *wifi_vif)
 	ret = wifi_cmd_configure(ACX_FEATURE_CFG,
 				   feature, sizeof(*feature));
 	if (ret < 0) {
-		wl1271_error("Couldn't set HW encryption");
+		wifi_error("Couldn't set HW encryption");
 		goto out;
 	}
 
@@ -142,14 +142,14 @@ out:
 	return ret;
 }
 
-int wl1271_acx_mem_map(struct acx_header *mem_map,
+int wifi_acx_mem_map(struct acx_header *mem_map,
 		       size_t len)
 {
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx mem map");
+	wifi_debug(DEBUG_ACX, "acx mem map");
 
-	ret = wl1271_cmd_interrogate(ACX_MEM_MAP, mem_map,
+	ret = wifi_cmd_interrogate(ACX_MEM_MAP, mem_map,
 				     sizeof(struct acx_header), len);
 	if (ret < 0)
 		return ret;
@@ -157,12 +157,12 @@ int wl1271_acx_mem_map(struct acx_header *mem_map,
 	return 0;
 }
 
-int wl1271_acx_rx_msdu_life_time(void)
+int wifi_acx_rx_msdu_life_time(void)
 {
 	struct acx_rx_msdu_lifetime *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx rx msdu life time");
+	wifi_debug(DEBUG_ACX, "acx rx msdu life time");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -174,7 +174,7 @@ int wl1271_acx_rx_msdu_life_time(void)
 	ret = wifi_cmd_configure(DOT11_RX_MSDU_LIFE_TIME,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("failed to set rx msdu life time: %d", ret);
+		wifi_warning("failed to set rx msdu life time: %d", ret);
 		goto out;
 	}
 
@@ -183,13 +183,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_slot(struct wifi_vif *wifi_vif,
+int wifi_acx_slot(struct wifi_vif *wifi_vif,
 		    enum acx_slot_type slot_time)
 {
 	struct acx_slot *slot;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx slot");
+	wifi_debug(DEBUG_ACX, "acx slot");
 
 	slot = kzalloc(sizeof(*slot), GFP_KERNEL);
 	if (!slot) {
@@ -203,7 +203,7 @@ int wl1271_acx_slot(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_SLOT, slot, sizeof(*slot));
 	if (ret < 0) {
-		wl1271_warning("failed to set slot time: %d", ret);
+		wifi_warning("failed to set slot time: %d", ret);
 		goto out;
 	}
 
@@ -212,13 +212,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_group_address_tbl(struct wifi_vif *wifi_vif,
+int wifi_acx_group_address_tbl(struct wifi_vif *wifi_vif,
 				 bool enable, void *mc_list, u32 mc_list_len)
 {
 	struct acx_dot11_grp_addr_tbl *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx group address tbl");
+	wifi_debug(DEBUG_ACX, "acx group address tbl");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -235,7 +235,7 @@ int wl1271_acx_group_address_tbl(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_configure(DOT11_GROUP_ADDRESS_TBL,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("failed to set group addr table: %d", ret);
+		wifi_warning("failed to set group addr table: %d", ret);
 		goto out;
 	}
 
@@ -244,7 +244,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_service_period_timeout(
+int wifi_acx_service_period_timeout(
 				      struct wifi_vif *wifi_vif)
 {
 	struct acx_rx_timeout *rx_timeout;
@@ -256,7 +256,7 @@ int wl1271_acx_service_period_timeout(
 		goto out;
 	}
 
-	wl1271_debug(DEBUG_ACX, "acx service period timeout");
+	wifi_debug(DEBUG_ACX, "acx service period timeout");
 
 	rx_timeout->role_id = wifi_vif->role_id;
 	rx_timeout->ps_poll_timeout = cpu_to_le16(wifi_data->conf.rx.ps_poll_timeout);
@@ -265,7 +265,7 @@ int wl1271_acx_service_period_timeout(
 	ret = wifi_cmd_configure(ACX_SERVICE_PERIOD_TIMEOUT,
 				   rx_timeout, sizeof(*rx_timeout));
 	if (ret < 0) {
-		wl1271_warning("failed to set service period timeout: %d",
+		wifi_warning("failed to set service period timeout: %d",
 			       ret);
 		goto out;
 	}
@@ -275,7 +275,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rts_threshold(struct wifi_vif *wifi_vif,
+int wifi_acx_rts_threshold(struct wifi_vif *wifi_vif,
 			     u32 rts_threshold)
 {
 	struct acx_rts_threshold *rts;
@@ -288,7 +288,7 @@ int wl1271_acx_rts_threshold(struct wifi_vif *wifi_vif,
 	if (rts_threshold > IEEE80211_MAX_RTS_THRESHOLD)
 		rts_threshold = wifi_data->conf.rx.rts_threshold;
 
-	wl1271_debug(DEBUG_ACX, "acx rts threshold: %d", rts_threshold);
+	wifi_debug(DEBUG_ACX, "acx rts threshold: %d", rts_threshold);
 
 	rts = kzalloc(sizeof(*rts), GFP_KERNEL);
 	if (!rts) {
@@ -301,7 +301,7 @@ int wl1271_acx_rts_threshold(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(DOT11_RTS_THRESHOLD, rts, sizeof(*rts));
 	if (ret < 0) {
-		wl1271_warning("failed to set rts threshold: %d", ret);
+		wifi_warning("failed to set rts threshold: %d", ret);
 		goto out;
 	}
 
@@ -310,13 +310,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_dco_itrim_params(void)
+int wifi_acx_dco_itrim_params(void)
 {
 	struct acx_dco_itrim_params *dco;
 	struct conf_itrim_settings *c = &wifi_data->conf.itrim;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx dco itrim parameters");
+	wifi_debug(DEBUG_ACX, "acx dco itrim parameters");
 
 	dco = kzalloc(sizeof(*dco), GFP_KERNEL);
 	if (!dco) {
@@ -330,7 +330,7 @@ int wl1271_acx_dco_itrim_params(void)
 	ret = wifi_cmd_configure(ACX_SET_DCO_ITRIM_PARAMS,
 				   dco, sizeof(*dco));
 	if (ret < 0) {
-		wl1271_warning("failed to set dco itrim parameters: %d", ret);
+		wifi_warning("failed to set dco itrim parameters: %d", ret);
 		goto out;
 	}
 
@@ -339,13 +339,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
+int wifi_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
 				 bool enable_filter)
 {
 	struct acx_beacon_filter_option *beacon_filter = NULL;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx beacon filter opt enable=%d",
+	wifi_debug(DEBUG_ACX, "acx beacon filter opt enable=%d",
 		     enable_filter);
 
 	if (enable_filter &&
@@ -370,7 +370,7 @@ int wl1271_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_configure(ACX_BEACON_FILTER_OPT,
 				   beacon_filter, sizeof(*beacon_filter));
 	if (ret < 0) {
-		wl1271_warning("failed to set beacon filter opt: %d", ret);
+		wifi_warning("failed to set beacon filter opt: %d", ret);
 		goto out;
 	}
 
@@ -379,7 +379,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_beacon_filter_table(
+int wifi_acx_beacon_filter_table(
 				   struct wifi_vif *wifi_vif)
 {
 	struct acx_beacon_filter_ie_table *ie_table;
@@ -387,7 +387,7 @@ int wl1271_acx_beacon_filter_table(
 	int ret;
 	bool vendor_spec = false;
 
-	wl1271_debug(DEBUG_ACX, "acx beacon filter table");
+	wifi_debug(DEBUG_ACX, "acx beacon filter table");
 
 	ie_table = kzalloc(sizeof(*ie_table), GFP_KERNEL);
 	if (!ie_table) {
@@ -426,7 +426,7 @@ int wl1271_acx_beacon_filter_table(
 	ret = wifi_cmd_configure(ACX_BEACON_FILTER_TABLE,
 				   ie_table, sizeof(*ie_table));
 	if (ret < 0) {
-		wl1271_warning("failed to set beacon filter table: %d", ret);
+		wifi_warning("failed to set beacon filter table: %d", ret);
 		goto out;
 	}
 
@@ -437,7 +437,7 @@ out:
 
 #define ACX_CONN_MONIT_DISABLE_VALUE  0xffffffff
 
-int wl1271_acx_conn_monit_params(struct wifi_vif *wifi_vif,
+int wifi_acx_conn_monit_params(struct wifi_vif *wifi_vif,
 				 bool enable)
 {
 	struct acx_conn_monit_params *acx;
@@ -445,7 +445,7 @@ int wl1271_acx_conn_monit_params(struct wifi_vif *wifi_vif,
 	u32 timeout = ACX_CONN_MONIT_DISABLE_VALUE;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx connection monitor parameters: %s",
+	wifi_debug(DEBUG_ACX, "acx connection monitor parameters: %s",
 		     enable ? "enabled" : "disabled");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
@@ -466,7 +466,7 @@ int wl1271_acx_conn_monit_params(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_configure(ACX_CONN_MONIT_PARAMS,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("failed to set connection monitor "
+		wifi_warning("failed to set connection monitor "
 			       "parameters: %d", ret);
 		goto out;
 	}
@@ -477,12 +477,12 @@ out:
 }
 
 
-int wl1271_acx_sg_enable(bool enable)
+int wifi_acx_sg_enable(bool enable)
 {
 	struct acx_bt_wlan_coex *pta;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx sg enable");
+	wifi_debug(DEBUG_ACX, "acx sg enable");
 
 	pta = kzalloc(sizeof(*pta), GFP_KERNEL);
 	if (!pta) {
@@ -497,7 +497,7 @@ int wl1271_acx_sg_enable(bool enable)
 
 	ret = wifi_cmd_configure(ACX_SG_ENABLE, pta, sizeof(*pta));
 	if (ret < 0) {
-		wl1271_warning("failed to set softgemini enable: %d", ret);
+		wifi_warning("failed to set softgemini enable: %d", ret);
 		goto out;
 	}
 
@@ -506,13 +506,13 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_sg_cfg(void)
+int wifi_acx_sg_cfg(void)
 {
 	struct acx_bt_wlan_coex_param *param;
 	struct conf_sg_settings *c = &wifi_data->conf.sg;
 	int i, ret;
 
-	wl1271_debug(DEBUG_ACX, "acx sg cfg");
+	wifi_debug(DEBUG_ACX, "acx sg cfg");
 
 	param = kzalloc(sizeof(*param), GFP_KERNEL);
 	if (!param) {
@@ -527,7 +527,7 @@ int wl12xx_acx_sg_cfg(void)
 
 	ret = wifi_cmd_configure(ACX_SG_CFG, param, sizeof(*param));
 	if (ret < 0) {
-		wl1271_warning("failed to set sg config: %d", ret);
+		wifi_warning("failed to set sg config: %d", ret);
 		goto out;
 	}
 
@@ -536,12 +536,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_cca_threshold(void)
+int wifi_acx_cca_threshold(void)
 {
 	struct acx_energy_detection *detection;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx cca threshold");
+	wifi_debug(DEBUG_ACX, "acx cca threshold");
 
 	detection = kzalloc(sizeof(*detection), GFP_KERNEL);
 	if (!detection) {
@@ -555,19 +555,19 @@ int wl1271_acx_cca_threshold(void)
 	ret = wifi_cmd_configure(ACX_CCA_THRESHOLD,
 				   detection, sizeof(*detection));
 	if (ret < 0)
-		wl1271_warning("failed to set cca threshold: %d", ret);
+		wifi_warning("failed to set cca threshold: %d", ret);
 
 out:
 	kfree(detection);
 	return ret;
 }
 
-int wl1271_acx_bcn_dtim_options(struct wifi_vif *wifi_vif)
+int wifi_acx_bcn_dtim_options(struct wifi_vif *wifi_vif)
 {
 	struct acx_beacon_broadcast *bb;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx bcn dtim options");
+	wifi_debug(DEBUG_ACX, "acx bcn dtim options");
 
 	bb = kzalloc(sizeof(*bb), GFP_KERNEL);
 	if (!bb) {
@@ -583,7 +583,7 @@ int wl1271_acx_bcn_dtim_options(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_configure(ACX_BCN_DTIM_OPTIONS, bb, sizeof(*bb));
 	if (ret < 0) {
-		wl1271_warning("failed to set rx config: %d", ret);
+		wifi_warning("failed to set rx config: %d", ret);
 		goto out;
 	}
 
@@ -592,12 +592,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_aid(struct wifi_vif *wifi_vif, u16 aid)
+int wifi_acx_aid(struct wifi_vif *wifi_vif, u16 aid)
 {
 	struct acx_aid *acx_aid;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx aid");
+	wifi_debug(DEBUG_ACX, "acx aid");
 
 	acx_aid = kzalloc(sizeof(*acx_aid), GFP_KERNEL);
 	if (!acx_aid) {
@@ -610,7 +610,7 @@ int wl1271_acx_aid(struct wifi_vif *wifi_vif, u16 aid)
 
 	ret = wifi_cmd_configure(ACX_AID, acx_aid, sizeof(*acx_aid));
 	if (ret < 0) {
-		wl1271_warning("failed to set aid: %d", ret);
+		wifi_warning("failed to set aid: %d", ret);
 		goto out;
 	}
 
@@ -619,12 +619,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_event_mbox_mask(u32 event_mask)
+int wifi_acx_event_mbox_mask(u32 event_mask)
 {
 	struct acx_event_mask *mask;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx event mbox mask");
+	wifi_debug(DEBUG_ACX, "acx event mbox mask");
 
 	mask = kzalloc(sizeof(*mask), GFP_KERNEL);
 	if (!mask) {
@@ -639,7 +639,7 @@ int wl1271_acx_event_mbox_mask(u32 event_mask)
 	ret = wifi_cmd_configure(ACX_EVENT_MBOX_MASK,
 				   mask, sizeof(*mask));
 	if (ret < 0) {
-		wl1271_warning("failed to set acx_event_mbox_mask: %d", ret);
+		wifi_warning("failed to set acx_event_mbox_mask: %d", ret);
 		goto out;
 	}
 
@@ -648,13 +648,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_set_preamble(struct wifi_vif *wifi_vif,
+int wifi_acx_set_preamble(struct wifi_vif *wifi_vif,
 			    enum acx_preamble_type preamble)
 {
 	struct acx_preamble *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx_set_preamble");
+	wifi_debug(DEBUG_ACX, "acx_set_preamble");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -667,7 +667,7 @@ int wl1271_acx_set_preamble(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_PREAMBLE_TYPE, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of preamble failed: %d", ret);
+		wifi_warning("Setting of preamble failed: %d", ret);
 		goto out;
 	}
 
@@ -676,13 +676,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_cts_protect(struct wifi_vif *wifi_vif,
+int wifi_acx_cts_protect(struct wifi_vif *wifi_vif,
 			   enum acx_ctsprotect_type ctsprotect)
 {
 	struct acx_ctsprotect *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx_set_ctsprotect");
+	wifi_debug(DEBUG_ACX, "acx_set_ctsprotect");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -695,7 +695,7 @@ int wl1271_acx_cts_protect(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_CTS_PROTECTION, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of ctsprotect failed: %d", ret);
+		wifi_warning("Setting of ctsprotect failed: %d", ret);
 		goto out;
 	}
 
@@ -704,13 +704,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
+int wifi_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
 {
 	struct acx_rate_policy *acx;
 	struct conf_tx_rate_class *c = &wifi_data->conf.tx.sta_rc_conf;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx rate policies");
+	wifi_debug(DEBUG_ACX, "acx rate policies");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 
@@ -719,7 +719,7 @@ int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
 		goto out;
 	}
 
-	wl1271_debug(DEBUG_ACX, "basic_rate: 0x%x, full_rate: 0x%x",
+	wifi_debug(DEBUG_ACX, "basic_rate: 0x%x, full_rate: 0x%x",
 		wifi_vif->basic_rate, wifi_vif->rate_set);
 
 	/* configure one basic rate class */
@@ -731,7 +731,7 @@ int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of rate policies failed: %d", ret);
+		wifi_warning("Setting of rate policies failed: %d", ret);
 		goto out;
 	}
 
@@ -747,7 +747,7 @@ int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of rate policies failed: %d", ret);
+		wifi_warning("Setting of rate policies failed: %d", ret);
 		goto out;
 	}
 
@@ -765,7 +765,7 @@ int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif)
 
 	ret = wifi_cmd_configure(ACX_RATE_POLICY, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of rate policies failed: %d", ret);
+		wifi_warning("Setting of rate policies failed: %d", ret);
 		goto out;
 	}
 
@@ -774,13 +774,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_ac_cfg(struct wifi_vif *wifi_vif,
+int wifi_acx_ac_cfg(struct wifi_vif *wifi_vif,
 		      u8 ac, u8 cw_min, u16 cw_max, u8 aifsn, u16 txop)
 {
 	struct acx_ac_cfg *acx;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx ac cfg %d cw_ming %d cw_max %d "
+	wifi_debug(DEBUG_ACX, "acx ac cfg %d cw_ming %d cw_max %d "
 		     "aifs %d txop %d", ac, cw_min, cw_max, aifsn, txop);
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
@@ -799,7 +799,7 @@ int wl1271_acx_ac_cfg(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_AC_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx ac cfg failed: %d", ret);
+		wifi_warning("acx ac cfg failed: %d", ret);
 		goto out;
 	}
 
@@ -808,7 +808,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_tid_cfg(struct wifi_vif *wifi_vif,
+int wifi_acx_tid_cfg(struct wifi_vif *wifi_vif,
 		       u8 queue_id, u8 channel_type,
 		       u8 tsid, u8 ps_scheme, u8 ack_policy,
 		       u32 apsd_conf0, u32 apsd_conf1)
@@ -816,7 +816,7 @@ int wl1271_acx_tid_cfg(struct wifi_vif *wifi_vif,
 	struct acx_tid_config *acx;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx tid config");
+	wifi_debug(DEBUG_ACX, "acx tid config");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 
@@ -836,7 +836,7 @@ int wl1271_acx_tid_cfg(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_TID_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of tid config failed: %d", ret);
+		wifi_warning("Setting of tid config failed: %d", ret);
 		goto out;
 	}
 
@@ -845,7 +845,7 @@ out:
 	return ret;
 }
 
-int wl1271_acx_frag_threshold(u32 frag_threshold)
+int wifi_acx_frag_threshold(u32 frag_threshold)
 {
 	struct acx_frag_threshold *acx;
 	int ret = 0;
@@ -857,7 +857,7 @@ int wl1271_acx_frag_threshold(u32 frag_threshold)
 	if (frag_threshold > IEEE80211_MAX_FRAG_THRESHOLD)
 		frag_threshold = wifi_data->conf.tx.frag_threshold;
 
-	wl1271_debug(DEBUG_ACX, "acx frag threshold: %d", frag_threshold);
+	wifi_debug(DEBUG_ACX, "acx frag threshold: %d", frag_threshold);
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 
@@ -869,7 +869,7 @@ int wl1271_acx_frag_threshold(u32 frag_threshold)
 	acx->frag_threshold = cpu_to_le16((u16)frag_threshold);
 	ret = wifi_cmd_configure(ACX_FRAG_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of frag threshold failed: %d", ret);
+		wifi_warning("Setting of frag threshold failed: %d", ret);
 		goto out;
 	}
 
@@ -878,12 +878,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_tx_config_options(void)
+int wifi_acx_tx_config_options(void)
 {
 	struct acx_tx_config_options *acx;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx tx config options");
+	wifi_debug(DEBUG_ACX, "acx tx config options");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 
@@ -896,7 +896,7 @@ int wl1271_acx_tx_config_options(void)
 	acx->tx_compl_threshold = cpu_to_le16(wifi_data->conf.tx.tx_compl_threshold);
 	ret = wifi_cmd_configure(ACX_TX_CONFIG_OPT, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("Setting of tx options failed: %d", ret);
+		wifi_warning("Setting of tx options failed: %d", ret);
 		goto out;
 	}
 
@@ -906,13 +906,13 @@ out:
 }
 
 #define WL18XX_NUM_TX_DESCRIPTORS 32
-int wl12xx_acx_mem_cfg(void)
+int wifi_acx_mem_cfg(void)
 {
-	struct wl12xx_acx_config_memory *mem_conf;
+	struct wifi_acx_config_memory *mem_conf;
 	struct conf_memory_settings *mem;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "wl1271 mem cfg");
+	wifi_debug(DEBUG_ACX, "wl1271 mem cfg");
 
 	mem_conf = kzalloc(sizeof(*mem_conf), GFP_KERNEL);
 	if (!mem_conf) {
@@ -937,7 +937,7 @@ int wl12xx_acx_mem_cfg(void)
 	ret = wifi_cmd_configure(ACX_MEM_CFG, mem_conf,
 				   sizeof(*mem_conf));
 	if (ret < 0) {
-		wl1271_warning("wl1271 mem config failed: %d", ret);
+		wifi_warning("wl1271 mem config failed: %d", ret);
 		goto out;
 	}
 
@@ -945,24 +945,24 @@ out:
 	kfree(mem_conf);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wl12xx_acx_mem_cfg);
+EXPORT_SYMBOL_GPL(wifi_acx_mem_cfg);
 
-int wl1271_acx_init_mem_config(void)
+int wifi_acx_init_mem_config(void)
 {
 	int ret;
 
-	wifi_data->target_mem_map = kzalloc(sizeof(struct wl1271_acx_mem_map),
+	wifi_data->target_mem_map = kzalloc(sizeof(struct wifi_acx_mem_map),
 				     GFP_KERNEL);
 	if (!wifi_data->target_mem_map) {
-		wl1271_error("couldn't allocate target memory map");
+		wifi_error("couldn't allocate target memory map");
 		return -ENOMEM;
 	}
 
 	/* we now ask for the firmware built memory map */
-	ret = wl1271_acx_mem_map((void *)wifi_data->target_mem_map,
-				 sizeof(struct wl1271_acx_mem_map));
+	ret = wifi_acx_mem_map((void *)wifi_data->target_mem_map,
+				 sizeof(struct wifi_acx_mem_map));
 	if (ret < 0) {
-		wl1271_error("couldn't retrieve firmware memory map");
+		wifi_error("couldn't retrieve firmware memory map");
 		kfree(wifi_data->target_mem_map);
 		wifi_data->target_mem_map = NULL;
 		return ret;
@@ -977,14 +977,14 @@ int wl1271_acx_init_mem_config(void)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(wl1271_acx_init_mem_config);
+EXPORT_SYMBOL_GPL(wifi_acx_init_mem_config);
 
-int wl1271_acx_init_rx_interrupt(void)
+int wifi_acx_init_rx_interrupt(void)
 {
-	struct wl1271_acx_rx_config_opt *rx_conf;
+	struct wifi_acx_rx_config_opt *rx_conf;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "wl1271 rx interrupt config");
+	wifi_debug(DEBUG_ACX, "wl1271 rx interrupt config");
 
 	rx_conf = kzalloc(sizeof(*rx_conf), GFP_KERNEL);
 	if (!rx_conf) {
@@ -1000,7 +1000,7 @@ int wl1271_acx_init_rx_interrupt(void)
 	ret = wifi_cmd_configure(ACX_RX_CONFIG_OPT, rx_conf,
 				   sizeof(*rx_conf));
 	if (ret < 0) {
-		wl1271_warning("wl1271 rx config opt failed: %d", ret);
+		wifi_warning("wl1271 rx config opt failed: %d", ret);
 		goto out;
 	}
 
@@ -1009,13 +1009,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_bet_enable(struct wifi_vif *wifi_vif,
+int wifi_acx_bet_enable(struct wifi_vif *wifi_vif,
 			  bool enable)
 {
-	struct wl1271_acx_bet_enable *acx = NULL;
+	struct wifi_acx_bet_enable *acx = NULL;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx bet enable");
+	wifi_debug(DEBUG_ACX, "acx bet enable");
 
 	if (enable && wifi_data->conf.conn.bet_enable == CONF_BET_MODE_DISABLE)
 		goto out;
@@ -1032,7 +1032,7 @@ int wl1271_acx_bet_enable(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_BET_ENABLE, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx bet enable failed: %d", ret);
+		wifi_warning("acx bet enable failed: %d", ret);
 		goto out;
 	}
 
@@ -1041,13 +1041,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
+int wifi_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
 			     u8 enable, __be32 address)
 {
-	struct wl1271_acx_arp_filter *acx;
+	struct wifi_acx_arp_filter *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx arp ip filter, enable: %d", enable);
+	wifi_debug(DEBUG_ACX, "acx arp ip filter, enable: %d", enable);
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1065,7 +1065,7 @@ int wl1271_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_configure(ACX_ARP_IP_FILTER,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("failed to set arp ip filter: %d", ret);
+		wifi_warning("failed to set arp ip filter: %d", ret);
 		goto out;
 	}
 
@@ -1074,13 +1074,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_pm_config(void)
+int wifi_acx_pm_config(void)
 {
-	struct wl1271_acx_pm_config *acx = NULL;
+	struct wifi_acx_pm_config *acx = NULL;
 	struct  conf_pm_config_settings *c = &wifi_data->conf.pm_config;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx pm config");
+	wifi_debug(DEBUG_ACX, "acx pm config");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1093,7 +1093,7 @@ int wl1271_acx_pm_config(void)
 
 	ret = wifi_cmd_configure(ACX_PM_CONFIG, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx pm config failed: %d", ret);
+		wifi_warning("acx pm config failed: %d", ret);
 		goto out;
 	}
 
@@ -1101,15 +1101,15 @@ out:
 	kfree(acx);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wl1271_acx_pm_config);
+EXPORT_SYMBOL_GPL(wifi_acx_pm_config);
 
-int wl1271_acx_keep_alive_mode(struct wifi_vif *wifi_vif,
+int wifi_acx_keep_alive_mode(struct wifi_vif *wifi_vif,
 			       bool enable)
 {
-	struct wl1271_acx_keep_alive_mode *acx = NULL;
+	struct wifi_acx_keep_alive_mode *acx = NULL;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx keep alive mode: %d", enable);
+	wifi_debug(DEBUG_ACX, "acx keep alive mode: %d", enable);
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1122,7 +1122,7 @@ int wl1271_acx_keep_alive_mode(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_KEEP_ALIVE_MODE, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx keep alive mode failed: %d", ret);
+		wifi_warning("acx keep alive mode failed: %d", ret);
 		goto out;
 	}
 
@@ -1131,13 +1131,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_keep_alive_config(struct wifi_vif *wifi_vif,
+int wifi_acx_keep_alive_config(struct wifi_vif *wifi_vif,
 				 u8 index, u8 tpl_valid)
 {
-	struct wl1271_acx_keep_alive_config *acx = NULL;
+	struct wifi_acx_keep_alive_config *acx = NULL;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx keep alive config");
+	wifi_debug(DEBUG_ACX, "acx keep alive config");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1154,7 +1154,7 @@ int wl1271_acx_keep_alive_config(struct wifi_vif *wifi_vif,
 	ret = wifi_cmd_configure(ACX_SET_KEEP_ALIVE_CONFIG,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx keep alive config failed: %d", ret);
+		wifi_warning("acx keep alive config failed: %d", ret);
 		goto out;
 	}
 
@@ -1163,13 +1163,13 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
+int wifi_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
 				bool enable, s16 thold, u8 hyst)
 {
-	struct wl1271_acx_rssi_snr_trigger *acx = NULL;
+	struct wifi_acx_rssi_snr_trigger *acx = NULL;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx rssi snr trigger");
+	wifi_debug(DEBUG_ACX, "acx rssi snr trigger");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1195,7 +1195,7 @@ int wl1271_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
 
 	ret = wifi_cmd_configure(ACX_RSSI_SNR_TRIGGER, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx rssi snr trigger setting failed: %d", ret);
+		wifi_warning("acx rssi snr trigger setting failed: %d", ret);
 		goto out;
 	}
 
@@ -1204,14 +1204,14 @@ out:
 	return ret;
 }
 
-int wl1271_acx_rssi_snr_avg_weights(
+int wifi_acx_rssi_snr_avg_weights(
 				    struct wifi_vif *wifi_vif)
 {
-	struct wl1271_acx_rssi_snr_avg_weights *acx = NULL;
+	struct wifi_acx_rssi_snr_avg_weights *acx = NULL;
 	struct conf_roam_trigger_settings *c = &wifi_data->conf.roam_trigger;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx rssi snr avg weights");
+	wifi_debug(DEBUG_ACX, "acx rssi snr avg weights");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1227,7 +1227,7 @@ int wl1271_acx_rssi_snr_avg_weights(
 
 	ret = wifi_cmd_configure(ACX_RSSI_SNR_WEIGHTS, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx rssi snr trigger weights failed: %d", ret);
+		wifi_warning("acx rssi snr trigger weights failed: %d", ret);
 		goto out;
 	}
 
@@ -1236,14 +1236,14 @@ out:
 	return ret;
 }
 
-int wl1271_acx_set_ht_information(
+int wifi_acx_set_ht_information(
 				   struct wifi_vif *wifi_vif,
 				   u16 ht_operation_mode)
 {
-	struct wl1271_acx_ht_information *acx;
+	struct wifi_acx_ht_information *acx;
 	int ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx ht information setting");
+	wifi_debug(DEBUG_ACX, "acx ht information setting");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1263,7 +1263,7 @@ int wl1271_acx_set_ht_information(
 	ret = wifi_cmd_configure(ACX_HT_BSS_OPERATION, acx, sizeof(*acx));
 
 	if (ret < 0) {
-		wl1271_warning("acx ht information setting failed: %d", ret);
+		wifi_warning("acx ht information setting failed: %d", ret);
 		goto out;
 	}
 
@@ -1273,13 +1273,13 @@ out:
 }
 
 /* Configure BA session initiator/receiver parameters setting in the FW. */
-int wl12xx_acx_set_ba_initiator_policy(
+int wifi_acx_set_ba_initiator_policy(
 				       struct wifi_vif *wifi_vif)
 {
-	struct wl1271_acx_ba_initiator_policy *acx;
+	struct wifi_acx_ba_initiator_policy *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx ba initiator policy");
+	wifi_debug(DEBUG_ACX, "acx ba initiator policy");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1298,7 +1298,7 @@ int wl12xx_acx_set_ba_initiator_policy(
 				   acx,
 				   sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx ba initiator policy failed: %d", ret);
+		wifi_warning("acx ba initiator policy failed: %d", ret);
 		goto out;
 	}
 
@@ -1307,14 +1307,14 @@ out:
 	return ret;
 }
 
-int wl1271_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
+int wifi_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
 			       bool enable)
 {
-	struct wl1271_acx_ps_rx_streaming *rx_streaming;
+	struct wifi_acx_ps_rx_streaming *rx_streaming;
 	u32 conf_queues, enable_queues;
 	int i, ret = 0;
 
-	wl1271_debug(DEBUG_ACX, "acx ps rx streaming");
+	wifi_debug(DEBUG_ACX, "acx ps rx streaming");
 
 	rx_streaming = kzalloc(sizeof(*rx_streaming), GFP_KERNEL);
 	if (!rx_streaming) {
@@ -1347,7 +1347,7 @@ int wl1271_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
 					   rx_streaming,
 					   sizeof(*rx_streaming));
 		if (ret < 0) {
-			wl1271_warning("acx ps rx streaming failed: %d", ret);
+			wifi_warning("acx ps rx streaming failed: %d", ret);
 			goto out;
 		}
 	}
@@ -1356,12 +1356,12 @@ out:
 	return ret;
 }
 
-int wl1271_acx_fm_coex(void)
+int wifi_acx_fm_coex(void)
 {
-	struct wl1271_acx_fm_coex *acx;
+	struct wifi_acx_fm_coex *acx;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx fm coex setting");
+	wifi_debug(DEBUG_ACX, "acx fm coex setting");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1387,7 +1387,7 @@ int wl1271_acx_fm_coex(void)
 
 	ret = wifi_cmd_configure(ACX_FM_COEX_CFG, acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx fm coex setting failed: %d", ret);
+		wifi_warning("acx fm coex setting failed: %d", ret);
 		goto out;
 	}
 
@@ -1396,13 +1396,13 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_set_rate_mgmt_params(void)
+int wifi_acx_set_rate_mgmt_params(void)
 {
-	struct wl12xx_acx_set_rate_mgmt_params *acx = NULL;
+	struct wifi_acx_set_rate_mgmt_params *acx = NULL;
 	struct conf_rate_policy_settings *conf = &wifi_data->conf.rate;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx set rate mgmt params");
+	wifi_debug(DEBUG_ACX, "acx set rate mgmt params");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx)
@@ -1429,7 +1429,7 @@ int wl12xx_acx_set_rate_mgmt_params(void)
 	ret = wifi_cmd_configure(ACX_SET_RATE_MGMT_PARAMS,
 				   acx, sizeof(*acx));
 	if (ret < 0) {
-		wl1271_warning("acx set rate mgmt params failed: %d", ret);
+		wifi_warning("acx set rate mgmt params failed: %d", ret);
 		goto out;
 	}
 
@@ -1438,13 +1438,13 @@ out:
 	return ret;
 }
 
-int wl12xx_acx_config_hangover(void)
+int wifi_acx_config_hangover(void)
 {
-	struct wl12xx_acx_config_hangover *acx;
+	struct wifi_acx_config_hangover *acx;
 	struct conf_hangover_settings *conf = &wifi_data->conf.hangover;
 	int ret;
 
-	wl1271_debug(DEBUG_ACX, "acx config hangover");
+	wifi_debug(DEBUG_ACX, "acx config hangover");
 
 	acx = kzalloc(sizeof(*acx), GFP_KERNEL);
 	if (!acx) {
@@ -1468,7 +1468,7 @@ int wl12xx_acx_config_hangover(void)
 				   sizeof(*acx));
 
 	if (ret < 0) {
-		wl1271_warning("acx config hangover failed: %d", ret);
+		wifi_warning("acx config hangover failed: %d", ret);
 		goto out;
 	}
 

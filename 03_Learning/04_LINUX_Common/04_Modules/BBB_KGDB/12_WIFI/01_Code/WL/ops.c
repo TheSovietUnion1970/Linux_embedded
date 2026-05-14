@@ -180,11 +180,11 @@ wifi_set_scan_chan_params(
 
 	cfg->passive_active = n_pactive_ch;
 
-	// wl1271_debug(DEBUG_SCAN, "    2.4GHz: active %d passive %d",
+	// wifi_debug(DEBUG_SCAN, "    2.4GHz: active %d passive %d",
 	// 	     cfg->active[0], cfg->passive[0]);
-	// wl1271_debug(DEBUG_SCAN, "    5GHz: active %d passive %d",
+	// wifi_debug(DEBUG_SCAN, "    5GHz: active %d passive %d",
 	// 	     cfg->active[1], cfg->passive[1]);
-	// wl1271_debug(DEBUG_SCAN, "    DFS: %d", cfg->dfs);
+	// wifi_debug(DEBUG_SCAN, "    DFS: %d", cfg->dfs);
 
 	return  cfg->passive[0] || cfg->active[0] ||
 		cfg->passive[1] || cfg->active[1] || cfg->dfs ||
@@ -220,7 +220,7 @@ int wifi_scan_send(struct wifi_vif *wifi_vif,
 	}
 
 	/* scan on the dev role if the regular one is not started */
-	if (wlcore_is_p2p_mgmt(wifi_vif))
+	if (wificore_is_p2p_mgmt(wifi_vif))
 		cmd->role_id = wifi_vif->dev_role_id;
 	else
 		cmd->role_id = wifi_vif->role_id;
@@ -284,7 +284,7 @@ int wifi_scan_send(struct wifi_vif *wifi_vif,
 	/* TODO: per-band ies? */
 	if (cmd->active[0]) {
 		u8 band = NL80211_BAND_2GHZ;
-		ret = wl12xx_cmd_build_probe_req(wifi_vif,
+		ret = wifi_cmd_build_probe_req(wifi_vif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -301,7 +301,7 @@ int wifi_scan_send(struct wifi_vif *wifi_vif,
 
 	if (cmd->active[1] || cmd->dfs) {
 		u8 band = NL80211_BAND_5GHZ;
-		ret = wl12xx_cmd_build_probe_req(wifi_vif,
+		ret = wifi_cmd_build_probe_req(wifi_vif,
 				 cmd->role_id, band,
 				 req->ssids ? req->ssids[0].ssid : NULL,
 				 req->ssids ? req->ssids[0].ssid_len : 0,
@@ -316,7 +316,7 @@ int wifi_scan_send(struct wifi_vif *wifi_vif,
 		}
 	}
 
-	//wl1271_dump(DEBUG_SCAN, "SCAN: ", cmd, sizeof(*cmd));
+	//wifi_dump(DEBUG_SCAN, "SCAN: ", cmd, sizeof(*cmd));
 
 	ret = wifi_cmd_send(CMD_SCAN, cmd, sizeof(*cmd), 0);
 	if (ret < 0) {
@@ -339,11 +339,11 @@ int wifi_get_mac(void)
 	if (ret < 0)
 		goto out;
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_1), &mac1, 4, false);
 	if (ret < 0)
 		goto out;
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(WL18XX_REG_FUSE_BD_ADDR_2), &mac2, 4, false);
 	if (ret < 0)
 		goto out;
 
@@ -368,7 +368,7 @@ out:
 	return ret;
 }
 
-int wifi_wait_for_event(enum wlcore_wait_event event, bool *timeout)
+int wifi_wait_for_event(enum wificore_wait_event event, bool *timeout)
 {
 	u32 local_event;
 
@@ -385,11 +385,11 @@ int wifi_wait_for_event(enum wlcore_wait_event event, bool *timeout)
 		/* event not implemented */
 		return 0;
 	}
-	return wlcore_cmd_wait_for_event_or_timeout(local_event, timeout);
+	return wificore_cmd_wait_for_event_or_timeout(local_event, timeout);
 }
 
 static inline void
-wlcore_set_min_fw_ver(unsigned int chip,
+wificore_set_min_fw_ver(unsigned int chip,
 		      unsigned int iftype_sr, unsigned int major_sr,
 		      unsigned int subtype_sr, unsigned int minor_sr,
 		      unsigned int iftype_mr, unsigned int major_mr,
@@ -414,7 +414,7 @@ int wifi_identify_chip(void)
 
 	switch (wifi_chip->id) {
 	case CHIP_ID_185x_PG20:
-		// wl1271_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
+		// wifi_debug(DEBUG_BOOT, "chip id 0x%x (185x PG20)",
 		// 		 wifi_chip->id);
 		wifi_data->sr_fw_name = WL18XX_FW_NAME;
 		/* wl18xx uses the same firmware for PLT */
@@ -426,7 +426,7 @@ int wifi_identify_chip(void)
 			      WLCORE_QUIRK_REGDOMAIN_CONF |
 			      WLCORE_QUIRK_DUAL_PROBE_TMPL;
 
-		wlcore_set_min_fw_ver(WL18XX_CHIP_VER,
+		wificore_set_min_fw_ver(WL18XX_CHIP_VER,
 				      WL18XX_IFTYPE_VER,  WL18XX_MAJOR_VER,
 				      WL18XX_SUBTYPE_VER, WL18XX_MINOR_VER,
 				      /* there's no separate multi-role FW */

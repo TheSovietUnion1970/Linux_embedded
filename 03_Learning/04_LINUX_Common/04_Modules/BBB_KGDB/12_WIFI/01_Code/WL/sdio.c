@@ -23,7 +23,7 @@
 #include <linux/of_irq.h>
 
 #include "wlcore.h"
-#include "wl12xx_80211.h"
+#include "wifi_80211.h"
 #include "io.h"
 
 #include "common.h"
@@ -31,24 +31,24 @@
 
 static bool dump = false;
 
-struct wl12xx_sdio_glue {
+struct wifi_sdio_glue {
 	struct device *dev;
 	struct platform_device *core;
 };
 
-static const struct sdio_device_id wl1271_devices[] = {
+static const struct sdio_device_id wifi_devices[] = {
 	{ SDIO_DEVICE(SDIO_VENDOR_ID_TI, SDIO_DEVICE_ID_TI_WL1271) },
 	{}
 };
-MODULE_DEVICE_TABLE(sdio, wl1271_devices);
+MODULE_DEVICE_TABLE(sdio, wifi_devices);
 
-static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
+static int wifi_sdio_power_on(struct wifi_sdio_glue *glue)
 {
 	int ret;
 	struct sdio_func *func = dev_to_sdio_func(glue->dev);
 	struct mmc_card *card = func->card;
 #if (PRINT_DEBUG)
-	printk("wl12xx_sdio_power_on -> 0x%x 0x%x %x\n", glue->dev, func, card);
+	printk("wifi_sdio_power_on -> 0x%x 0x%x %x\n", glue->dev, func, card);
 #endif
 	ret = pm_runtime_get_sync(&card->dev);
 	if (ret < 0) {
@@ -72,7 +72,7 @@ static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 	return 0;
 }
 
-static int wl12xx_sdio_power_off(struct wl12xx_sdio_glue *glue)
+static int wifi_sdio_power_off(struct wifi_sdio_glue *glue)
 {
 	struct sdio_func *func = dev_to_sdio_func(glue->dev);
 	struct mmc_card *card = func->card;
@@ -86,21 +86,21 @@ static int wl12xx_sdio_power_off(struct wl12xx_sdio_glue *glue)
 	return 0;
 }
 
-static int wl12xx_sdio_set_power(struct device *child, bool enable)
+static int wifi_sdio_set_power(struct device *child, bool enable)
 {
-	struct wl12xx_sdio_glue *glue = dev_get_drvdata(child->parent);
+	struct wifi_sdio_glue *glue = dev_get_drvdata(child->parent);
 
 	if (enable)
-		return wl12xx_sdio_power_on(glue);
+		return wifi_sdio_power_on(glue);
 	else
-		return wl12xx_sdio_power_off(glue);
+		return wifi_sdio_power_off(glue);
 }
 
-static struct wl1271_if_operations sdio_ops = {
-	// .read		= wl12xx_sdio_raw_read,
-	// .write		= wl12xx_sdio_raw_write,
-	.power		= wl12xx_sdio_set_power,
-	// .set_block_size = wl1271_sdio_set_block_size,
+static struct wifi_if_operations sdio_ops = {
+	// .read		= wifi_sdio_raw_read,
+	// .write		= wifi_sdio_raw_write,
+	.power		= wifi_sdio_set_power,
+	// .set_block_size = wifi_sdio_set_block_size,
 };
 
 #ifdef CONFIG_OF
@@ -121,7 +121,7 @@ static const struct wilink_family_data wl18xx_data = {
 	.nvs_name = "ti-connectivity/wl1271-nvs.bin",
 };
 
-static const struct of_device_id wlcore_sdio_of_match_table[] = {
+static const struct of_device_id wificore_sdio_of_match_table[] = {
 	{ .compatible = "ti,wl1271", .data = &wl127x_data },
 	{ .compatible = "ti,wl1273", .data = &wl127x_data },
 	{ .compatible = "ti,wl1281", .data = &wl128x_data },
@@ -136,13 +136,13 @@ static const struct of_device_id wlcore_sdio_of_match_table[] = {
 	{ }
 };
 
-static int wlcore_probe_of(struct device *dev, int *irq, int *wakeirq,
-			   struct wlcore_platdev_data *pdev_data)
+static int wificore_probe_of(struct device *dev, int *irq, int *wakeirq,
+			   struct wificore_platdev_data *pdev_data)
 {
 	struct device_node *np = dev->of_node;
 	const struct of_device_id *of_id;
 
-	of_id = of_match_node(wlcore_sdio_of_match_table, np);
+	of_id = of_match_node(wificore_sdio_of_match_table, np);
 	if (!of_id)
 		return -ENODEV;
 
@@ -165,25 +165,25 @@ static int wlcore_probe_of(struct device *dev, int *irq, int *wakeirq,
 	return 0;
 }
 #else
-static int wlcore_probe_of(struct device *dev, int *irq, int *wakeirq,
-			   struct wlcore_platdev_data *pdev_data)
+static int wificore_probe_of(struct device *dev, int *irq, int *wakeirq,
+			   struct wificore_platdev_data *pdev_data)
 {
 	return -ENODATA;
 }
 #endif
 
-static int wl1271_probe(struct sdio_func *func,
+static int wifi_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
-	struct wlcore_platdev_data *pdev_data;
-	struct wl12xx_sdio_glue *glue;
+	struct wificore_platdev_data *pdev_data;
+	struct wifi_sdio_glue *glue;
 	struct resource res[2];
 	mmc_pm_flag_t mmcflags;
 	int ret = -ENOMEM;
 	int irq, wakeirq, num_irqs;
 	const char *chip_family;
 #if (PRINT_DEBUG)
-	printk("[MERGE] - wl1271_probe\n");
+	printk("[MERGE] - wifi_probe\n");
 #endif
 	/* We are only able to handle the wlan function */
 	if (func->num != 0x02)
@@ -207,7 +207,7 @@ static int wl1271_probe(struct sdio_func *func,
 	/* Use block mode for transferring over one block size of data */
 	func->card->quirks |= MMC_QUIRK_BLKSZ_FOR_BYTE_MODE;
 
-	ret = wlcore_probe_of(&func->dev, &irq, &wakeirq, pdev_data);
+	ret = wificore_probe_of(&func->dev, &irq, &wakeirq, pdev_data);
 	if (ret)
 		goto out;
 
@@ -289,61 +289,61 @@ out:
 	return ret;
 }
 
-static void wl1271_remove(struct sdio_func *func)
+static void wifi_remove(struct sdio_func *func)
 {
-	struct wl12xx_sdio_glue *glue = sdio_get_drvdata(func);
+	struct wifi_sdio_glue *glue = sdio_get_drvdata(func);
 #if (PRINT_DEBUG)
-	printk("[MERGE] - wl1271_remove\n");
+	printk("[MERGE] - wifi_remove\n");
 #endif
-	/* Undo decrement done above in wl1271_probe */
+	/* Undo decrement done above in wifi_probe */
 	pm_runtime_get_noresume(&func->dev);
 
 	platform_device_unregister(glue->core);
 }
 
 #ifdef CONFIG_PM
-static int wl1271_suspend(struct device *dev)
+static int wifi_suspend(struct device *dev)
 {
 	dev_info(dev, "wl1271 suspend\n");
 	return 0;	
 }
 
-static int wl1271_resume(struct device *dev)
+static int wifi_resume(struct device *dev)
 {
 	dev_info(dev, "wl1271 resume\n");
 	return 0;
 }
 
-static const struct dev_pm_ops wl1271_sdio_pm_ops = {
-	.suspend	= wl1271_suspend,
-	.resume		= wl1271_resume,
+static const struct dev_pm_ops wifi_sdio_pm_ops = {
+	.suspend	= wifi_suspend,
+	.resume		= wifi_resume,
 };
 #endif
 
-static struct sdio_driver wl1271_sdio_driver = {
-	.name		= "wl1271_sdio",
-	.id_table	= wl1271_devices,
-	.probe		= wl1271_probe,
-	.remove		= wl1271_remove,
+static struct sdio_driver wifi_sdio_driver = {
+	.name		= "wifi_sdio",
+	.id_table	= wifi_devices,
+	.probe		= wifi_probe,
+	.remove		= wifi_remove,
 #ifdef CONFIG_PM
 	.drv = {
-		.pm = &wl1271_sdio_pm_ops,
+		.pm = &wifi_sdio_pm_ops,
 	},
 #endif
 };
 
-static int __init wl1271_init(void)
+static int __init wifi_init(void)
 {
-	return sdio_register_driver(&wl1271_sdio_driver);
+	return sdio_register_driver(&wifi_sdio_driver);
 }
 
-static void __exit wl1271_exit(void)
+static void __exit wifi_exit(void)
 {
-	sdio_unregister_driver(&wl1271_sdio_driver);
+	sdio_unregister_driver(&wifi_sdio_driver);
 }
 
-module_init(wl1271_init);
-module_exit(wl1271_exit);
+module_init(wifi_init);
+module_exit(wifi_exit);
 
 module_param(dump, bool, 0600);
 MODULE_PARM_DESC(dump, "Enable sdio read/write dumps.");

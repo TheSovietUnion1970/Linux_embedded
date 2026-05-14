@@ -32,14 +32,14 @@
 
 struct wl1271;
 
-void wlcore_disable_interrupts(void);
-void wlcore_disable_interrupts_nosync(void);
-void wlcore_enable_interrupts(void);
-void wlcore_synchronize_interrupts(void);
+void wificore_disable_interrupts(void);
+void wificore_disable_interrupts_nosync(void);
+void wificore_enable_interrupts(void);
+void wificore_synchronize_interrupts(void);
 
-int wlcore_translate_addr(int addr);
+int wificore_translate_addr(int addr);
 
-static inline void wl1271_power_off(void)
+static inline void wifi_power_off(void)
 {
 	int ret = 0;
 
@@ -62,7 +62,7 @@ static inline void wl1271_power_off(void)
 int wifi_sdio_raw_write(int addr, u32 var, size_t len, bool fixed);
 int wifi_sdio_raw_write1(int addr, void* var, size_t len, bool fixed);
 int wifi_sdio_raw_read(int addr, u32* var, size_t len, bool fixed);
-int wlcore_translate_addr(int addr);
+int wificore_translate_addr(int addr);
 int wifi_set_partition_core(const struct wifi_partition_set *p);
 void wifi_sdio_set_block_size(unsigned int blksz);
 

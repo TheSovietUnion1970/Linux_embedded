@@ -21,26 +21,26 @@
 #include "main.h"
 #include "wl18.h"
 
-static int wl1271_boot_set_ecpu_ctrl(u32 flag)
+static int wifi_boot_set_ecpu_ctrl(u32 flag)
 {
 	u32 cpu_ctrl;
 	int ret;
 
 	/* 10.5.0 run the firmware (I) */
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), &cpu_ctrl, 4, false);
 	if (ret < 0)
 		goto out;
 
 	/* 10.5.1 run the firmware (II) */
 	cpu_ctrl |= flag;
-	ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
+	ret = wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_ECPU_CONTROL]), cpu_ctrl, 4, false);
 
 out:
 	return ret;
 }
 
-static int wlcore_boot_parse_fw_ver(
-				    struct wl1271_static_data *static_data)
+static int wificore_boot_parse_fw_ver(
+				    struct wifi_static_data *static_data)
 {
 	int ret;
 
@@ -56,7 +56,7 @@ static int wlcore_boot_parse_fw_ver(
 		     &wifi_chip->fw_ver[4]);
 
 	if (ret != 5) {
-		wl1271_warning("fw version incorrect value");
+		wifi_warning("fw version incorrect value");
 		memset(wifi_chip->fw_ver, 0, sizeof(wifi_chip->fw_ver));
 		ret = -EINVAL;
 		goto out;
@@ -66,7 +66,7 @@ out:
 	return ret;
 }
 
-static int wlcore_validate_fw_ver(void)
+static int wificore_validate_fw_ver(void)
 {
 	unsigned int *fw_ver = wifi_chip->fw_ver;
 	unsigned int *min_ver = (wifi_data->fw_type == WL12XX_FW_TYPE_MULTI) ?
@@ -116,7 +116,7 @@ fail:
 					sizeof(min_fw_str) - off,
 					"%u.", min_ver[i]);
 
-	wl1271_error("Your WiFi FW version (%u.%u.%u.%u.%u) is invalid.\n"
+	wifi_error("Your WiFi FW version (%u.%u.%u.%u.%u) is invalid.\n"
 		     "Please use at least FW %s\n"
 		     "You can get the latest firmwares at:\n"
 		     "git://git.ti.com/wilink8-wlan/wl18xx_fw.git",
@@ -128,7 +128,7 @@ fail:
 
 static int wifi_boot_static_data(void)
 {
-	struct wl1271_static_data *static_data;
+	struct wifi_static_data *static_data;
 	size_t len = sizeof(*static_data) + wifi_data->static_data_priv_len;
 	int ret;
 
@@ -138,15 +138,15 @@ static int wifi_boot_static_data(void)
 		goto out;
 	}
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(*wifi_data->cmd_box_addr), (u32*)static_data, len, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(*wifi_data->cmd_box_addr), (u32*)static_data, len, false);
 	if (ret < 0)
 		goto out_free;
 
-	ret = wlcore_boot_parse_fw_ver(static_data);
+	ret = wificore_boot_parse_fw_ver(static_data);
 	if (ret < 0)
 		goto out_free;
 
-	ret = wlcore_validate_fw_ver();
+	ret = wificore_validate_fw_ver();
 	if (ret < 0)
 		goto out_free;
 
@@ -160,10 +160,10 @@ out:
 	return ret;
 }
 
-static int wl1271_boot_upload_firmware_chunk(void *buf,
+static int wifi_boot_upload_firmware_chunk(void *buf,
 					     size_t fw_data_len, u32 dest)
 {
-	// struct wlcore_partition_set partition;
+	// struct wificore_partition_set partition;
 	struct wifi_partition_set partition;
 	int addr, chunk_num, partition_limit;
 	u8 *p, *chunk;
@@ -171,19 +171,19 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 
 	/* whal_FwCtrl_LoadFwImageSm() */
 
-	wl1271_debug(DEBUG_BOOT, "starting firmware upload");
+	wifi_debug(DEBUG_BOOT, "starting firmware upload");
 
-	wl1271_debug(DEBUG_BOOT, "fw_data_len %zd chunk_size %d",
+	wifi_debug(DEBUG_BOOT, "fw_data_len %zd chunk_size %d",
 		     fw_data_len, CHUNK_SIZE);
 
 	if ((fw_data_len % 4) != 0) {
-		wl1271_error("firmware length not multiple of four");
+		wifi_error("firmware length not multiple of four");
 		return -EIO;
 	}
 
 	chunk = kmalloc(CHUNK_SIZE, GFP_KERNEL);
 	if (!chunk) {
-		wl1271_error("allocation for firmware upload chunk failed");
+		wifi_error("allocation for firmware upload chunk failed");
 		return -ENOMEM;
 	}
 
@@ -215,9 +215,9 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 		addr = dest + chunk_num * CHUNK_SIZE;
 		p = buf + chunk_num * CHUNK_SIZE;
 		memcpy(chunk, p, CHUNK_SIZE);
-		wl1271_debug(DEBUG_BOOT, "uploading fw chunk 0x%p to 0x%x",
+		wifi_debug(DEBUG_BOOT, "uploading fw chunk 0x%p to 0x%x",
 			     p, addr);
-		ret = wifi_sdio_raw_write1(wlcore_translate_addr(addr), chunk, CHUNK_SIZE, false);
+		ret = wifi_sdio_raw_write1(wificore_translate_addr(addr), chunk, CHUNK_SIZE, false);
 		if (ret < 0)
 			goto out;
 
@@ -228,16 +228,16 @@ static int wl1271_boot_upload_firmware_chunk(void *buf,
 	addr = dest + chunk_num * CHUNK_SIZE;
 	p = buf + chunk_num * CHUNK_SIZE;
 	memcpy(chunk, p, fw_data_len % CHUNK_SIZE);
-	wl1271_debug(DEBUG_BOOT, "uploading fw last chunk (%zd B) 0x%p to 0x%x",
+	wifi_debug(DEBUG_BOOT, "uploading fw last chunk (%zd B) 0x%p to 0x%x",
 		     fw_data_len % CHUNK_SIZE, p, addr);
-	ret = wifi_sdio_raw_write1(wlcore_translate_addr(addr), chunk, fw_data_len % CHUNK_SIZE, false);
+	ret = wifi_sdio_raw_write1(wificore_translate_addr(addr), chunk, fw_data_len % CHUNK_SIZE, false);
 
 out:
 	kfree(chunk);
 	return ret;
 }
 
-int wlcore_boot_upload_firmware(void)
+int wificore_boot_upload_firmware(void)
 {
 	u32 chunks, addr, len;
 	int ret = 0;
@@ -247,7 +247,7 @@ int wlcore_boot_upload_firmware(void)
 	chunks = be32_to_cpup((__be32 *) fw);
 	fw += sizeof(u32);
 
-	wl1271_debug(DEBUG_BOOT, "firmware chunks to be uploaded: %u", chunks);
+	wifi_debug(DEBUG_BOOT, "firmware chunks to be uploaded: %u", chunks);
 
 	while (chunks--) {
 		addr = be32_to_cpup((__be32 *) fw);
@@ -259,9 +259,9 @@ int wlcore_boot_upload_firmware(void)
 			printk("firmware chunk too long: %u", len);
 			return -EINVAL;
 		}
-		wl1271_debug(DEBUG_BOOT, "chunk %d addr 0x%x len %u",
+		wifi_debug(DEBUG_BOOT, "chunk %d addr 0x%x len %u",
 			     chunks, addr, len);
-		ret = wl1271_boot_upload_firmware_chunk(fw, len, addr);
+		ret = wifi_boot_upload_firmware_chunk(fw, len, addr);
 		if (ret != 0)
 			break;
 		fw += len;
@@ -269,10 +269,10 @@ int wlcore_boot_upload_firmware(void)
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wlcore_boot_upload_firmware);
+EXPORT_SYMBOL_GPL(wificore_boot_upload_firmware);
 
 #include "wl18xx.h"
-int wlcore_boot_run_firmware(void)
+int wificore_boot_run_firmware(void)
 {
 	int loop, ret;
 	u32 chip_id, intr;
@@ -282,18 +282,18 @@ int wlcore_boot_run_firmware(void)
 	if (ret < 0)
 		return ret;
 
-	ret = wl1271_boot_set_ecpu_ctrl(ECPU_CONTROL_HALT);
+	ret = wifi_boot_set_ecpu_ctrl(ECPU_CONTROL_HALT);
 	if (ret < 0)
 		return ret;
 
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_CHIP_ID_B]), &chip_id, 4, false);
 	if (ret < 0)
 		return ret;
 
-	wl1271_debug(DEBUG_BOOT, "chip id after firmware boot: 0x%x", chip_id);
+	wifi_debug(DEBUG_BOOT, "chip id after firmware boot: 0x%x", chip_id);
 
 	if (chip_id != wifi_chip->id) {
-		wl1271_error("chip id doesn't match after firmware boot");
+		wifi_error("chip id doesn't match after firmware boot");
 		return -EIO;
 	}
 
@@ -301,18 +301,18 @@ int wlcore_boot_run_firmware(void)
 	loop = 0;
 	while (loop++ < INIT_LOOP) {
 		udelay(INIT_LOOP_DELAY);
-		ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
+		ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_NO_CLEAR]), &intr, 4, false);
 		if (ret < 0)
 			return ret;
 
 		if (intr == 0xffffffff) {
-			wl1271_error("error reading hardware complete "
+			wifi_error("error reading hardware complete "
 				     "init indication");
 			return -EIO;
 		}
 		/* check that ACX_INTR_INIT_COMPLETE is enabled */
 		else if (intr & WL1271_ACX_INTR_INIT_COMPLETE) {
-			ret = wifi_sdio_raw_write(wlcore_translate_addr(wifi_data->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
+			ret = wifi_sdio_raw_write(wificore_translate_addr(wifi_data->rtable[REG_INTERRUPT_ACK]), WL1271_ACX_INTR_INIT_COMPLETE, 4, false);
 			if (ret < 0)
 				return ret;
 			break;
@@ -320,26 +320,26 @@ int wlcore_boot_run_firmware(void)
 	}
 
 	if (loop > INIT_LOOP) {
-		wl1271_error("timeout waiting for the hardware to "
+		wifi_error("timeout waiting for the hardware to "
 			     "complete initialization");
 		return -EIO;
 	}
 
 	/* get hardware config command mail box */
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data->cmd_box_addr, 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_COMMAND_MAILBOX_PTR]), wifi_data->cmd_box_addr, 4, false);
 	if (ret < 0)
 		return ret;
 #if (PRINT_DEBUG)
 	printk("cmd_box_addr 0x%x", wifi_data->cmd_box_addr);
 #endif
-	ret = wifi_sdio_raw_read(wlcore_translate_addr(wifi_data->rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data->mbox_ptr[0], 4, false);
+	ret = wifi_sdio_raw_read(wificore_translate_addr(wifi_data->rtable[REG_EVENT_MAILBOX_PTR]), (u32*)wifi_data->mbox_ptr[0], 4, false);
 	if (ret < 0)
 		return ret;
 	*(wifi_data->mbox_ptr[1]) = *(wifi_data->mbox_ptr[0]) + sizeof(struct wl18xx_event_mailbox);
 
 	ret = wifi_boot_static_data();
 	if (ret < 0) {
-		wl1271_error("error getting static data");
+		wifi_error("error getting static data");
 		return ret;
 	}
 
@@ -349,9 +349,9 @@ int wlcore_boot_run_firmware(void)
 	 */
 
 	/* unmask required mbox events  */
-	ret = wl1271_event_unmask();
+	ret = wifi_event_unmask();
 	if (ret < 0) {
-		wl1271_error("EVENT mask setting failed");
+		wifi_error("EVENT mask setting failed");
 		return ret;
 	}
 
@@ -361,4 +361,4 @@ int wlcore_boot_run_firmware(void)
 	/* firmware startup completed */
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wlcore_boot_run_firmware);
+EXPORT_SYMBOL_GPL(wificore_boot_run_firmware);

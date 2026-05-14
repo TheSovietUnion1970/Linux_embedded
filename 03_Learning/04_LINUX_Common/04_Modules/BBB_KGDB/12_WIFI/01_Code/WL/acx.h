@@ -52,7 +52,7 @@
 
 /* Target's information element */
 struct acx_header {
-	struct wl1271_cmd_header cmd;
+	struct wifi_cmd_header cmd;
 
 	/* acx (or information element) header */
 	__le16 id;
@@ -84,7 +84,7 @@ struct acx_error_counter {
 	__le32 seq_num_miss;
 } __packed;
 
-enum wl12xx_role {
+enum wifi_role {
 	WL1271_ROLE_STA = 0,
 	WL1271_ROLE_IBSS,
 	WL1271_ROLE_AP,
@@ -96,7 +96,7 @@ enum wl12xx_role {
 	WL12XX_INVALID_ROLE_TYPE = 0xff
 };
 
-enum wl1271_psm_mode {
+enum wifi_psm_mode {
 	/* Active mode */
 	WL1271_PSM_CAM = 0,
 
@@ -455,7 +455,7 @@ struct acx_tx_config_options {
 	__le16 tx_compl_threshold;   /* number of packets */
 } __packed;
 
-struct wl12xx_acx_config_memory {
+struct wifi_acx_config_memory {
 	struct acx_header header;
 
 	u8 rx_mem_block_num;
@@ -471,7 +471,7 @@ struct wl12xx_acx_config_memory {
 	u8 padding[3];
 } __packed;
 
-struct wl1271_acx_mem_map {
+struct wifi_acx_mem_map {
 	struct acx_header header;
 
 	__le32 code_start;
@@ -515,7 +515,7 @@ struct wl1271_acx_mem_map {
 	__le32 tx_ctrl;
 } __packed;
 
-struct wl1271_acx_rx_config_opt {
+struct wifi_acx_rx_config_opt {
 	struct acx_header header;
 
 	__le16 mblk_threshold;
@@ -526,7 +526,7 @@ struct wl1271_acx_rx_config_opt {
 } __packed;
 
 
-struct wl1271_acx_bet_enable {
+struct wifi_acx_bet_enable {
 	struct acx_header header;
 
 	u8 role_id;
@@ -543,7 +543,7 @@ struct wl1271_acx_bet_enable {
 #define ACX_ARP_FILTER_ARP_FILTERING	BIT(0)
 #define ACX_ARP_FILTER_AUTO_ARP		BIT(1)
 
-struct wl1271_acx_arp_filter {
+struct wifi_acx_arp_filter {
 	struct acx_header header;
 	u8 role_id;
 	u8 version;         /* ACX_IPV4_VERSION, ACX_IPV6_VERSION */
@@ -555,7 +555,7 @@ struct wl1271_acx_arp_filter {
 			       used. */
 } __packed;
 
-struct wl1271_acx_pm_config {
+struct wifi_acx_pm_config {
 	struct acx_header header;
 
 	__le32 host_clk_settling_time;
@@ -563,7 +563,7 @@ struct wl1271_acx_pm_config {
 	u8 padding[3];
 } __packed;
 
-struct wl1271_acx_keep_alive_mode {
+struct wifi_acx_keep_alive_mode {
 	struct acx_header header;
 
 	u8 role_id;
@@ -581,7 +581,7 @@ enum {
 	ACX_KEEP_ALIVE_TPL_VALID
 };
 
-struct wl1271_acx_keep_alive_config {
+struct wifi_acx_keep_alive_config {
 	struct acx_header header;
 
 	u8 role_id;
@@ -626,7 +626,7 @@ enum {
 	WL1271_ACX_TRIG_COUNT = 8,
 };
 
-struct wl1271_acx_rssi_snr_trigger {
+struct wifi_acx_rssi_snr_trigger {
 	struct acx_header header;
 
 	u8 role_id;
@@ -641,7 +641,7 @@ struct wl1271_acx_rssi_snr_trigger {
 	u8 padding[1];
 };
 
-struct wl1271_acx_rssi_snr_avg_weights {
+struct wifi_acx_rssi_snr_avg_weights {
 	struct acx_header header;
 
 	u8 role_id;
@@ -661,7 +661,7 @@ struct wl1271_acx_rssi_snr_avg_weights {
  * Configure HT capabilities - declare the capabilities of the peer
  * we are connected to.
  */
-struct wl1271_acx_ht_capabilities {
+struct wifi_acx_ht_capabilities {
 	struct acx_header header;
 
 	/* bitmask of capability bits supported by the peer */
@@ -686,7 +686,7 @@ struct wl1271_acx_ht_capabilities {
  * ACX_HT_BSS_OPERATION
  * Configure HT capabilities - AP rules for behavior in the BSS.
  */
-struct wl1271_acx_ht_information {
+struct wifi_acx_ht_information {
 	struct acx_header header;
 
 	u8 role_id;
@@ -715,7 +715,7 @@ struct wl1271_acx_ht_information {
 	u8 padding[2];
 } __packed;
 
-struct wl1271_acx_ba_initiator_policy {
+struct wifi_acx_ba_initiator_policy {
 	struct acx_header header;
 
 	/* Specifies role Id, Range 0-7, 0xFF means ANY role. */
@@ -738,7 +738,7 @@ struct wl1271_acx_ba_initiator_policy {
 	u8 padding[2];
 } __packed;
 
-struct wl1271_acx_ba_receiver_setup {
+struct wifi_acx_ba_receiver_setup {
 	struct acx_header header;
 
 	/* Specifies link id, range 0-31 */
@@ -757,7 +757,7 @@ struct wl1271_acx_ba_receiver_setup {
 	u8 padding[2];
 } __packed;
 
-struct wl12xx_acx_fw_tsf_information {
+struct wifi_acx_fw_tsf_information {
 	struct acx_header header;
 
 	u8 role_id;
@@ -770,7 +770,7 @@ struct wl12xx_acx_fw_tsf_information {
 	u8 padding2[3];
 } __packed;
 
-struct wl1271_acx_ps_rx_streaming {
+struct wifi_acx_ps_rx_streaming {
 	struct acx_header header;
 
 	u8 role_id;
@@ -785,7 +785,7 @@ struct wl1271_acx_ps_rx_streaming {
 	u8 padding[3];
 } __packed;
 
-struct wl1271_acx_config_ps {
+struct wifi_acx_config_ps {
 	struct acx_header header;
 
 	u8 exit_retries;
@@ -794,7 +794,7 @@ struct wl1271_acx_config_ps {
 	__le32 null_data_rate;
 } __packed;
 
-struct wl1271_acx_inconnection_sta {
+struct wifi_acx_inconnection_sta {
 	struct acx_header header;
 
 	u8 addr[ETH_ALEN];
@@ -806,7 +806,7 @@ struct wl1271_acx_inconnection_sta {
  * ACX_FM_COEX_CFG
  * set the FM co-existence parameters.
  */
-struct wl1271_acx_fm_coex {
+struct wifi_acx_fm_coex {
 	struct acx_header header;
 	/* enable(1) / disable(0) the FM Coex feature */
 	u8 enable;
@@ -862,7 +862,7 @@ struct wl1271_acx_fm_coex {
 } __packed;
 
 #define ACX_RATE_MGMT_ALL_PARAMS 0xff
-struct wl12xx_acx_set_rate_mgmt_params {
+struct wifi_acx_set_rate_mgmt_params {
 	struct acx_header header;
 
 	u8 index; /* 0xff to configure all params */
@@ -885,7 +885,7 @@ struct wl12xx_acx_set_rate_mgmt_params {
 	u8 padding2[2];
 } __packed;
 
-struct wl12xx_acx_config_hangover {
+struct wifi_acx_config_hangover {
 	struct acx_header header;
 
 	__le32 recover_time;
@@ -1013,75 +1013,75 @@ enum {
 };
 
 
-int wl1271_acx_wake_up_conditions(
+int wifi_acx_wake_up_conditions(
 				  struct wifi_vif *wifi_vif,
 				  u8 wake_up_event, u8 listen_interval);
-int wl1271_acx_sleep_auth(u8 sleep_auth);
-int wl1271_acx_tx_power(struct wifi_vif *wifi_vif,
+int wifi_acx_sleep_auth(u8 sleep_auth);
+int wifi_acx_tx_power(struct wifi_vif *wifi_vif,
 			int power);
-int wl1271_acx_feature_cfg(struct wifi_vif *wifi_vif);
-int wl1271_acx_mem_map(
+int wifi_acx_feature_cfg(struct wifi_vif *wifi_vif);
+int wifi_acx_mem_map(
 		       struct acx_header *mem_map, size_t len);
-int wl1271_acx_rx_msdu_life_time(void);
-int wl1271_acx_slot(struct wifi_vif *wifi_vif,
+int wifi_acx_rx_msdu_life_time(void);
+int wifi_acx_slot(struct wifi_vif *wifi_vif,
 		    enum acx_slot_type slot_time);
-int wl1271_acx_group_address_tbl(struct wifi_vif *wifi_vif,
+int wifi_acx_group_address_tbl(struct wifi_vif *wifi_vif,
 				 bool enable, void *mc_list, u32 mc_list_len);
-int wl1271_acx_service_period_timeout(
+int wifi_acx_service_period_timeout(
 				      struct wifi_vif *wifi_vif);
-int wl1271_acx_rts_threshold(struct wifi_vif *wifi_vif,
+int wifi_acx_rts_threshold(struct wifi_vif *wifi_vif,
 			     u32 rts_threshold);
-int wl1271_acx_dco_itrim_params(void);
-int wl1271_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
+int wifi_acx_dco_itrim_params(void);
+int wifi_acx_beacon_filter_opt(struct wifi_vif *wifi_vif,
 				 bool enable_filter);
-int wl1271_acx_beacon_filter_table(
+int wifi_acx_beacon_filter_table(
 				   struct wifi_vif *wifi_vif);
-int wl1271_acx_conn_monit_params(struct wifi_vif *wifi_vif,
+int wifi_acx_conn_monit_params(struct wifi_vif *wifi_vif,
 				 bool enable);
-int wl1271_acx_sg_enable(bool enable);
-int wl12xx_acx_sg_cfg(void);
-int wl1271_acx_cca_threshold(void);
-int wl1271_acx_bcn_dtim_options(struct wifi_vif *wifi_vif);
-int wl1271_acx_aid(struct wifi_vif *wifi_vif, u16 aid);
-int wl1271_acx_event_mbox_mask(u32 event_mask);
-int wl1271_acx_set_preamble(struct wifi_vif *wifi_vif,
+int wifi_acx_sg_enable(bool enable);
+int wifi_acx_sg_cfg(void);
+int wifi_acx_cca_threshold(void);
+int wifi_acx_bcn_dtim_options(struct wifi_vif *wifi_vif);
+int wifi_acx_aid(struct wifi_vif *wifi_vif, u16 aid);
+int wifi_acx_event_mbox_mask(u32 event_mask);
+int wifi_acx_set_preamble(struct wifi_vif *wifi_vif,
 			    enum acx_preamble_type preamble);
-int wl1271_acx_cts_protect(struct wifi_vif *wifi_vif,
+int wifi_acx_cts_protect(struct wifi_vif *wifi_vif,
 			   enum acx_ctsprotect_type ctsprotect);
-int wl1271_acx_sta_rate_policies(struct wifi_vif *wifi_vif);
-int wl1271_acx_ac_cfg(struct wifi_vif *wifi_vif,
+int wifi_acx_sta_rate_policies(struct wifi_vif *wifi_vif);
+int wifi_acx_ac_cfg(struct wifi_vif *wifi_vif,
 		      u8 ac, u8 cw_min, u16 cw_max, u8 aifsn, u16 txop);
-int wl1271_acx_tid_cfg(struct wifi_vif *wifi_vif,
+int wifi_acx_tid_cfg(struct wifi_vif *wifi_vif,
 		       u8 queue_id, u8 channel_type,
 		       u8 tsid, u8 ps_scheme, u8 ack_policy,
 		       u32 apsd_conf0, u32 apsd_conf1);
-int wl1271_acx_frag_threshold(u32 frag_threshold);
-int wl1271_acx_tx_config_options(void);
-int wl12xx_acx_mem_cfg(void);
-int wl1271_acx_init_mem_config(void);
-int wl1271_acx_init_rx_interrupt(void);
-int wl1271_acx_bet_enable(struct wifi_vif *wifi_vif,
+int wifi_acx_frag_threshold(u32 frag_threshold);
+int wifi_acx_tx_config_options(void);
+int wifi_acx_mem_cfg(void);
+int wifi_acx_init_mem_config(void);
+int wifi_acx_init_rx_interrupt(void);
+int wifi_acx_bet_enable(struct wifi_vif *wifi_vif,
 			  bool enable);
-int wl1271_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
+int wifi_acx_arp_ip_filter(struct wifi_vif *wifi_vif,
 			     u8 enable, __be32 address);
-int wl1271_acx_pm_config(void);
-int wl1271_acx_keep_alive_mode(struct wifi_vif *vif,
+int wifi_acx_pm_config(void);
+int wifi_acx_keep_alive_mode(struct wifi_vif *vif,
 			       bool enable);
-int wl1271_acx_keep_alive_config(struct wifi_vif *wifi_vif,
+int wifi_acx_keep_alive_config(struct wifi_vif *wifi_vif,
 				 u8 index, u8 tpl_valid);
-int wl1271_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
+int wifi_acx_rssi_snr_trigger(struct wifi_vif *wifi_vif,
 				bool enable, s16 thold, u8 hyst);
-int wl1271_acx_rssi_snr_avg_weights(
+int wifi_acx_rssi_snr_avg_weights(
 				    struct wifi_vif *wifi_vif);
-int wl1271_acx_set_ht_information(
+int wifi_acx_set_ht_information(
 				   struct wifi_vif *wifi_vif,
 				   u16 ht_operation_mode);
-int wl12xx_acx_set_ba_initiator_policy(
+int wifi_acx_set_ba_initiator_policy(
 				       struct wifi_vif *wifi_vif);
-int wl1271_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
+int wifi_acx_ps_rx_streaming(struct wifi_vif *wifi_vif,
 			       bool enable);
-int wl1271_acx_fm_coex(void);
-int wl12xx_acx_set_rate_mgmt_params(void);
-int wl12xx_acx_config_hangover(void);
+int wifi_acx_fm_coex(void);
+int wifi_acx_set_rate_mgmt_params(void);
+int wifi_acx_config_hangover(void);
 
 #endif /* __WL1271_ACX_H__ */
