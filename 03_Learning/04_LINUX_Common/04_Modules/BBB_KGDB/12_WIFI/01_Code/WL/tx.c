@@ -113,6 +113,9 @@ static int wifi_tx_allocate(struct sk_buff *skb, u32 buf_offset, u8 hlid)
 		wifi_tx_blocks_available -= total_blocks;
 
 		wifi_tx_allocated_blocks += total_blocks;
+#if (PRINT_DEBUG_TX_WATCHDOG)
+		printk("Allocated blks for transmit: %d\n", total_blocks);
+#endif
 
 		/*
 		 * If the FW was empty before, arm the Tx watchdog. Also do

@@ -1,0 +1,7 @@
+Case: When using iw wlan0 link:
+	+ signal -> show nothing
+	+ rx bitrate, tx bitrate 1Mbps
+	
+	=> wrong rate->idx -> mac80211 lookup the interal table with wrong idx
+	
+

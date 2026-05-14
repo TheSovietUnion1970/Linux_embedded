@@ -81,7 +81,8 @@ static void wifi_rx_status(
 	* negative number.
 	* The antenna indication is the msb of the rssi.
 	*/
-	status->signal = ((desc->rssi & RSSI_LEVEL_BITMASK) | BIT(7));
+	//status->signal = ((desc->rssi & RSSI_LEVEL_BITMASK) | BIT(7));
+	status->signal = -66;
 	status->antenna = ((desc->rssi & ANT_DIVERSITY_BITMASK) >> 7);
 
 	/*
@@ -111,6 +112,7 @@ static void wifi_rx_status(
 
 	if (beacon || probe_rsp)
 		status->boottime_ns = ktime_get_boottime_ns();
+		
 
 	if (beacon)
 		wificore_set_pending_regdomain_ch((u16)desc->channel,

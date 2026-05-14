@@ -1,0 +1,21 @@
+TX packets are sent late accidentally
+-> Add sw watchdog tx for notifying it:
+
+-> Add queue delayed work to check
+
+Ex:
+[ 8475.832158] Allocated blks for transmit: 2
+[ 8475.839571] Free blks for transmit: 2
+
+[ 8477.581393] Allocated blks for transmit: 3
+[ 8477.585674] Allocated blks for transmit: 2
+[ 8477.593452] Free blks for transmit: 5
+
+	-> no watchdog tx stuck
+
+[ 8475.832158] Allocated blks for transmit: 3
+[ 8475.839571] Free blks for transmit: 2
+	-> watchdog tx struct
+	
+	
+-> can use PRINT_DEBUG_TX_WATCHDOG for inspect

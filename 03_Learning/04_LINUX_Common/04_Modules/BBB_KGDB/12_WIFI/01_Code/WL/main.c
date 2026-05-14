@@ -91,22 +91,19 @@ void wifi_rearm_tx_watchdog_locked(void)
 	/* if the watchdog is not armed, don't do anything */
 	// If there are no blocks currently allocated for TX -> no need to transmit
 	// so no need to check TX data is stuck
-#if (PRINT_DEBUG)
-	printk("[WORK] TX watchdog: %d\n", wifi_tx_allocated_blocks);
-#endif
 	if (wifi_tx_allocated_blocks == 0)
 		return;
 
 	cancel_delayed_work(&wifi_work.tx_watchdog_work);
 	ieee80211_queue_delayed_work(wifi_data->hw, &wifi_work.tx_watchdog_work,
-		msecs_to_jiffies(wifi_data->conf.tx.tx_watchdog_timeout));
+		msecs_to_jiffies(5000));
 }
 
 static void wifi_tx_watchdog_work(struct work_struct *work)
 {
-#if (PRINT_DEBUG)
+//#if (PRINT_DEBUG)
 	printk("[WORK] - wifi_tx_watchdog_work\n");
-#endif
+//#endif
 	struct delayed_work *dwork;
 
 	dwork = to_delayed_work(work);
@@ -248,9 +245,13 @@ static int wificore_fw_status(void)
 	// => freed_blocks = new (total_released_blks) - last (tx_blocks_freed)
 	//				   = the ctr number of released blocks
 
-
+	//freed_blocks-=2;
 	
 	wifi_tx_allocated_blocks = wifi_tx_allocated_blocks - freed_blocks;
+
+#if (PRINT_DEBUG_TX_WATCHDOG)
+		printk("Free blks for transmit: %d\n", freed_blocks);
+#endif
 
 	/*
 	 * If the FW freed some blocks:
@@ -407,6 +408,8 @@ static void wifi_get_last_tx_rate(struct ieee80211_vif *vif,
 			}
 		}
 	}
+
+	//rate->idx = CONF_HW_RATE_INDEX_6MBPS;
 
 	
 #if (PRINT_DEBUG)

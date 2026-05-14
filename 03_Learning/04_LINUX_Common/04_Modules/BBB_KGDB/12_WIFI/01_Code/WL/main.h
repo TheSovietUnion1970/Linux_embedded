@@ -76,6 +76,25 @@ Only happens if connected to wifi hotspot
 #define RX_LIMIT 100 /* limit rx frame up to RX_LIMIT */
 #define TX_LIMIT 100 /* limit tx frame up to TX_LIMIT */
 
+/* Debug watchdog TX */
+#define PRINT_DEBUG_TX_WATCHDOG 0
+/*
+Ex:
+[ 8475.832158] Allocated blks for transmit: 2
+[ 8475.839571] Free blks for transmit: 2
+
+[ 8477.581393] Allocated blks for transmit: 3
+[ 8477.585674] Allocated blks for transmit: 2
+[ 8477.593452] Free blks for transmit: 5
+
+	-> no watchdog tx stuck
+
+[ 8475.832158] Allocated blks for transmit: 3
+[ 8475.839571] Free blks for transmit: 2
+	-> watchdog tx struct
+
+*/
+
 #define APPLY_EXTERNAL_CONFIG 0
 
 #endif
