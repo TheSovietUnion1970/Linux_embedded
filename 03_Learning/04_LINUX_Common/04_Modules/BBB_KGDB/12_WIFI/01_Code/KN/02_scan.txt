@@ -1,0 +1,17 @@
+One AP can operate on 1 channel per band
+	Ex: AP A - channel 6-24GHz and channel 36-5GHz
+	
+	
+ieee80211_scan_completed -> must be called by driver to tell mac80211 that the scan is finished
+
+When no AP connection, wl1271_op_hw_scan is triggered periodically to find nearby AP (asked to scan lists of channels 2.4 and 6 band from mac80211)
+
+After having active and passive channels per band
+	-> ACTIVE: STA sends probe req and gets probe rsp from AP
+	-> PASSIVE: STA listen beacon frame from AP
+	
+	
+DFS = Dynamic freq selection -> certain channels on band 5
+	-> CAC - Channel Availability Check - passively listen on the channel for 60 seconds
+		-> If no radar is detected → AP can start transmitting (beacons, data).
+		-> If radar is detected → AP must immediately stop transmitting and move to a non-DFS channel.

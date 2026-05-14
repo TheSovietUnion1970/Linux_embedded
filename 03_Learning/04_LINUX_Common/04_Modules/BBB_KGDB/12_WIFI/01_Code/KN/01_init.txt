@@ -1,7 +1,10 @@
+wl12xx_chip_wakeup:
+	wl12xx_set_power_on		-> wake up chip
 wl12xx_init_fw:
 	wl12xx_chip_wakeup -> fetch fw from /lib/firmware/ti-connectivity/wl18xx-fw-4.bin
 	wifi_data->ops->boot() = load fw (binary code) to Wifi chip:
 		+ Low-level RADIO control
+		+ Rate policies (best, poor, fallback, compatible bw AP - STA)
 		
 		+ RX/TX packet
 		+ Memory 		-> Internal SRAM for TX/RX buffers
@@ -12,5 +15,9 @@ wl12xx_init_fw:
 		
 		+ Power management
 		+ Channel management
+		
+		===== specific ====
+		template - arp filter, probe req (management frames)
+		
 	wl1271_hw_init  -> config cmd blkcs based on the fw (binary code) 
 		=> the fw will understand these cmd blkcs and configure controllers 
