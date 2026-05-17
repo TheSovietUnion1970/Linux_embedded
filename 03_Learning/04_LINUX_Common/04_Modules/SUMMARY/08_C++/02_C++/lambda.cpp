@@ -18,12 +18,13 @@ int main() {
 		v[idx] = val;
 	};
 
-	// or [v]
+	// or [v] for only v
 	auto ModifyVal = [=](int idx, int val) mutable {
 		v[idx] = val;
 	};
 
-	auto PrintVal = [&v](int idx){
+	// or [&v] for only ref v
+	auto PrintVal = [&](int idx){
 		cout << "At idx: " << idx << " -> " << v[idx] << endl;
 	};
 
