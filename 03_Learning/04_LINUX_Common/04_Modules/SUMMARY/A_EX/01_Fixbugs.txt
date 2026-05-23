@@ -1,0 +1,13 @@
+WIFI:
+	RENE:	 RZ - custom TI WiLink8	- TI WL1837MOD				-> TX stuck, template, rate
+  (SDV)	Bosch:	 BBGW, NXP i.MX 93	- Murata				-> wrong display status
+	
+ETHERNET:
+	RENE:	 RZ - XDP supported	- KSZ903... chip, DP83TD... chip (TI)	-> speed stuck
+  (SDV)	Bosch:	 NXP i.MX 93		- TSN (low-latency communication)	-> Miss of RX des
+  
+USB:
+	RENE:	RX								-> Wrong len CBW
+	
+I2C:
+	RENE:	RZ								-> corrupted continous reading
