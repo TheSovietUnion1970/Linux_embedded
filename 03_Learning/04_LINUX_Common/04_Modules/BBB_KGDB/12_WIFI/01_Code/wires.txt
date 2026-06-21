@@ -1,0 +1,8 @@
+|CPU| <--------> |WIFI CHIP|
+       DAT[3:0]			-> standard SDIO 4-bit
+       CLK
+       CMD
+       
+       WL_EN			-> specific to wl18xx
+       WL_IRQ
+       WL_BUF_EN
