@@ -213,6 +213,43 @@ void PathLeafth(TreeNode* root, std::vector<string>& vec_str){
     PreOrder_PathLeafth(root, "", vec_str);
 }
 
+/*
+    0. Count all sub trees that the sum is equal to target sum
+
+    1. targetSum = 5 -> cnt = 2
+          5
+      ┌───┴───┐
+      1       7
+    ┌─┴─┐   ┌─┴─┐
+            6   8             5 -> 1
+                                   6
+                                
+    2. For each node, trace all dirs with the equal target sum
+       Ex: for tree above, trace all 5 nodes
+*/
+int count = 0;
+void PathSumReach (TreeNode *node, int cur_sum, int targetSum){
+    if (!node) return;
+ 
+    cur_sum += node->val;
+ 
+    if (cur_sum == targetSum) count++;
+    else if (cur_sum > targetSum) return;
+ 
+    PathSumReach(node->left, cur_sum, targetSum);
+    PathSumReach(node->right, cur_sum, targetSum);
+}
+int PathNodeSum(TreeNode *root, int targetSum){
+    if (!root) return 0;
+ 
+    PathSumReach(root, 0, targetSum); // reach all nodes until leaf or cur_sum > targetSum
+ 
+    PathNodeSum(root->left, targetSum); // continue with node left
+    PathNodeSum(root->right, targetSum); // continue with node right
+ 
+    return count;
+}
+
 int main()
 {
     // create tree
@@ -243,6 +280,10 @@ int main()
     for (const string& path : result) {
         cout << " " << path << endl;
     }
+
+    std::cout << "4. PathNodeSum: " << std::endl;
+    int cnt = PathNodeSum(root, 6);
+    cout << "PathNodeSum: " << cnt << endl;
     // ==================
  
     // clean up
