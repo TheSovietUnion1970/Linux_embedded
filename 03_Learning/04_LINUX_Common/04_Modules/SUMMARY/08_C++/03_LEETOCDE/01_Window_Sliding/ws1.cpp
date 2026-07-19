@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <climits>
+#include <unordered_set>
 using namespace std;
  
 class WindowSliding {
@@ -142,6 +143,56 @@ public:
         return res;
     }
 
+    /*
+        0. Find the longest same string (even duplicated each other)
+            + "banana" -> "ana"
+            + "abcabc" -> "abc"
+
+        1. + Use unordered_set to add substring, then check count > 0
+           + Use binary search
+             Ex: 8 bytes string with 3 bytes same
+                  + Check 4 bytes, if no string found -> then 2 bytes
+                  + 2 bytes are found -> Find longer 3 bytes
+
+    */
+    std::string FindDuplicateKLength(const string& s, int k_len){
+        std::unordered_set<std::string> seen_string;
+        int n = s.size();
+
+        for (int i = 0; i < s.size() - k_len + 1; i++){
+            std::string sub_string = s.substr(i, k_len);
+            if (seen_string.count(sub_string)){
+                //std::cout << "Duplicates: " << sub_string << ", num = " << seen_string.count(sub_string) << std::endl;
+                return sub_string;
+            }
+            seen_string.insert(sub_string);
+        }
+
+        return "";
+    }
+
+    std::string LongestDuplicatedString(const string& s){
+        int left = 1;
+        int right = s.length() - 1;
+        std::string out;
+
+        while (left <= right){
+            int mid = left + (right - left)/2;
+            std::string tmp;
+
+            tmp = FindDuplicateKLength(s, mid);
+
+            if (tmp.empty()){
+                right = mid - 1;
+            }
+            else {
+                out = tmp;
+                left = mid + 1;
+            }
+        }
+
+        return out;
+    }
 };
  
 int main(){
@@ -154,5 +205,8 @@ int main(){
     std::vector<int> v1 = {-1,7,-4};
     max = ws.MaximumSum(v1, 1,2,3);
     std::cout << "MaximumSum = " << max << std::endl;
+
+    std::string out = ws.LongestDuplicatedString("banana");
+    std::cout << "LongestDuplicatedString = " << out << std::endl;
     return 0;
 }
