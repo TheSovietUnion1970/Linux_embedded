@@ -193,6 +193,43 @@ public:
 
         return out;
     }
+
+    /*
+        0. Find the max sum of 2 non-overlapping arrs
+            + {-1,2,-1,-1,3,4}, fl = 1, sl = 2 -> max sum = 2+3+4 = 9
+
+        1. with fl = 1 left, sl = 2 right
+            + {[-1], [2, -1]} -> first_max = -1, max_sum = 0
+            + {[2] , [-1,-1]} -> first_max = 2,  max_sum = 0
+            ...
+            + {[-1], [3,  4]} -> first_max = 2,  max_sum = 9
+           with sl = 2 left, fl = 1 right
+
+    */
+    int maxSumTwoNoOverlap(vector<int>& nums, int firstLen, int secondLen){
+        int n = nums.size();
+        std::vector<int> prefix(n+1, 0);
+        int first_sum = INT_MIN, total_sum = INT_MIN;
+
+        //prefix[0] = 0;
+        for (int i = 1; i < n+1; i++){
+            prefix[i] = prefix[i-1] + nums.at(i-1);
+        }
+
+        // first len left, right len right
+        for (int i = firstLen; i < n - secondLen + 1; i++){
+            first_sum = std::max(first_sum, prefix[i] - prefix[i - firstLen]);
+            total_sum = std::max(total_sum, first_sum + prefix[i + secondLen] - prefix[i]);
+        }
+
+        // second len left, first len right
+        for (int i = secondLen; i < n - firstLen + 1; i++){
+            first_sum = std::max(first_sum, prefix[i] - prefix[i - secondLen]);
+            total_sum = std::max(total_sum, first_sum + prefix[i + firstLen] - prefix[i]);
+        }
+
+        return total_sum;
+    }
 };
  
 int main(){
@@ -208,5 +245,9 @@ int main(){
 
     std::string out = ws.LongestDuplicatedString("banana");
     std::cout << "LongestDuplicatedString = " << out << std::endl;
+
+    std::vector<int> v2 = {-1,2,-1,-1,3,4};
+    max = ws.maxSumTwoNoOverlap(v2, 1,2);
+    std::cout << "MaximumSum = " << max << std::endl;
     return 0;
 }
