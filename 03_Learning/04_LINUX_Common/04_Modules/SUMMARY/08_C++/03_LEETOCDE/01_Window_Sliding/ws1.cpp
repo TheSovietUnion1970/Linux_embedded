@@ -38,7 +38,7 @@ public:
             => 3 - 0 - (1 - 0) = 2 -> 2 here is the len {2,3} between 1 value
 
     */
-    int MaxLen(std::vector<int>& vec, int k_removed){
+    int MaxLenRemove(std::vector<int>& vec, int k_removed){
         int l = 0, r = 0;
         std::unordered_map<int, std::vector<int>> Val2Vector;
         int max_len = 0;
@@ -62,6 +62,30 @@ public:
         return max_len;
     }
  
+    int MaxLenFlip(std::vector<int>& vec, int k_flip){
+        int l = 0, r = 0;
+        std::unordered_map<int, std::vector<int>> Val2Vector;
+        int max_len = 0;
+
+        for (int i = 0; i < vec.size(); i++){
+            Val2Vector[vec.at(i)].push_back(i);
+        }
+
+        for (auto pair : Val2Vector){
+            std::vector<int> vec = pair.second;
+
+            for (r = 0; r < vec.size(); r++){
+                while (vec[r] - vec[l] - (r - l) > k_flip){
+                    l++;
+                }
+
+                max_len = std::max(vec[r] - vec[l] + 1, max_len);
+            }
+        }
+
+        return max_len;
+    }
+
     /*
     0. With at most m subarray, len = [l,r] -> Find the max sum of at most m subarray
         + {-1, 7,-4}, m=1, l=2, r=3 
@@ -236,8 +260,11 @@ int main(){
     WindowSliding ws("Window Sliding");
 
     std::vector<int> v = {1,2,3,1,2,3,1};
-    int max = ws.MaxLen(v,3);
-    std::cout << "MaxLen = " << max << std::endl;
+    int max = ws.MaxLenRemove(v,3); // output is 2
+    std::cout << "MaxLenRemove = " << max << std::endl;
+
+    max = ws.MaxLenFlip(v,4); // output is 7
+    std::cout << "MaxLenFlip = " << max << std::endl;
 
     std::vector<int> v1 = {-1,7,-4};
     max = ws.MaximumSum(v1, 1,2,3);
