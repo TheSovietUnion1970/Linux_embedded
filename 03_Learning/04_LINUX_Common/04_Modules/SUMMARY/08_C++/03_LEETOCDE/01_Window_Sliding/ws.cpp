@@ -292,24 +292,32 @@ public:
                                   l++
     */
     int MaxOfKpairSubArrays(std::vector<int>& nums, int k){
-        int right = 0, left = 0;
-        int max_sum = 0, pairs = 0;
-        std::unordered_map<int, int> Val2Cnt;
-        for (right = 0; right < nums.size(); right++){
-            pairs += Val2Cnt[nums.at(right)];
-            Val2Cnt[nums.at(right)]++;
- 
-            while(pairs >= k){
-                //std::cout << right << ", " << nums.size() - right << std::endl;
-                max_sum += (nums.size() - right);
- 
-                Val2Cnt[nums.at(left)]--;
-                pairs -= Val2Cnt[nums.at(left)];
-                left++;
+        std::unordered_map<int, int> Val2Sum;
+        int n = nums.size();
+        int num_of_kpair = 0;
+        int l = 0;
+        int sum_of_arr = 0;
+
+        for (int r = 0; r < n; r++){
+            num_of_kpair += Val2Sum[nums.at(r)];
+            Val2Sum[nums.at(r)]++;
+
+            while(num_of_kpair >= k and Val2Sum.size() >= k){
+
+                if (num_of_kpair == k){
+                    std::cout << l << " -> " << r << std::endl;
+                    sum_of_arr += (n - r);
+                }
+
+                Val2Sum[nums.at(l)]--;
+                num_of_kpair -= Val2Sum[nums.at(l)];
+                if (Val2Sum[nums.at(l)] == 0) Val2Sum.erase(nums.at(l));
+                l++;
+
             }
         }
- 
-        return max_sum;
+
+        return sum_of_arr;
     }
  
     /* Limit of k pairs and k_max pair
