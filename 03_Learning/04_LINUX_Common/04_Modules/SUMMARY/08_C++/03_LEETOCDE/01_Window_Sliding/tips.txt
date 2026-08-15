@@ -14,6 +14,14 @@ idx: 1 2 3
   + "a"
         + "b", "ab"
         + "c", "bc", "abc"
+        
+str: a b c   -> must contain b
+idx: 1 2 3
+-> on left:  2
+   on right: 2
+   -> total = 2*2 = 4
+   + "b", "bc"
+   + "ab", "abc" 
  
 3. ==================
 str: x x a b x 
