@@ -1,0 +1,79 @@
+1. ====== order
+Postorder (leaf to root)
+	-> delete tree
+	-> depth of tree from leaft to root
+	
+Preorder (left down)
+	-> print path (end of string = leaf)
+	
+Inorder
+	-> transverse left to right
+	
+	
+	
+===== Core func =====
+struct TreeNode
+{
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};
+ 
+struct TreeNode *CreateTree(std::vector<int> nums)
+{
+    std::vector<TreeNode *> vecNodes;
+    struct TreeNode *root = new TreeNode(nums.at(0));
+    vecNodes.push_back(root);
+ 
+    for (int i = 1; i < nums.size(); i++)
+    {
+        if (nums[i] != -1)
+        {
+            TreeNode *node = new TreeNode(nums.at(i));
+            if (i & 0x1)
+            {
+                vecNodes[(i - 1) / 2]->left = node;
+            }
+            else
+            {
+                vecNodes[(i - 1) / 2]->right = node;
+            }
+            vecNodes.push_back(node);
+        }
+    }
+ 
+    return root;
+}
+ 
+void DeleteTree(struct TreeNode *root)
+{
+    if (root == NULL)
+        return;
+ 
+    // std::cout << "Free " << root->val << std::endl;
+    //PrintRootLR(root, root->left, root->right);
+    //PrintRootLRVal(root->val, );
+ 
+    DeleteTree(root->left);
+    DeleteTree(root->right);
+ 
+    //std::cout << "Free " << root->val << std::endl;
+    //PrintRootLR(root, root->left, root->right);
+    delete root;
+}
+
+void printTree(TreeNode *root, std::string prefix = "", bool isLeft = true)
+{
+    if (root == nullptr)
+        return;
+    std::cout << prefix;
+    std::cout << (isLeft ? "├── " : "└── ");
+    std::cout << root->val << std::endl;
+    // Recur for left and right
+    printTree(root->left, prefix + (isLeft ? "│   " : "    "), true);
+    printTree(root->right, prefix + (isLeft ? "│   " : "    "), false);
+}
+

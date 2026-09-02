@@ -197,6 +197,7 @@ bool CheckBalancedTree(TreeNode* root){
     2. Each recursion append val and  '->'
 */
 void PreOrder_PathLeafth(TreeNode* node, std::string path, std::vector<string>& vec_str){
+    if (!node) return; // without, case 2 will fail
 
     path += std::to_string(node->val);
     if (!node->left and !node->right){
