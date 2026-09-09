@@ -94,6 +94,75 @@ int minCostClimbingStairs(std::vector<int>& v){
     return v.at(n) + min(minCostClimbingStairsR(n - 1, v, dp), minCostClimbingStairsR(n - 2, v, dp));
 }
 
+// Catalan number
+// n = 0, 1, 2, 3, 4, 5… are: 1, 1, 2, 5, 14, 42
+// the same for couting unique valid BST
+// the same for couting non-crossed lines in Polygon
+int numOfValidParenthesis(int n){
+    if (n <= 1) return 1;
+
+    int res = 0;
+    for (int i = 0; i < n; i++){
+        res += numOfValidParenthesis(i)*numOfValidParenthesis(n - i - 1);
+    }
+
+    return res;
+}
+
+int minSumPathR(vector<vector<int>> &triangle, int i, int j){
+    // i -> row, j -> column
+    if (i == triangle.size()){
+        return 0;
+    }
+
+    return triangle[i][j] + min(minSumPathR(triangle, i + 1, j), minSumPathR(triangle, i + 1, j + 1));
+}
+int minSumPath(vector<vector<int>> &triangle){
+    return minSumPathR(triangle, 0, 0);
+}
+
+/*
+    n = 4, k = 2
+    12 34
+    13 24
+    23 14
+
+    1 234
+    2 134
+    3 124
+
+    4 123
+
+    BASE: n = 3 (k*Bell_number(k, n - 1)) => '4' joins existing subset 
+    12 | 3
+    13 | 2
+    23 | 1
+    ->
+    12 | 3
+    → 124 | 3
+    → 12  | 34
+
+    13 | 2
+    → 134 | 2
+    → 13  | 24
+
+    23 | 1
+    → 234 | 1
+    → 23  | 14
+
+    BASE: n = 3 (Bell_number(k - 1, n - 1)) => '4' forms new one
+    123
+    → 123 | 4
+
+*/
+int Bell_number(int k, int n){
+    if (k == 1 or n == k) return 1;
+
+    return k*Bell_number(k, n - 1) + Bell_number(k - 1, n - 1);
+}
+
+
+
 int main() {
     int res;
 
@@ -108,4 +177,33 @@ int main() {
 	vector<int> cost = {10, 15, 20, 25, 0};
     cout << "minCostClimbingStairs(cost) = " << minCostClimbingStairs(cost) << endl;
     // output is 30 -> there are minimal 30 costs to reach 0 if 1 or 2 steps at a time
+
+    res = numOfValidParenthesis(3);
+    cout << "numOfValidParenthesis(3) = " << res << endl;
+    // output is 5 with frame = (A)B
+    /*
+        A = 2 -> ()() or (())
+        B = 0
+            -> (()()) or ((()))
+
+        A = 1 -> ()
+        B = 1 -> ()
+            -> ()()
+
+        A = 0
+        B = 2 -> ()() or (())
+            -> ()()() or ()(())
+    */
+
+    vector<vector<int>> triangle{
+        {2}, 
+        {3, 9}, 
+        {1, 6, 7}
+    };
+    cout << "minSumPath() = " << minSumPath(triangle) << endl;
+    // output = 6: 2 -> 3 -> 1, sum = 6
+
+    res = Bell_number(2,4);
+    cout << "Bell_number(2,4) = " << res << endl;
+    // output = 7
 }
