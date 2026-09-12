@@ -194,6 +194,37 @@ int decode(std::string digit){
     return decodeR(digit, 0);
 }
 
+/*
+                                                       {1,1,1}         {1,2}
+                      3 (1,2)                            3 (1)          1 (1,2)   
+                   /           \                          /               \
+              1 (1,2)           3 (1)                    2 (1)           1 (1)        
+             /       \          /      \                  /               /       
+        -1 (1,2)    1 (1)      2 (1)    3 ()             1(1)            0(1)
+                    /   \      /   \                     /
+                  0(1)  1()  1(1)  2()                  0(1)
+                             /   \                  -> depth = 3      -> depth = 2
+                           0(1)  1()
+*/
+int minCoinsRecur(std::vector<int> coins, int sum, int i){
+
+    if (sum == 0) return 0;
+    if (i < 0 or sum < 0) return INT_MAX;
+
+    int take, no_take;
+
+    take = minCoinsRecur(coins, sum - coins[i], i); 
+    if (take != INT_MAX) take++;
+
+    no_take = minCoinsRecur(coins, sum, i - 1);
+
+    return std::min(take, no_take);
+}
+int minCoins(std::vector<int> coins, int sum){
+    int n = coins.size();
+    return minCoinsRecur(coins, sum, n - 1);
+}
+
 int main(){
     int res;
     bool ret;
@@ -229,4 +260,8 @@ int main(){
     res = decode("1212");
     std::cout << "decode = " << res << std::endl;
     // output is 8
+
+    std::vector<int> coins1 = {1, 2};
+    std::cout << "minCoins = " << minCoins(coins1, 3) << std::endl;
+    // output is 2
 }
